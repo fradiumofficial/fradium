@@ -12,7 +12,7 @@ const navigationItems = [
 
 const Navbar = () => {
   return (
-    <header style={{ width: '100%', background: '#0C0D14', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 72, position: 'relative', zIndex: 100 }}>
+    <header style={{ position: 'fixed', top: 0, left: 0, width: '100vw', background: '#0C0D14', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 72, zIndex: 1000 }}>
       <div style={{ width: '100%', maxWidth: 1440, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', minHeight: 72 }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

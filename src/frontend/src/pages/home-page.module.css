@@ -15,6 +15,7 @@
     overflow-x: hidden;
     background: #0C0D14;
     padding: 0;
+    padding-top: 72px;
 }
 
 .heroIllustrationLeft,
@@ -157,5 +158,143 @@
 
     .heroSection {
         padding: 0 8px;
+        padding-top: 56px;
+    }
+}
+
+.aboutSection {
+    position: relative;
+    width: 100vw;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+}
+
+.aboutGlow {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    max-width: none;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+}
+
+.aboutGlow img {
+    width: 100vw;
+    max-width: none;
+    margin: 0;
+    display: block;
+    opacity: 0.7;
+}
+
+.aboutContent {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 64px;
+    margin-bottom: 32px;
+}
+
+.aboutLabel {
+    color: #9BEB83;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+.aboutTitle {
+    color: #fff;
+    font-size: 44px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 18px;
+    line-height: 1.15;
+}
+
+.aboutDesc {
+    color: #B0B6BE;
+    font-size: 20px;
+    font-weight: 400;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.aboutIllus {
+    position: relative;
+    z-index: 2;
+    width: 100vw;
+    max-width: none;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-top: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.aboutIllus img {
+    width: 100vw;
+    max-width: none;
+    height: auto;
+    display: block;
+}
+
+@media (max-width: 900px) {
+    .aboutTitle {
+        font-size: 28px;
+    }
+
+    .aboutDesc {
+        font-size: 16px;
+        max-width: 95vw;
+    }
+
+    .aboutGlow img {
+        max-width: none;
+    }
+
+    .aboutIllus img {
+        max-width: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .aboutContent {
+        margin-top: 32px;
+        margin-bottom: 16px;
+    }
+
+    .aboutTitle {
+        font-size: 20px;
+    }
+
+    .aboutDesc {
+        font-size: 13px;
+    }
+
+    .aboutGlow img {
+        max-width: none;
+    }
+
+    .aboutIllus img {
+        max-width: none;
     }
 }
