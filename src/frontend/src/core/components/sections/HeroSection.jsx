@@ -33,7 +33,7 @@ const HeroSection = () => {
           </h1>
           {/* Subtitle */}
           <p className={styles.heroSubtitle} style={{ margin: '32px 0 48px 0', maxWidth: 600 }}>
-            Here is Your Digital Asset Guardian to Analyse. Protect. Transact with Confidence.
+            Here is Your Digital Asset Guardian to <br /> Analyse. Protect. Transact with Confidence.
           </p>
           {/* CTA Button */}
           <Button className={styles.heroButton} size="lg">

@@ -13,20 +13,20 @@
 .heroTitle {
     font-family: 'General Sans', sans-serif;
     font-size: 64px;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 120%;
     color: #fff;
     text-align: center;
 }
 
-.heroTitleAccent {
+/* .heroTitleAccent {
     color: #9BEB83;
-}
+} */
 
 .heroSubtitle {
     font-family: 'General Sans', sans-serif;
-    font-size: 20px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 400;
     line-height: 150%;
     color: #fff;
     text-align: center;
