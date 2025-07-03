@@ -21,12 +21,22 @@
       },
       "type": "custom",
       "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    },
+    "chatbot": {
+      "dependencies": ["llm"],
+      "main": "src/chatbot/chatbot.mo",
+      "type": "motoko"
+    },
+    "llm": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.did",
+      "wasm": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.wasm"
     }
   },
   "defaults": {
     "build": {
       "args": "",
-      "packtool": ""
+      "packtool": "mops sources"
     }
   },
   "output_env_file": ".env",
