@@ -31,6 +31,10 @@
       "type": "custom",
       "candid": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.did",
       "wasm": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.wasm"
+    },
+    "token": {
+      "main": "src/token/token.mo",
+      "type": "motoko"
     }
   },
   "defaults": {
