@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
 import HomePage from "./pages/home-page.jsx";
-import HomeLayout from "@/core/components/layouts/home-layout.jsx";
+import MainLayout from "@/core/components/layouts/MainLayout.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
 
 NProgress.configure({
@@ -62,7 +62,7 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <NProgressRouter />
       <Routes>
-        <Route path="/" element={<HomeLayout />}>
+        <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

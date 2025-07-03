@@ -11,16 +11,29 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["General Sans", "system-ui", "sans-serif"],
+      },
       colors: {
+        // Fradium Design System Colors
+        primary: {
+          green: "#9BEB83",
+          purple: "#A259FF", 
+          black: "#0C0D14",
+          white: "#FFFFFF",
+        },
+        support: {
+          pink: "#FF2C9C",
+          blue: "#2CDDFE", 
+          yellow: "#FFD74B",
+          cyan: "#00F0FF",
+        },
+        // Keep original shadcn colors for compatibility
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -45,6 +58,23 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      fontSize: {
+        // Fradium Typography Scale
+        'h1': ['64px', { lineHeight: '120%', fontWeight: '700' }],
+        'h2': ['48px', { lineHeight: '120%', fontWeight: '600' }],
+        'subtitle': ['20px', { lineHeight: '150%', fontWeight: '500' }],
+        'body': ['16px', { lineHeight: '150%', fontWeight: '400' }],
+        'caption': ['14px', { lineHeight: '140%', fontWeight: '500' }],
+        'button': ['16px', { lineHeight: '130%', fontWeight: '600' }],
+      },
+      spacing: {
+        // 8pt Grid System
+        'xs': '4px',
+        's': '8px', 
+        'm': '16px',
+        'l': '32px',
+        'xl': '64px',
       },
       borderRadius: {
         lg: "var(--radius)",

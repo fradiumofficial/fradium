@@ -1,7 +1,13 @@
 import React from "react";
+import HeroSection from "@/core/components/sections/HeroSection";
 
 const HomePage = () => {
-  return <div className="text-2xl font-bold">Hello World</div>;
+  return (
+    <div>
+      <HeroSection />
+      {/* Section lainnya akan ditambahkan di sini */}
+    </div>
+  );
 };
 
 export default HomePage;
