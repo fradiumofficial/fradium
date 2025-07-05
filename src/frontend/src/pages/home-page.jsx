@@ -60,7 +60,89 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      {/* Section lainnya bisa langsung ditambah di sini */}
+      {/* How it works section */}
+      <section className="w-full flex flex-col items-center mt-24 px-4">
+        <div className="text-center mb-6">
+          <div className="text-green-400 font-semibold tracking-widest text-sm mb-2">HOW IT WORKS</div>
+          <h2 className="text-4xl md:text-5xl font-medium text-white mb-4">Simple Protection for Every Transaction</h2>
+          <p className="text-[#B0B6BE] text-lg max-w-4xl mx-auto">Fradium simplifies blockchain security with two essential tools: address analysis and smart contract audit.<br className="hidden md:block" />The process is designed to be clear, quick, and reliable.</p>
+        </div>
+        <div
+          className="relative bg-[#181C22]/80 rounded-3xl shadow-lg overflow-hidden mx-auto"
+          style={{
+            width: 'calc(100vw - 100px)',
+            maxWidth: '1400px',
+            margin: '0 auto',
+            height: '292px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            border: '1.5px solid rgba(255,255,255,0.10)',
+            borderRadius: '24px',
+            boxSizing: 'border-box',
+          }}
+        >
+          <img
+            src="/assets/images/wave-steper.png"
+            alt="How it works"
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              objectFit: 'contain',
+            }}
+            draggable="false"
+          />
+          {/* Overlay step content */}
+          <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+            {/* Step 1 */}
+            <div
+              className="absolute text-center"
+              style={{
+                top: '150px',
+                left: '19%',
+                transform: 'translateX(-50%)',
+                width: '260px',
+              }}
+            >
+              <div className="text-white text-xl font-medium mb-2">Step 1</div>
+              <div className="text-[#B0B6BE] text-base">
+                Enter the wallet address or smart contract you wish to review
+              </div>
+            </div>
+            {/* Step 2 */}
+            <div
+              className="absolute text-center"
+              style={{
+                top: '150px',
+                left: '51%',
+                transform: 'translateX(-50%)',
+                width: '260px',
+              }}
+            >
+              <div className="text-white text-xl font-medium mb-2">Step 2</div>
+              <div className="text-[#B0B6BE] text-base">
+                Fradium checks against fraud databases and performs risk analysis.
+              </div>
+            </div>
+            {/* Step 3 */}
+            <div
+              className="absolute text-center"
+              style={{
+                top: '150px',
+                left: '83%',
+                transform: 'translateX(-50%)',
+                width: '260px',
+              }}
+            >
+              <div className="text-white text-xl font-medium mb-2">Step 3</div>
+              <div className="text-[#B0B6BE] text-base">
+                Get a risk score and actionable recommendations instantly.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </HomeLayout>
   );
 };
