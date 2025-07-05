@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "@/core/components/Navbar";
 import Button from "@/core/components/Button";
 import styles from "./home-page.module.css";
+import Footer from "../core/components/Footer";
 
 const HomePage = () => {
   return (
@@ -12,14 +13,14 @@ const HomePage = () => {
         <div className={styles.heroContentWrapper}>
           {/* Ilustrasi kiri */}
           <img
-            src="assets/images/hero_kiri.png"
+            src="/assets/images/hero_kiri.png"
             alt="Blockchain Security Illustration"
             className={styles.heroIllustrationLeft}
             draggable="false"
           />
           {/* Ilustrasi kanan */}
           <img
-            src="assets/images/hero_kanan.png"
+            src="/assets/images/hero_kanan.png"
             alt="Digital Assets Security"
             className={styles.heroIllustrationRight}
             draggable="false"
@@ -44,7 +45,7 @@ const HomePage = () => {
             </Button>
             {/* Efek Glow di bawah button */}
             <div className={styles.aboutGlowBg}>
-              <img src="assets/images/glow.png" alt="Glow" className={styles.glowImg} />
+              <img src="/assets/images/glow.png" alt="Glow" className={styles.glowImg} />
             </div>
           </div>
         </div>
@@ -57,11 +58,12 @@ const HomePage = () => {
             Our mission: help you detect risks, avoid fraud, and engage with confidence across the blockchain ecosystem.
           </p>
           <div className={styles.aboutIllus}>
-            <img src="assets/images/illus.png" alt="Fradium About Illustration" />
+            <img src="/assets/images/illus.png" alt="Fradium About Illustration" />
           </div>
         </div>
       </section>
       {/* Section lainnya bisa langsung ditambah di sini */}
+      <Footer></Footer>
     </>
   );
 };
