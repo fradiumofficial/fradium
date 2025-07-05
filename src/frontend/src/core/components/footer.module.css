@@ -82,7 +82,7 @@
 .desc {
     color: #B0B6BE;
     font-size: 1.05rem;
-    max-width: 340px;
+    max-width: 400px;
 }
 
 .socialRow {
@@ -92,8 +92,8 @@
 }
 
 .socialRow img {
-    width: 38px;
-    height: 38px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: #181C22;
     padding: 5px;
@@ -108,7 +108,7 @@
     flex: 1 1 340px;
     display: flex;
     flex-direction: row;
-    gap: 56px;
+    gap: 120px;
     justify-content: flex-end;
 }
 

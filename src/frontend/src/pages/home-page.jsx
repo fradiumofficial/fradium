@@ -1,13 +1,11 @@
 import React from "react";
-import Navbar from "@/core/components/Navbar";
 import Button from "@/core/components/Button";
 import styles from "./home-page.module.css";
-import Footer from "../core/components/Footer";
+import HomeLayout from "@/core/components/layouts/home-layout";
 
 const HomePage = () => {
   return (
-    <>
-      <Navbar />
+    <HomeLayout>
       <section className={styles.heroAboutSection}>
         {/* Hero Content */}
         <div className={styles.heroContentWrapper}>
@@ -63,8 +61,7 @@ const HomePage = () => {
         </div>
       </section>
       {/* Section lainnya bisa langsung ditambah di sini */}
-      <Footer></Footer>
-    </>
+    </HomeLayout>
   );
 };
 
