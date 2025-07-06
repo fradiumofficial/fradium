@@ -24,3 +24,22 @@ dist/
 
 # environment variables
 .env
+
+# Local artifacts 
+*.joblib
+
+# DFINITY/Internet Computer
+.dfx/
+.vessel/
+.mops/
+
+# Rust
+target/
+Cargo.lock
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
