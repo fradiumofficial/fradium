@@ -1,4 +1,5 @@
 {
+  "version": 1,
   "canisters": {
     "backend": {
       "main": "src/backend/main.mo",
@@ -21,14 +22,32 @@
       },
       "type": "custom",
       "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    },
+    "ransomware_detector": { 
+      "type": "rust",
+      "package": "ransomware_detector",
+      "candid": "src/ai/ransomware_detector_service/src/ransomware_detector.did",
+      "build": [ 
+        "./bin/build.sh"
+      ]
     }
   },
   "defaults": {
-    "build": {
+    "build": { 
       "args": "",
       "packtool": ""
     }
   },
   "output_env_file": ".env",
-  "version": 1
+  "networks": { 
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral",
+      "max_ingress_bytes_per_message": 10000000
+    },
+    "ic": {
+      "providers": ["https://ic0.app"],
+      "type": "persistent"
+    }
+  }
 }
