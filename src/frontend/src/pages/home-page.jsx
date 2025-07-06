@@ -11,13 +11,14 @@ function CollapsibleSection({ title, children, open, onToggle }) {
       <div className={styles.fradiumExtCollapsibleHeader} onClick={onToggle}>
         <h2 className={styles.fradiumExtCollapsibleTitle}>{title}</h2>
         <ButtonBullet
+          class="mr-4"
           onClick={onToggle}
           direction={open ? "up" : "down"}
           ariaLabel={open ? `Tutup ${title}` : `Buka ${title}`}
         />
       </div>
-      <hr className={styles.fradiumExtDivider} />
-      {open && <div className={styles.fradiumExtCollapsibleContent}>{children}</div>}
+      {/* <hr className={styles.fradiumExtDivider} /> */}
+      {open && <div>{children}</div>}
     </div>
   );
 }
@@ -169,6 +170,19 @@ const HomePage = () => {
 
       {/* Fradium Extension Section */}
       <section className={styles.fradiumExtSectionWrapper}>
+        <div className={styles.fradiumExtHeaderRow}>
+          <div>
+            <span className={styles.fradiumExtSectionLabel}>FRADIUM EXTENSION</span>
+            <h2 className={styles.fradiumExtSectionTitle}>Security that follows you, anywhere you Browse</h2>
+          </div>
+          <Button
+            size="sm"
+            style={{ fontSize: 16, padding: "13px 24px" }}
+          >
+            Download Extension
+          </Button>
+        </div>
+        <hr className={styles.fradiumExtDivider} />
         <CollapsibleSection
           title="About Fradium Extension"
           open={openAbout}
@@ -183,6 +197,7 @@ const HomePage = () => {
             </div>
           </div>
         </CollapsibleSection>
+        {!openAbout && <hr className={styles.fradiumExtDivider} />}
         <CollapsibleSection
           title="How It Works"
           open={openHow}
@@ -197,6 +212,7 @@ const HomePage = () => {
             </div>
           </div>
         </CollapsibleSection>
+        {!openHow && <hr className={styles.fradiumExtDivider} />}
       </section>
     </HomeLayout>
   );
