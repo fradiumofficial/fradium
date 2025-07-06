@@ -1,9 +1,32 @@
 import React from "react";
 import Button from "@/core/components/Button";
+import ButtonBullet from "@/core/components/ButtonBullet";
 import styles from "./home-page.module.css";
 import HomeLayout from "@/core/components/layouts/home-layout";
 
+// Komponen collapsible reusable
+function CollapsibleSection({ title, children, open, onToggle }) {
+  return (
+    <div className={styles.fradiumExtCollapsibleSection}>
+      <div className={styles.fradiumExtCollapsibleHeader} onClick={onToggle}>
+        <h2 className={styles.fradiumExtCollapsibleTitle}>{title}</h2>
+        <ButtonBullet
+          onClick={onToggle}
+          direction={open ? "up" : "down"}
+          ariaLabel={open ? `Tutup ${title}` : `Buka ${title}`}
+        />
+      </div>
+      <hr className={styles.fradiumExtDivider} />
+      {open && <div className={styles.fradiumExtCollapsibleContent}>{children}</div>}
+    </div>
+  );
+}
+
 const HomePage = () => {
+  // State collapsible
+  const [openAbout, setOpenAbout] = React.useState(true);
+  const [openHow, setOpenHow] = React.useState(false);
+
   return (
     <HomeLayout>
       <section className={styles.heroAboutSection}>
@@ -142,6 +165,38 @@ const HomePage = () => {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Fradium Extension Section */}
+      <section className={styles.fradiumExtSectionWrapper}>
+        <CollapsibleSection
+          title="About Fradium Extension"
+          open={openAbout}
+          onToggle={() => setOpenAbout((v) => !v)}
+        >
+          <div className={styles.fradiumExtAboutContent}>
+            <div className={styles.fradiumExtAboutText}>
+              Fradium Extension is a browser tool designed to help you assess the safety of blockchain interactions as you navigate Web3 platforms. After downloading and installing the extension, you can analyse wallet addresses and smart contracts directly from your browser. The extension runs checks in the background and displays risk information on the spot, so you can review potential threats without leaving the page or switching to another tool.
+            </div>
+            <div className={styles.fradiumExtAboutImage}>
+              <img src="/assets/images/fradium-extension.png" alt="Fradium Extension" draggable="false" />
+            </div>
+          </div>
+        </CollapsibleSection>
+        <CollapsibleSection
+          title="How It Works"
+          open={openHow}
+          onToggle={() => setOpenHow((v) => !v)}
+        >
+          <div className={styles.fradiumExtAboutContent}>
+            <div className={styles.fradiumExtAboutText}>
+              To use the Fradium Extension, simply download and install it on your browser. Once installed, you have two ways to scan wallet addresses or smart contracts. You can highlight the address or contract on any page, right-click, and select 'Scan with Fradium'. Alternatively, you can open the extension, enter the address or contract manually, and click the analyse button to check its risk level. Both options give you clear results directly in your browser, so you can verify before interacting.
+            </div>
+            <div className={styles.fradiumExtAboutImage}>
+              <img src="/assets/images/fradium-extension.png" alt="Fradium Extension" draggable="false" />
+            </div>
+          </div>
+        </CollapsibleSection>
       </section>
     </HomeLayout>
   );
