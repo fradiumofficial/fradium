@@ -43,7 +43,7 @@ fn custom_getrandom(dest: &mut [u8]) -> Result<(), Error> {
 
 register_custom_getrandom!(custom_getrandom);
 
-const MODEL_BYTES: &[u8] = include_bytes!("../ransomware_model_mlp.onnx");
+const MODEL_BYTES: &[u8] = include_bytes!("../../models/ransomware_model_mlp.onnx");
 
 // PASTE THE CONTENT of your 'scaler_params.json' file here.
 const SCALER_PARAMS_JSON: &str = r#"

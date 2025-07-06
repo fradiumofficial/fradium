@@ -23,13 +23,11 @@
       "type": "custom",
       "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
     },
-    "ransomware_detector": { 
+    "ransomware_detector": {
       "type": "rust",
       "package": "ransomware_detector",
-      "candid": "src/ai/ransomware_detector_service/src/ransomware_detector.did",
-      "build": [ 
-        "./bin/build.sh"
-      ]
+      "candid": "src/ai/detector_service/src/ransomware_detector.did",
+      "build": ["./bin/build.sh"]
     }
   },
   "defaults": {
