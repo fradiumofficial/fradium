@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+venv/
+*.log
+
+# Environment
+.env
+
+# Node.js
+node_modules/
+contracts
+contracts/artifacts/
+contracts/cache/
+contracts/coverage/
+
+# Hardhat build
+contracts/build/
+
+# Docker
+*.pid
+*.db
+*.sock
+*.sqlite3
+Dockerfile~
+*.tar
+*.log
+*.i*
