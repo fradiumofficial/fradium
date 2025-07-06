@@ -547,7 +547,7 @@
     flex-direction: row;
     align-items: center;
     gap: 64px;
-    margin-top: 48px;
+    /* margin-top: 48px; */
     margin-bottom: 64px;
 }
 

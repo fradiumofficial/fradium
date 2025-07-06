@@ -182,6 +182,7 @@ const HomePage = () => {
             Download Extension
           </Button>
         </div>
+        {/* Divider atas */}
         <hr className={styles.fradiumExtDivider} />
         <CollapsibleSection
           title="About Fradium Extension"
@@ -197,7 +198,8 @@ const HomePage = () => {
             </div>
           </div>
         </CollapsibleSection>
-        {!openAbout && <hr className={styles.fradiumExtDivider} />}
+        {/* Divider tengah */}
+        <hr className={styles.fradiumExtDivider} />
         <CollapsibleSection
           title="How It Works"
           open={openHow}
@@ -212,6 +214,7 @@ const HomePage = () => {
             </div>
           </div>
         </CollapsibleSection>
+        {/* Divider bawah hanya jika How It Works tertutup */}
         {!openHow && <hr className={styles.fradiumExtDivider} />}
       </section>
     </HomeLayout>
