@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "canisters": {
+    "ransomware_detector": {
+      "type": "rust",
+      "package": "ransomware_detector",
+      "candid": "src/ransomware_detector.did"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "./bin/build.sh",
+      "args": ""
+    }
+  },
+  "output_env_file": ".env",
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral",
+      "max_ingress_bytes_per_message": 10000000
+    },
+    "ic": {
+      "providers": ["https://ic0.app"],
+      "type": "persistent"
+    }
+  }
+}
