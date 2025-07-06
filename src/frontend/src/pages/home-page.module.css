@@ -662,3 +662,191 @@
 .fradiumExtNoDivider {
     border: none !important;
 }
+
+.keyFeatureSection {
+    width: 100vw;
+    max-width: 1500px;
+    margin: 0 auto 0 auto;
+    padding: 0 0 96px 0;
+    position: relative;
+}
+
+.keyFeatureHeader {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.keyFeatureLabel {
+    color: #7be495;
+    font-size: 16px;
+    letter-spacing: 2px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    display: block;
+    text-transform: uppercase;
+}
+
+.keyFeatureTitle {
+    color: #fff;
+    font-size: 40px;
+    font-weight: 500;
+    margin: 0 0 24px 0;
+    line-height: 1.1;
+}
+
+.keyFeatureContentWrapper {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 690px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.keyFeatureImageWrapper {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 690px;
+    height: 690px;
+    margin: 0 auto;
+}
+
+.keyFeatureImage {
+    width: 690px;
+    height: auto;
+    max-width: 100%;
+    border-radius: 32px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+    position: relative;
+    z-index: 2;
+    transform: rotate(-8deg);
+}
+
+.keyFeatureItem {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    max-width: 300px;
+    z-index: 3;
+}
+
+.keyFeatureIcon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #181c22;
+    padding: 12px;
+    box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.keyFeatureItemTitle {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.keyFeatureItemDesc {
+    color: #b0b6be;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+/* Posisi fitur */
+.keyFeatureItemLeftTop {
+    left: -60px;
+    top: 15%;
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.keyFeatureItemLeftBottom {
+    left: -60px;
+    bottom: 15%;
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.keyFeatureItemRightTop {
+    right: -60px;
+    top: 15%;
+    text-align: left;
+}
+
+.keyFeatureItemRightBottom {
+    right: -60px;
+    bottom: 15%;
+    text-align: left;
+}
+
+@media (max-width: 1100px) {
+    .keyFeatureContentWrapper {
+        min-height: 420px;
+    }
+
+    .keyFeatureImageWrapper {
+        width: 420px;
+        height: 420px;
+    }
+
+    .keyFeatureImage {
+        width: 420px;
+    }
+
+    .keyFeatureItem {
+        max-width: 180px;
+    }
+
+    .keyFeatureItemLeftTop,
+    .keyFeatureItemRightTop {
+        top: 10px;
+        left: -30px;
+        right: -30px;
+    }
+
+    .keyFeatureItemLeftBottom,
+    .keyFeatureItemRightBottom {
+        bottom: 10px;
+        left: -30px;
+        right: -30px;
+    }
+}
+
+@media (max-width: 700px) {
+    .keyFeatureContentWrapper {
+        min-height: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 32px;
+    }
+
+    .keyFeatureImageWrapper {
+        width: 220px;
+        height: 220px;
+    }
+
+    .keyFeatureImage {
+        width: 220px;
+        transform: rotate(-8deg);
+    }
+
+    .keyFeatureItem {
+        position: static;
+        flex-direction: row;
+        text-align: left;
+        margin: 0 auto;
+        max-width: 100%;
+        justify-content: flex-start;
+    }
+}
