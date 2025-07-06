@@ -10,12 +10,13 @@
     "tabs"
   ],
   "background": {
-    "service_worker": "src/background/background.ts"
+    "service_worker": "./assets/background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/background/content.ts"]
+      "js": ["./assets/content.js"]
     }
   ]
 }
