@@ -83,7 +83,7 @@ const HomePage = () => {
           }}
         >
           <img
-            src="/assets/images/wave-steper.png"
+            src="/assets/images/wave-steper2.png"
             alt="How it works"
             style={{
               width: '100%',
@@ -99,8 +99,8 @@ const HomePage = () => {
             <div
               className="absolute text-center"
               style={{
-                top: '150px',
-                left: '19%',
+                top: '145px',
+                left: '18.5%',
                 transform: 'translateX(-50%)',
                 width: '260px',
               }}
@@ -114,8 +114,8 @@ const HomePage = () => {
             <div
               className="absolute text-center"
               style={{
-                top: '150px',
-                left: '51%',
+                top: '145px',
+                left: '50%',
                 transform: 'translateX(-50%)',
                 width: '260px',
               }}
@@ -129,8 +129,8 @@ const HomePage = () => {
             <div
               className="absolute text-center"
               style={{
-                top: '150px',
-                left: '83%',
+                top: '145px',
+                left: '81.5%',
                 transform: 'translateX(-50%)',
                 width: '260px',
               }}
