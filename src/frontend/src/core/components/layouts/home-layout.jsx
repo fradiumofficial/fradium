@@ -6,7 +6,7 @@ import Footer from "@/core/components/Footer";
 const HomeLayout = ({ children }) => {
     return (
         <>
-            <NavbarLogined />
+            <Navbar />
             {children}
             <Footer />
         </>
