@@ -50,16 +50,30 @@ export function getStorageNetwork() {
 }
 
 export function jsonStringify(data) {
-  return JSON.stringify(data, (_, v) => (typeof v === "bigint" ? v.toString() : v));
+  return JSON.stringify(data, (_, v) =>
+    typeof v === "bigint" ? v.toString() : v
+  );
 }
 
 export function formatTimestamp(initialTimestamp, label = "Last updated: ") {
-  let timestamp = typeof initialTimestamp === "bigint" ? Number(initialTimestamp) : initialTimestamp;
+  let timestamp =
+    typeof initialTimestamp === "bigint"
+      ? Number(initialTimestamp)
+      : initialTimestamp;
   const now = Date.now();
   const inputTime = timestamp / 1_000; // Ubah ke millisecond
   const diff = Math.floor((now - inputTime) / 1000); // Konversi ke detik
 
-  let timeString = diff < 60 ? `${diff} Seconds ago` : diff < 3600 ? `${Math.floor(diff / 60)} Minutes ago` : diff < 86400 ? `Yesterday` : diff < 604800 ? `${Math.floor(diff / 86400)} Days ago` : `${Math.floor(diff / 604800)} Weeks ago`;
+  let timeString =
+    diff < 60
+      ? `${diff} Seconds ago`
+      : diff < 3600
+      ? `${Math.floor(diff / 60)} Minutes ago`
+      : diff < 86400
+      ? `Yesterday`
+      : diff < 604800
+      ? `${Math.floor(diff / 86400)} Days ago`
+      : `${Math.floor(diff / 604800)} Weeks ago`;
 
   return label + timeString;
 }
@@ -85,7 +99,9 @@ export function unixToDateString(unix) {
 }
 
 export function toUnixTimestamps(dateString) {
-  return dateString === null ? null : Math.floor(new Date(dateString).getTime() / 1000);
+  return dateString === null
+    ? null
+    : Math.floor(new Date(dateString).getTime() / 1000);
 }
 
 export function optValue(value) {
@@ -107,7 +123,11 @@ export function optValue(value) {
   return value;
 }
 
-export function extractOptValue(optValue, useZeroIndex = true, isArray = false) {
+export function extractOptValue(
+  optValue,
+  useZeroIndex = true,
+  isArray = false
+) {
   let value = optValue;
 
   if (useZeroIndex) value = optValue[0];
@@ -131,16 +151,26 @@ export function extractOptValue(optValue, useZeroIndex = true, isArray = false) 
 }
 
 export function prepareArg(value) {
-  if (value === null || value === "" || (Array.isArray(value) && value.length === 0) || Number.isNaN(value) || (typeof value === "object" && Object.keys(value).length === 0)) {
+  if (
+    value === null ||
+    value === "" ||
+    (Array.isArray(value) && value.length === 0) ||
+    Number.isNaN(value) ||
+    (typeof value === "object" && Object.keys(value).length === 0)
+  ) {
     return [];
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => (typeof item === "object" ? prepareArg(item) : item));
+    return value.map((item) =>
+      typeof item === "object" ? prepareArg(item) : item
+    );
   }
 
   if (typeof value === "object") {
-    const transformedObject = Object.fromEntries(Object.entries(value).map(([key, val]) => [key, prepareArg(val)]));
+    const transformedObject = Object.fromEntries(
+      Object.entries(value).map(([key, val]) => [key, prepareArg(val)])
+    );
     return [transformedObject]; // Pastikan objek tetap dalam array
   }
 

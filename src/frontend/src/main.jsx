@@ -6,12 +6,19 @@ import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigationType,
+} from "react-router";
 import HomePage from "./pages/home-page.jsx";
 import HomeLayout from "@/core/components/layouts/home-layout.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
 import { AuthProvider } from "./core/providers/auth-provider.jsx";
 import { backend } from "declarations/backend";
+import { mapOptionalToFormattedJSON } from "./core/lib/canisterUtils";
 
 NProgress.configure({
   minimum: 0.3,
@@ -70,11 +77,12 @@ createRoot(document.getElementById("root")).render(
         getProfileFunction={async () => {
           const userResponse = await backend.get_profile();
           if (userResponse.Ok) {
-            return userResponse.Ok;
+            return mapOptionalToFormattedJSON(userResponse.Ok);
           } else {
             return null;
           }
-        }}>
+        }}
+      >
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route index element={<HomePage />} />
@@ -82,7 +90,17 @@ createRoot(document.getElementById("root")).render(
           </Route>
         </Routes>
       </AuthProvider>
-      <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </BrowserRouter>
   </StrictMode>
 );
