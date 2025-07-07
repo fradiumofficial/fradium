@@ -10,6 +10,8 @@ import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "re
 import HomePage from "./pages/home-page.jsx";
 import HomeLayout from "@/core/components/layouts/home-layout.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
+import { AuthProvider } from "./core/providers/auth-provider.jsx";
+import { backend } from "declarations/backend";
 
 NProgress.configure({
   minimum: 0.3,
@@ -61,12 +63,25 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <Routes>
-        <Route path="/" element={<HomeLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+      <AuthProvider
+        redirectAfterLogin="/"
+        redirectAfterLogout="/"
+        canisters={{ backend }}
+        getProfileFunction={async () => {
+          const userResponse = await backend.get_profile();
+          if (userResponse.Ok) {
+            return userResponse.Ok;
+          } else {
+            return null;
+          }
+        }}>
+        <Routes>
+          <Route path="/" element={<HomeLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
       <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
     </BrowserRouter>
   </StrictMode>

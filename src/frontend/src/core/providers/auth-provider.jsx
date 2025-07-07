@@ -58,13 +58,8 @@ export const AuthProvider = ({
         if (getProfileFunction) {
           try {
             const userResponse = await getProfileFunction();
-            if (userResponse && "Ok" in userResponse) {
-              setUser(userResponse.Ok);
-              setIsAuthenticated(true);
-            } else {
-              setIsAuthenticated(true);
-              setUser(null);
-            }
+            setUser(userResponse);
+            setIsAuthenticated(true);
           } catch (err) {
             console.error("Profile fetch error:", err);
             setIsAuthenticated(true);
@@ -142,6 +137,23 @@ export const AuthProvider = ({
     }
   };
 
+  const refreshUser = async () => {
+    if (!isAuthenticated || !getProfileFunction) return;
+
+    try {
+      const userResponse = await getProfileFunction();
+      if (userResponse && "Ok" in userResponse) {
+        setUser(userResponse.Ok);
+      } else if (userResponse && "Err" in userResponse) {
+        console.error("Error refreshing profile:", userResponse.Err);
+        setUser(null);
+      }
+    } catch (err) {
+      console.error("Profile refresh error:", err);
+      setUser(null);
+    }
+  };
+
   const logout = async () => {
     await authClient.logout();
     setUser(null);
@@ -170,6 +182,7 @@ export const AuthProvider = ({
         user,
         authClient,
         canisters, // Expose canisters for use in components
+        refreshUser, // Add refreshUser function
       }}>
       {children}
     </AuthContext.Provider>

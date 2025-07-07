@@ -11,6 +11,7 @@ actor Fradium {
 
   public type Result<T, E> = { #Ok : T; #Err : E };
 
+  // ===== REPORT =====
   public type ReportStatus = {
       #Pending;
       #Accepted;
@@ -44,18 +45,33 @@ actor Fradium {
     vote_deadline: Time.Time;
     created_at: Time.Time;
   };
+  // ===== END REPORT =====
+
+  // ===== USER =====
+  public type User = {
+    name: Text;
+    profile_picture: ?Text;
+    created_at: Time.Time;
+  };
+  // ===== END USER =====
 
   public type ReportId = Nat32;
+  public type UserId = Nat32;
 
   stable var reportsStorage : [(Principal, [Report])] = [];
-  var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
+  stable var usersStorage : [(Principal, User)] = [];
 
+  var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
+  var userStore = Map.HashMap<Principal, User>(0, Principal.equal, Principal.hash);
+
+  private stable var next_user_id : UserId = 0;
   private stable var next_report_id : ReportId = 0;
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
     // Save all data to stable storage
     reportsStorage := Iter.toArray(reportStore.entries());
+    usersStorage := Iter.toArray(userStore.entries());
   };
 
   system func postupgrade() {
@@ -63,6 +79,77 @@ actor Fradium {
     reportStore := Map.HashMap<Principal, [Report]>(reportsStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in reportsStorage.vals()) {
         reportStore.put(key, value);
+    };
+
+    userStore := Map.HashMap<Principal, User>(usersStorage.size(), Principal.equal, Principal.hash);
+    for ((key, value) in usersStorage.vals()) {
+        userStore.put(key, value);
+    };
+  };
+
+  public shared({ caller }) func get_profile() : async Result<User, Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+    
+    switch (userStore.get(caller)) {
+      case (?user) { return #Ok(user); };
+      case null { return #Err("User profile not found. Please create a profile first."); };
+    };
+  };
+
+  type CreateProfileParams = {
+    name : Text;
+    profile_picture : ?Text;
+  };
+
+  public shared({ caller }) func create_profile(params : CreateProfileParams) : async Result<User, Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+    
+    switch (userStore.get(caller)) {
+      case (?_) { 
+        return #Err("Profile already exists. Use update_profile to modify existing profile."); 
+      };
+      case null {
+        let new_user : User = {
+          name = params.name;
+          profile_picture = params.profile_picture;
+          created_at = Time.now();
+        };
+        
+        userStore.put(caller, new_user);
+        return #Ok(new_user);
+      };
+    };
+  };
+
+  public shared({ caller }) func update_profile(name : ?Text, profile_picture : ?Text) : async Result<User, Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+    
+    switch (userStore.get(caller)) {
+      case (?existing_user) {
+        let updated_user : User = {
+          name = switch (name) {
+            case (?new_name) { new_name };
+            case null { existing_user.name };
+          };
+          profile_picture = switch (profile_picture) {
+            case (?new_picture) { ?new_picture };
+            case null { existing_user.profile_picture };
+          };
+          created_at = existing_user.created_at;
+        };
+        
+        userStore.put(caller, updated_user);
+        return #Ok(updated_user);
+      };
+      case null { 
+        return #Err("Profile not found. Please create a profile first."); 
+      };
     };
   };
 
