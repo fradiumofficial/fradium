@@ -23,6 +23,7 @@ import ReportPage from "./pages/report/detail-report-page.jsx";
 import HomeLayout from "@/core/components/layouts/home-layout.jsx";
 import CreateReportPage from "./pages/report/create-report-page.jsx";
 import FaucetPage from "./pages/faucet-page.jsx";
+import { token } from "declarations/token";
 
 NProgress.configure({
   minimum: 0.3,
@@ -77,15 +78,7 @@ createRoot(document.getElementById("root")).render(
       <AuthProvider
         redirectAfterLogin="/"
         redirectAfterLogout="/"
-        canisters={{ backend }}
-        getProfileFunction={async () => {
-          const userResponse = await backend.get_profile();
-          if (userResponse.Ok) {
-            return mapOptionalToFormattedJSON(userResponse.Ok);
-          } else {
-            return null;
-          }
-        }}
+        canisters={{ backend, token }}
       >
         <Routes>
           <Route path="/" element={<HomeLayout />}>

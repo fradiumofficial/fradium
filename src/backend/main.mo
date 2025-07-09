@@ -23,11 +23,6 @@ actor Fradium {
 
   public type Result<T, E> = { #Ok : T; #Err : E };
 
-  public type Chain = {
-      #Bitcoin;
-      #Ethereum;
-  };
-
   public type Voter = {
     voter: Principal;
     vote: Bool;
@@ -41,7 +36,7 @@ actor Fradium {
   public type Report = {
     report_id: Nat;
     reporter: Principal;
-    chain: Chain;
+    chain: Text;
     address: Text;
     category: Text;
     description: Text;
@@ -228,7 +223,7 @@ actor Fradium {
 
   // ===== COMMUNITY REPORT & STAKE FUNCTIONS =====
   public type CreateReportParams = {
-    chain : Chain;
+    chain : Text;
     address : Text;
     category : Text;
     description : Text;

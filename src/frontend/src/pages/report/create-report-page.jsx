@@ -18,11 +18,18 @@ import {
   CheckCircle,
   Upload,
   FileText,
+  CloudCog,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
+import { useAuth } from "@/core/providers/auth-provider";
+import { token } from "declarations/token";
+import { convertE8sToToken, optValue } from "../../core/lib/canisterUtils";
+import { backend, canisterId as backendCanisterId } from "declarations/backend";
+import { Principal } from "@dfinity/principal";
 
 export default function CreateReportPage() {
+  const { isAuthenticated, handleLogin, identity } = useAuth();
   // Form state
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -31,8 +38,12 @@ export default function CreateReportPage() {
     description: "",
     evidenceFields: [""],
     whatHappened: "",
+    url: "",
   });
   const [errors, setErrors] = useState({});
+
+  const [balance, setBalance] = useState(null);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(true);
 
   // Confirmation Modal
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,6 +52,8 @@ export default function CreateReportPage() {
   const [userBalance, setUserBalance] = useState(100);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [files, setFiles] = useState([]);
+
+  console.log(formData);
 
   // What happened options for dropdown
   const whatHappenedOptions = [
@@ -100,6 +113,19 @@ export default function CreateReportPage() {
     setFormData((prev) => ({ ...prev, chain: detectedChain }));
   }, [formData.address]);
 
+  useEffect(() => {
+    const fetchBalance = async () => {
+      setIsBalanceLoading(true);
+      const balance = await token.icrc1_balance_of({
+        owner: identity.getPrincipal(),
+        subaccount: [],
+      });
+      setIsBalanceLoading(false);
+      setBalance(balance);
+    };
+    fetchBalance();
+  }, [identity]);
+
   // Form validation
   const validateStep = (step) => {
     const newErrors = {};
@@ -116,13 +142,22 @@ export default function CreateReportPage() {
       } else if (formData.address.length < 10) {
         newErrors.address = "Please enter a valid address";
       }
+
+      // Validate URL if provided
+      if (formData.url.trim()) {
+        try {
+          new URL(formData.url);
+        } catch {
+          newErrors.url = "Please enter a valid URL";
+        }
+      }
     }
 
     if (step === 3) {
       if (!formData.description.trim()) {
         newErrors.description = "Description is required";
-      } else if (formData.description.length < 50) {
-        newErrors.description = "Description must be at least 50 characters";
+      } else if (formData.description.length < 20) {
+        newErrors.description = "Description must be at least 20 characters";
       }
     }
 
@@ -183,17 +218,45 @@ export default function CreateReportPage() {
 
   // Submit form
   const handleSubmit = async () => {
-    if (!validateStep(3)) return;
+    console.log("111");
+    // if (!validateStep(3)) return;
 
     setIsSubmitting(true);
+    console.log(Principal.fromText(backendCanisterId).toString());
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const approveResult = await token.icrc2_approve({
+      from_subaccount: [],
+      spender: Principal.fromText(backendCanisterId),
+      amount: BigInt(stakeAmount) * BigInt(10 ** 8),
+      expires_at: [],
+      fee: [],
+      memo: [new TextEncoder().encode(`Approve for staking report creation`)],
+      created_at_time: [],
+    });
 
-    setIsSubmitting(false);
-    setShowSuccessModal(true);
+    console.log("OKADOKAD");
 
-    console.log("Form submitted:", formData);
+    console.log("approveResult", approveResult);
+
+    const response = await backend.create_report({
+      chain: formData.chain,
+      address: formData.address,
+      category: formData.whatHappened.toLowerCase(),
+      description: formData.description,
+      url: optValue(formData.url ?? null),
+      evidence: formData.evidenceFields.map((evidence) => "example.com"),
+      stake_amount: Number(stakeAmount) * 10 ** 8,
+    });
+
+    console.log("response", response);
+    // if (response.ok) {
+    //   setShowSuccessModal(true);
+    // } else {
+    //   toast.error(response.error);
+    //   console.log(response.error);
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
   };
 
   const handleFileChange = (e) => {
@@ -383,7 +446,9 @@ export default function CreateReportPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2">Scammer Information</h2>
-              <p className="text-gray-400 mb-6">Provide the wallet address.</p>
+              <p className="text-gray-400 mb-6">
+                Provide the wallet address and related information.
+              </p>
             </div>
 
             {/* Address Input */}
@@ -415,6 +480,28 @@ export default function CreateReportPage() {
                   {formData.chain || "Enter address to auto-detect"}
                 </span>
               </div>
+            </div>
+
+            {/* URL Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Related URL <span className="text-gray-400">(Optional)</span>
+              </label>
+              <Input
+                value={formData.url}
+                onChange={(e) => handleInputChange("url", e.target.value)}
+                placeholder="Enter related website or social media URL (e.g., https://example.com)"
+                className={`bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10 ${
+                  errors.url ? "border-red-400" : ""
+                }`}
+              />
+              {errors.url && (
+                <p className="text-red-400 text-sm mt-1">{errors.url}</p>
+              )}
+              <p className="text-gray-400 text-xs mt-1">
+                Add any related website, social media, or platform URL where the
+                scam occurred
+              </p>
             </div>
           </div>
         );
@@ -474,7 +561,7 @@ export default function CreateReportPage() {
   // Calculate estimated reward
   const calculateEstimatedReward = () => {
     const amount = Number.parseFloat(stakeAmount) || 0;
-    return Math.round(amount * 0.15); // 15% reward if report is validated
+    return amount * 0.25;
   };
 
   return (
@@ -772,7 +859,7 @@ export default function CreateReportPage() {
                     Your current balance:
                   </span>
                   <span className="font-bold text-white">
-                    {userBalance} FUM
+                    {convertE8sToToken(balance)} FUM
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -837,12 +924,12 @@ export default function CreateReportPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={
-                    !stakeAmount ||
-                    Number.parseFloat(stakeAmount) < 5 ||
-                    Number.parseFloat(stakeAmount) > userBalance ||
-                    isSubmitting
-                  }
+                  // disabled={
+                  //   !stakeAmount ||
+                  //   Number.parseFloat(stakeAmount) < 5 ||
+                  //   Number.parseFloat(stakeAmount) > userBalance ||
+                  //   isSubmitting
+                  // }
                   className="flex-1 bg-red-400 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Submitting..." : "Confirm & Submit"}

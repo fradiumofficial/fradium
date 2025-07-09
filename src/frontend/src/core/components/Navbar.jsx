@@ -56,7 +56,10 @@ const Navbar = () => {
     <header className="fixed top-0 left-0 w-full backdrop-blur-lg bg-black/50   flex items-center justify-center min-h-[72px] z-[1000]">
       <div className="w-full max-w-[1440px] flex items-center justify-between lg:px-12 md:px-8 sm:px-4 px-2 min-h-[72px]">
         {/* Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 select-none min-w-fit">
+        <div
+          className="flex items-center gap-2 sm:gap-3 select-none min-w-fit cursor-pointer"
+          onClick={() => navigate("/")}
+        >
           <img
             src="/logo.svg"
             alt="Crypgo Logo"
@@ -64,7 +67,7 @@ const Navbar = () => {
             draggable="false"
           />
           <span className="font-semibold text-[22px] sm:text-[28px] text-white tracking-wider font-[General Sans, sans-serif]">
-            Cryp<span className="text-[#9BEB83]">go</span>
+            Fradi<span className="text-[#9BEB83]">um</span>
           </span>
         </div>
         {/* Menu Desktop */}
@@ -98,7 +101,7 @@ const Navbar = () => {
         {isAuthenticated ? (
           <div className="hidden md:block">
             <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-black/5 focus:bg-black/5">
+              <DropdownMenuTrigger className="flex items-center gap-3 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-black/5 focus:bg-black/5">
                 <div className="relative h-8 w-8 overflow-hidden rounded-full">
                   <img
                     src={`https://api.dicebear.com/7.x/identicon/svg?seed=${identity
@@ -120,7 +123,7 @@ const Navbar = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-56 bg-black/50 backdrop-blur-lg z-[1000] border border-transparent"
+                className="w-56 bg-black/70 backdrop-blur-lg z-[1000] border border-transparent"
               >
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
@@ -159,7 +162,7 @@ const Navbar = () => {
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() => navigate("/nfts")}
