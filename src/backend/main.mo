@@ -6,6 +6,7 @@ import Array "mo:base/Array";
 import Nat32 "mo:base/Nat32";
 import Nat8 "mo:base/Nat8";
 import Nat "mo:base/Nat";
+import Int "mo:base/Int";
 import Text "mo:base/Text";
 import TokenCanister "canister:token";
 
@@ -292,6 +293,39 @@ actor Fradium {
             faucetClaimsStore.put(caller, currentTime);
             return #Ok("Tokens transferred successfully");
         };
+    };
+  };
+
+  public shared({ caller }) func check_faucet_claim() : async Result<Text, Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+
+    switch (faucetClaimsStore.get(caller)) {
+      case (?lastClaimTime) {
+        let currentTime = Time.now();
+        let timeSinceLastClaim = currentTime - lastClaimTime;
+        let canClaim = timeSinceLastClaim >= FAUCET_COOLDOWN_DURATION;
+        
+        if (canClaim) {
+          return #Ok("You can claim faucet now");
+        } else {
+          let remainingTime = FAUCET_COOLDOWN_DURATION - timeSinceLastClaim;
+          let remainingHours = remainingTime / 3_600_000_000_000; // Convert to hours
+          let remainingMinutes = (remainingTime % 3_600_000_000_000) / 60_000_000_000; // Convert to minutes
+          
+          if (remainingHours > 0 and remainingMinutes > 0) {
+            return #Err("You can't claim faucet yet. Remaining time: " # Nat.toText(Int.abs(remainingHours)) # " hours " # Nat.toText(Int.abs(remainingMinutes)) # " minutes");
+          } else if (remainingHours > 0) {
+            return #Err("You can't claim faucet yet. Remaining time: " # Nat.toText(Int.abs(remainingHours)) # " hours");
+          } else {
+            return #Err("You can't claim faucet yet. Remaining time: " # Nat.toText(Int.abs(remainingMinutes)) # " minutes");
+          };
+        };
+      };
+      case null {
+        return #Ok("You can claim faucet now");
+      };
     };
   };
 }

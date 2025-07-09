@@ -17,153 +17,92 @@ import {
 import { Link } from "react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/core/providers/auth-provider";
+import { backend } from "declarations/backend";
 
 export default function FaucetPage() {
   const { isAuthenticated: isConnected, handleLogin, identity } = useAuth();
   // User state
   const [walletAddress, setWalletAddress] = useState(
-    identity.getPrincipal().toString() ? identity.getPrincipal().toString() : ""
+    identity ? identity.getPrincipal().toString() : ""
   );
+
   const [userBalance, setUserBalance] = useState(0);
   const [isClaiming, setIsClaiming] = useState(false);
-  const [lastClaimTime, setLastClaimTime] = useState(null);
-  const [claimHistory, setClaimHistory] = useState([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [claimedAmount, setClaimedAmount] = useState(0);
+  const [canClaim, setCanClaim] = useState(null);
+  const [remainingTime, setRemainingTime] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Faucet configuration
-  const CLAIM_AMOUNT = 100; // FUM tokens per claim
-  const COOLDOWN_HOURS = 24; // 24 hours between claims
-  const MAX_DAILY_CLAIMS = 1;
-
-  // Calculate time remaining for next claim
-  const [timeRemaining, setTimeRemaining] = useState("");
+  const CLAIM_AMOUNT = 10;
+  const COOLDOWN_HOURS = 24;
 
   useEffect(() => {
-    // Simulate checking if wallet is connected
-    const checkWalletConnection = () => {
-      // In a real app, this would check MetaMask or other wallet connections
-      const mockWallet = localStorage.getItem("mockWallet");
-      if (mockWallet) {
-        setIsConnected(true);
-        setWalletAddress(mockWallet);
-        setUserBalance(
-          Number.parseInt(localStorage.getItem("userBalance") || "0")
-        );
+    const checkClaim = async () => {
+      if (!isConnected) return;
 
-        const lastClaim = localStorage.getItem("lastClaimTime");
-        if (lastClaim) {
-          setLastClaimTime(new Date(lastClaim));
+      setIsLoading(true);
+      try {
+        const response = await backend.check_faucet_claim();
+        if ("Ok" in response) {
+          setCanClaim(true);
+          setRemainingTime(null);
+        } else if ("Err" in response) {
+          setCanClaim(false);
+          setRemainingTime(response.Err);
         }
-
-        const history = localStorage.getItem("claimHistory");
-        if (history) {
-          setClaimHistory(JSON.parse(history));
-        }
+      } catch (error) {
+        console.error("Error checking faucet claim:", error);
+        setCanClaim(false);
+        setRemainingTime("Error checking claim status");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    checkWalletConnection();
-  }, []);
-
-  // Update countdown timer
-  useEffect(() => {
-    if (!lastClaimTime) return;
-
-    const updateTimer = () => {
-      const now = new Date();
-      const nextClaimTime = new Date(
-        lastClaimTime.getTime() + COOLDOWN_HOURS * 60 * 60 * 1000
-      );
-      const diff = nextClaimTime - now;
-
-      if (diff <= 0) {
-        setTimeRemaining("");
-        return;
-      }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeRemaining(
-        `${hours.toString().padStart(2, "0")}:${minutes
-          .toString()
-          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-      );
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [lastClaimTime]);
-
-  // Connect wallet simulation
-  const connectWallet = () => {
-    const mockAddress = "0x742d35Cc6634C0532925a3b8D4C0532925a3b8D4";
-    setWalletAddress(mockAddress);
-    setIsConnected(true);
-    localStorage.setItem("mockWallet", mockAddress);
-  };
-
-  // Disconnect wallet
-  const disconnectWallet = () => {
-    setIsConnected(false);
-    setWalletAddress("");
-    localStorage.removeItem("mockWallet");
-  };
-
-  // Check if user can claim
-  const canClaim = () => {
-    if (!lastClaimTime) return true;
-
-    const now = new Date();
-    const nextClaimTime = new Date(
-      lastClaimTime.getTime() + COOLDOWN_HOURS * 60 * 60 * 1000
-    );
-
-    return now >= nextClaimTime;
-  };
+    checkClaim();
+  }, [isConnected]);
 
   // Claim tokens
   const claimTokens = async () => {
-    if (!canClaim() || isClaiming) return;
-
     setIsClaiming(true);
+    setError("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const response = await backend.claim_faucet();
+      console.log(response);
 
-    const now = new Date();
-    const newBalance = userBalance + CLAIM_AMOUNT;
-    const newClaim = {
-      id: Date.now(),
-      amount: CLAIM_AMOUNT,
-      timestamp: now.toISOString(),
-      txHash: `0x${Math.random().toString(16).substr(2, 64)}`,
-    };
-
-    setUserBalance(newBalance);
-    setLastClaimTime(now);
-    setClaimHistory((prev) => [newClaim, ...prev.slice(0, 9)]); // Keep last 10 claims
-    setClaimedAmount(CLAIM_AMOUNT);
-    setShowSuccessModal(true);
-
-    // Save to localStorage
-    localStorage.setItem("userBalance", newBalance.toString());
-    localStorage.setItem("lastClaimTime", now.toISOString());
-    localStorage.setItem(
-      "claimHistory",
-      JSON.stringify([newClaim, ...claimHistory.slice(0, 9)])
-    );
-
-    setIsClaiming(false);
-  };
-
-  // Copy to clipboard
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+      if ("Ok" in response) {
+        setShowSuccessModal(true);
+        setCanClaim(false); // Update status after successful claim
+        // Re-check claim status after a short delay
+        setTimeout(() => {
+          const checkClaim = async () => {
+            try {
+              const response = await backend.check_faucet_claim();
+              if ("Ok" in response) {
+                setCanClaim(true);
+                setRemainingTime(null);
+              } else if ("Err" in response) {
+                setCanClaim(false);
+                setRemainingTime(response.Err);
+              }
+            } catch (error) {
+              console.error("Error re-checking claim status:", error);
+            }
+          };
+          checkClaim();
+        }, 2000);
+      } else if ("Err" in response) {
+        setError(response.Err);
+      }
+    } catch (error) {
+      console.error("Error claiming tokens:", error);
+      setError("Failed to claim tokens. Please try again.");
+    } finally {
+      setIsClaiming(false);
+    }
   };
 
   // Format address
@@ -220,40 +159,58 @@ export default function FaucetPage() {
                   </div>
 
                   {/* Claim Button */}
-                  {canClaim() ? (
-                    <PrimaryButton
-                      onClick={claimTokens}
-                      disabled={isClaiming}
-                      className=""
-                    >
-                      {isClaiming ? (
-                        <>
-                          <Clock className="w-5 h-5 mr-2 animate-spin" />
-                          Claiming...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-5 h-5 mr-2" />
-                          Claim {CLAIM_AMOUNT} FUM
-                        </>
-                      )}
-                    </PrimaryButton>
-                  ) : (
-                    <div className="space-y-4">
-                      <PrimaryButton
-                        disabled
-                        className="bg-gray-600 text-gray-400 px-12 py-4 text-lg font-semibold cursor-not-allowed"
-                      >
-                        <Clock className="w-5 h-5 mr-2" />
-                        Claim Available In
-                      </PrimaryButton>
-                      <div className="text-3xl font-mono text-yellow-400">
-                        {timeRemaining}
+                  {isLoading ? (
+                    <div className="text-center">
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6 mb-6">
+                        <Clock className="w-8 h-8 text-green-400 mx-auto mb-3 animate-spin" />
+                        <h3 className="text-lg font-semibold text-green-400 mb-2">
+                          Checking Claim Status
+                        </h3>
+                        <p className="text-gray-300 text-sm">
+                          Please wait while we check your claim eligibility...
+                        </p>
                       </div>
-                      <p className="text-gray-400">
-                        You can claim {CLAIM_AMOUNT} FUM tokens every{" "}
-                        {COOLDOWN_HOURS} hours
-                      </p>
+                    </div>
+                  ) : canClaim ? (
+                    <div className="text-center">
+                      {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
+                          <p className="text-red-400 text-sm">{error}</p>
+                        </div>
+                      )}
+                      <PrimaryButton
+                        onClick={claimTokens}
+                        disabled={isClaiming}
+                        className=""
+                      >
+                        {isClaiming ? (
+                          <>
+                            <Clock className="w-5 h-5 mr-2 animate-spin" />
+                            Claiming...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-5 h-5 mr-2" />
+                            Claim {CLAIM_AMOUNT} FUM
+                          </>
+                        )}
+                      </PrimaryButton>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-6">
+                        <Clock className="w-8 h-8 text-red-400 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-red-400 mb-2">
+                          Cannot Claim Yet
+                        </h3>
+                        <p className="text-gray-300 text-sm">
+                          {remainingTime ||
+                            "Please wait for the cooldown period to complete."}
+                        </p>
+                      </div>
+                      <div className="text-gray-400 text-xs">
+                        You can claim once every {COOLDOWN_HOURS} hours
+                      </div>
                     </div>
                   )}
                 </div>
