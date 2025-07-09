@@ -1,7 +1,7 @@
 interface TransactionInput {
     prev_out?: {
         addr?: string;
-        value?: number;
+        value: number;
     }
 }
 
