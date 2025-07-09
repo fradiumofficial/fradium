@@ -27,6 +27,11 @@ export function convertE8sToToken(e8s) {
   return parseFloat(number.toString());
 }
 
+export const formatAddress = (address) => {
+  if (!address) return "";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
 export function convertTokenToE8s(token) {
   if (!token) return 0;
   const value = Math.floor(token * 100_000_000);

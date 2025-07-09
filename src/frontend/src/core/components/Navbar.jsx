@@ -1,9 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import Button from "./Button";
 import { Button as ButtonShad } from "@/core/components/ui/button";
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { useAuth } from "@/core/providers/auth-provider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/core/components/ui/dropdown-menu";
+import { ChevronDown, CloudCog } from "lucide-react";
+import { cn } from "@/core/lib/utils";
+import { User, CreditCard, FileText, LogOut } from "lucide-react";
+import { token } from "declarations/token";
+import { formatAddress } from "../lib/canisterUtils";
 
 const navigationItems = [
   { label: "Home", href: "/" },
@@ -15,8 +28,30 @@ const navigationItems = [
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, handleLogin, logout, identity } = useAuth();
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    async function fetchBalance() {
+      const response = await token.icrc1_balance_of({
+        owner: identity.getPrincipal(),
+        subaccount: [],
+      });
+      console.log(response);
+      setBalance(response);
+    }
+
+    fetchBalance();
+  }, [isAuthenticated]);
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
     <header className="fixed top-0 left-0 w-full backdrop-blur-lg bg-black/50   flex items-center justify-center min-h-[72px] z-[1000]">
       <div className="w-full max-w-[1440px] flex items-center justify-between lg:px-12 md:px-8 sm:px-4 px-2 min-h-[72px]">
@@ -52,20 +87,111 @@ const Navbar = () => {
               return;
             }
 
-            if (user.role === "community") {
-              navigate("/community?tab=balance");
-            } else {
-              navigate("/balance");
-            }
+            navigate("/balance");
           }}
         >
           <span className="text-sm font-medium h-5">
-            {isAuthenticated ? convertE8sToToken(user?.balance) : 0} FUM
+            {isAuthenticated ? convertE8sToToken(balance) : 0} FUM
           </span>
         </ButtonShad>
-        <div className="hidden lg:flex relative items-center flex-shrink-0 min-w-fit">
-          <Button size="sm">Sign In &nbsp;→</Button>
-        </div>
+        {/* User Profile Desktop */}
+        {isAuthenticated ? (
+          <div className="hidden md:block">
+            <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-black/5 focus:bg-black/5">
+                <div className="relative h-8 w-8 overflow-hidden rounded-full">
+                  <img
+                    src={`https://api.dicebear.com/7.x/identicon/svg?seed=${identity
+                      .getPrincipal()
+                      .toString()}`}
+                    alt="User avatar"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <span className="text-sm font-medium text-white">
+                  {formatAddress(identity.getPrincipal().toString())}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform text-[#9BEB83]",
+                    isOpen && "rotate-180"
+                  )}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 bg-black/50 backdrop-blur-lg z-[1000] border border-transparent"
+              >
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center gap-1 text-xs text-white">
+                      <p>{identity.getPrincipal().toString()}</p>
+                      <button
+                        onClick={() =>
+                          navigator.clipboard.writeText(
+                            identity.getPrincipal().toString()
+                          )
+                        }
+                        className="hover:text-foreground"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect
+                            x="9"
+                            y="9"
+                            width="13"
+                            height="13"
+                            rx="2"
+                            ry="2"
+                          ></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => navigate("/nfts")}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>NFTs</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => navigate("/my-projects")}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>My Projects</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-500 focus:text-red-500 cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : (
+          <div className="hidden lg:flex relative items-center flex-shrink-0 min-w-fit">
+            <Button size="sm" onClick={handleLogin}>
+              Sign In &nbsp;→
+            </Button>
+          </div>
+        )}
         {/* Hamburger Mobile */}
         <button
           className="lg:hidden flex items-center justify-center p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#9BEB83]"

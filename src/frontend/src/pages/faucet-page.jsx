@@ -18,6 +18,7 @@ import { Link } from "react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/core/providers/auth-provider";
 import { backend } from "declarations/backend";
+import { formatAddress } from "@/core/lib/canisterUtils";
 
 export default function FaucetPage() {
   const { isAuthenticated: isConnected, handleLogin, identity } = useAuth();
@@ -103,12 +104,6 @@ export default function FaucetPage() {
     } finally {
       setIsClaiming(false);
     }
-  };
-
-  // Format address
-  const formatAddress = (address) => {
-    if (!address) return "";
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   return (
