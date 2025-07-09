@@ -1,5 +1,5 @@
 import { useState } from "react";
-import cryptoCards from "../../../interfaces/carousel";
+import cryptoCards from "../model/CarouselDummyModel";
 import topBarImage from "../../../assets/Illus.svg"
 import NeoButton from "../../../components/ui/custom-button";
 import AnalyzeAddress from "../../../assets/analyze_address.svg";

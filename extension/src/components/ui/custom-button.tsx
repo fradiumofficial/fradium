@@ -26,7 +26,7 @@ const NeoButton: React.FC<NeoButtonProps> = ({ children, icon, onClick, classNam
         `}
       >
         {/* We now render an <img> tag with the src pointing to our icon path. */}
-        <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] pe-1" />
+        {icon === null ? <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] pe-1" /> : <div></div>}
         <span className="text-[14px]">{children}</span>
       </button>
     </div>
