@@ -19,9 +19,6 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center gap-2 sm:gap-3 select-none min-w-fit">
           <img src="/logo.svg" alt="Crypgo Logo" className="h-8 sm:h-9 w-auto" draggable="false" />
-          <span className="font-semibold text-[22px] sm:text-[28px] text-white tracking-wider font-[General Sans, sans-serif]">
-            Cryp<span className="text-[#9BEB83]">go</span>
-          </span>
         </div>
         {/* Menu Desktop */}
         <nav className="hidden lg:flex flex-1 justify-center items-center gap-6 xl:gap-12">

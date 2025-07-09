@@ -17,8 +17,7 @@ const Footer = () => {
             <div className={styles.footerContent} style={{ position: 'relative', zIndex: 2, marginTop: '260px' }}>
                 <div className={styles.leftCol}>
                     <div className={styles.logoRow}>
-                        <img src="/logo.svg" alt="Crypgo Logo" className={styles.logo} />
-                        <span className={styles.brand}>Crypgo</span>
+                        <img src="/logo.svg" alt="Fradium Logo" className={styles.logo} style={{ height: 44, width: 'auto' }} />
                     </div>
                     <p className={styles.desc}>
                         Fradium equips you with powerful tools to analyse, protect, and transact securely across the blockchain.
