@@ -1,6 +1,6 @@
 import NeoButton from "@/components/ui/custom-button";
 import ProfileHeader from "@/components/ui/header";
-import AnalyzeSmartContractIcon from "../assets/analyze_contract.svg";
+import AnalyzeSmartContractIcon from "../../../assets/analyze_contract.svg";
 
 function AnalyzeSmartContract() {
     return (

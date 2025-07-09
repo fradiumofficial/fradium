@@ -1,6 +1,6 @@
 import { SafetyCard } from "@/components/ui/custom-card";
 import ProfileHeader from "@/components/ui/header";
-import Wallet from "../assets/Wallet.svg";
+import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
 
 function AnalyzeAdressResult() {

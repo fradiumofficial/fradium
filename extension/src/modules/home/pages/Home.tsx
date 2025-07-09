@@ -1,12 +1,12 @@
 import { useState } from "react";
-import cryptoCards from "../interfaces/carousel";
-import topBarImage from "../assets/Illus.svg"
-import NeoButton from "../components/ui/custom-button";
-import AnalyzeAddress from "../assets/analyze_address.svg";
-import AnalyzeContract from "../assets/analyze_contract.svg";
-import Bitcoin from "../assets/bitcoin.svg";
-import ProfileHeader from "../components/ui/header";
-import { Separator } from "../components/ui/separator";
+import cryptoCards from "../../../interfaces/carousel";
+import topBarImage from "../../../assets/Illus.svg"
+import NeoButton from "../../../components/ui/custom-button";
+import AnalyzeAddress from "../../../assets/analyze_address.svg";
+import AnalyzeContract from "../../../assets/analyze_contract.svg";
+import Bitcoin from "../../../assets/bitcoin.svg";
+import ProfileHeader from "../../../components/ui/header";
+import { Separator } from "../../../components/ui/separator";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";

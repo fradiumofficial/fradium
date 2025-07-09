@@ -1,10 +1,10 @@
-import Home from "./features/home/Home"
+import Home from "./modules/home/pages/Home"
 import { ThemeProvider } from "./components/ui/theme-provider"
-import AnalyzeAddress from "./features/analyze_address/AnalyzeAdress"
-import AnalyzeSmartContract from "./features/analyze_smartcontract/AnalyzeSmartContract"
+import AnalyzeAddress from "./modules/analyze_address/pages/AnalyzeAdress"
+import AnalyzeSmartContract from "./modules/analyze_smartcontract/pages/AnalyzeSmartContract"
 import { Route, Routes } from "react-router-dom"
 import { ROUTES } from "./constants/routes"
-import AnalyzeAdressResult from "./features/analyze_address/AnalyzeAddressResult"
+import AnalyzeAdressResult from "./modules/analyze_address/pages/AnalyzeAddressResult"
 
 function App() {
 

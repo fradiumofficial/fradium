@@ -1,6 +1,6 @@
 import NeoButton from "@/components/ui/custom-button";
 import ProfileHeader from "@/components/ui/header";
-import AnalyzeAddressIcon from "../assets/analyze_address.svg";
+import AnalyzeAddressIcon from "../../../assets/analyze_address.svg";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 
