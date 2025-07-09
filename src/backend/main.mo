@@ -8,6 +8,10 @@ import Nat8 "mo:base/Nat8";
 import Nat "mo:base/Nat";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
+import Bool "mo:base/Bool";
+import Blob "mo:base/Blob";
+import Nat64 "mo:base/Nat64";
+
 import TokenCanister "canister:token";
 
 actor Fradium {
@@ -19,14 +23,6 @@ actor Fradium {
 
   public type Result<T, E> = { #Ok : T; #Err : E };
 
-  // ===== REPORT =====
-  public type ReportStatus = {
-      #Pending;
-      #Accepted;
-      #Rejected;
-      #Expired;
-  };
-
   public type Chain = {
       #Bitcoin;
       #Ethereum;
@@ -37,6 +33,11 @@ actor Fradium {
     vote: Bool;
   };
 
+  public type ReportRole = {
+    #Reporter;
+    #Voter: Bool; // true = vote yes, false = vote no
+  };
+
   public type Report = {
     report_id: Nat;
     reporter: Principal;
@@ -45,8 +46,7 @@ actor Fradium {
     category: Text;
     description: Text;
     evidence: [Text];
-    url: Text;
-    status: ReportStatus;
+    url: ?Text;
     votes_yes: Nat;
     votes_no: Nat;
     voted_by: [Voter];
@@ -55,34 +55,33 @@ actor Fradium {
   };
   // ===== END REPORT =====
 
-  // ===== USER =====
-  public type User = {
-    name: Text;
-    profile_picture: ?Text;
-    created_at: Time.Time;
+  // ===== STAKE =====
+  public type StakeRecord = {
+    staker: Principal;
+    amount: Nat;
+    staked_at: Time.Time;
+    role: ReportRole;
+    report_id: ReportId;
   };
-  // ===== END USER =====
+  // ===== END STAKE =====
 
   public type ReportId = Nat32;
-  public type UserId = Nat32;
 
   stable var reportsStorage : [(Principal, [Report])] = [];
-  stable var usersStorage : [(Principal, User)] = [];
   stable var faucetClaimsStorage : [(Principal, Time.Time)] = [];
+  stable var stakeRecordsStorage : [(Principal, StakeRecord)] = [];
 
   var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
-  var userStore = Map.HashMap<Principal, User>(0, Principal.equal, Principal.hash);
   var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
-
-  private stable var next_user_id : UserId = 0;
+  var stakeRecordsStore = Map.HashMap<Principal, StakeRecord>(0, Principal.equal, Principal.hash);
   private stable var next_report_id : ReportId = 0;
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
     // Save all data to stable storage
     reportsStorage := Iter.toArray(reportStore.entries());
-    usersStorage := Iter.toArray(userStore.entries());
     faucetClaimsStorage := Iter.toArray(faucetClaimsStore.entries());
+    stakeRecordsStorage := Iter.toArray(stakeRecordsStore.entries());
   };
 
   system func postupgrade() {
@@ -92,80 +91,14 @@ actor Fradium {
         reportStore.put(key, value);
     };
 
-    userStore := Map.HashMap<Principal, User>(usersStorage.size(), Principal.equal, Principal.hash);
-    for ((key, value) in usersStorage.vals()) {
-        userStore.put(key, value);
-    };
-
     faucetClaimsStore := Map.HashMap<Principal, Time.Time>(faucetClaimsStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in faucetClaimsStorage.vals()) {
         faucetClaimsStore.put(key, value);
     };
-  };
 
-  public shared({ caller }) func get_profile() : async Result<User, Text> {
-    if(Principal.isAnonymous(caller)) {
-        return #Err("Anonymous users can't perform this action.");
-    };
-    
-    switch (userStore.get(caller)) {
-      case (?user) { return #Ok(user); };
-      case null { return #Err("User profile not found. Please create a profile first."); };
-    };
-  };
-
-  type CreateProfileParams = {
-    name : Text;
-    profile_picture : ?Text;
-  };
-
-  public shared({ caller }) func create_profile(params : CreateProfileParams) : async Result<User, Text> {
-    if(Principal.isAnonymous(caller)) {
-        return #Err("Anonymous users can't perform this action.");
-    };
-    
-    switch (userStore.get(caller)) {
-      case (?_) { 
-        return #Err("Profile already exists. Use update_profile to modify existing profile."); 
-      };
-      case null {
-        let new_user : User = {
-          name = params.name;
-          profile_picture = params.profile_picture;
-          created_at = Time.now();
-        };
-        
-        userStore.put(caller, new_user);
-        return #Ok(new_user);
-      };
-    };
-  };
-
-  public shared({ caller }) func update_profile(name : ?Text, profile_picture : ?Text) : async Result<User, Text> {
-    if(Principal.isAnonymous(caller)) {
-        return #Err("Anonymous users can't perform this action.");
-    };
-    
-    switch (userStore.get(caller)) {
-      case (?existing_user) {
-        let updated_user : User = {
-          name = switch (name) {
-            case (?new_name) { new_name };
-            case null { existing_user.name };
-          };
-          profile_picture = switch (profile_picture) {
-            case (?new_picture) { ?new_picture };
-            case null { existing_user.profile_picture };
-          };
-          created_at = existing_user.created_at;
-        };
-        
-        userStore.put(caller, updated_user);
-        return #Ok(updated_user);
-      };
-      case null { 
-        return #Err("Profile not found. Please create a profile first."); 
-      };
+    stakeRecordsStore := Map.HashMap<Principal, StakeRecord>(stakeRecordsStorage.size(), Principal.equal, Principal.hash);
+    for ((key, value) in stakeRecordsStorage.vals()) {
+        stakeRecordsStore.put(key, value);
     };
   };
 
@@ -182,42 +115,6 @@ actor Fradium {
       };
     };
     return #Err("Report not found");
-  };
-
-  public shared({ caller }) func create_report(report : Report) : async Result<ReportId, Text> {
-    if(Principal.isAnonymous(caller)) {
-        return #Err("Anonymous users can't perform this action.");
-    };
-
-    let new_report_id = next_report_id;
-    next_report_id += 1;
-    
-    let new_report = {
-      report_id = Nat32.toNat(new_report_id);
-      reporter = report.reporter;
-      chain = report.chain;
-      address = report.address;
-      category = report.category;
-      description = report.description;
-      evidence = report.evidence;
-      url = report.url;
-      status = #Pending;
-      votes_yes = 0;
-      votes_no = 0;
-      voted_by = [];
-      vote_deadline = Time.now() + VOTE_DEADLINE_DURATION;
-      created_at = Time.now();
-    };
-    
-    let existing_reports = switch (reportStore.get(report.reporter)) {
-      case (?reports) { reports };
-      case null { [] };
-    };
-    
-    let updated_reports = Array.append(existing_reports, [new_report]);
-    reportStore.put(report.reporter, updated_reports);
-    
-    return #Ok(new_report_id);
   };
 
   public shared({ caller }) func delete_report(report_id : ReportId) : async Result<Text, Text> {
@@ -256,7 +153,7 @@ actor Fradium {
     return #Err("Report not found");
   };
 
-  // ===== FAUCETFUNCTIONS =====
+  // ===== FAUCET FUNCTIONS =====
   public shared({ caller }) func claim_faucet() : async Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
@@ -327,5 +224,99 @@ actor Fradium {
         return #Ok("You can claim faucet now");
       };
     };
+  };
+
+  // ===== COMMUNITY REPORT & STAKE FUNCTIONS =====
+  public type CreateReportParams = {
+    chain : Chain;
+    address : Text;
+    category : Text;
+    description : Text;
+    url : ?Text;
+    evidence : [Text];
+    stake_amount : Nat;
+  };
+  public shared({ caller }) func create_report(params : CreateReportParams) : async Result<Text, Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+
+    // Check if address already exists in any report
+    for ((principal, reports) in reportStore.entries()) {
+      for (report in reports.vals()) {
+        if (report.address == params.address and report.chain == params.chain) {
+          return #Err("Address " # params.address # " has already been reported. Please check existing reports.");
+        };
+      };
+    };
+
+    let minimum_stake_amount = 5 * (10 ** Nat8.toNat(await TokenCanister.get_decimals()));
+
+    if (params.stake_amount < minimum_stake_amount) {
+      return #Err("Minimum stake is 5 FUM tokens");
+    };
+
+    let transferArgs = {
+        spender_subaccount = null;
+        from = {
+            owner = caller; 
+            subaccount = null;
+        };
+        to = {
+            owner = Principal.fromActor(Fradium); 
+            subaccount = null;
+        };
+        amount = params.stake_amount;
+        fee = null;
+        memo = ?Blob.toArray(Text.encodeUtf8("Report Stake"));
+        created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+    };
+
+    let transferResult = await TokenCanister.icrc2_transfer_from(transferArgs);
+    switch (transferResult) {
+        case (#Err(err)) {
+            return #Err("Failed to transfer tokens: " # debug_show(err));
+        };
+        case (#Ok(_)) { };  
+    };
+
+    let new_report_id = next_report_id;
+    next_report_id += 1;
+
+    // Record the stake
+    let stakeRecord : StakeRecord = {
+      staker = caller;
+      amount = params.stake_amount;
+      staked_at = Time.now();
+      role = #Reporter;
+      report_id = new_report_id;
+    };
+    stakeRecordsStore.put(caller, stakeRecord);
+
+    let new_report : Report = {
+      report_id = Nat32.toNat(new_report_id);
+      reporter = caller;
+      chain = params.chain;
+      address = params.address;
+      category = params.category;
+      description = params.description;
+      evidence = params.evidence;
+      url = params.url;
+      votes_yes = 0;
+      votes_no = 0;
+      voted_by = [];
+      vote_deadline = Time.now() + VOTE_DEADLINE_DURATION;
+      created_at = Time.now();
+    };
+    
+    let existing_reports = switch (reportStore.get(caller)) {
+      case (?reports) { reports };
+      case null { [] };
+    };
+    
+    let updated_reports = Array.append(existing_reports, [new_report]);
+    reportStore.put(caller, updated_reports);
+    
+    return #Ok("Report created successfully with ID: " # Nat32.toText(new_report_id));
   };
 }

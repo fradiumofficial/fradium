@@ -103,7 +103,7 @@ const Navbar = () => {
                   <img
                     src={`https://api.dicebear.com/7.x/identicon/svg?seed=${identity
                       .getPrincipal()
-                      .toString()}`}
+                      .toString()}&colors=000000`}
                     alt="User avatar"
                     className="h-full w-full object-cover"
                   />
