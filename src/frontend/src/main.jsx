@@ -13,12 +13,16 @@ import {
   useLocation,
   useNavigationType,
 } from "react-router";
-import HomePage from "./pages/home-page.jsx";
-import HomeLayout from "@/core/components/layouts/home-layout.jsx";
+import HomePage from "./pages/home/home-page.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
 import { AuthProvider } from "./core/providers/auth-provider.jsx";
 import { backend } from "declarations/backend";
 import { mapOptionalToFormattedJSON } from "./core/lib/canisterUtils";
+import ListReportPage from "./pages/report/list-report-page.jsx";
+import ReportPage from "./pages/report/detail-report-page.jsx";
+import HomeLayout from "@/core/components/layouts/home-layout.jsx";
+import CreateReportPage from "./pages/report/create-report-page.jsx";
+import FaucetPage from "./pages/faucet-page.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -85,7 +89,11 @@ createRoot(document.getElementById("root")).render(
       >
         <Routes>
           <Route path="/" element={<HomeLayout />}>
-            <Route index element={<HomePage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/reports" element={<ListReportPage />} />
+            <Route path="/reports/create" element={<CreateReportPage />} />
+            <Route path="/reports/:id" element={<ReportPage />} />
+            <Route path="/faucet" element={<FaucetPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

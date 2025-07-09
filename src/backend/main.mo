@@ -4,10 +4,17 @@ import Map "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Array "mo:base/Array";
 import Nat32 "mo:base/Nat32";
+import Nat8 "mo:base/Nat8";
+import Nat "mo:base/Nat";
+import Text "mo:base/Text";
+import TokenCanister "canister:token";
 
 actor Fradium {
   // Vote deadline in nanoseconds (1 week = 7 * 24 * 60 * 60 * 1_000_000_000)
   private let VOTE_DEADLINE_DURATION : Time.Time = 604_800_000_000_000;
+  
+  // Faucet claim cooldown in nanoseconds (48 hours = 48 * 60 * 60 * 1_000_000_000)
+  private let FAUCET_COOLDOWN_DURATION : Time.Time = 172_800_000_000_000;
 
   public type Result<T, E> = { #Ok : T; #Err : E };
 
@@ -60,9 +67,11 @@ actor Fradium {
 
   stable var reportsStorage : [(Principal, [Report])] = [];
   stable var usersStorage : [(Principal, User)] = [];
+  stable var faucetClaimsStorage : [(Principal, Time.Time)] = [];
 
   var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
   var userStore = Map.HashMap<Principal, User>(0, Principal.equal, Principal.hash);
+  var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
 
   private stable var next_user_id : UserId = 0;
   private stable var next_report_id : ReportId = 0;
@@ -72,6 +81,7 @@ actor Fradium {
     // Save all data to stable storage
     reportsStorage := Iter.toArray(reportStore.entries());
     usersStorage := Iter.toArray(userStore.entries());
+    faucetClaimsStorage := Iter.toArray(faucetClaimsStore.entries());
   };
 
   system func postupgrade() {
@@ -84,6 +94,11 @@ actor Fradium {
     userStore := Map.HashMap<Principal, User>(usersStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in usersStorage.vals()) {
         userStore.put(key, value);
+    };
+
+    faucetClaimsStore := Map.HashMap<Principal, Time.Time>(faucetClaimsStorage.size(), Principal.equal, Principal.hash);
+    for ((key, value) in faucetClaimsStorage.vals()) {
+        faucetClaimsStore.put(key, value);
     };
   };
 
@@ -238,5 +253,45 @@ actor Fradium {
     };
     
     return #Err("Report not found");
+  };
+
+  // ===== FAUCETFUNCTIONS =====
+  public shared({ caller }) func claim_faucet() : async Result<Text, Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+
+    // Check if user has claimed recently
+    let currentTime = Time.now();
+    switch (faucetClaimsStore.get(caller)) {
+      case (?lastClaimTime) {
+        let timeSinceLastClaim = currentTime - lastClaimTime;
+        if (timeSinceLastClaim < FAUCET_COOLDOWN_DURATION) {
+          return #Err("You can only claim faucet once every 48 hours. Please try again later.");
+        };
+      };
+      case null { /* First time claiming, proceed */ };
+    };
+
+    let transferArgs = {
+      from_subaccount = null;
+      to = { owner = caller; subaccount = null };
+      amount = 10 * (10 ** Nat8.toNat(await TokenCanister.get_decimals()));
+      fee = null;
+      memo = ?Text.encodeUtf8("Faucet Claim");
+      created_at_time = null;
+    };
+
+    let transferResult = await TokenCanister.icrc1_transfer(transferArgs);
+    switch (transferResult) {
+        case (#Err(err)) {
+            return #Err("Failed to transfer tokens: " # debug_show(err));
+        };
+        case (#Ok(_)) {
+            // Record the claim time
+            faucetClaimsStore.put(caller, currentTime);
+            return #Ok("Tokens transferred successfully");
+        };
+    };
   };
 }

@@ -1,0 +1,31 @@
+.buttonFancy {
+  position: relative;
+  display: inline-block;
+  font-family: "General Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #0c0d14;
+  background-color: #99e39e;
+  padding: 13px 24px !important;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+  transition: background 0.2s ease;
+  outline: none;
+  line-height: 1.1;
+  text-align: center;
+  overflow: visible;
+  box-shadow: -5px 5px 0 0 #a259ff;
+}
+
+.buttonFancy:hover {
+  background: #83d36f;
+}
+
+@media (max-width: 600px) {
+  .buttonFancy {
+    font-size: 14px;
+    padding: 10px 24px;
+    box-shadow: -3px 3px 0 0 #a259ff;
+  }
+}
