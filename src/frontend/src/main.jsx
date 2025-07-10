@@ -6,13 +6,7 @@ import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import {
-  BrowserRouter,
-  Route,
-  Routes,
-  useLocation,
-  useNavigationType,
-} from "react-router";
+import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
 import HomePage from "./pages/home/home-page.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
 import { AuthProvider } from "./core/providers/auth-provider.jsx";
@@ -75,11 +69,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider
-        redirectAfterLogin="/"
-        redirectAfterLogout="/"
-        canisters={{ backend, token }}
-      >
+      <AuthProvider canisters={{ backend, token }}>
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
@@ -91,17 +81,7 @@ createRoot(document.getElementById("root")).render(
           </Route>
         </Routes>
       </AuthProvider>
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
     </BrowserRouter>
   </StrictMode>
 );

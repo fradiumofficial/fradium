@@ -133,7 +133,11 @@ export const AuthProvider = ({
     if (onLoginSuccess) {
       onLoginSuccess({ user, isAuthenticated: true });
     } else {
-      window.location.href = redirectAfterLogin;
+      if (redirectAfterLogin) {
+        window.location.href = redirectAfterLogin;
+      } else {
+        window.location.reload();
+      }
     }
   };
 
@@ -163,7 +167,11 @@ export const AuthProvider = ({
     if (onLogout) {
       onLogout();
     } else {
-      document.location.href = redirectAfterLogout;
+      if (redirectAfterLogout) {
+        document.location.href = redirectAfterLogout;
+      } else {
+        window.location.reload();
+      }
     }
   };
 
