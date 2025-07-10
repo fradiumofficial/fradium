@@ -113,9 +113,9 @@ actor Fradium {
   };
 
   public shared({ caller }) func delete_report(report_id : ReportId) : async Result<Text, Text> {
-    if(Principal.isAnonymous(caller)) {
-        return #Err("Anonymous users can't perform this action.");
-    };
+    // if(Principal.isAnonymous(caller)) {
+    //     return #Err("Anonymous users can't perform this action.");
+    // };
     
     for ((principal, reports) in reportStore.entries()) {
       let filtered_reports = Array.filter(reports, func (report : Report) : Bool {
@@ -129,16 +129,16 @@ actor Fradium {
         
         switch (target_report) {
           case (?report) {
-            if (report.reporter == caller) {
+            // if (report.reporter == caller) {
               if (filtered_reports.size() == 0) {
                 reportStore.delete(principal);
               } else {
                 reportStore.put(principal, filtered_reports);
               };
               return #Ok("Report deleted successfully");
-            } else {
-              return #Err("Only report owner can delete this report");
-            };
+            // } else {
+            //   return #Err("Only report owner can delete this report");
+            // };
           };
           case null { return #Err("Report not found"); };
         };

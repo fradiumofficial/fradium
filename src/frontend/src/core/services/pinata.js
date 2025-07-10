@@ -39,7 +39,8 @@ export const uploadFileToPinata = async (file) => {
     }
 
     const result = await response.json();
-    return result.IpfsHash; // Return the CID
+    const cid = result.IpfsHash;
+    return `https://gateway.pinata.cloud/ipfs/${cid}`; // Return the full Pinata URL
   } catch (error) {
     console.error("Error uploading to Pinata:", error);
     throw error;
@@ -49,23 +50,23 @@ export const uploadFileToPinata = async (file) => {
 /**
  * Upload multiple files to Pinata IPFS
  * @param {File[]} files - Array of files to upload
- * @returns {Promise<string[]>} - Array of IPFS hashes (CIDs) of the uploaded files
+ * @returns {Promise<string[]>} - Array of full Pinata URLs of the uploaded files
  */
 export const uploadMultipleFilesToPinata = async (files) => {
-  const cids = [];
+  const urls = [];
 
   for (const file of files) {
     try {
-      const cid = await uploadFileToPinata(file);
-      cids.push(cid);
-      console.log(`File ${file.name} uploaded with CID: ${cid}`);
+      const url = await uploadFileToPinata(file);
+      urls.push(url);
+      console.log(`File ${file.name} uploaded with URL: ${url}`);
     } catch (error) {
       console.error(`Failed to upload file ${file.name}:`, error);
       throw error; // Re-throw to let caller handle
     }
   }
 
-  return cids;
+  return urls;
 };
 
 /**
@@ -82,9 +83,9 @@ export const uploadMultipleFilesToPinataWithFallback = async (files) => {
 
   for (const file of files) {
     try {
-      const cid = await uploadFileToPinata(file);
-      result.success.push(cid);
-      console.log(`File ${file.name} uploaded with CID: ${cid}`);
+      const url = await uploadFileToPinata(file);
+      result.success.push(url);
+      console.log(`File ${file.name} uploaded with URL: ${url}`);
     } catch (error) {
       console.error(`Failed to upload file ${file.name}:`, error);
       result.failed.push(file.name);

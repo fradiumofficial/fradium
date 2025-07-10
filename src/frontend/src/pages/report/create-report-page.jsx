@@ -287,13 +287,13 @@ export default function CreateReportPage() {
       }
 
       // Upload files to Pinata after successful approve
-      const evidenceCids = [];
+      const evidenceUrls = [];
       if (files.length > 0) {
         setIsUploading(true);
 
         try {
           const uploadResult = await uploadMultipleFilesToPinataWithFallback(files);
-          evidenceCids.push(...uploadResult.success);
+          evidenceUrls.push(...uploadResult.success);
         } catch (error) {
           console.error("Error during file upload:", error);
         } finally {
@@ -307,7 +307,7 @@ export default function CreateReportPage() {
         category: formData.whatHappened.toLowerCase(),
         description: formData.description,
         url: optValue(formData.url ?? null),
-        evidence: evidenceCids.length > 0 ? evidenceCids : [],
+        evidence: evidenceUrls.length > 0 ? evidenceUrls : [],
         stake_amount: Number(stakeAmount) * 10 ** 8,
       });
       console.log("response", response);
