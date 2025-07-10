@@ -231,22 +231,8 @@ export default function ReportPage() {
       <main className="pt-18 pb-16">
         {/* Page Header - Full Screen */}
         <div className="relative overflow-hidden mb-6 sm:mb-8">
-          {/* Background Image - Full Screen */}
-          <div
-            className="absolute inset-0 w-screen bg-cover opacity-30 bg-center bg-no-repeat blur-sm"
-            style={{
-              backgroundImage: "url('/assets/images/illus.png')",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "100vw",
-            }}
-          ></div>
-
-          {/* Dark overlay for better text visibility */}
-          <div className="absolute inset-0 bg-black/60"></div>
-
           {/* Content - Container */}
-          <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-32">
+          <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-16">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
               <div className="flex-1">
                 <motion.h1
