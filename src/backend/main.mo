@@ -11,6 +11,7 @@ import Text "mo:base/Text";
 import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
 import Nat64 "mo:base/Nat64";
+import Float "mo:base/Float";
 
 import TokenCanister "canister:token";
 
@@ -26,6 +27,7 @@ actor Fradium {
   public type Voter = {
     voter: Principal;
     vote: Bool;
+    vote_weight: Nat; // Bobot vote = stake amount
   };
 
   public type ReportRole = {
@@ -57,6 +59,7 @@ actor Fradium {
     staked_at: Time.Time;
     role: ReportRole;
     report_id: ReportId;
+    vote_weight: Nat; // Bobot vote = stake amount
   };
   // ===== END STAKE =====
 
@@ -285,6 +288,7 @@ actor Fradium {
       staked_at = Time.now();
       role = #Reporter;
       report_id = new_report_id;
+      vote_weight = 0;
     };
     stakeRecordsStore.put(caller, stakeRecord);
 
@@ -313,5 +317,241 @@ actor Fradium {
     reportStore.put(caller, updated_reports);
     
     return #Ok("Report created successfully with ID: " # Nat32.toText(new_report_id));
+  };
+
+  public type VoteReportParams = {
+    stake_amount : Nat;
+    vote_type : Bool;
+    report_id : ReportId;
+  };
+  
+  public shared({ caller }) func vote_report(params : VoteReportParams) : async Result<Text, Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+
+    // Find the report
+    var targetReport : ?Report = null;
+    var reportOwner : ?Principal = null;
+    
+    for ((principal, reports) in reportStore.entries()) {
+      for (report in reports.vals()) {
+        if (report.report_id == Nat32.toNat(params.report_id)) {
+          targetReport := ?report;
+          reportOwner := ?principal;
+        };
+      };
+    };
+
+    switch (targetReport) {
+      case null {
+        return #Err("Report not found");
+      };
+      case (?report) {
+        // Check if voting deadline has passed
+        let currentTime = Time.now();
+        if (currentTime > report.vote_deadline) {
+          return #Err("Voting period has ended for this report");
+        };
+
+        // Check if user is the reporter (reporter cannot vote on their own report)
+        if (report.reporter == caller) {
+          return #Err("You cannot vote on your own report");
+        };
+
+        // Check if user has already voted
+        for (voter in report.voted_by.vals()) {
+          if (voter.voter == caller) {
+            return #Err("You have already voted on this report");
+          };
+        };
+
+        // Validate minimum stake amount
+        let minimum_stake_amount = 1 * (10 ** Nat8.toNat(await TokenCanister.get_decimals()));
+        if (params.stake_amount < minimum_stake_amount) {
+          return #Err("Minimum stake is 1 FUM token");
+        };
+
+        // Transfer tokens from user to canister
+        let transferArgs = {
+          spender_subaccount = null;
+          from = {
+            owner = caller; 
+            subaccount = null;
+          };
+          to = {
+            owner = Principal.fromActor(Fradium); 
+            subaccount = null;
+          };
+          amount = params.stake_amount;
+          fee = null;
+          memo = ?Blob.toArray(Text.encodeUtf8("Vote Stake"));
+          created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+        };
+
+        let transferResult = await TokenCanister.icrc2_transfer_from(transferArgs);
+        switch (transferResult) {
+          case (#Err(err)) {
+            return #Err("Failed to transfer tokens: " # debug_show(err));
+          };
+          case (#Ok(_)) { };
+        };
+
+        // Record the stake
+        let stakeRecord : StakeRecord = {
+          staker = caller;
+          amount = params.stake_amount;
+          staked_at = Time.now();
+          role = #Voter(params.vote_type);
+          report_id = params.report_id;
+          vote_weight = Int.abs(Float.toInt(Float.fromInt(Int.abs(params.stake_amount)) * calculate_activity_score(caller)));
+        };
+        stakeRecordsStore.put(caller, stakeRecord);
+
+        // Update the report with new vote
+        let newVoter : Voter = {
+          voter = caller;
+          vote = params.vote_type;
+          vote_weight = params.stake_amount;
+        };
+
+        let updatedVotedBy = Array.append(report.voted_by, [newVoter]);
+        
+        let updatedVotesYes = if (params.vote_type) {
+          report.votes_yes + 1
+        } else {
+          report.votes_yes
+        };
+
+        let updatedVotesNo = if (params.vote_type) {
+          report.votes_no
+        } else {
+          report.votes_no + 1
+        };
+
+        let updatedReport : Report = {
+          report_id = report.report_id;
+          reporter = report.reporter;
+          chain = report.chain;
+          address = report.address;
+          category = report.category;
+          description = report.description;
+          evidence = report.evidence;
+          url = report.url;
+          votes_yes = updatedVotesYes;
+          votes_no = updatedVotesNo;
+          voted_by = updatedVotedBy;
+          vote_deadline = report.vote_deadline;
+          created_at = report.created_at;
+        };
+
+        // Update the report in storage
+        switch (reportOwner) {
+          case (?owner) {
+            let existingReports = switch (reportStore.get(owner)) {
+              case (?reports) { reports };
+              case null { [] };
+            };
+
+            let updatedReports = Array.map(existingReports, func (r : Report) : Report {
+              if (r.report_id == report.report_id) {
+                updatedReport
+              } else {
+                r
+              }
+            });
+
+            reportStore.put(owner, updatedReports);
+          };
+          case null {
+            return #Err("Report owner not found");
+          };
+        };
+
+        let voteTypeText = if (params.vote_type) { "unsafe" } else { "safe" };
+        return #Ok("Vote submitted successfully. You voted " # voteTypeText # " with " # Nat.toText(params.stake_amount) # " tokens staked");
+      };
+    };
+  };
+
+  private func calculate_activity_score(caller : Principal) : Float {
+    // Calculate activity factor based on valid votes and valid reports
+    // activity_factor = 1.0 + (valid_votes × 0.02) + (valid_reports × 0.05)
+    
+    var valid_votes : Nat = 0;
+    var valid_reports : Nat = 0;
+    
+    // Count valid votes (votes that were correct)
+    for ((staker, stakeRecord) in stakeRecordsStore.entries()) {
+      if (staker == caller) {
+        switch (stakeRecord.role) {
+          case (#Voter(vote_type)) {
+            // Find the report to check if vote was correct
+            for ((principal, reports) in reportStore.entries()) {
+              for (report in reports.vals()) {
+                if (report.report_id == Nat32.toNat(stakeRecord.report_id)) {
+                  // Check if voting deadline has passed
+                  let currentTime = Time.now();
+                  if (currentTime > report.vote_deadline) {
+                    // Calculate if vote was correct
+                    let totalVotes = report.votes_yes + report.votes_no;
+                    let yesPercentage = if (totalVotes > 0) {
+                      (report.votes_yes * 100) / totalVotes
+                    } else {
+                      0
+                    };
+                    
+                    // Vote is correct if:
+                    // - vote_type = true (unsafe) and yesPercentage >= 75% (report marked as unsafe)
+                    // - vote_type = false (safe) and yesPercentage < 75% (report marked as safe)
+                    let isVoteCorrect = if (yesPercentage >= 75) {
+                      vote_type == true // Voted unsafe and report is unsafe
+                    } else {
+                      vote_type == false // Voted safe and report is safe
+                    };
+                    
+                    if (isVoteCorrect) {
+                      valid_votes += 1;
+                    };
+                  };
+                };
+              };
+            };
+          };
+          case (#Reporter) {
+            // Count valid reports (reports that were validated by community)
+            for ((principal, reports) in reportStore.entries()) {
+              for (report in reports.vals()) {
+                if (report.report_id == Nat32.toNat(stakeRecord.report_id)) {
+                  // Check if voting deadline has passed
+                  let currentTime = Time.now();
+                  if (currentTime > report.vote_deadline) {
+                    let totalVotes = report.votes_yes + report.votes_no;
+                    let yesPercentage = if (totalVotes > 0) {
+                      (report.votes_yes * 100) / totalVotes
+                    } else {
+                      0
+                    };
+                    
+                    // Report is valid if yesPercentage >= 75% (marked as unsafe)
+                    if (yesPercentage >= 75) {
+                      valid_reports += 1;
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    
+    // Calculate activity factor using Float
+    let base : Float = 1.0;
+    let vote_weight : Float = Float.fromInt(Int.abs(valid_votes)) * 0.02;
+    let report_weight : Float = Float.fromInt(Int.abs(valid_reports)) * 0.05;
+    let activity_factor : Float = base + vote_weight + report_weight;
+    
+    return activity_factor;
   };
 }
