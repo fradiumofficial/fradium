@@ -114,13 +114,9 @@ const Navbar = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/nfts")}>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>NFTs</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-projects")}>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-report")}>
                   <FileText className="mr-2 h-4 w-4" />
-                  <span>My Projects</span>
+                  <span>My Reports</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-500 focus:text-red-500 cursor-pointer" onClick={handleLogout}>

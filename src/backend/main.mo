@@ -11,7 +11,6 @@ import Text "mo:base/Text";
 import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
 import Nat64 "mo:base/Nat64";
-import Float "mo:base/Float";
 
 import TokenCanister "canister:token";
 
@@ -104,35 +103,7 @@ actor Fradium {
     
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
-        // Calculate vote totals based on vote_weight from Voter array
-        var totalVoteYes : Nat = 0;
-        var totalVoteNo : Nat = 0;
-        
-        for (voter in report.voted_by.vals()) {
-          if (voter.vote) {
-            totalVoteYes += voter.vote_weight;
-          } else {
-            totalVoteNo += voter.vote_weight;
-          };
-        };
-        
-        let updatedReport : Report = {
-          report_id = report.report_id;
-          reporter = report.reporter;
-          chain = report.chain;
-          address = report.address;
-          category = report.category;
-          description = report.description;
-          evidence = report.evidence;
-          url = report.url;
-          votes_yes = totalVoteYes;
-          votes_no = totalVoteNo;
-          voted_by = report.voted_by;
-          vote_deadline = report.vote_deadline;
-          created_at = report.created_at;
-        };
-        
-        allReports := Array.append(allReports, [updatedReport]);
+        allReports := Array.append(allReports, [report]);
       };
     };
     
@@ -143,35 +114,8 @@ actor Fradium {
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
         if (report.report_id == Nat32.toNat(report_id)) {
-          // Calculate vote totals based on vote_weight from Voter array
-          var totalVoteYes : Nat = 0;
-          var totalVoteNo : Nat = 0;
+          return #Ok(report);
           
-          for (voter in report.voted_by.vals()) {
-            if (voter.vote) {
-              totalVoteYes += 1;
-            } else {
-              totalVoteNo += 1;
-            };
-          };
-          
-          let updatedReport : Report = {
-            report_id = report.report_id;
-            reporter = report.reporter;
-            chain = report.chain;
-            address = report.address;
-            category = report.category;
-            description = report.description;
-            evidence = report.evidence;
-            url = report.url;
-            votes_yes = totalVoteYes;
-            votes_no = totalVoteNo;
-            voted_by = report.voted_by;
-            vote_deadline = report.vote_deadline;
-            created_at = report.created_at;
-          };
-          
-          return #Ok(updatedReport);
         };
       };
     };
@@ -288,6 +232,50 @@ actor Fradium {
   };
 
   // ===== COMMUNITY REPORT & STAKE FUNCTIONS =====
+  public shared({ caller }) func get_my_reports() : async Result<[Report], Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+
+    switch (reportStore.get(caller)) {
+      case (?reports) {
+        return #Ok(reports);
+      };
+      case null {
+        return #Ok([]);
+      };
+    };
+  };
+
+  public shared({ caller }) func get_my_votes() : async Result<[Report], Text> {
+    if(Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't perform this action.");
+    };
+
+    var votedReports : [Report] = [];
+    
+    // Get all stake records for this caller with role Voter
+    for ((staker, stakeRecord) in stakeRecordsStore.entries()) {
+      if (staker == caller) {
+        switch (stakeRecord.role) {
+          case (#Voter(_)) {
+            // Find the report with this report_id
+            for ((principal, reports) in reportStore.entries()) {
+              for (report in reports.vals()) {
+                if (report.report_id == Nat32.toNat(stakeRecord.report_id)) {
+                  votedReports := Array.append(votedReports, [report]);
+                };
+              };
+            };
+          };
+          case (#Reporter) { };
+        };
+      };
+    };
+    
+    return #Ok(votedReports);
+  };
+
   public type CreateReportParams = {
     chain : Text;
     address : Text;
