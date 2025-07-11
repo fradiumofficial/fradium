@@ -315,6 +315,10 @@ export default function CreateReportPage() {
       if (response.Ok) {
         toast.success("Report created successfully.");
         setShowConfirmModal(false);
+
+        // Trigger balance update event for navbar
+        window.dispatchEvent(new Event("balance-updated"));
+
         navigate("/reports");
       } else {
         if (response.Err) {

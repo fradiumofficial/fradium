@@ -11,12 +11,12 @@ import HomePage from "./pages/home/home-page.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
 import { AuthProvider } from "./core/providers/auth-provider.jsx";
 import { backend } from "declarations/backend";
-import { mapOptionalToFormattedJSON } from "./core/lib/canisterUtils";
 import ListReportPage from "./pages/report/list-report-page.jsx";
 import ReportPage from "./pages/report/detail-report-page.jsx";
 import HomeLayout from "@/core/components/layouts/home-layout.jsx";
 import CreateReportPage from "./pages/report/create-report-page.jsx";
 import FaucetPage from "./pages/faucet-page.jsx";
+import BalancePage from "./pages/balance-page.jsx";
 import { token } from "declarations/token";
 
 NProgress.configure({
@@ -73,6 +73,7 @@ createRoot(document.getElementById("root")).render(
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/balance" element={<BalancePage />} />
             <Route path="/reports" element={<ListReportPage />} />
             <Route path="/reports/create" element={<CreateReportPage />} />
             <Route path="/reports/:id" element={<ReportPage />} />

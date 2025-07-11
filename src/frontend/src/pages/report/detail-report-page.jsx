@@ -4,13 +4,13 @@ import { Link, useParams } from "react-router";
 import { useState, useEffect } from "react";
 import { Input } from "@/core/components/ui/input";
 import Card from "../../core/components/Card";
-import { backend } from "declarations/backend";
+import { backend, canisterId as backendCanisterId } from "declarations/backend";
 import { token } from "declarations/token";
 import { toast } from "react-toastify";
 import { useAuth } from "@/core/providers/auth-provider";
 import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/chainExplorers";
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
-
+import { Principal } from "@dfinity/principal";
 import PrimaryButton from "@/core/components/Button";
 
 export default function DetailReportPage() {
@@ -30,6 +30,7 @@ export default function DetailReportPage() {
   const [voteType, setVoteType] = useState(null); // 'yes' or 'no'
   const [stakeAmount, setStakeAmount] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // User data - would come from API/backend
   const [userBalance, setUserBalance] = useState(null);
@@ -42,8 +43,8 @@ export default function DetailReportPage() {
     const votesYes = parseInt(backendData.votes_yes) || 0;
     const votesNo = parseInt(backendData.votes_no) || 0;
     const totalVotes = votesYes + votesNo;
-    const yesPercentage = totalVotes > 0 ? Math.round((votesYes / totalVotes) * 100) : 0;
-    const noPercentage = totalVotes > 0 ? Math.round((votesNo / totalVotes) * 100) : 0;
+    const yesPercentage = totalVotes > 0 ? Number(((votesYes / totalVotes) * 100).toFixed(2)) : 0;
+    const noPercentage = totalVotes > 0 ? Number(((votesNo / totalVotes) * 100).toFixed(2)) : 0;
 
     // Convert nanoseconds to milliseconds and then to Date
     const createdAt = new Date(parseInt(backendData.created_at) / 1000000);
@@ -188,7 +189,7 @@ export default function DetailReportPage() {
 
   const calculateEstimatedReward = () => {
     const amount = Number.parseFloat(stakeAmount) || 0;
-    return Math.round(amount * 0.1); // 10% reward if vote is correct
+    return amount * 0.1; // 10% reward if vote is correct
   };
 
   const handleVoteClick = (vote) => {
@@ -198,30 +199,75 @@ export default function DetailReportPage() {
   };
 
   const handleSubmit = async () => {
-    // TODO: Implementasi manual oleh user
-    // Parameter yang tersedia:
-    // - voteType: 'yes' atau 'no' (vote unsafe atau safe)
-    // - stakeAmount: jumlah token yang di-stake (dalam FUM)
-    // - reportId: ID report yang di-vote (uiData.id)
-    // - userPrincipal: principal user yang sedang login (identity.getPrincipal().toString())
+    if (!stakeAmount || Number.parseFloat(stakeAmount) <= 0 || Number.parseFloat(stakeAmount) > (userBalance ? convertE8sToToken(userBalance) : 0)) {
+      toast.error("Invalid stake amount");
+      return;
+    }
 
-    console.log("Vote parameters:", {
-      voteType,
-      stakeAmount,
-      reportId: uiData.id,
-      userPrincipal: identity.getPrincipal().toString(),
-      voteWeight: calculateVoteWeight(),
-      estimatedReward: calculateEstimatedReward(),
-    });
+    try {
+      setIsSubmitting(true);
 
-    // Contoh implementasi yang bisa diikuti:
-    // 1. Approve token ke backend canister
-    // 2. Panggil backend.vote() dengan parameter yang sesuai
-    // 3. Handle response dan error
+      const approveResult = await token.icrc2_approve({
+        from_subaccount: [],
+        spender: Principal.fromText(backendCanisterId),
+        amount: BigInt(stakeAmount) * BigInt(10 ** 8),
+        expires_at: [],
+        fee: [],
+        memo: [new TextEncoder().encode(`Approve for staking report creation`)],
+        created_at_time: [],
+      });
 
-    setUserVote(voteType);
-    setShowVoteModal(false);
-    setShowSuccessModal(true);
+      // Check if approve failed
+      if (!approveResult || approveResult.Err) {
+        if (approveResult.Err?.InsufficientFunds) {
+          toast.error("Insufficient funds. Please top up your balance.");
+        } else {
+          toast.error("Failed to approve tokens. Please try again.");
+        }
+        return;
+      }
+
+      const response = await backend.vote_report({
+        stake_amount: BigInt(stakeAmount) * BigInt(10 ** 8),
+        vote_type: voteType === "yes",
+        report_id: uiData.id,
+      });
+      setIsSubmitting(false);
+      console.log("response", response);
+
+      if (response.Err) {
+        toast.error(response.Err);
+      } else {
+        toast.success("Vote submitted successfully");
+        setUserVote(voteType);
+        setShowVoteModal(false);
+        setShowSuccessModal(true);
+
+        // Trigger balance update event for navbar
+        window.dispatchEvent(new Event("balance-updated"));
+
+        // Reload report data
+        const fetchReport = async () => {
+          try {
+            const response = await backend.get_report(parseInt(id));
+            if (response.Err) {
+              toast.error(response.Err);
+            } else {
+              setReportData(response.Ok);
+            }
+          } catch (error) {
+            toast.error("Failed to fetch report");
+            console.error("Error fetching report:", error);
+          }
+        };
+        fetchReport();
+      }
+    } catch (error) {
+      console.log("error", error);
+      toast.error("Failed to submit vote");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancelVote = () => {
@@ -327,50 +373,46 @@ export default function DetailReportPage() {
             {/* Left Column - Main Content */}
             <div className="xl:col-span-2 space-y-6 sm:space-y-8">
               {/* Report Title & Status */}
-              <Card>
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-6 space-y-4 lg:space-y-0">
-                  <div>
-                    <h1 className="text-3xl sm:text-4xl font-bold mb-4">{uiData.category} Report</h1>
-                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                      <div className={`inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(uiData.status)} h-8`}>
-                        {getStatusIcon(uiData.status)}
-                        <span>{uiData.status}</span>
-                      </div>
-                      <div className="inline-flex items-center justify-center px-4 py-2 bg-red-400/10 text-red-400 rounded-full text-sm font-medium h-8">{uiData.riskLevel} Risk</div>
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-6 space-y-4 lg:space-y-0">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-bold mb-4">{uiData.category} Report</h1>
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <div className={`inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(uiData.status)} h-8`}>
+                      {getStatusIcon(uiData.status)}
+                      <span>{uiData.status}</span>
                     </div>
-                  </div>
-                  <div className="text-left lg:text-right">
-                    <div className="text-sm text-gray-400 mb-1">Report ID</div>
-                    <div className="font-mono text-lg">#{uiData.id.toString().padStart(4, "0")}</div>
+                    <div className="inline-flex items-center justify-center px-4 py-2 bg-red-400/10 text-red-400 rounded-full text-sm font-medium h-8">{uiData.riskLevel} Risk</div>
                   </div>
                 </div>
+                <div className="text-left lg:text-right">
+                  <div className="text-sm text-gray-400 mb-1">Report ID</div>
+                  <div className="font-mono text-lg">#{uiData.id.toString().padStart(4, "0")}</div>
+                </div>
+              </div>
 
-                {/* Reported Address - Hero Style */}
-                <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-400/20 rounded-xl p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-red-400 text-sm font-medium mb-2">FLAGGED ADDRESS</div>
-                      <div className="font-mono text-xl sm:text-2xl font-bold mb-2 break-all">{uiData.shortAddress}</div>
-                      <div className="font-mono text-sm text-gray-400 break-all">{uiData.address}</div>
-                    </div>
-                    <Button onClick={() => copyToClipboard(uiData.address)} className="bg-red-400/20 border border-red-400/30 hover:bg-red-400/30 text-red-400 self-start sm:self-center">
-                      <Copy className="w-4 h-4" />
-                    </Button>
+              {/* Reported Address - Hero Style */}
+              <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-400/20 rounded-xl p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-red-400 text-sm font-medium mb-2">FLAGGED ADDRESS</div>
+                    <div className="font-mono text-xl sm:text-2xl font-bold mb-2 break-all">{uiData.shortAddress}</div>
+                    <div className="font-mono text-sm text-gray-400 break-all">{uiData.address}</div>
                   </div>
+                  <Button onClick={() => copyToClipboard(uiData.address)} className="bg-red-400/20 border border-red-400/30 hover:bg-red-400/30 text-red-400 self-start sm:self-center">
+                    <Copy className="w-4 h-4" />
+                  </Button>
                 </div>
-              </Card>
+              </div>
 
               {/* Description */}
-              <Card>
-                <h2 className="text-xl sm:text-2xl font-semibold mb-6">Threat Analysis</h2>
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-gray-300 leading-relaxed mb-4 text-base sm:text-lg">{uiData.description}</p>
-                </div>
-              </Card>
+              <h2 className="text-xl sm:text-2xl font-semibold mb-6 mt-10">Threat Analysis</h2>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-gray-300 leading-relaxed mb-4 text-base sm:text-lg">{uiData.description}</p>
+              </div>
 
               {/* Evidence Gallery */}
               {uiData.evidence && uiData.evidence.length > 0 && (
-                <Card>
+                <>
                   <h2 className="text-xl sm:text-2xl font-semibold mb-6 flex items-center">
                     <ImageIcon className="w-5 sm:w-6 h-5 sm:h-6 mr-3" />
                     Evidence Gallery ({uiData.evidence.length})
@@ -408,7 +450,7 @@ export default function DetailReportPage() {
                       </button>
                     ))}
                   </div>
-                </Card>
+                </>
               )}
             </div>
 
@@ -529,7 +571,7 @@ export default function DetailReportPage() {
 
               {/* Chain Explorer Link */}
               {getExplorerName(uiData.chain) !== "Explorer" && (
-                <Card>
+                <>
                   <h3 className="text-lg font-semibold mb-4 flex items-center">
                     <span className="mr-2">{getExplorerIcon(uiData.chain)}</span>
                     {getExplorerName(uiData.chain)}
@@ -540,7 +582,7 @@ export default function DetailReportPage() {
                       View on {getExplorerName(uiData.chain)}
                     </Button>
                   </a>
-                </Card>
+                </>
               )}
             </div>
           </div>
@@ -589,8 +631,8 @@ export default function DetailReportPage() {
                   <Button onClick={handleCancelVote} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
                     Cancel
                   </Button>
-                  <Button onClick={handleSubmit} disabled={!stakeAmount || Number.parseFloat(stakeAmount) <= 0 || Number.parseFloat(stakeAmount) > (userBalance ? convertE8sToToken(userBalance) : 0)} className={`flex-1 ${voteType === "yes" ? "bg-red-400 hover:bg-red-500 text-white" : "bg-green-400 hover:bg-green-500 text-black"} disabled:opacity-50 disabled:cursor-not-allowed`}>
-                    Confirm Vote
+                  <Button onClick={handleSubmit} disabled={isSubmitting || !stakeAmount || Number.parseFloat(stakeAmount) <= 0 || Number.parseFloat(stakeAmount) > (userBalance ? convertE8sToToken(userBalance) : 0)} className={`flex-1 ${voteType === "yes" ? "bg-red-400 hover:bg-red-500 text-white" : "bg-green-400 hover:bg-green-500 text-black"} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                    {isSubmitting ? "Submitting..." : "Confirm Vote"}
                   </Button>
                 </div>
               </div>

@@ -59,7 +59,6 @@ actor Fradium {
     staked_at: Time.Time;
     role: ReportRole;
     report_id: ReportId;
-    vote_weight: Nat; // Bobot vote = stake amount
   };
   // ===== END STAKE =====
 
@@ -101,14 +100,78 @@ actor Fradium {
   };
 
   public query func get_reports() : async Result<[Report], Text> {
-    return #Ok(Array.flatten(Iter.toArray(reportStore.vals())));
+    var allReports : [Report] = [];
+    
+    for ((principal, reports) in reportStore.entries()) {
+      for (report in reports.vals()) {
+        // Calculate vote totals based on vote_weight from Voter array
+        var totalVoteYes : Nat = 0;
+        var totalVoteNo : Nat = 0;
+        
+        for (voter in report.voted_by.vals()) {
+          if (voter.vote) {
+            totalVoteYes += voter.vote_weight;
+          } else {
+            totalVoteNo += voter.vote_weight;
+          };
+        };
+        
+        let updatedReport : Report = {
+          report_id = report.report_id;
+          reporter = report.reporter;
+          chain = report.chain;
+          address = report.address;
+          category = report.category;
+          description = report.description;
+          evidence = report.evidence;
+          url = report.url;
+          votes_yes = totalVoteYes;
+          votes_no = totalVoteNo;
+          voted_by = report.voted_by;
+          vote_deadline = report.vote_deadline;
+          created_at = report.created_at;
+        };
+        
+        allReports := Array.append(allReports, [updatedReport]);
+      };
+    };
+    
+    return #Ok(allReports);
   };
 
   public query func get_report(report_id : ReportId) : async Result<Report, Text> {
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
         if (report.report_id == Nat32.toNat(report_id)) {
-          return #Ok(report);
+          // Calculate vote totals based on vote_weight from Voter array
+          var totalVoteYes : Nat = 0;
+          var totalVoteNo : Nat = 0;
+          
+          for (voter in report.voted_by.vals()) {
+            if (voter.vote) {
+              totalVoteYes += 1;
+            } else {
+              totalVoteNo += 1;
+            };
+          };
+          
+          let updatedReport : Report = {
+            report_id = report.report_id;
+            reporter = report.reporter;
+            chain = report.chain;
+            address = report.address;
+            category = report.category;
+            description = report.description;
+            evidence = report.evidence;
+            url = report.url;
+            votes_yes = totalVoteYes;
+            votes_no = totalVoteNo;
+            voted_by = report.voted_by;
+            vote_deadline = report.vote_deadline;
+            created_at = report.created_at;
+          };
+          
+          return #Ok(updatedReport);
         };
       };
     };
@@ -288,7 +351,6 @@ actor Fradium {
       staked_at = Time.now();
       role = #Reporter;
       report_id = new_report_id;
-      vote_weight = 0;
     };
     stakeRecordsStore.put(caller, stakeRecord);
 
@@ -324,7 +386,6 @@ actor Fradium {
     vote_type : Bool;
     report_id : ReportId;
   };
-  
   public shared({ caller }) func vote_report(params : VoteReportParams) : async Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
@@ -404,7 +465,6 @@ actor Fradium {
           staked_at = Time.now();
           role = #Voter(params.vote_type);
           report_id = params.report_id;
-          vote_weight = Int.abs(Float.toInt(Float.fromInt(Int.abs(params.stake_amount)) * calculate_activity_score(caller)));
         };
         stakeRecordsStore.put(caller, stakeRecord);
 
@@ -412,7 +472,7 @@ actor Fradium {
         let newVoter : Voter = {
           voter = caller;
           vote = params.vote_type;
-          vote_weight = params.stake_amount;
+          vote_weight = (params.stake_amount * calculate_activity_score(caller)) / 1000;
         };
 
         let updatedVotedBy = Array.append(report.voted_by, [newVoter]);
@@ -474,9 +534,10 @@ actor Fradium {
     };
   };
 
-  private func calculate_activity_score(caller : Principal) : Float {
+  private func calculate_activity_score(caller : Principal) : Nat {
     // Calculate activity factor based on valid votes and valid reports
-    // activity_factor = 1.0 + (valid_votes × 0.02) + (valid_reports × 0.05)
+    // activity_factor = 1000 + (valid_votes × 20) + (valid_reports × 50)
+    // Using scaling factor of 1000 to avoid floating point
     
     var valid_votes : Nat = 0;
     var valid_reports : Nat = 0;
@@ -546,11 +607,11 @@ actor Fradium {
       };
     };
     
-    // Calculate activity factor using Float
-    let base : Float = 1.0;
-    let vote_weight : Float = Float.fromInt(Int.abs(valid_votes)) * 0.02;
-    let report_weight : Float = Float.fromInt(Int.abs(valid_reports)) * 0.05;
-    let activity_factor : Float = base + vote_weight + report_weight;
+    // Calculate activity factor using Nat with scaling factor 1000
+    let base : Nat = 1000;
+    let vote_weight : Nat = valid_votes * 20;
+    let report_weight : Nat = valid_reports * 50;
+    let activity_factor : Nat = base + vote_weight + report_weight;
     
     return activity_factor;
   };

@@ -34,7 +34,8 @@
     },
     "token": {
       "main": "src/token/token.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "build": "scripts/build.fradium_token.sh"
     }
   },
   "defaults": {

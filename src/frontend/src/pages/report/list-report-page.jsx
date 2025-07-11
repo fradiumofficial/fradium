@@ -8,6 +8,7 @@ import Card from "../../core/components/Card";
 import { backend } from "declarations/backend";
 import { toast } from "react-toastify";
 import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/chainExplorers";
+import PrimaryButton from "@/core/components/Button";
 
 export default function ReportPage() {
   const navigate = useNavigate();
@@ -28,8 +29,8 @@ export default function ReportPage() {
       const votesYes = parseInt(report.votes_yes) || 0;
       const votesNo = parseInt(report.votes_no) || 0;
       const totalVotes = votesYes + votesNo;
-      const yesPercentage = totalVotes > 0 ? Math.round((votesYes / totalVotes) * 100) : 0;
-      const noPercentage = totalVotes > 0 ? Math.round((votesNo / totalVotes) * 100) : 0;
+      const yesPercentage = totalVotes > 0 ? Number(((votesYes / totalVotes) * 100).toFixed(2)) : 0;
+      const noPercentage = totalVotes > 0 ? Number(((votesNo / totalVotes) * 100).toFixed(2)) : 0;
 
       // Convert nanoseconds to milliseconds and then to Date
       const createdAt = new Date(parseInt(report.created_at) / 1000000);
@@ -223,9 +224,9 @@ export default function ReportPage() {
   return (
     <div className="min-h-screen bg-black text-white ">
       {/* Main Content */}
-      <main className="pt-18 pb-16">
+      <main className="pt-18 pb-16 md:container">
         {/* Page Header - Full Screen */}
-        <div className="relative overflow-hidden mb-6 sm:mb-8">
+        <div className="relative overflow-hidden mb-6 sm:mb-8 px-3 md:px-6">
           {/* Content - Container */}
           <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-16">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
@@ -235,21 +236,18 @@ export default function ReportPage() {
               </div>
 
               {/* Create Report Button */}
-              <div className="flex-shrink-0 mt-20 lg:mt-0">
-                <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white sm:flex-shrink-0" onClick={() => navigate("/reports/create")}>
-                  <AlertTriangle className="w-5 h-5 mr-2" />
-                  Create Report
-                </Button>
+              <div className="flex-shrink-0 md:mt-20">
+                <PrimaryButton onClick={() => navigate("/reports/create")}>Create Report</PrimaryButton>
               </div>
             </div>
           </div>
         </div>
 
         {/* Rest of Content */}
-        <div className="px-4 sm:px-6">
+        <div className="md:px-6">
           <div className="container mx-auto">
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {isLoading
                 ? // Loading skeleton
                   Array.from({ length: 4 }).map((_, index) => (
@@ -279,189 +277,183 @@ export default function ReportPage() {
             </div>
 
             {/* Filters and Search */}
-            <div>
-              <Card className="my-10">
-                <div className="flex flex-col gap-4 items-stretch">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 flex-1">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10" />
-                    </div>
-                    <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white sm:flex-shrink-0">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
+            <div className="my-10">
+              <div className="flex flex-col gap-4 items-stretch">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 flex-1">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10" />
                   </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                    <span className="text-gray-400 text-sm">Sort by:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { field: "dateReported", label: "Date" },
-                        { field: "totalVotes", label: "Votes" },
-                        { field: "status", label: "Status" },
-                        { field: "category", label: "Category" },
-                        { field: "chain", label: "Chain" },
-                      ].map((sortOption, index) => (
-                        <div key={sortOption.field}>
-                          <Button onClick={() => handleSort(sortOption.field)} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm flex-1 sm:flex-initial">
-                            {sortOption.label}
-                            {getSortIcon(sortOption.field)}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
+                  <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white sm:flex-shrink-0">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                  <span className="text-gray-400 text-sm">Sort by:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { field: "dateReported", label: "Date" },
+                      { field: "totalVotes", label: "Votes" },
+                      { field: "status", label: "Status" },
+                      { field: "category", label: "Category" },
+                      { field: "chain", label: "Chain" },
+                    ].map((sortOption, index) => (
+                      <div key={sortOption.field}>
+                        <Button onClick={() => handleSort(sortOption.field)} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm flex-1 sm:flex-initial">
+                          {sortOption.label}
+                          {getSortIcon(sortOption.field)}
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
 
             {/* Reports Cards */}
             <div className="space-y-6">
-              <Card>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-2 sm:space-y-0">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-semibold mb-2">Reported Addresses</h2>
-                    <p className="text-gray-400 text-sm">Community-reported wallet addresses under review for potential security threats</p>
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} results
-                  </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-2 sm:space-y-0">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-semibold mb-2">Reported Addresses</h2>
+                  <p className="text-gray-400 text-sm">Community-reported wallet addresses under review for potential security threats</p>
                 </div>
+                <div className="text-sm text-gray-400">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} results
+                </div>
+              </div>
 
-                {currentData.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No reports found</h3>
-                    <p className="text-gray-400">Try adjusting your search terms or filters</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-                    {currentData.map((report, index) => (
-                      <div key={report.id}>
-                        <Card>
-                          {/* Card Header */}
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-                                <span className="font-mono text-base sm:text-lg font-semibold truncate">{report.shortAddress}</span>
-                                <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)} self-start`}>
-                                  {getStatusIcon(report.status)}
-                                  <span>{report.status}</span>
-                                </div>
+              {currentData.length === 0 ? (
+                <div className="text-center py-12">
+                  <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No reports found</h3>
+                  <p className="text-gray-400">Try adjusting your search terms or filters</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-1 gap-4 sm:gap-6">
+                  {currentData.map((report, index) => (
+                    <div key={report.id}>
+                      <div className="rounded-xl p-4">
+                        {/* Card Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                              <span className="font-mono text-base sm:text-lg font-semibold truncate">{report.shortAddress}</span>
+                              <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)} self-start`}>
+                                {getStatusIcon(report.status)}
+                                <span>{report.status}</span>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-400">
-                                <span>{report.category}</span>
-                                <span className="hidden sm:inline">•</span>
-                                <span>Reported {report.dateReported}</span>
-                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-400">
+                              <span>{report.category}</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span>Reported {report.dateReported}</span>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Vote Information */}
-                          <div className="mb-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">{report.chain} Network</span>
-                              <span className="text-sm font-semibold">{report.totalVotes.toLocaleString()} votes</span>
+                        {/* Vote Information */}
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-300">{report.chain} Network</span>
+                            <span className="text-sm font-semibold">{report.totalVotes.toLocaleString()} votes</span>
+                          </div>
+                          <div className="mb-2">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-red-400">Unsafe: {report.yesPercentage}%</span>
+                              <span className="text-green-400">Safe: {report.noPercentage}%</span>
                             </div>
-                            <div className="mb-2">
-                              <div className="flex justify-between text-xs mb-1">
-                                <span className="text-red-400">Unsafe: {report.yesPercentage}%</span>
-                                <span className="text-green-400">Safe: {report.noPercentage}%</span>
-                              </div>
-                              <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                                <div className="bg-red-400 h-2 rounded-full" style={{ width: `${report.yesPercentage}%` }} />
-                              </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                              <div className="bg-red-400 h-2 rounded-full" style={{ width: `${report.yesPercentage}%` }} />
                             </div>
                           </div>
+                        </div>
 
-                          {/* Card Footer */}
-                          <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                            <div className="flex items-center space-x-4 text-xs text-gray-400">
-                              <span>ID: #{report.id.toString().padStart(4, "0")}</span>
-                              <span>Evidence: {report.evidence.length}</span>
-                            </div>
-                            <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm" onClick={() => navigate(`/reports/${report.id}`)}>
-                              <Eye className="w-3 h-3 mr-2" />
-                              <span className="hidden sm:inline">View Details</span>
-                              <span className="sm:hidden">View</span>
-                            </Button>
+                        {/* Card Footer */}
+                        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                          <div className="flex items-center space-x-4 text-xs text-gray-400">
+                            <span>ID: #{report.id.toString().padStart(4, "0")}</span>
+                            <span>Evidence: {report.evidence.length}</span>
                           </div>
-                        </Card>
+                          <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm" onClick={() => navigate(`/reports/${report.id}`)}>
+                            <Eye className="w-3 h-3 mr-2" />
+                            <span className="hidden sm:inline">View Details</span>
+                            <span className="sm:hidden">View</span>
+                          </Button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Pagination */}
-                {filteredAndSortedData.length > 0 && (
-                  <div className="mt-6 sm:mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-                    <span className="text-gray-400 text-sm text-center sm:text-left">
-                      Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} reports
-                    </span>
-                    <div className="flex items-center space-x-2">
-                      <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        <ChevronLeft className="w-4 h-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Previous</span>
-                      </Button>
-
-                      {/* Page Numbers */}
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 2) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 1) {
-                            pageNum = totalPages - 2 + i;
-                          } else {
-                            pageNum = currentPage - 1 + i;
-                          }
-
-                          return (
-                            <Button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`w-8 h-8 p-0 text-sm ${currentPage === pageNum ? "bg-white text-black" : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white"}`}>
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
-                      </div>
-
-                      <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span className="hidden sm:inline">Next</span>
-                        <ChevronRight className="w-4 h-4 sm:ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Info Section */}
-            <div>
-              <Card className="my-10">
-                <h3 className="text-lg font-semibold mb-4">How Community Voting Works</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-300">
-                  {[
-                    {
-                      title: "1. Report Submission",
-                      description: "Community members can report suspicious wallet addresses with evidence and reasoning.",
-                    },
-                    {
-                      title: "2. Community Review",
-                      description: "Verified users vote on whether the reported address poses a security threat to the ecosystem.",
-                    },
-                    {
-                      title: "3. Consensus Decision",
-                      description: 'Addresses with 75%+ "Unsafe" votes are flagged and added to the community blocklist.',
-                    },
-                  ].map((step, index) => (
-                    <div key={index}>
-                      <h4 className="font-medium text-white mb-2">{step.title}</h4>
-                      <p>{step.description}</p>
                     </div>
                   ))}
                 </div>
-              </Card>
+              )}
+
+              {/* Pagination */}
+              {filteredAndSortedData.length > 0 && (
+                <div className="mt-6 sm:mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+                  <span className="text-gray-400 text-sm text-center sm:text-left">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} reports
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ChevronLeft className="w-4 h-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Previous</span>
+                    </Button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 2) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 1) {
+                          pageNum = totalPages - 2 + i;
+                        } else {
+                          pageNum = currentPage - 1 + i;
+                        }
+
+                        return (
+                          <Button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`w-8 h-8 p-0 text-sm ${currentPage === pageNum ? "bg-white text-black" : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white"}`}>
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight className="w-4 h-4 sm:ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Info Section */}
+            <div className="my-10">
+              <h3 className="text-lg font-semibold mb-4">How Community Voting Works</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-300">
+                {[
+                  {
+                    title: "1. Report Submission",
+                    description: "Community members can report suspicious wallet addresses with evidence and reasoning.",
+                  },
+                  {
+                    title: "2. Community Review",
+                    description: "Verified users vote on whether the reported address poses a security threat to the ecosystem.",
+                  },
+                  {
+                    title: "3. Consensus Decision",
+                    description: 'Addresses with 75%+ "Unsafe" votes are flagged and added to the community blocklist.',
+                  },
+                ].map((step, index) => (
+                  <div key={index}>
+                    <h4 className="font-medium text-white mb-2">{step.title}</h4>
+                    <p>{step.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

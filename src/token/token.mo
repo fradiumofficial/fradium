@@ -433,6 +433,34 @@ actor Token {
         Buffer.toArray(log);
     };  
 
+    public func get_transaction_history_of(account: Account) : async [Transaction] {
+        let filteredTransactions = Buffer.Buffer<Transaction>(0);
+        
+        for (tx in log.vals()) {
+            // Check if account is involved in any transaction type
+            let isInvolved = switch (tx.operation) {
+                case (#Transfer { from; to; amount = _; spender = _; source = _; fee = _; memo = _; created_at_time = _ }) {
+                    from == account or to == account
+                };
+                case (#Mint { from = _; to; amount = _; spender = _; source = _; fee = _; memo = _; created_at_time = _ }) {
+                    to == account
+                };
+                case (#Burn { from; to = _; amount = _; spender = _; source = _; fee = _; memo = _; created_at_time = _ }) {
+                    from == account
+                };
+                case (#Approve { from; spender = _; amount = _; expires_at = _; fee = _; memo = _; created_at_time = _ }) {
+                    from == account
+                };
+            };
+
+            if (isInvolved) {
+                filteredTransactions.add(tx);
+            };
+        };
+        
+        Buffer.toArray(filteredTransactions);
+    };  
+
     public func get_decimals() : async Nat8 {
         tokenConfig.decimals;
     };
@@ -472,35 +500,7 @@ actor Token {
         #Ok("Token created");
     };
 
-    public func transaction_history_of(account: Account) : async [Transaction] {
-        let filteredTransactions = Buffer.Buffer<Transaction>(0);
-        
-        for (tx in log.vals()) {
-            // Check if caller is involved in any transaction type
-            let isInvolved = switch (tx.operation) {
-                case (#Transfer { from; to; amount; }) {
-                    from == account or to == account
-                };
-                case (#Mint { to; amount }) {
-                    to == account
-                };
-                case (#Burn { from; amount }) {
-                    from == account
-                };
-                case (#Approve { from; amount; }) {
-                    from == account
-                };
-                // Add any other transaction types here
-                case (_) { false };
-            };
 
-            if (isInvolved) {
-                filteredTransactions.add(tx);
-            };
-        };
-        
-        Buffer.toArray(filteredTransactions);
-    };
 
     public query func get_genesis_transaction() : async ?Transaction {
         if (log.size() > 0) {

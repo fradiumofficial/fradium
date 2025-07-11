@@ -41,7 +41,18 @@ const Navbar = () => {
     }
 
     fetchBalance();
-  }, [isAuthenticated]);
+
+    // Listen for balance update events
+    const handleBalanceUpdate = () => {
+      fetchBalance();
+    };
+
+    window.addEventListener("balance-updated", handleBalanceUpdate);
+
+    return () => {
+      window.removeEventListener("balance-updated", handleBalanceUpdate);
+    };
+  }, [isAuthenticated, identity]);
 
   const handleLogout = async () => {
     await logout();
