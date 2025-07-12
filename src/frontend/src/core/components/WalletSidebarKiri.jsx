@@ -13,7 +13,7 @@ const menu = [
 
 export default function WalletSidebar() {
     return (
-        <aside className="h-screen w-300 bg-[#11141A] flex flex-col justify-between py-8 px-6 border-r border-[#23272F]">
+        <aside className="h-screen w-300 bg-[#0F1219] flex flex-col justify-between py-8 px-6 border-r border-[#23272F]">
             {/* Logo dan Brand */}
             <div>
                 <div className="flex items-center gap-3 mb-12">

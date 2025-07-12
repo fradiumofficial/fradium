@@ -21,7 +21,7 @@ const tokens = [
 export default function WalletPage() {
     return (
         <WalletLayout>
-            <div className="flex flex-col gap-8 max-w-xl mx-auto w-full">
+            <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
                 {/* Card Wallet pakai gambar utuh */}
                 <div className="relative flex justify-center items-center">
                     <img
