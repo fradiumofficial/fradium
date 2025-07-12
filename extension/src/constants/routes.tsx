@@ -4,4 +4,6 @@ export const ROUTES = {
   ANALYZE_SMART_CONTRACT: '/analyze-smart-contract',
   ANALYZE_ADDRESS_RESULT: '/analyze-address-result',
   ANALYZE_SMART_CONTRACT_RESULT: '/analyze-smart-contract-result',
+  HISTORY: '/history',
+  DETAIL_HISTORY: '/history/:id',
 }

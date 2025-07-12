@@ -6,6 +6,7 @@ import { Route, Routes } from "react-router-dom"
 import { ROUTES } from "./constants/routes"
 import AnalyzeAdressResult from "./modules/analyze_address/pages/AnalyzeAddressResult"
 import AnalyzeSmartContractResult from "./modules/analyze_smartcontract/pages/AnalyzeSmartContractResult"
+import History from "./modules/history/pages/history"
 
 function App() {
 
@@ -17,6 +18,7 @@ function App() {
         <Route path={ROUTES.ANALYZE_SMART_CONTRACT} element={<AnalyzeSmartContract />} />
         <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={<AnalyzeAdressResult />} />
         <Route path={ROUTES.ANALYZE_SMART_CONTRACT_RESULT} element={<AnalyzeSmartContractResult />} />
+        <Route path={ROUTES.HISTORY} element={<History />} />
       </Routes>
     </ThemeProvider>
   )

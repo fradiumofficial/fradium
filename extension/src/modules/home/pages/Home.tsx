@@ -6,13 +6,14 @@ import AnalyzeAddress from "../../../assets/analyze_address.svg";
 import AnalyzeContract from "../../../assets/analyze_contract.svg";
 import Bitcoin from "../../../assets/bitcoin.svg";
 import ProfileHeader from "../../../components/ui/header";
-import { Separator } from "../../../components/ui/separator";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
+import HistoryCard from "@/components/ui/history-card";
 
 function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [date] = useState(new Date());
   const navigate = useNavigate();
 
   const prevSlide = () => {
@@ -98,22 +99,19 @@ function Home() {
       { /* History Section */}
       <div className="flex flex-row justify-between m-4">
         <h1 className="text-[16px] font-semibold">History</h1>
-        <button className="text-[#99E39E] text-[14px] group-hover:text-green">View All</button>
+        <button className="text-[#99E39E] hover:text-white transition-transform duration-300 ease-in-out" onClick={() => navigate(ROUTES.HISTORY)}>View All</button>
       </div>
 
       <div className="flex flex-col items-center m-4">
         {Array.from({ length: 2 }).map((_, index) => (
-          <div key={index} className="w-full mb-4">
-            <div className="flex flex-row justify-between items-center w-full pb-5">
-              <img src={Bitcoin} alt="Ethereum" className="pe-4"/>
-              <div className="flex flex-col text-left grow-7">
-                <p className="text-white">0x1234567890abcdef</p>
-                <p className="text-white/50">Transaction - AI</p>
-              </div>
-              <p className="grow-3 text-end">24/04/35</p>
-            </div>
-            <Separator />
-          </div>
+          <HistoryCard
+            key={index}
+            icon={Bitcoin}
+            address={`13AM4VW2dhxYgXeQepoHkHSQuy6NgaEb94`}
+            category="Ransomeware - AI"
+            date={`${date.toLocaleDateString()}`}
+            index={index}
+          />
         ))}
       </div>
 
