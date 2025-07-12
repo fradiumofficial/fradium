@@ -36,10 +36,7 @@ function AnalyzeAdressResult() {
       <ProfileHeader
           mainAvatarSrc='https://github.com/shadcn.png'
           mainAvatarFallback='N'
-          title="Indra's Wallet"
           address='0x1A2b3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9g0H'
-          secondaryAvatarSrc='https://github.com/shadcn.png'
-          secondaryAvatarFallback='CN'
         />
 
       { /* Analyze Address Section */}

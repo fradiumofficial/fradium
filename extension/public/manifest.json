@@ -7,7 +7,9 @@
     "default_popup": "index.html"
   },
   "permissions": [
-    "tabs"
+    "tabs",
+    "menus",
+    "contextMenus"
   ],
   "background": {
     "service_worker": "./assets/background.js",
