@@ -5,7 +5,7 @@ export async function fetchTransactions(address: string): Promise<Transaction[]>
     const allTransactions: Transaction[] = [];
     let offset = 0;
     const LIMIT = 50;
-    const MAX_TRANSACTIONS = 500;
+    const MAX_TRANSACTIONS = 100;
 
     console.log(`Fetching up to ${MAX_TRANSACTIONS} transactions for address: ${address}`);
 
