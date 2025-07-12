@@ -2,9 +2,13 @@ import Safe from '../../assets/safe.svg'
 
 interface SafetyCardProps {
   confidence: number;
+  title: string;
 }
 
-export function SafetyCard({ confidence }: SafetyCardProps) {
+export function SafetyCard({ 
+  confidence,
+  title
+}: SafetyCardProps) {
   return (
     <div className="w-full max-w-md bg-gradient-to-b from-[#4A834C] to-[#35373E] p-6 mt-[20px]">
       <div className="flex items-center gap-4">
@@ -18,7 +22,7 @@ export function SafetyCard({ confidence }: SafetyCardProps) {
         {/* Text Section */}
         <div className="flex flex-col">
           <h3 className="text-[14px] font-semibold uppercase tracking-wider">
-            Address Is Safe
+            {title} Is Safe
           </h3>
           <p className="text-[12px] font-medium text-white">
             Confidence: {confidence}%

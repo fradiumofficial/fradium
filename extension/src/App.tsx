@@ -5,6 +5,7 @@ import AnalyzeSmartContract from "./modules/analyze_smartcontract/pages/AnalyzeS
 import { Route, Routes } from "react-router-dom"
 import { ROUTES } from "./constants/routes"
 import AnalyzeAdressResult from "./modules/analyze_address/pages/AnalyzeAddressResult"
+import AnalyzeSmartContractResult from "./modules/analyze_smartcontract/pages/AnalyzeSmartContractResult"
 
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
         <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
         <Route path={ROUTES.ANALYZE_SMART_CONTRACT} element={<AnalyzeSmartContract />} />
         <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={<AnalyzeAdressResult />} />
+        <Route path={ROUTES.ANALYZE_SMART_CONTRACT_RESULT} element={<AnalyzeSmartContractResult />} />
       </Routes>
     </ThemeProvider>
   )

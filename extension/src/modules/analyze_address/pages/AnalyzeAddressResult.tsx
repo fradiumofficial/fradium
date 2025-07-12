@@ -41,8 +41,8 @@ function AnalyzeAdressResult() {
 
       { /* Analyze Address Section */}
       <div className="m-4">
-        <h1 className="text-[20px] font-semibold">Analyze Smart Contract</h1>
-        <SafetyCard confidence={100} />
+        <h1 className="text-[20px] font-semibold">Analyze Address</h1>
+        <SafetyCard confidence={100} title={"Address"}  />
         <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Address Details</h1>
         <div className="grid grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
