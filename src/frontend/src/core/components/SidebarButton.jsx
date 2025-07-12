@@ -7,7 +7,7 @@ const NeoButton = ({ children, icon, onClick, className = '', ...props }) => {
                 onClick={onClick}
                 className={`
           w-full
-          flex items-center justify-center gap-2
+          flex items-center gap-3 px-4 py-3
           px-3 py-3
           font-medium text-[#000510]
           bg-[#9BEB83]
@@ -18,7 +18,7 @@ const NeoButton = ({ children, icon, onClick, className = '', ...props }) => {
         `}
                 {...props}
             >
-                {icon && <img src={icon} alt="Button Icon" className="w-[20px] h-[20px]" />}
+                {icon && <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] " />}
                 <span className="text-[14px]">{children}</span>
             </button>
         </div>

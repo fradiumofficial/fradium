@@ -1,4 +1,5 @@
 import React from "react";
+import SidebarButton from "./SidebarButton";
 
 const menu = [
     { label: "Transactions", icon: "/assets/icons/wallet.svg", active: true },
@@ -21,18 +22,26 @@ export default function WalletSidebar() {
                 {/* Menu */}
                 <nav className="flex flex-col gap-1">
                     {menu.map((item, idx) => (
-                        <button
-                            key={item.label}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative
-                                ${item.active
-                                    ? "bg-[#9BEB83] text-[#23272F] font-semibold shadow border-l-8 border-[#A259FF]"
-                                    : "text-white hover:bg-[#181C22] hover:text-[#9BEB83]"}
-                                ${idx === 0 ? "mt-0" : "mt-1"}
-                            `}
-                        >
-                            <img src={item.icon} alt={item.label} className="w-5 h-5" />
-                            <span>{item.label}</span>
-                        </button>
+                        item.active ? (
+                            <SidebarButton
+                                key={item.label}
+                                icon={item.icon}
+                                className={idx === 0 ? "mt-0" : "mt-1"}
+                            >
+                                {item.label}
+                            </SidebarButton>
+                        ) : (
+                            <button
+                                key={item.label}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative
+                                    text-white hover:bg-[#181C22] hover:text-[#9BEB83]
+                                    ${idx === 0 ? "mt-0" : "mt-1"}
+                                `}
+                            >
+                                <img src={item.icon} alt={item.label} className="w-5 h-5" />
+                                <span>{item.label}</span>
+                            </button>
+                        )
                     ))}
                 </nav>
             </div>
