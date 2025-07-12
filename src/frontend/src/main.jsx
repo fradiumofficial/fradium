@@ -6,10 +6,16 @@ import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
+import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 import HomePage from "./pages/home-page.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
-import WalletPage from "./pages/wallet-page.jsx";
+import TransactionPage from "./pages/transaction.jsx";
+import AnalyseAddressPage from "./pages/analyse-address.jsx";
+import AnalyseContractPage from "./pages/analyse-contract.jsx";
+import TransactionHistoryPage from "./pages/transaction-history.jsx";
+import ScanHistoryPage from "./pages/scan-history.jsx";
+import SettingPage from "./pages/setting.jsx";
+import LogoutPage from "./pages/logout.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -62,7 +68,14 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <NProgressRouter />
       <Routes>
-        <Route path="/" element={<WalletPage />} />
+        <Route path="/" element={<TransactionPage />} />
+        <Route path="/transactions" element={<TransactionPage />} />
+        <Route path="/analyse-address" element={<AnalyseAddressPage />} />
+        <Route path="/analyse-contract" element={<AnalyseContractPage />} />
+        <Route path="/transaction-history" element={<TransactionHistoryPage />} />
+        <Route path="/scan-history" element={<ScanHistoryPage />} />
+        <Route path="/setting" element={<SettingPage />} />
+        <Route path="/logout" element={<LogoutPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

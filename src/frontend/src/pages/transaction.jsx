@@ -18,7 +18,7 @@ const tokens = [
     },
 ];
 
-export default function WalletPage() {
+export default function TransactionPage() {
     return (
         <WalletLayout>
             <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
