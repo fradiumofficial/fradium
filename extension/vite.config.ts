@@ -24,7 +24,6 @@ export default defineConfig({
       input: {
         main: './index.html',
         background: 'src/scripts/background.ts',
-        content: 'src/scripts/content.ts',
       },
       output: {
         entryFileNames: `assets/[name].js`,

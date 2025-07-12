@@ -7,18 +7,9 @@
     "default_popup": "index.html"
   },
   "permissions": [
-    "tabs",
-    "menus",
     "contextMenus"
   ],
   "background": {
-    "service_worker": "./assets/background.js",
-    "type": "module"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["./assets/content.js"]
-    }
-  ]
+    "service_worker": "./assets/background.js"
+  }
 }
