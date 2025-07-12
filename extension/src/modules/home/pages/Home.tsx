@@ -105,12 +105,12 @@ function Home() {
       <div className="flex flex-col items-center m-4">
         {Array.from({ length: 2 }).map((_, index) => (
           <HistoryCard
+            onClick={() => navigate(ROUTES.DETAIL_HISTORY.replace(':id', index.toString()))}
             key={index}
             icon={Bitcoin}
             address={`13AM4VW2dhxYgXeQepoHkHSQuy6NgaEb94`}
             category="Ransomeware - AI"
             date={`${date.toLocaleDateString()}`}
-            index={index}
           />
         ))}
       </div>
