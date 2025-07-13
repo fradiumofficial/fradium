@@ -1,48 +1,82 @@
-import type { Transaction } from "../model/AnalyzeAddressModel";
+import { getFromLocalStorage, isCacheFresh, saveToLocalStorage } from "@/lib/localStorage";
+import type { MempoolAddressTransaction, Transaction } from "../model/AnalyzeAddressModel";
 import axios from "axios";
 
+/**
+ * Mengadaptasi transaksi dari Mempool Space ke format yang sesuai dengan model AnalyzeAddress.
+ * @param tx Transaksi dari Mempool Space.
+ * @returns Transaksi yang telah diadaptasi.
+ */
+function adaptMempoolTransaction(tx: MempoolAddressTransaction): Transaction {
+    return {
+        hash: tx.txid,
+        block_height: tx.status.block_height || 0,
+        fee: tx.fee,
+        inputs: tx.vin.map(input => ({
+            prev_out: {
+                addr: input.prevout.scriptpubkey_address,
+                value: input.prevout.value
+            }
+        })),
+        outputs: tx.vout.map(output => ({
+            addr: output.scriptpubkey_address,
+            value: output.value
+        }))
+    };
+}
+
+/**
+ * Mengambil transaksi untuk alamat Bitcoin tertentu.
+ * Data akan diambil dari cache lokal jika tersedia dan masih valid.
+ * Jika tidak, data akan diambil dari API Mempool Space.
+ * @param address Alamat Bitcoin yang akan dianalisis.
+ * @returns Daftar transaksi yang terkait dengan alamat tersebut.
+ */
 export async function fetchTransactions(address: string): Promise<Transaction[]> {
-    const allTransactions: Transaction[] = [];
-    let offset = 0;
-    const LIMIT = 50;
     const MAX_TRANSACTIONS = 100;
+    const cacheKey = `analyze_address_${address}`;
+    const cacheTimeKey = `${cacheKey}-timestamp`;
 
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-    console.log(`Fetching up to ${MAX_TRANSACTIONS} transactions for address: ${address}`);
+    console.log(`Fetching transactions for address: ${address}`);
 
     try {
-        while (offset < MAX_TRANSACTIONS) {
-            const url = `https://blockchain.info/rawaddr/${address}?limit=${LIMIT}&offset=${offset}`;
-            console.log(`Fetching page (offset ${offset}): ${url}`);
+        const cachedTransactions = getFromLocalStorage(cacheKey);
 
-            const response = await axios.get(url);
-            const transactions: Transaction[] = response.data.txs || [];
-
-            if (transactions.length === 0) {
-                console.log(`No more transactions found at offset ${offset}. Stopping.`);
-                break;
-            }
-
-            allTransactions.push(...transactions);
-
-            if (transactions.length < LIMIT) {
-                console.log(`Less than ${LIMIT} transactions returned at offset ${offset}. Stopping.`);
-                break;
-            }
-
-            offset += LIMIT;
-
-            await delay(2000); // Delay to avoid hitting rate limits
+        if (cachedTransactions && isCacheFresh(cacheKey)) {
+            console.log(`Using cached transactions for address: ${address}, found ${cachedTransactions.length} transactions.`);
+            return cachedTransactions;
         }
-        
-        console.log(`Total transactions fetched: ${allTransactions.length}`);
-        return allTransactions;
 
+        console.log(`No fresh cache found for address: ${address}. Fetching from API...`);
+
+        const url = `https://mempool.space/api/address/${address}/txs`;
+
+        const response = await axios.get<MempoolAddressTransaction[]>(url);
+        let mempoolTransactions = response.data || [];
+
+        if (mempoolTransactions.length > MAX_TRANSACTIONS) {
+            console.log(`Limiting to ${MAX_TRANSACTIONS} transactions from mempool ${mempoolTransactions.length}`);
+            mempoolTransactions = mempoolTransactions.slice(0, MAX_TRANSACTIONS);
+        }
+
+        const transaction: Transaction[] = mempoolTransactions.map(adaptMempoolTransaction);
+
+        console.log(`Total transactions fetched: ${transaction.length}`);
+
+        saveToLocalStorage(cacheKey, transaction);
+        localStorage.setItem(cacheTimeKey, Date.now().toString());
+
+        return transaction;
     } catch (error) {
-        if (axios.isAxiosError(error) && error.response) {
-            console.error(`API Error (${error.response.status}): ${error.response.data}`);
-            throw new Error(`Failed to fetch transactions address: ${address}. It may be invalid or the API may be down.`);
+         // Jika ada error, coba gunakan cache yang sudah ada meskipun tidak fresh
+        if (axios.isAxiosError(error)) {
+            console.error(`API Error: ${error.message}`);
+            
+            const cachedTransactions = getFromLocalStorage(cacheKey);
+            if (cachedTransactions) {
+                console.log(`Using existing cache due to API error`);
+                return cachedTransactions;
+            }
         }
 
         console.error(`An unexpected error occured: ${error}`);

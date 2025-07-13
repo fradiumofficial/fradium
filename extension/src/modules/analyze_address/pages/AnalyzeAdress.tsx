@@ -1,53 +1,15 @@
 import NeoButton from "@/components/ui/custom-button";
 import ProfileHeader from "@/components/ui/header";
 import AnalyzeAddressIcon from "../../../assets/analyze_address.svg";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/constants/routes";
-import { fetchTransactions, extractFeatures } from "../api/AnalyzeAddressApi";
 import { useState } from "react";
+import { useAnalyzeAddress } from "../hooks/useAnalyzeAddress";
 
 function AnalyzeAddress() {
-  const navigate = useNavigate();
-  const [address, setAddress] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [address, setAddress] = useState("");
+  const { isLoading, error, analyze } = useAnalyzeAddress();
 
-  const handleAnalyzeClick = async () => {
-    if (!address) {
-      setError("Please enter a valid address.");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Step A: Fetch transactions for the entered address
-      console.log(`Starting analysis for address: ${address}`);
-      const transactions = await fetchTransactions(address);
-      // Step B: Extract the feature vector from the transactions
-      const featureVector = extractFeatures(transactions, address);
-      // Step C: Log the final output to the console as requested
-      console.log("✅ Analysis Complete! Feature Vector:", featureVector);
-      // Note: Navigation is commented out to focus on the console log.
-      // You can re-enable it and pass the results via state or params if needed.
-      // navigate(ROUTES.ANALYZE_ADDRESS_RESULT);
-      navigate(ROUTES.ANALYZE_ADDRESS_RESULT, { 
-        state: { 
-          features: featureVector,
-          analyzedAddress: address 
-        } 
-      });
-
-    } catch (err: any) {
-      // Step D: Catch and display any errors from the API call
-      console.error("Analysis failed:", err);
-      setError(err.message || "An unexpected error occurred.");
-    } finally {
-      // Step E: Reset the loading state
-      setIsLoading(false);
-    }
-
+  const handleSubmit = () => {
+    analyze(address);
   }
 
   return (
@@ -77,8 +39,8 @@ function AnalyzeAddress() {
         {/* 5. Update the button to call the new handler and reflect loading state */}
         <NeoButton 
           icon={AnalyzeAddressIcon} 
-          onClick={handleAnalyzeClick} 
-          disabled={isLoading}
+          onClick={handleSubmit} 
+          disabled={isLoading || !address}
         >
           {isLoading ? "Analyzing..." : "Analyze Address"}
         </NeoButton>
