@@ -7,6 +7,8 @@ export async function fetchTransactions(address: string): Promise<Transaction[]>
     const LIMIT = 50;
     const MAX_TRANSACTIONS = 100;
 
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     console.log(`Fetching up to ${MAX_TRANSACTIONS} transactions for address: ${address}`);
 
     try {
@@ -30,6 +32,8 @@ export async function fetchTransactions(address: string): Promise<Transaction[]>
             }
 
             offset += LIMIT;
+
+            await delay(2000); // Delay to avoid hitting rate limits
         }
         
         console.log(`Total transactions fetched: ${allTransactions.length}`);
