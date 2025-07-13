@@ -3,14 +3,18 @@ import SidebarButton from "./SidebarButton";
 import { Link, useLocation } from "react-router-dom";
 
 const menu = [
-    { label: "Transactions", icon: "/assets/icons/wallet.svg", path: "/transactions" },
-    { label: "Analyse Address", icon: "/assets/icons/analyze_address.svg", path: "/analyse-address" },
-    { label: "Analyse Contract", icon: "/assets/icons/analyze_contract.svg", path: "/analyse-contract" },
-    { label: "Transaction History", icon: "/assets/icons/transaction-history.svg", path: "/transaction-history" },
-    { label: "Scan History", icon: "/assets/icons/history.svg", path: "/scan-history" },
-    { label: "Setting", icon: "/assets/icons/setting-wallet.svg", path: "/setting" },
-    { label: "Logout", icon: "/assets/icons/logout.svg", path: "/logout" },
+    { label: "Transactions", icon: "wallet", path: "/transactions" },
+    { label: "Analyse Address", icon: "analyze-address", path: "/analyse-address" },
+    { label: "Analyse Contract", icon: "analyze-contract", path: "/analyse-contract" },
+    { label: "Transaction History", icon: "transaction-history", path: "/transaction-history" },
+    { label: "Scan History", icon: "history", path: "/scan-history" },
+    { label: "Setting", icon: "setting-wallet", path: "/setting" },
+    { label: "Logout", icon: "logout", path: "/logout" },
 ];
+
+function normalize(path) {
+    return path.replace(/\/+$/, "");
+}
 
 export default function WalletSidebar() {
     const location = useLocation();
@@ -24,11 +28,12 @@ export default function WalletSidebar() {
                 {/* Menu */}
                 <nav className="flex flex-col gap-1">
                     {menu.map((item, idx) => {
-                        const isActive = location.pathname === item.path || (item.path === "/transactions" && location.pathname === "/");
+                        const isActive = normalize(location.pathname) === normalize(item.path);
+                        const iconSrc = `/assets/icons/${item.icon}-${isActive ? "dark" : "light"}.svg`;
                         return isActive ? (
                             <SidebarButton
                                 key={item.label}
-                                icon={item.icon}
+                                icon={<img src={iconSrc} alt={item.label} className="w-5 h-5" />}
                                 className={idx === 0 ? "mt-0" : "mt-1"}
                                 as={Link}
                                 to={item.path}
@@ -42,7 +47,7 @@ export default function WalletSidebar() {
                                 to={item.path}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"}`}
                             >
-                                <img src={item.icon} alt={item.label} className="w-5 h-5" />
+                                <img src={iconSrc} alt={item.label} className="w-5 h-5" />
                                 <span>{item.label}</span>
                             </Link>
                         );

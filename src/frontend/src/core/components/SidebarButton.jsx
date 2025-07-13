@@ -18,7 +18,10 @@ const NeoButton = ({ children, icon, onClick, className = '', ...props }) => {
         `}
                 {...props}
             >
-                {icon && <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] " />}
+                {icon &&
+                    (typeof icon === "string"
+                        ? <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] " />
+                        : icon)}
                 <span className="text-[14px]">{children}</span>
             </button>
         </div>

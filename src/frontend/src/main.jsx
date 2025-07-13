@@ -6,7 +6,7 @@ import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, useNavigationType, Navigate } from "react-router-dom";
 import HomePage from "./pages/home-page.jsx";
 import NotFoundPage from "./pages/SEO/not-found-page";
 import TransactionPage from "./pages/transaction.jsx";
@@ -68,7 +68,7 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <NProgressRouter />
       <Routes>
-        <Route path="/" element={<TransactionPage />} />
+        <Route path="/" element={<Navigate to="/transactions" replace />} />
         <Route path="/transactions" element={<TransactionPage />} />
         <Route path="/analyse-address" element={<AnalyseAddressPage />} />
         <Route path="/analyse-contract" element={<AnalyseContractPage />} />
