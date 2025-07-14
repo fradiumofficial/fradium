@@ -1,13 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { extractFeatures, fetchTransactions } from "../api/AnalyzeAddressApi";
+import { performCompleteAnalysis } from "../api/AnalyzeAddressApi";
 import { ROUTES } from "@/constants/routes";
-import type { Transaction } from "../model/AnalyzeAddressModel";
-
-export interface AnalyzeResult {
-    features: number[];
-    analyzedAddress: string;
-}
+import type { AnalysisResult } from "../model/AnalyzeAddressModel";
 
 export function useAnalyzeAddress() {
     const navigate = useNavigate();
@@ -20,33 +15,32 @@ export function useAnalyzeAddress() {
             return null;
         }
 
+        // Basic Bitcoin address validation
+        if (!/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$/.test(address)) {
+            setError("Please enter a valid Bitcoin address.");
+            return null;
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
-            // Step A: Fetch transactions for the entered address
-            console.log(`Starting analysis for address: ${address}`);
-            const transactions: Transaction[] = await fetchTransactions(address);
+            console.log(`🔍 Starting complete analysis for address: ${address}`);
+            
+            // Perform the complete analysis (fetch transactions, extract features, analyze with AI)
+            const result: AnalysisResult = await performCompleteAnalysis(address);
 
-            if (!transactions || transactions.length === 0) {
-                throw new Error("No transactions found for this address.");
-            }
+            console.log(`✅ Analysis completed successfully!`, result);
 
-            // Step B: Extract the feature vector from the transactions
-            const featureVector = extractFeatures(transactions, address);
-            console.log("✅ Analysis Complete! Feature Vector:", featureVector);
+            // Navigate to result page with the analysis result
+            navigate(ROUTES.ANALYZE_ADDRESS_RESULT, { state: { result } });
 
-            const result: AnalyzeResult = {
-                features: featureVector,
-                analyzedAddress: address
-            };
-
-            // Step C: Navigate to the result page with the feature vector and address
-            navigate(ROUTES.ANALYZE_ADDRESS_RESULT, { state: result });
+            return result;
 
         } catch (err: any) {
-            console.error("Analysis failed:", err);
-            setError(err.message || "An unexpected error occurred.");
+            console.error("❌ Analysis failed:", err);
+            const errorMessage = err.message || "An unexpected error occurred during analysis.";
+            setError(errorMessage);
             return null;
         } finally {
             setIsLoading(false);

@@ -1,6 +1,7 @@
 import { getFromLocalStorage, isCacheFresh, saveToLocalStorage } from "@/lib/localStorage";
-import type { MempoolAddressTransaction, Transaction } from "../model/AnalyzeAddressModel";
+import type { AnalysisResult, MempoolAddressTransaction, Transaction } from "../model/AnalyzeAddressModel";
 import axios from "axios";
+import { createRansomwareDetectorActor } from "@/canister/canister_handler";
 
 /**
  * Mengadaptasi transaksi dari Mempool Space ke format yang sesuai dengan model AnalyzeAddress.
@@ -272,4 +273,86 @@ const calculateIntervals = (blocks: number[]): number[] => {
     if (blocks.length < 2) return [];
     const sorted = [...blocks].sort((a, b) => a - b);
     return sorted.slice(1).map((block, index) => block - sorted[index]);
+}
+
+/**
+ * Analyze address by sending features to the ICP canister
+ * @param address Bitcoin address to analyze
+ * @param features Feature vector extracted from transactions
+ * @returns Analysis result from the AI model
+ */
+export async function analyzeAddressWithCanister(address: string, features: number[]): Promise<AnalysisResult> {
+  try {
+    console.log(`Sending analysis request to canister for address: ${address}`);
+    console.log(`Feature vector length: ${features.length}`);
+
+    // Create the canister actor
+    const actor = await createRansomwareDetectorActor();
+
+    // Convert number array to Float32Array for the canister
+    const featureVector = new Float32Array(features);
+    
+    // Call the canister method
+    const response = await actor.analyze_address(address, Array.from(featureVector));
+
+    console.log(`Canister response:`, response);
+
+    if ('Err' in response) {
+      throw new Error(`Canister error: ${response.Err}`);
+    }
+
+    if (!response.Ok) {
+      throw new Error('No result returned from canister');
+    }
+
+    const result = response.Ok;
+    
+    console.log(`✅ Analysis completed successfully:`, result);
+
+    return {
+      address: result.address,
+      is_ransomware: result.is_ransomware,
+      ransomware_probability: result.ransomware_probability,
+      confidence_level: result.confidence_level,
+      threshold_used: result.threshold_used,
+      transactions_analyzed: result.transactions_analyzed,
+      features: features
+    };
+
+  } catch (error) {
+    console.error(`Failed to analyze address with canister:`, error);
+    throw new Error(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Complete analysis pipeline: fetch transactions, extract features, and analyze with canister
+ * @param address Bitcoin address to analyze
+ * @returns Complete analysis result
+ */
+export async function performCompleteAnalysis(address: string): Promise<AnalysisResult> {
+  try {
+    // Step 1: Fetch transactions
+    const transactions = await fetchTransactions(address);
+    
+    if (!transactions || transactions.length === 0) {
+      throw new Error('No transactions found for this address');
+    }
+
+    // Step 2: Extract features
+    const features = extractFeatures(transactions, address);
+    
+    if (!features || features.length === 0) {
+      throw new Error('Failed to extract features from transactions');
+    }
+
+    // Step 3: Analyze with canister
+    const result = await analyzeAddressWithCanister(address, features);
+    
+    return result;
+
+  } catch (error) {
+    console.error(`Complete analysis failed:`, error);
+    throw error;
+  }
 }

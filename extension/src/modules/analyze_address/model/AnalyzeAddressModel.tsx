@@ -41,3 +41,13 @@ export interface MempoolAddressTransaction {
         scriptpubkey_address?: string;
     }[];
 }
+
+export interface AnalysisResult {
+  address: string;
+  is_ransomware: boolean;
+  ransomware_probability: number;
+  confidence_level: string;
+  threshold_used: number;
+  transactions_analyzed: number;
+  features?: number[];
+}
