@@ -5,4 +5,5 @@ export interface RansomwareResult {
   transactions_analyzed: number;
   ransomware_probability: number;
   is_ransomware: boolean;
+  confidence: number;
 }

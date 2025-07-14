@@ -5,7 +5,6 @@ import type { RansomwareResult } from './canister_result';
 
 // Define the canister interface based on your Rust backend
 export interface RansomwareDetectorService {
-  analyze_address: (address: string, features: number[]) => Promise<{ Ok?: RansomwareResult; Err?: string }>;
   predict_from_features: (address: string, features: number[]) => Promise<{ Ok?: RansomwareResult; Err?: string }>;
   get_model_info: () => Promise<{ Ok?: string; Err?: string }>;
 }
@@ -43,6 +42,7 @@ export const createRansomwareDetectorActor = async (): Promise<RansomwareDetecto
         threshold_used: IDL.Float64,
         transactions_analyzed: IDL.Nat32,
         is_ransomware: IDL.Bool,
+        confidence: IDL.Float64,
       });
 
       const Result = IDL.Variant({

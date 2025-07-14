@@ -1,5 +1,5 @@
 import { getFromLocalStorage, isCacheFresh, saveToLocalStorage } from "@/lib/localStorage";
-import type { AnalysisResult, MempoolAddressTransaction, Transaction } from "../model/AnalyzeAddressModel";
+import type { AnalyzeResult, MempoolAddressTransaction, Transaction } from "../model/AnalyzeAddressModel";
 import axios from "axios";
 import { createRansomwareDetectorActor } from "@/canister/canister_handler";
 
@@ -281,7 +281,7 @@ const calculateIntervals = (blocks: number[]): number[] => {
  * @param features Feature vector extracted from transactions
  * @returns Analysis result from the AI model
  */
-export async function analyzeAddressWithCanister(address: string, features: number[]): Promise<AnalysisResult> {
+export async function analyzeAddressWithCanister(address: string, features: number[]): Promise<AnalyzeResult> {
   try {
     console.log(`Sending analysis request to canister for address: ${address}`);
     console.log(`Feature vector length: ${features.length}`);
@@ -293,7 +293,7 @@ export async function analyzeAddressWithCanister(address: string, features: numb
     const featureVector = new Float32Array(features);
     
     // Call the canister method
-    const response = await actor.analyze_address(address, Array.from(featureVector));
+    const response = await actor.predict_from_features(address, Array.from(featureVector));
 
     console.log(`Canister response:`, response);
 
@@ -316,6 +316,7 @@ export async function analyzeAddressWithCanister(address: string, features: numb
       confidence_level: result.confidence_level,
       threshold_used: result.threshold_used,
       transactions_analyzed: result.transactions_analyzed,
+      confidence: result.confidence,
       features: features
     };
 
@@ -330,7 +331,7 @@ export async function analyzeAddressWithCanister(address: string, features: numb
  * @param address Bitcoin address to analyze
  * @returns Complete analysis result
  */
-export async function performCompleteAnalysis(address: string): Promise<AnalysisResult> {
+export async function performCompleteAnalysis(address: string): Promise<AnalyzeResult> {
   try {
     // Step 1: Fetch transactions
     const transactions = await fetchTransactions(address);

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { performCompleteAnalysis } from "../api/AnalyzeAddressApi";
 import { ROUTES } from "@/constants/routes";
-import type { AnalysisResult } from "../model/AnalyzeAddressModel";
+import type { AnalyzeResult } from "../model/AnalyzeAddressModel";
 
 export function useAnalyzeAddress() {
     const navigate = useNavigate();
@@ -28,7 +28,7 @@ export function useAnalyzeAddress() {
             console.log(`🔍 Starting complete analysis for address: ${address}`);
             
             // Perform the complete analysis (fetch transactions, extract features, analyze with AI)
-            const result: AnalysisResult = await performCompleteAnalysis(address);
+            const result: AnalyzeResult = await performCompleteAnalysis(address);
 
             console.log(`✅ Analysis completed successfully!`, result);
 

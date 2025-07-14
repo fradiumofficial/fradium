@@ -42,12 +42,13 @@ export interface MempoolAddressTransaction {
     }[];
 }
 
-export interface AnalysisResult {
+export interface AnalyzeResult {
   address: string;
   is_ransomware: boolean;
   ransomware_probability: number;
   confidence_level: string;
   threshold_used: number;
   transactions_analyzed: number;
+  confidence: number;
   features?: number[];
 }
