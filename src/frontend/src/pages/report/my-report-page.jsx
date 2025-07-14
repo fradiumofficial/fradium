@@ -69,7 +69,7 @@ export default function MyReportPage() {
       const reward = report.reward ? convertE8sToToken(report.reward) : 0;
 
       // Check if report has been unstaked
-      const isUnstaked = report.unstaked_at !== null && report.unstaked_at !== undefined;
+      const isUnstaked = report.unstaked_at.length > 0 && report.unstaked_at !== undefined;
 
       return {
         id: report.report_id,
@@ -605,13 +605,13 @@ export default function MyReportPage() {
                 {unstakeReport.type === "voted" && unstakeReport.reward > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300 text-sm sm:text-base">Potential reward (10%):</span>
-                    <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(1)} FUM</span>
+                    <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
                   </div>
                 )}
                 {unstakeReport.type === "created" && unstakeReport.reward > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300 text-sm sm:text-base">Validation reward (25%):</span>
-                    <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(1)} FUM</span>
+                    <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
                   </div>
                 )}
               </div>
@@ -620,7 +620,7 @@ export default function MyReportPage() {
               <div className="p-4 bg-green-400/10 rounded-xl border border-green-400/20">
                 <div className="flex justify-between items-center">
                   <span className="text-green-400 font-medium">Total to receive:</span>
-                  <span className="font-bold text-green-400 text-lg">{(stakedAmount + unstakeReport.reward).toFixed(1)} FUM</span>
+                  <span className="font-bold text-green-400 text-lg">{(stakedAmount + unstakeReport.reward).toFixed(2)} FUM</span>
                 </div>
               </div>
 

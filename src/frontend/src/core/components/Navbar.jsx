@@ -5,16 +5,15 @@ import { Button as ButtonShad } from "@/core/components/ui/button";
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { useAuth } from "@/core/providers/auth-provider";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/core/components/ui/dropdown-menu";
-import { ChevronDown, CloudCog } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/core/lib/utils";
-import { User, CreditCard, FileText, LogOut } from "lucide-react";
+import { FileText, LogOut } from "lucide-react";
 import { token } from "declarations/token";
 import { formatAddress } from "../lib/canisterUtils";
 
 const navigationItems = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
-  { label: "Whitepaper", href: "/whitepaper" },
   { label: "Docs", href: "/docs" },
   { label: "View Reports", href: "/reports" },
 ];
