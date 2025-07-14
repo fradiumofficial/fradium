@@ -1,0 +1,6 @@
+Flask
+requests
+packaging
+python-dotenv
+mythril==0.24.8
+solc-select==1.1.0

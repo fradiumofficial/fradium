@@ -1,0 +1,24 @@
+type RansomwareResult = record {
+  address : text;
+  ransomware_probability : float64;
+  is_ransomware : bool;
+  confidence_level : text;
+  threshold_used : float64;
+  transactions_analyzed : nat32;
+};
+
+type ModelChunk = record {
+  chunk_id : nat32;
+  total_chunks : nat32;
+  data : blob;  // THIS IS CRITICAL - must be blob
+};
+
+service : {
+  load_model : (vec nat8) -> (variant { Ok : text; Err : text });
+  upload_model_chunk : (ModelChunk) -> (variant { Ok : text; Err : text });
+  get_upload_status : () -> (text) query;
+  clear_upload_state : () -> (text);
+  get_memory_usage : () -> (text) query;
+  analyze_address : (text) -> (variant { Ok : RansomwareResult; Err : text });
+  get_model_info : () -> (variant { Ok : text; Err : text }) query;
+}
