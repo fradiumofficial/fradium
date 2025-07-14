@@ -5,26 +5,14 @@ import Button from "./Button";
 const Footer = () => {
   return (
     <footer className={`relative w-full flex flex-col items-center`}>
-      <img
-        src="/assets/images/Illus-footer.png"
-        alt="Footer Illustration"
-        className="absolute"
-        draggable="false"
-        style={{}}
-      />
-      <div
-        className={styles.footerContent}
-        style={{ position: "relative", zIndex: 2, marginTop: "260px" }}
-      >
+      <img src="/assets/images/Illus-footer.png" alt="Footer Illustration" className="absolute" draggable="false" style={{}} />
+      <div className={styles.footerContent} style={{ position: "relative", zIndex: 2, marginTop: "260px" }}>
         <div className={styles.leftCol}>
           <div className={styles.logoRow}>
             <img src="/logo.svg" alt="Crypgo Logo" className={styles.logo} />
             <span className={styles.brand}>Crypgo</span>
           </div>
-          <p className={styles.desc}>
-            Fradium equips you with powerful tools to analyse, protect, and
-            transact securely across the blockchain.
-          </p>
+          <p className={styles.desc}>Fradium equips you with powerful tools to analyse, protect, and transact securely across the blockchain.</p>
           <div className={styles.socialRow}>
             <a href="#" aria-label="Facebook">
               <img src="/assets/images/facebook.png" alt="Facebook" />
@@ -74,9 +62,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
-      <div className={styles.copyright}>
-        Copyright &copy;2025 Fradium. All rights reserved
-      </div>
+      <div className={styles.copyright}>Copyright &copy;2025 Fradium. All rights reserved</div>
     </footer>
   );
 };

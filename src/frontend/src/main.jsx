@@ -14,12 +14,19 @@ import { backend } from "declarations/backend";
 import ListReportPage from "./pages/report/list-report-page.jsx";
 import ReportPage from "./pages/report/detail-report-page.jsx";
 import HomeLayout from "@/core/components/layouts/home-layout.jsx";
+import WalletLayout from "@/core/components/layouts/wallet-layout.jsx";
 import CreateReportPage from "./pages/report/create-report-page.jsx";
 import FaucetPage from "./pages/faucet-page.jsx";
 import BalancePage from "./pages/balance-page.jsx";
 import MyReportPage from "./pages/report/my-report-page.jsx";
 import { token } from "declarations/token";
 import AuthGuard from "./core/components/auth/auth-guard.jsx";
+import TransactionPage from "./pages/transaction.jsx";
+import AnalyseAddressPage from "./pages/analyse-address.jsx";
+import AnalyseContractPage from "./pages/analyse-contract.jsx";
+import TransactionHistoryPage from "./pages/transaction-history.jsx";
+import ScanHistoryPage from "./pages/scan-history.jsx";
+import SettingPage from "./pages/setting.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -89,6 +96,21 @@ createRoot(document.getElementById("root")).render(
             />
             <Route path="/faucet" element={<FaucetPage />} />
             <Route path="*" element={<NotFoundPage />} />
+          </Route>
+          <Route
+            path="/wallet"
+            element={
+              <AuthGuard isRedirectToLogin>
+                <WalletLayout />
+              </AuthGuard>
+            }>
+            <Route index element={<TransactionPage />} />
+            <Route path="assets" element={<TransactionPage />} />
+            <Route path="analyse-address" element={<AnalyseAddressPage />} />
+            <Route path="analyse-contract" element={<AnalyseContractPage />} />
+            <Route path="transaction-history" element={<TransactionHistoryPage />} />
+            <Route path="scan-history" element={<ScanHistoryPage />} />
+            <Route path="setting" element={<SettingPage />} />
           </Route>
         </Routes>
       </AuthProvider>

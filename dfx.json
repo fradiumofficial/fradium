@@ -43,6 +43,10 @@
       "main": "src/token/token.mo",
       "type": "motoko",
       "build": "scripts/build.fradium_token.sh"
+    },
+    "bitcoin": {
+      "main": "src/bitcoin/src/Main.mo",
+      "type": "motoko"
     }
   },
   "defaults": {

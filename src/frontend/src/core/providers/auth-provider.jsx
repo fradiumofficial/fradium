@@ -80,20 +80,25 @@ export const AuthProvider = ({
     }
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (customLoginSuccessHandler = null) => {
     if (!authClient) return;
+
+    // Konfigurasi untuk membuka window baru, bukan tab
+    const windowFeatures = ["width=500", "height=600", "scrollbars=yes", "resizable=yes", "toolbar=no", "menubar=no", "location=no", "status=no", "directories=no"].join(",");
+
     await new Promise((resolve, reject) =>
       authClient.login({
         identityProvider: getIdentityProvider(),
         onSuccess: resolve,
         onError: reject,
+        windowOpenerFeatures: windowFeatures,
       })
     );
     const newIdentity = authClient.getIdentity();
-    await handleLoginSuccess(newIdentity);
+    await handleLoginSuccess(newIdentity, customLoginSuccessHandler);
   };
 
-  const handleLoginSuccess = async (newIdentity) => {
+  const handleLoginSuccess = async (newIdentity, customLoginSuccessHandler = null) => {
     setIdentity(newIdentity);
 
     // Update identity for all provided canisters
@@ -130,13 +135,16 @@ export const AuthProvider = ({
     setIsLoading(false);
 
     // Use custom login success handler or default redirect
-    if (onLoginSuccess) {
+    if (customLoginSuccessHandler) {
+      customLoginSuccessHandler({ user, isAuthenticated: true });
+    } else if (onLoginSuccess) {
       onLoginSuccess({ user, isAuthenticated: true });
     } else {
       if (redirectAfterLogin) {
-        window.location.href = redirectAfterLogin;
+        window.open(redirectAfterLogin, "_blank");
       } else {
-        window.location.reload();
+        // Jika tidak ada redirectAfterLogin, tidak reload halaman
+        // Biarkan user tetap di halaman yang sama
       }
     }
   };

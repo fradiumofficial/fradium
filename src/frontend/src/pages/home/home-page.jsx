@@ -2,6 +2,8 @@ import React from "react";
 import Button from "@/core/components/Button";
 import ButtonBullet from "@/core/components/ButtonBullet";
 import styles from "./home-page.module.css";
+import { useNavigate } from "react-router";
+import { useAuth } from "@/core/providers/auth-provider";
 
 // Komponen collapsible reusable
 function CollapsibleSection({ title, children, open, onToggle }) {
@@ -18,9 +20,33 @@ function CollapsibleSection({ title, children, open, onToggle }) {
 }
 
 const HomePage = () => {
+  const { isAuthenticated, handleLogin } = useAuth();
+  const navigate = useNavigate();
+
   // State collapsible
   const [openAbout, setOpenAbout] = React.useState(true);
   const [openHow, setOpenHow] = React.useState(false);
+
+  // Fungsi untuk handle launch wallet
+  const handleLaunchWallet = async () => {
+    if (isAuthenticated) {
+      // Jika sudah login, langsung redirect ke wallet
+      window.open("/wallet", "_blank");
+    } else {
+      // Jika belum login, tampilkan popup login dengan custom handler
+      try {
+        // Custom handler untuk redirect ke wallet setelah login berhasil
+        const customLoginHandler = () => {
+          window.open("/wallet", "_blank");
+        };
+
+        await handleLogin(customLoginHandler);
+      } catch (error) {
+        // Jika login gagal, tidak ada yang terjadi (stay di halaman)
+        console.log("Login cancelled or failed");
+      }
+    }
+  };
 
   return (
     <>
@@ -46,7 +72,7 @@ const HomePage = () => {
               Here is Your Digital Asset Guardian to <br /> Analyse. Protect. Transact with Confidence.
             </p>
             {/* CTA Button */}
-            <Button>Launch Wallet &rarr;</Button>
+            <Button onClick={handleLaunchWallet}>Launch Wallet &rarr;</Button>
             {/* Efek Glow di bawah button */}
             <div className={styles.aboutGlowBg}>
               <img src="/assets/images/glow.png" alt="Glow" className={styles.glowImg} />
