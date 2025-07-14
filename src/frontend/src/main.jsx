@@ -19,6 +19,7 @@ import FaucetPage from "./pages/faucet-page.jsx";
 import BalancePage from "./pages/balance-page.jsx";
 import MyReportPage from "./pages/report/my-report-page.jsx";
 import { token } from "declarations/token";
+import AuthGuard from "./core/components/auth/auth-guard.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -78,7 +79,14 @@ createRoot(document.getElementById("root")).render(
             <Route path="/reports" element={<ListReportPage />} />
             <Route path="/reports/create" element={<CreateReportPage />} />
             <Route path="/reports/:id" element={<ReportPage />} />
-            <Route path="/my-report" element={<MyReportPage />} />
+            <Route
+              path="/my-report"
+              element={
+                <AuthGuard>
+                  <MyReportPage />
+                </AuthGuard>
+              }
+            />
             <Route path="/faucet" element={<FaucetPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

@@ -20,6 +20,15 @@ actor Fradium {
   
   // Faucet claim cooldown in nanoseconds (48 hours = 48 * 60 * 60 * 1_000_000_000)
   private let FAUCET_COOLDOWN_DURATION : Time.Time = 172_800_000_000_000;
+  
+  // Unstake voter reward percentage (10% = 1/10)
+  private let UNSTAKE_VOTER_REWARD_PERCENTAGE : Nat = 10;
+  
+  // Unstake created report reward percentage (25% = 1/4)
+  private let UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE : Nat = 4;
+
+  // Minimum quorum for vote validation (minimum number of voters required)
+  private let MINIMUM_QUORUM : Nat = 1;
 
   public type Result<T, E> = { #Ok : T; #Err : E };
 
@@ -58,6 +67,7 @@ actor Fradium {
     staked_at: Time.Time;
     role: ReportRole;
     report_id: ReportId;
+    unstaked_at: ?Time.Time;
   };
   // ===== END STAKE =====
 
@@ -232,14 +242,89 @@ actor Fradium {
   };
 
   // ===== COMMUNITY REPORT & STAKE FUNCTIONS =====
-  public shared({ caller }) func get_my_reports() : async Result<[Report], Text> {
+  public type GetMyReportsParams = Report and {
+    stake_amount : Nat;
+    reward : Nat;
+    unstaked_at : ?Time.Time;
+  };
+
+  // Reusable function to calculate reward for reporter
+  private func calculate_reporter_reward(report : Report, stakeAmount : Nat) : Nat {
+    // Check if report was validated by community (YES majority)
+    let isReportValidated = is_vote_correct(report, true); // Check if YES majority
+    
+    // Calculate reward (0.25% of stake amount) only if report was validated
+    let rewardAmount = if (isReportValidated) {
+      stakeAmount / UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE;
+    } else {
+      0;
+    };
+    
+    return rewardAmount;
+  };
+
+  // Reusable function to calculate reward for voter
+  private func calculate_voter_reward(report : Report, voteType : Bool, stakeAmount : Nat) : Nat {
+    // Check if vote was correct
+    let isVoteCorrect = is_vote_correct(report, voteType);
+    
+    // Calculate reward (0.1% of stake amount) only if vote was correct
+    let rewardAmount = if (isVoteCorrect) {
+      stakeAmount / UNSTAKE_VOTER_REWARD_PERCENTAGE;
+    } else {
+      0;
+    };
+    
+    return rewardAmount;
+  };
+
+  public shared({ caller }) func get_my_reports() : async Result<[GetMyReportsParams], Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
     };
 
     switch (reportStore.get(caller)) {
       case (?reports) {
-        return #Ok(reports);
+        // Convert reports to GetMyReportsParams format
+        let reportsWithStakeInfo = Array.map(reports, func (report : Report) : GetMyReportsParams {
+          // Get stake record for this report
+          var stakeAmount : Nat = 0;
+          var reward : Nat = 0;
+          var unstakedAt : ?Time.Time = null;
+          
+          switch (stakeRecordsStore.get(caller)) {
+            case (?stakeRecord) {
+              if (stakeRecord.report_id == Nat32.fromNat(report.report_id)) {
+                stakeAmount := stakeRecord.amount;
+                // Calculate reward for reporter
+                reward := calculate_reporter_reward(report, stakeRecord.amount);
+                unstakedAt := stakeRecord.unstaked_at;
+              };
+            };
+            case null { };
+          };
+          
+          {
+            report_id = report.report_id;
+            reporter = report.reporter;
+            chain = report.chain;
+            address = report.address;
+            category = report.category;
+            description = report.description;
+            evidence = report.evidence;
+            url = report.url;
+            votes_yes = report.votes_yes;
+            votes_no = report.votes_no;
+            voted_by = report.voted_by;
+            vote_deadline = report.vote_deadline;
+            created_at = report.created_at;
+            stake_amount = stakeAmount;
+            reward = reward;
+            unstaked_at = unstakedAt;
+          }
+        });
+        
+        return #Ok(reportsWithStakeInfo);
       };
       case null {
         return #Ok([]);
@@ -247,23 +332,53 @@ actor Fradium {
     };
   };
 
-  public shared({ caller }) func get_my_votes() : async Result<[Report], Text> {
+  public type GetMyVotesParams = Report and {
+    stake_amount : Nat;
+    reward : Nat;
+    vote_type : Bool;
+    unstaked_at : ?Time.Time;
+  };
+
+  public shared({ caller }) func get_my_votes() : async Result<[GetMyVotesParams], Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
     };
 
-    var votedReports : [Report] = [];
+    var votedReports : [GetMyVotesParams] = [];
     
     // Get all stake records for this caller with role Voter
     for ((staker, stakeRecord) in stakeRecordsStore.entries()) {
       if (staker == caller) {
         switch (stakeRecord.role) {
-          case (#Voter(_)) {
+          case (#Voter(vote_type)) {
             // Find the report with this report_id
             for ((principal, reports) in reportStore.entries()) {
               for (report in reports.vals()) {
                 if (report.report_id == Nat32.toNat(stakeRecord.report_id)) {
-                  votedReports := Array.append(votedReports, [report]);
+                  // Calculate reward for voter
+                  let reward = calculate_voter_reward(report, vote_type, stakeRecord.amount);
+                  
+                  let voteReport : GetMyVotesParams = {
+                    report_id = report.report_id;
+                    reporter = report.reporter;
+                    chain = report.chain;
+                    address = report.address;
+                    category = report.category;
+                    description = report.description;
+                    evidence = report.evidence;
+                    url = report.url;
+                    votes_yes = report.votes_yes;
+                    votes_no = report.votes_no;
+                    voted_by = report.voted_by;
+                    vote_deadline = report.vote_deadline;
+                    created_at = report.created_at;
+                    stake_amount = stakeRecord.amount;
+                    reward = reward;
+                    vote_type = vote_type;
+                    unstaked_at = stakeRecord.unstaked_at;
+                  };
+                  
+                  votedReports := Array.append(votedReports, [voteReport]);
                 };
               };
             };
@@ -339,6 +454,7 @@ actor Fradium {
       staked_at = Time.now();
       role = #Reporter;
       report_id = new_report_id;
+      unstaked_at = null;
     };
     stakeRecordsStore.put(caller, stakeRecord);
 
@@ -453,6 +569,7 @@ actor Fradium {
           staked_at = Time.now();
           role = #Voter(params.vote_type);
           report_id = params.report_id;
+          unstaked_at = null;
         };
         stakeRecordsStore.put(caller, stakeRecord);
 
@@ -518,6 +635,278 @@ actor Fradium {
 
         let voteTypeText = if (params.vote_type) { "unsafe" } else { "safe" };
         return #Ok("Vote submitted successfully. You voted " # voteTypeText # " with " # Nat.toText(params.stake_amount) # " tokens staked");
+      };
+    };
+  };
+
+  // Reusable function to check if a vote is correct based on majority and quorum
+  private func is_vote_correct(report : Report, vote_type : Bool) : Bool {
+    // Check if minimum quorum is met
+    let totalVoters = report.voted_by.size();
+    if (totalVoters < MINIMUM_QUORUM) {
+      return false; // Not enough voters to determine result
+    };
+
+    // Calculate total weight for yes and no votes
+    var totalYesWeight : Nat = 0;
+    var totalNoWeight : Nat = 0;
+    
+    for (voter in report.voted_by.vals()) {
+      if (voter.vote == true) {
+        totalYesWeight += voter.vote_weight;
+      } else {
+        totalNoWeight += voter.vote_weight;
+      };
+    };
+    
+    // Check if YES votes > NO votes (majority rule)
+    let isYesMajority = totalYesWeight > totalNoWeight;
+    
+    // Vote is correct if:
+    // - vote_type = true (unsafe) and YES is majority (report marked as unsafe)
+    // - vote_type = false (safe) and NO is majority (report marked as safe)
+    let isVoteCorrect = if (isYesMajority) {
+      vote_type == true // Voted unsafe and report is unsafe
+    } else {
+      vote_type == false // Voted safe and report is safe
+    };
+    
+    return isVoteCorrect;
+  };
+
+  public shared({ caller }) func unstake_voted_report(report_id : ReportId) : async Result<Text, Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+
+    // Check if user has stake record for this report
+    switch (stakeRecordsStore.get(caller)) {
+      case (?stakeRecord) {
+        if (stakeRecord.report_id != report_id) {
+          return #Err("You don't have a stake for this report");
+        };
+
+        // Check if already unstaked
+        switch (stakeRecord.unstaked_at) {
+          case (?_) {
+            return #Err("You have already unstaked this report");
+          };
+          case null { };
+        };
+
+        // Find the report to check if voting deadline has passed
+        var targetReport : ?Report = null;
+        var reportOwner : ?Principal = null;
+        
+        for ((principal, reports) in reportStore.entries()) {
+          for (report in reports.vals()) {
+            if (report.report_id == Nat32.toNat(report_id)) {
+              targetReport := ?report;
+              reportOwner := ?principal;
+            };
+          };
+        };
+
+        switch (targetReport) {
+          case null {
+            return #Err("Report not found");
+          };
+          case (?report) {
+            // Check if voting deadline has passed
+            let currentTime = Time.now();
+            if (currentTime <= report.vote_deadline) {
+              return #Err("Cannot unstake before voting deadline has passed");
+            };
+
+            // Check if vote was correct (only for voters, not reporters)
+            var shouldGiveReward = false;
+            var rewardAmount : Nat = 0;
+            switch (stakeRecord.role) {
+              case (#Voter(vote_type)) {
+                rewardAmount := calculate_voter_reward(report, vote_type, stakeRecord.amount);
+                shouldGiveReward := rewardAmount > 0;
+              };
+              case (#Reporter) {
+                // Reporters don't get reward for unstaking
+                shouldGiveReward := false;
+              };
+            };
+
+            // Transfer stake amount back to user
+            let stakeTransferArgs = {
+              from_subaccount = null;
+              to = { owner = caller; subaccount = null };
+              amount = stakeRecord.amount;
+              fee = null;
+              memo = ?Text.encodeUtf8("Unstake Return");
+              created_at_time = null;
+            };
+
+            let stakeTransferResult = await TokenCanister.icrc1_transfer(stakeTransferArgs);
+            switch (stakeTransferResult) {
+              case (#Err(err)) {
+                return #Err("Failed to transfer stake tokens: " # debug_show(err));
+              };
+              case (#Ok(_)) { };
+            };
+
+            // Transfer reward to user only if vote was correct
+            if (shouldGiveReward) {
+              let rewardTransferArgs = {
+                from_subaccount = null;
+                to = { owner = caller; subaccount = null };
+                amount = rewardAmount;
+                fee = null;
+                memo = ?Text.encodeUtf8("Unstake Reward");
+                created_at_time = null;
+              };
+
+              let rewardTransferResult = await TokenCanister.icrc1_transfer(rewardTransferArgs);
+              switch (rewardTransferResult) {
+                case (#Err(err)) {
+                  return #Err("Failed to transfer reward tokens: " # debug_show(err));
+                };
+                case (#Ok(_)) { };
+              };
+            };
+
+            // Update stake record to mark as unstaked
+            let updatedStakeRecord : StakeRecord = {
+              staker = stakeRecord.staker;
+              amount = stakeRecord.amount;
+              staked_at = stakeRecord.staked_at;
+              role = stakeRecord.role;
+              report_id = stakeRecord.report_id;
+              unstaked_at = ?Time.now();
+            };
+            stakeRecordsStore.put(caller, updatedStakeRecord);
+
+            return #Ok("Successfully unstaked. Returned " # Nat.toText(stakeRecord.amount) # " tokens + " # Nat.toText(rewardAmount) # " reward = " # Nat.toText(stakeRecord.amount + rewardAmount) # " total");
+          };
+        };
+      };
+      case null {
+        return #Err("You don't have any stake records");
+      };
+    };
+  };
+
+  public shared({ caller }) func unstake_created_report(report_id : ReportId) : async Result<Text, Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+
+    // Check if user has stake record for this report as reporter
+    switch (stakeRecordsStore.get(caller)) {
+      case (?stakeRecord) {
+        if (stakeRecord.report_id != report_id) {
+          return #Err("You don't have a stake for this report");
+        };
+
+        // Check if user is the reporter
+        switch (stakeRecord.role) {
+          case (#Reporter) { };
+          case (#Voter(_)) {
+            return #Err("This function is only for report creators. Use unstake_voted_report for voters");
+          };
+        };
+
+        // Check if already unstaked
+        switch (stakeRecord.unstaked_at) {
+          case (?_) {
+            return #Err("You have already unstaked this report");
+          };
+          case null { };
+        };
+
+        // Find the report to check if voting deadline has passed
+        var targetReport : ?Report = null;
+        var reportOwner : ?Principal = null;
+        
+        for ((principal, reports) in reportStore.entries()) {
+          for (report in reports.vals()) {
+            if (report.report_id == Nat32.toNat(report_id)) {
+              targetReport := ?report;
+              reportOwner := ?principal;
+            };
+          };
+        };
+
+        switch (targetReport) {
+          case null {
+            return #Err("Report not found");
+          };
+          case (?report) {
+            // Check if voting deadline has passed
+            let currentTime = Time.now();
+            if (currentTime <= report.vote_deadline) {
+              return #Err("Cannot unstake before voting deadline has passed");
+            };
+
+            // Calculate reward using reusable function
+            let rewardAmount = calculate_reporter_reward(report, stakeRecord.amount);
+
+            // Transfer stake amount back to user
+            let stakeTransferArgs = {
+              from_subaccount = null;
+              to = { owner = caller; subaccount = null };
+              amount = stakeRecord.amount;
+              fee = null;
+              memo = ?Text.encodeUtf8("Unstake Return");
+              created_at_time = null;
+            };
+
+            let stakeTransferResult = await TokenCanister.icrc1_transfer(stakeTransferArgs);
+            switch (stakeTransferResult) {
+              case (#Err(err)) {
+                return #Err("Failed to transfer stake tokens: " # debug_show(err));
+              };
+              case (#Ok(_)) { };
+            };
+
+            // Transfer reward to user only if report was validated
+            if (rewardAmount > 0) {
+              let rewardTransferArgs = {
+                from_subaccount = null;
+                to = { owner = caller; subaccount = null };
+                amount = rewardAmount;
+                fee = null;
+                memo = ?Text.encodeUtf8("Report Validation Reward");
+                created_at_time = null;
+              };
+
+              let rewardTransferResult = await TokenCanister.icrc1_transfer(rewardTransferArgs);
+              switch (rewardTransferResult) {
+                case (#Err(err)) {
+                  return #Err("Failed to transfer reward tokens: " # debug_show(err));
+                };
+                case (#Ok(_)) { };
+              };
+            };
+
+            // Update stake record to mark as unstaked
+            let updatedStakeRecord : StakeRecord = {
+              staker = stakeRecord.staker;
+              amount = stakeRecord.amount;
+              staked_at = stakeRecord.staked_at;
+              role = stakeRecord.role;
+              report_id = stakeRecord.report_id;
+              unstaked_at = ?Time.now();
+            };
+            stakeRecordsStore.put(caller, updatedStakeRecord);
+
+            let rewardText = if (rewardAmount > 0) {
+              " + " # Nat.toText(rewardAmount) # " reward = " # Nat.toText(stakeRecord.amount + rewardAmount) # " total"
+            } else {
+              " (no reward - report not validated by community)"
+            };
+
+            return #Ok("Successfully unstaked created report. Returned " # Nat.toText(stakeRecord.amount) # " tokens" # rewardText);
+          };
+        };
+      };
+      case null {
+        return #Err("You don't have any stake records");
       };
     };
   };
@@ -602,5 +991,69 @@ actor Fradium {
     let activity_factor : Nat = base + vote_weight + report_weight;
     
     return activity_factor;
+  };
+
+  // ADMIN - DEBUG ONLY - DELETE LATER
+  public shared({ caller }) func admin_change_report_deadline(report_id : ReportId, new_deadline : Time.Time) : async Result<Text, Text> {
+    // Find the report
+    var targetReport : ?Report = null;
+    var reportOwner : ?Principal = null;
+    
+    for ((principal, reports) in reportStore.entries()) {
+      for (report in reports.vals()) {
+        if (report.report_id == Nat32.toNat(report_id)) {
+          targetReport := ?report;
+          reportOwner := ?principal;
+        };
+      };
+    };
+
+    switch (targetReport) {
+      case null {
+        return #Err("Report not found");
+      };
+      case (?report) {
+        // Update the report with new deadline
+        let updatedReport : Report = {
+          report_id = report.report_id;
+          reporter = report.reporter;
+          chain = report.chain;
+          address = report.address;
+          category = report.category;
+          description = report.description;
+          evidence = report.evidence;
+          url = report.url;
+          votes_yes = report.votes_yes;
+          votes_no = report.votes_no;
+          voted_by = report.voted_by;
+          vote_deadline = new_deadline;
+          created_at = report.created_at;
+        };
+
+        // Update the report in storage
+        switch (reportOwner) {
+          case (?owner) {
+            let existingReports = switch (reportStore.get(owner)) {
+              case (?reports) { reports };
+              case null { [] };
+            };
+
+            let updatedReports = Array.map(existingReports, func (r : Report) : Report {
+              if (r.report_id == report.report_id) {
+                updatedReport
+              } else {
+                r
+              }
+            });
+
+            reportStore.put(owner, updatedReports);
+            return #Ok("Report deadline updated successfully");
+          };
+          case null {
+            return #Err("Report owner not found");
+          };
+        };
+      };
+    };
   };
 }

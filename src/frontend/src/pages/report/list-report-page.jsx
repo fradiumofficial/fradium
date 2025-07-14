@@ -18,7 +18,7 @@ export default function ReportPage() {
 
   // State for search, sorting, and pagination
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("dateReported");
+  const [sortBy, setSortBy] = useState("timestamp");
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(4);
@@ -35,6 +35,7 @@ export default function ReportPage() {
       // Convert nanoseconds to milliseconds and then to Date
       const createdAt = new Date(parseInt(report.created_at) / 1000000);
       const voteDeadline = new Date(parseInt(report.vote_deadline) / 1000000);
+      const timestamp = parseInt(report.created_at) / 1000000; // Add timestamp for sorting
 
       // Determine status based on deadline and votes
       let status = "Ongoing";
@@ -69,6 +70,7 @@ export default function ReportPage() {
         voteDeadline: voteDeadline,
         reporter: reporterString,
         category: report.category,
+        timestamp: timestamp, // Add timestamp for sorting
       };
     });
   };
@@ -91,6 +93,9 @@ export default function ReportPage() {
       if (sortBy === "dateReported") {
         aValue = new Date(aValue);
         bValue = new Date(bValue);
+      } else if (sortBy === "timestamp") {
+        aValue = Number(aValue);
+        bValue = Number(bValue);
       } else if (sortBy === "totalVotes" || sortBy === "yesPercentage") {
         aValue = Number(aValue);
         bValue = Number(bValue);
@@ -293,7 +298,7 @@ export default function ReportPage() {
                   <span className="text-gray-400 text-sm">Sort by:</span>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { field: "dateReported", label: "Date" },
+                      { field: "timestamp", label: "Latest" },
                       { field: "totalVotes", label: "Votes" },
                       { field: "status", label: "Status" },
                       { field: "category", label: "Category" },

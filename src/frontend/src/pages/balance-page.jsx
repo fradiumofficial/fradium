@@ -111,9 +111,11 @@ export default function BalancePage() {
           amount,
           date: date.toISOString(),
           txHash,
+          timestamp: timestamp, // Add timestamp for sorting
         };
       })
-      .filter((tx) => tx.type !== "unknown"); // Filter out unknown transactions
+      .filter((tx) => tx.type !== "unknown") // Filter out unknown transactions
+      .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
   };
 
   // Fetch user balance and transactions from token canister
