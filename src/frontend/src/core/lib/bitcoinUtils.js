@@ -26,7 +26,9 @@ export const fetchBTCPrice = async () => {
   }
 
   try {
-    const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -166,7 +168,12 @@ export const getNetworkFromAddress = (address) => {
   if (address.startsWith("bc1")) return "mainnet";
   if (address.startsWith("tb1")) return "testnet";
   if (address.startsWith("1") || address.startsWith("3")) return "mainnet";
-  if (address.startsWith("2") || address.startsWith("m") || address.startsWith("n")) return "testnet";
+  if (
+    address.startsWith("2") ||
+    address.startsWith("m") ||
+    address.startsWith("n")
+  )
+    return "testnet";
 
   return null;
 };
@@ -178,7 +185,11 @@ export const getNetworkFromAddress = (address) => {
  * @param {number} endChars - Number of characters to show at end (default: 4)
  * @returns {string} Truncated address
  */
-export const truncateBitcoinAddress = (address, startChars = 6, endChars = 4) => {
+export const truncateBitcoinAddress = (
+  address,
+  startChars = 6,
+  endChars = 4
+) => {
   if (!address || address.length <= startChars + endChars + 3) return address;
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 };

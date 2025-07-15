@@ -20,17 +20,6 @@ fi
 BTC_ADDRESS="$1"
 MINING_BLOCK="$2"
 
-# Validate BTC address format (basic validation)
-if [[ ! "$BTC_ADDRESS" =~ ^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$ ]] && [[ ! "$BTC_ADDRESS" =~ ^bc1[a-z0-9]{39,59}$ ]] && [[ ! "$BTC_ADDRESS" =~ ^[2mn][a-km-zA-HJ-NP-Z1-9]{25,34}$ ]] && [[ ! "$BTC_ADDRESS" =~ ^tb1[a-z0-9]{39,59}$ ]]; then
-    echo "Error: Invalid BTC address format"
-    echo "Supported formats:"
-    echo "  - Legacy (P2PKH): 1[base58]"
-    echo "  - SegWit (P2SH): 3[base58]"
-    echo "  - Native SegWit (P2WPKH): bc1[bech32]"
-    echo "  - Testnet: 2, m, n, or tb1[bech32]"
-    exit 1
-fi
-
 echo "Generating $MINING_BLOCK blocks to address: $BTC_ADDRESS"
 echo "This will take a few moments..."
 

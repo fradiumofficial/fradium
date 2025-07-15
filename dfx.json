@@ -40,8 +40,9 @@
       "build": "scripts/build.fradium_token.sh"
     },
     "bitcoin": {
-      "main": "src/bitcoin/src/Main.mo",
-      "type": "motoko"
+      "main": "src/bitcoin/Main.mo",
+      "type": "motoko",
+      "init_arg": "(variant { regtest })"
     }
   },
   "defaults": {
@@ -51,8 +52,7 @@
     },
     "bitcoin": {
       "enabled": true,
-      "nodes": ["127.0.0.1:18444"],
-      "canister_init_arg": "(record { stability_threshold = 0 : nat; network = variant { regtest }; blocks_source = principal \"aaaaa-aa\"; fees = record { get_utxos_base = 0 : nat; get_utxos_cycles_per_ten_instructions = 0 : nat; get_utxos_maximum = 0 : nat; get_balance = 0 : nat; get_balance_maximum = 0 : nat; get_current_fee_percentiles = 0 : nat; get_current_fee_percentiles_maximum = 0 : nat;  send_transaction_base = 0 : nat; send_transaction_per_byte = 0 : nat; }; syncing = variant { enabled }; api_access = variant { enabled }; disable_api_if_not_fully_synced = variant { enabled }})"
+      "nodes": ["127.0.0.1:18444"]
     }
   },
   "output_env_file": ".env",

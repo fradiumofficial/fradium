@@ -23,18 +23,19 @@ export const WalletProvider = ({ children }) => {
 
   console.log("User Address", userWallet?.addresses[0]?.address);
 
-  useEffect(() => {
-    const fetchUserWallet = async () => {
-      setIsLoading(true);
-      const response = await backend.get_wallet();
-      setIsLoading(false);
+  const fetchUserWallet = async () => {
+    setIsLoading(true);
+    const response = await backend.get_wallet();
 
-      if (response.Ok) {
-        setUserWallet(response.Ok);
-      } else {
-        createWallet();
-      }
-    };
+    if (response.Ok) {
+      setUserWallet(response.Ok);
+      setIsLoading(false);
+    } else {
+      createWallet();
+    }
+  };
+
+  useEffect(() => {
     fetchUserWallet();
   }, []);
 
@@ -58,6 +59,8 @@ export const WalletProvider = ({ children }) => {
       setIsCreatingWallet(false);
       if (response.Ok) {
         setUserWallet(response.value);
+        await fetchUserWallet();
+        setIsLoading(false);
       } else {
         console.error("Failed to create wallet:", response);
       }
@@ -77,7 +80,14 @@ export const WalletProvider = ({ children }) => {
     try {
       const newAddress = {
         network: network === "testnet" ? { Testnet: null } : { Mainnet: null },
-        token_type: tokenType === "bitcoin" ? { Bitcoin: null } : tokenType === "ethereum" ? { Ethereum: null } : tokenType === "solana" ? { Solana: null } : null,
+        token_type:
+          tokenType === "bitcoin"
+            ? { Bitcoin: null }
+            : tokenType === "ethereum"
+            ? { Ethereum: null }
+            : tokenType === "solana"
+            ? { Solana: null }
+            : null,
         address: address,
       };
 
@@ -88,11 +98,12 @@ export const WalletProvider = ({ children }) => {
         addresses: updatedAddresses,
       });
 
-      if (response.ok) {
+      if (response.Ok) {
         setUserWallet(response.value);
+        await fetchUserWallet();
         return true;
       } else {
-        console.error("Failed to add address:", response.err);
+        console.error("Failed to add address:", response.Err);
         return false;
       }
     } catch (error) {
@@ -112,5 +123,9 @@ export const WalletProvider = ({ children }) => {
     setNetwork,
   };
 
-  return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;
+  return (
+    <WalletContext.Provider value={walletContextValue}>
+      {children}
+    </WalletContext.Provider>
+  );
 };
