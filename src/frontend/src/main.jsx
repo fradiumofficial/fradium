@@ -21,7 +21,7 @@ import BalancePage from "./pages/balance-page.jsx";
 import MyReportPage from "./pages/report/my-report-page.jsx";
 import { token } from "declarations/token";
 import AuthGuard from "./core/components/auth/auth-guard.jsx";
-import TransactionPage from "./pages/transaction.jsx";
+import AssetsPage from "./pages/wallet/asset-page.jsx";
 import AnalyseAddressPage from "./pages/analyse-address.jsx";
 import AnalyseContractPage from "./pages/analyse-contract.jsx";
 import TransactionHistoryPage from "./pages/transaction-history.jsx";
@@ -104,8 +104,7 @@ createRoot(document.getElementById("root")).render(
                 <WalletLayout />
               </AuthGuard>
             }>
-            <Route index element={<TransactionPage />} />
-            <Route path="assets" element={<TransactionPage />} />
+            <Route index element={<AssetsPage />} />
             <Route path="analyse-address" element={<AnalyseAddressPage />} />
             <Route path="analyse-contract" element={<AnalyseContractPage />} />
             <Route path="transaction-history" element={<TransactionHistoryPage />} />

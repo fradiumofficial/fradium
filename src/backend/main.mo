@@ -71,15 +71,42 @@ actor Fradium {
   };
   // ===== END STAKE =====
 
+  // ===== WALLET APP =====
+  public type Network = {
+    #Testnet;
+    #Mainnet;
+  };
+
+  public type TokenType = {
+    #Bitcoin;
+    #Ethereum;
+    #Solana;
+  };
+
+  public type WalletAddress = {
+    network: Network;
+    token_type: TokenType;
+    address: Text;
+  };
+
+  public type UserWallet = {
+    principal: Principal;
+    addresses: [WalletAddress];
+    created_at: Time.Time;
+  };
+  // ===== END WALLET APP =====
+
   public type ReportId = Nat32;
 
   stable var reportsStorage : [(Principal, [Report])] = [];
   stable var faucetClaimsStorage : [(Principal, Time.Time)] = [];
   stable var stakeRecordsStorage : [(Principal, StakeRecord)] = [];
+  stable var userWalletsStorage : [(Principal, UserWallet)] = [];
 
   var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
   var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
   var stakeRecordsStore = Map.HashMap<Principal, StakeRecord>(0, Principal.equal, Principal.hash);
+  var userWalletsStore = Map.HashMap<Principal, UserWallet>(0, Principal.equal, Principal.hash);
   private stable var next_report_id : ReportId = 0;
 
   // ===== SYSTEM FUNCTIONS =====
@@ -88,6 +115,7 @@ actor Fradium {
     reportsStorage := Iter.toArray(reportStore.entries());
     faucetClaimsStorage := Iter.toArray(faucetClaimsStore.entries());
     stakeRecordsStorage := Iter.toArray(stakeRecordsStore.entries());
+    userWalletsStorage := Iter.toArray(userWalletsStore.entries());
   };
 
   system func postupgrade() {
@@ -105,6 +133,11 @@ actor Fradium {
     stakeRecordsStore := Map.HashMap<Principal, StakeRecord>(stakeRecordsStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in stakeRecordsStorage.vals()) {
         stakeRecordsStore.put(key, value);
+    };
+
+    userWalletsStore := Map.HashMap<Principal, UserWallet>(userWalletsStorage.size(), Principal.equal, Principal.hash);
+    for ((key, value) in userWalletsStorage.vals()) {
+        userWalletsStore.put(key, value);
     };
   };
 
@@ -993,8 +1026,54 @@ actor Fradium {
     return activity_factor;
   };
 
+  // ===== WALLET APP =====
+  public type CreateWalletParams = {
+    addresses: [WalletAddress];
+  };
+  public shared({ caller }) func create_wallet(params : CreateWalletParams) : async Result<Text, Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+
+    // Check if user already has a wallet
+    switch (userWalletsStore.get(caller)) {
+      case (?_) {
+        return #Err("You already have a wallet created");
+      };
+      case null { };
+    };
+
+    // Create new wallet
+    let newWallet : UserWallet = {
+      principal = caller;
+      addresses = params.addresses;
+      created_at = Time.now();
+    };
+
+    // Store the wallet
+    userWalletsStore.put(caller, newWallet);
+
+    return #Ok("Wallet created successfully with " # Nat.toText(params.addresses.size()) # " addresses");
+  };
+
+  public shared({ caller }) func get_wallet(network : Network) : async Result<UserWallet, Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+
+    // Get user's wallet
+    switch (userWalletsStore.get(caller)) {
+      case (?wallet) {
+        return #Ok(wallet);
+      };
+      case null {
+        return #Err("Wallet not found. Please create a wallet first.");
+      };
+    };
+  };
+  
   // ADMIN - DEBUG ONLY - DELETE LATER
-  public shared({ caller }) func admin_change_report_deadline(report_id : ReportId, new_deadline : Time.Time) : async Result<Text, Text> {
+  public func admin_change_report_deadline(report_id : ReportId, new_deadline : Time.Time) : async Result<Text, Text> {
     // Find the report
     var targetReport : ?Report = null;
     var reportOwner : ?Principal = null;

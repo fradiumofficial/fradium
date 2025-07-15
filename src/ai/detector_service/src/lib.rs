@@ -279,6 +279,7 @@ pub struct RansomwareResult {
     pub confidence_level: String,
     pub threshold_used: f64,
     pub transactions_analyzed: u32,
+    pub confidence: f64,
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
@@ -632,6 +633,15 @@ fn load_model_from_bytes(model_bytes: Vec<u8>) -> Result<String, String> {
 }
 
 // --- CORE LOGIC ---
+#[update]
+pub async fn predict_from_features(address: String, features: Vec<f32>) -> Result<RansomwareResult, String> {
+    ic_cdk::println!("Received feature vector with {} elements for address: {}", features.len(), &address);
+
+    // Langsung panggil fungsi prediksi inti.
+    // Kita set `transactions_analyzed` ke 0 karena canister tidak tahu jumlahnya,
+    // atau Anda bisa menambahkannya sebagai parameter jika perlu.
+    predict_ransomware(features, &address, 0)
+}
 
 #[update]
 pub async fn analyze_address(address: String) -> Result<RansomwareResult, String> {
@@ -975,6 +985,7 @@ fn predict_ransomware(
                 confidence_level: confidence_level.to_string(),
                 threshold_used: metadata.threshold,
                 transactions_analyzed: transaction_count,
+                confidence
             })
         })
     })
@@ -1071,3 +1082,5 @@ fn get_model_info() -> Result<String, String> {
 
     Ok(format!("Status - {} | {}", metadata_status, model_status))
 }
+
+ic_cdk::export_candid!();
