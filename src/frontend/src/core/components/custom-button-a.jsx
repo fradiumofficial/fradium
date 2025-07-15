@@ -11,6 +11,7 @@ const CustomButton = ({ children, icon, onClick, className = '', ...props }) => 
           px-3 py-3
           font-medium text-white
           bg-[#823EFD]
+          justify-center
           transform -translate-y-1 translate-x-1
           hover:-translate-y-0 hover:translate-x-0
           active:translate-y-0 active:translate-x-0
