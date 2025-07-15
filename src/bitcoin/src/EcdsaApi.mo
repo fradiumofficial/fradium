@@ -11,7 +11,7 @@ module {
   type EcdsaCanisterActor = Types.EcdsaCanisterActor;
 
   // The fee for the `sign_with_ecdsa` endpoint using the test key.
-  let SIGN_WITH_ECDSA_COST_CYCLES : Cycles = 10_000_000_000;
+  let SIGN_WITH_ECDSA_COST_CYCLES : Cycles = 27_000_000_000;
 
   /// Returns the ECDSA public key of this canister at the given derivation path.
   public func ecdsa_public_key(ecdsa_canister_actor: EcdsaCanisterActor, key_name : Text, derivation_path : [Blob]) : async Blob {

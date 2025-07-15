@@ -1,7 +1,8 @@
 import React from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/wallet-provider";
 import SidebarButton from "../SidebarButton";
+import { useAuth } from "@/core/providers/auth-provider";
 
 export default function WalletLayout() {
   return (
@@ -11,25 +12,35 @@ export default function WalletLayout() {
   );
 }
 
-const menu = [
-  { label: "Transactions", icon: "wallet", path: "/wallet" },
-  { label: "Analyse Address", icon: "analyze-address", path: "/wallet/analyse-address" },
-  { label: "Analyse Contract", icon: "analyze-contract", path: "/wallet/analyse-contract" },
-  { label: "Transaction History", icon: "transaction-history", path: "/wallet/transaction-history" },
-  { label: "Scan History", icon: "history", path: "/wallet/scan-history" },
-  { label: "Setting", icon: "setting-wallet", path: "/wallet/setting" },
-  { label: "Logout", icon: "logout", path: "/wallet/logout" },
-];
-
 function normalize(path) {
+  if (!path) return "/";
   return path.replace(/\/+$/, "");
 }
 
 function WalletLayoutContent() {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const { isLoading, userWallet, isCreatingWallet, network, setNetwork } = useWallet();
+
+  // Menu configuration with logout function
+  const menu = [
+    { label: "Transactions", icon: "wallet", path: "/wallet" },
+    { label: "Analyse Address", icon: "analyze-address", path: "/wallet/analyse-address" },
+    { label: "Analyse Contract", icon: "analyze-contract", path: "/wallet/analyse-contract" },
+    { label: "Transaction History", icon: "transaction-history", path: "/wallet/transaction-history" },
+    { label: "Scan History", icon: "history", path: "/wallet/scan-history" },
+    { label: "Setting", icon: "setting-wallet", path: "/wallet/setting" },
+    {
+      label: "Logout",
+      icon: "logout",
+      onClick: () => {
+        navigate("/");
+        logout();
+      },
+    },
+  ];
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -75,6 +86,11 @@ function WalletLayoutContent() {
                 <SidebarButton key={item.label} icon={<img src={iconSrc} alt={item.label} className="w-5 h-5" />} className={idx === 0 ? "mt-0" : "mt-1"} as={Link} to={item.path} active>
                   {item.label}
                 </SidebarButton>
+              ) : item.onClick ? (
+                <button key={item.label} onClick={item.onClick} className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"}`}>
+                  <img src={iconSrc} alt={item.label} className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </button>
               ) : (
                 <Link key={item.label} to={item.path} className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"}`}>
                   <img src={iconSrc} alt={item.label} className="w-5 h-5" />

@@ -34,12 +34,6 @@
       "candid": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.did",
       "wasm": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.wasm"
     },
-    "ransomware_detector": {
-      "type": "rust",
-      "package": "ransomware_detector",
-      "candid": "src/ai/detector_service/src/ransomware_detector.did",
-      "build": ["./bin/build.sh"]
-    },
     "token": {
       "main": "src/token/token.mo",
       "type": "motoko",

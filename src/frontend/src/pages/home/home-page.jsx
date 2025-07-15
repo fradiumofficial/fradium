@@ -31,13 +31,14 @@ const HomePage = () => {
   const handleLaunchWallet = async () => {
     if (isAuthenticated) {
       // Jika sudah login, langsung redirect ke wallet
-      window.open("/wallet", "_blank");
+      // window.open("/wallet", "_blank");
+      navigate("/wallet");
     } else {
       // Jika belum login, tampilkan popup login dengan custom handler
       try {
         // Custom handler untuk redirect ke wallet setelah login berhasil
         const customLoginHandler = () => {
-          window.open("/wallet", "_blank");
+          navigate("/wallet");
         };
 
         await handleLogin(customLoginHandler);

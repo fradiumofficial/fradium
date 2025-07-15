@@ -27,6 +27,7 @@ import AnalyseContractPage from "./pages/analyse-contract.jsx";
 import TransactionHistoryPage from "./pages/transaction-history.jsx";
 import ScanHistoryPage from "./pages/scan-history.jsx";
 import SettingPage from "./pages/setting.jsx";
+import { bitcoin } from "declarations/bitcoin";
 
 NProgress.configure({
   minimum: 0.3,
@@ -78,7 +79,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider canisters={{ backend, token }}>
+      <AuthProvider canisters={{ backend, token, bitcoin }}>
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />

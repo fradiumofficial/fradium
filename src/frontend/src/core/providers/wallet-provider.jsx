@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { backend } from "declarations/backend";
 import { bitcoin } from "declarations/bitcoin";
+import { useAuth } from "./auth-provider";
 
 // Create context for wallet data
 const WalletContext = createContext();
@@ -19,6 +20,8 @@ export const WalletProvider = ({ children }) => {
   const [userWallet, setUserWallet] = useState(null);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [network, setNetwork] = useState("testnet");
+
+  console.log("User Address", userWallet?.addresses[0]?.address);
 
   useEffect(() => {
     const fetchUserWallet = async () => {

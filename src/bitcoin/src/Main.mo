@@ -67,23 +67,22 @@ actor class BasicBitcoin(network : Types.Network) {
     await P2pkh.get_address(ecdsa_canister_actor, NETWORK, KEY_NAME, p2pkhDerivationPath());
   };
 
-  public func get_p2pkh_address_for(principal : Principal) : async BitcoinAddress {
-    await P2pkh.get_address(
-      ecdsa_canister_actor,
-      NETWORK,
-      KEY_NAME,
-      derivationPathForUser(principal, "p2pkh")
-    );
-  };
-
   /// Sends the given amount of bitcoin from this canister to the given address.
   /// Returns the transaction ID.
-  public shared(msg) func send_from_p2pkh_address(request : SendRequest) : async TransactionId {
-    let caller = msg.caller;
-    let path = derivationPathForUser(caller, "p2pkh");
-
-    Utils.bytesToText(await P2pkh.send(ecdsa_canister_actor, NETWORK, path, KEY_NAME, request.destination_address, request.amount_in_satoshi));
+  public func send_from_p2pkh_address(request : SendRequest) : async TransactionId {
+    Utils.bytesToText(await P2pkh.send(ecdsa_canister_actor, NETWORK, p2pkhDerivationPath(), KEY_NAME, request.destination_address, request.amount_in_satoshi));
   };
+
+    public shared({caller}) func get_p2pkh_address_by_principal() : async BitcoinAddress {
+    let derivation_path = derivationPathWithPrincipal(caller);
+    await P2pkh.get_address(ecdsa_canister_actor, NETWORK, KEY_NAME, derivation_path);
+  };
+
+    func derivationPathWithPrincipal(principal : Principal) : [[Nat8]] {
+    let principal_bytes = Blob.toArray(Principal.toBlob(principal));
+    Array.flatten([DERIVATION_PATH, [principal_bytes]]);
+  };
+
 
   public func get_p2tr_key_only_address() : async BitcoinAddress {
     await P2trKeyOnly.get_address_key_only(schnorr_canister_actor, NETWORK, KEY_NAME, p2trKeyOnlyDerivationPath());
@@ -123,10 +122,4 @@ actor class BasicBitcoin(network : Types.Network) {
   func derivationPathWithSuffix(suffix : Blob) : [[Nat8]] {
     Array.flatten([DERIVATION_PATH, [Blob.toArray(suffix)]]);
   };
-
-  func derivationPathForUser(principal : Principal, suffix : Text) : [[Nat8]] {
-    let user_bytes = Blob.toArray(Principal.toBlob(principal));
-    let suffix_bytes = Blob.toArray(Text.encodeUtf8(suffix));
-    [user_bytes, suffix_bytes];
-  }
 };

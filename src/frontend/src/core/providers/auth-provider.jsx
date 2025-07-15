@@ -166,7 +166,7 @@ export const AuthProvider = ({
     }
   };
 
-  const logout = async () => {
+  const logout = async (url = null) => {
     await authClient.logout();
     setUser(null);
     setIsAuthenticated(false);
@@ -175,7 +175,9 @@ export const AuthProvider = ({
     if (onLogout) {
       onLogout();
     } else {
-      if (redirectAfterLogout) {
+      if (url) {
+        document.location.href = url;
+      } else if (redirectAfterLogout) {
         document.location.href = redirectAfterLogout;
       } else {
         window.location.reload();

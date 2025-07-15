@@ -1056,7 +1056,7 @@ actor Fradium {
     return #Ok("Wallet created successfully with " # Nat.toText(params.addresses.size()) # " addresses");
   };
 
-  public shared({ caller }) func get_wallet(network : Network) : async Result<UserWallet, Text> {
+  public shared({ caller }) func get_wallet() : async Result<UserWallet, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
