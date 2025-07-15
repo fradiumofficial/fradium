@@ -43,7 +43,9 @@ export default function TransactionPage() {
     const [openSend, setOpenSend] = useState({ open: false, coin: null });
     const [sendForm, setSendForm] = useState({ address: '', amount: '' });
     const [showAnalyzeProgress, setShowAnalyzeProgress] = useState(false);
+    const [showSendResultSafe, setShowSendResultSafe] = useState(false);
     const [showSendResultDanger, setShowSendResultDanger] = useState(false);
+    const [showSuccessSend, setShowSuccessSend] = useState(false);
 
     const qrImages = {
         Bitcoin: "/assets/images/qr-bitcoin.png",
@@ -264,7 +266,7 @@ export default function TransactionPage() {
                 </div>
             )}
             {/* Modal Progress Analyze Address */}
-            <AnalysisProgressModal open={showAnalyzeProgress} onClose={() => { setShowAnalyzeProgress(false); setShowSendResultDanger(true); }} />
+            <AnalysisProgressModal open={showAnalyzeProgress} onClose={() => { setShowAnalyzeProgress(false); setShowSendResultSafe(true); }} />
             {/* Modal Hasil Analisis Negatif (Address Not Safe) */}
             {showSendResultDanger && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -350,7 +352,7 @@ export default function TransactionPage() {
                                 </div>
                                 {/* Button Confirm Send & Cancel */}
                                 <div className="flex gap-2 mt-2">
-                                    <CustomButton className="w-full justify-center" onClick={() => setShowSendResultDanger(false)}>
+                                    <CustomButton className="w-full justify-center" onClick={() => { setShowSendResultDanger(false); setShowSuccessSend(true); }}>
                                         Confirm Send
                                     </CustomButton>
                                     <NeoButton className="w-full text-white justify-center" onClick={() => setShowSendResultDanger(false)}>
@@ -359,6 +361,125 @@ export default function TransactionPage() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal Hasil Analisis Aman (Address Safe) */}
+            {showSendResultSafe && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="relative bg-[#25262B] max-w-[391px] w-full h-[630px] rounded-lg shadow-lg">
+                        <button
+                            className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold z-20"
+                            onClick={() => setShowSendResultSafe(false)}
+                            aria-label="Close"
+                        >
+                            ×
+                        </button>
+                        <div className="overflow-y-auto h-full p-6">
+                            <div className="text-white text-2xl font-semibold mb-6">Send {openSend.coin}</div>
+                            <div className="w-full flex flex-col gap-6 relative z-10">
+                                {/* Status Safe */}
+                                <div className="rounded-lg overflow-hidden mb-2 bg-white/5">
+                                    {/* Bagian atas dengan gradient */}
+                                    <div className="relative w-full">
+                                        <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-[#22C55E] via-transparent to-transparent opacity-80 z-0" />
+                                        <div className="relative flex items-center gap-4 px-6 py-5 z-10">
+                                            <img src="/assets/icons/safe.png" alt="Safe" className="w-12 h-12 object-contain" />
+                                            <div>
+                                                <div className="text-white font-bold text-lg leading-tight">ADDRESS IS SAFE</div>
+                                                <div className="text-[#B0B6BE] text-sm">Confidence: 96%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Bagian bawah deskripsi */}
+                                    <div className="px-6 pb-4">
+                                        <div className="text-[#B0B6BE] text-xs font-normal">This bitcoin address appears to be clean with no suspicious activity detected in our comprehensive database</div>
+                                    </div>
+                                </div>
+                                {/* Address Details */}
+                                <p className="text-white font-semibold text-lg">Address Details</p>
+                                <div className=" rounded-lg p-4 mb-2">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/5 rounded-lg px-4 py-3 flex flex-col">
+                                            <span className="text-white text-base font-medium">296</span>
+                                            <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                                                <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                                                Transactions
+                                            </span>
+                                        </div>
+                                        <div className="bg-white/5 rounded-lg px-4 py-3 flex flex-col">
+                                            <span className="text-white text-base font-medium">89.98 BTC</span>
+                                            <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                                                <img src="/assets/icons/total-volume.svg" alt="Total Volume" className="w-4 h-4" />
+                                                Total Volume
+                                            </span>
+                                        </div>
+                                        <div className="bg-white/5 rounded-lg px-4 py-3 flex flex-col">
+                                            <span className="text-green-400 text-base font-medium">17/100</span>
+                                            <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                                                <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
+                                                Risk Score
+                                            </span>
+                                        </div>
+                                        <div className="bg-white/5 rounded-lg px-4 py-3 flex flex-col">
+                                            <span className="text-white text-base font-medium">17 Days Ago</span>
+                                            <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                                                <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
+                                                Last Activity
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Security Checks */}
+                                <div className="rounded-lg px-6 py-5 mb-2 border-l-2 border-[#22C55E] relative overflow-hidden bg-white/5">
+                                    <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#22C55E]/30 to-transparent pointer-events-none" />
+                                    <div className="relative z-10">
+                                        <div className="text-white font-bold mb-2">Security Checks Passed</div>
+                                        <ul className="flex flex-col gap-1">
+                                            <li className="flex items-center gap-2 text-[#22C55E] text-sm">
+                                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#22C55E" /><path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                                <span className="text-white">No links to known scam addressed</span>
+                                            </li>
+                                            <li className="flex items-center gap-2 text-[#22C55E] text-sm">
+                                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#22C55E" /><path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                                <span className="text-white">No suspicious transaction pattern detected</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                {/* Button Confirm Send */}
+                                <div className="flex gap-2 mt-2">
+                                    <CustomButton className="w-full justify-center" onClick={() => { setShowSendResultSafe(false); setShowSuccessSend(true); }}>
+                                        Confirm Send
+                                    </CustomButton>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal Success Send */}
+            {showSuccessSend && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="relative bg-[#25262B] max-w-[400px] w-full rounded-lg shadow-lg p-8 flex flex-col items-center gap-6">
+                        {/* Success Icon */}
+                        <div className="flex items-center justify-center mb-2">
+                            <img src="/assets/images/succes-send.png" alt="Success Send" className="w-32 h-32 object-contain" />
+                        </div>
+
+                        {/* Success Text */}
+                        <div className="text-center">
+                            <h2 className="text-green-400 text-xl font-bold mb-2">SUCCESS SEND!</h2>
+                            <p className="text-[#B0B6BE] text-sm">YOUR TRANSACTION WAS SUCCESSFUL!</p>
+                        </div>
+
+                        {/* OK Button */}
+                        <CustomButton
+                            className="w-full max-w-[200px] justify-center"
+                            onClick={() => setShowSuccessSend(false)}
+                        >
+                            OK
+                        </CustomButton>
                     </div>
                 </div>
             )}
