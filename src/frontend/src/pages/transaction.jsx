@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import WalletLayout from "../core/components/layouts/wallet-layout";
 import NeoButton from "../core/components/SidebarButton";
+import TransactionButton from "../core/components/TransactionButton";
 import CustomButton from "../core/components/custom-button-a";
 import AnalysisProgressModal from "../core/components/AnalysisProgressModal";
 
@@ -58,21 +59,81 @@ export default function TransactionPage() {
     { label: "Fradium", address: "m1psqxsfsn3efndfm1psqxsfsnfd723bu7an" },
   ];
 
-  return (
-    <WalletLayout>
-      <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
-        {/* Card Wallet pakai gambar utuh */}
-        <div className="relative items-center w-full mx-auto">
-          <img
-            src="/assets/cek-card-wallet.png"
-            alt="Wallet Card"
-            className="block w-full max-w-full h-auto select-none pointer-events-none"
-            draggable="false"
-          />
-          {/* Overlay Content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pt-20 pb-8">
-            <div className="text-white text-xs md:text-xs font-normal mb-1">
-              Total Portofolio Value
+    return (
+        <WalletLayout>
+            <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
+                {/* Card Wallet pakai gambar utuh */}
+                <div className="relative items-center max-w-full w-full mx-auto">
+                    <img
+                        src="/assets/cek-card-wallet.png"
+                        alt="Wallet Card"
+                        className="block w-full max-w-full h-auto select-none pointer-events-none"
+                        draggable="false"
+                    />
+                    {/* Overlay Content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pt-20 pb-8">
+                        <div className="text-white text-xs md:text-xs font-normal mb-1">Total Portofolio Value</div>
+                        <div className="text-white text-4xl md:text-4xl font-semibold mb-1">$0.00</div>
+                        <div className="text-green-400 text-sm font-medium mb-6 text-center">Top up your wallet to start using it!</div>
+                        <div className="flex gap-8 w-full max-w-lg justify-center">
+                            {/* Receive */}
+                            <div className="flex flex-col flex-1">
+                                <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
+                                    <div className="absolute top-4 right-4">
+                                        <TransactionButton
+                                            icon="/assets/icons/received.svg"
+                                            iconSize="w-6 h-6"
+                                            onClick={() => setOpenReceive(true)}
+                                        />
+                                    </div>
+                                    <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Receive</div>
+                                </div>
+                            </div>
+                            {/* Send */}
+                            <div className="flex flex-col flex-1">
+                                <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
+                                    <div className="absolute top-4 right-4">
+                                        <TransactionButton
+                                            icon="/assets/icons/send.svg"
+                                            iconSize="w-6 h-6"
+                                            onClick={() => setOpenSend({ open: true, coin: 'Bitcoin' })}
+                                        />
+                                    </div>
+                                    <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Send</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {/* Token List */}
+                <div>
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-white">Tokens</h2>
+                        <div className="flex gap-4">
+                            <img src="/assets/icons/search.svg" alt="Search" className="w-5 h-5 cursor-pointer" />
+                            <img src="/assets/icons/page_info.svg" alt="Setting" className="w-5 h-5 cursor-pointer" />
+                        </div>
+                    </div>
+                    <div className="flex flex-col divide-y divide-[#23272F]">
+                        {tokens.map((token, idx) => (
+                            <div key={idx} className="flex items-center px-2 py-4 gap-4">
+                                <img src={token.icon} alt={token.name} className="w-10 h-10" />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-white font-semibold text-base">{token.name}</span>
+                                        {token.symbol && <span className="text-[#B0B6BE] text-base">• {token.symbol}</span>}
+                                        {token.fullname && <span className="text-[#B0B6BE] text-base">• {token.fullname}</span>}
+                                    </div>
+                                    <div className="text-[#B0B6BE] text-sm truncate">{token.desc}</div>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-white font-semibold text-base">{token.amount}</span>
+                                    <span className="text-[#B0B6BE] text-sm">{token.value}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
             <div className="text-white text-4xl md:text-4xl font-semibold mb-1">
               $0.00

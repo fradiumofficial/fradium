@@ -1,5 +1,4 @@
 import React from "react";
-import WalletLayout from "../core/components/layouts/wallet-layout";
 
 const transactions = [
   {
