@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useWallet } from "@/core/providers/wallet-provider";
+import { Link } from "react-router-dom";
 import NeoButton from "@/core/components/SidebarButton";
 import { bitcoin } from "declarations/bitcoin";
 import {
   satoshisToBTC,
-  formatSatoshisToBTC,
   fetchBTCPrice,
   btcToSatoshis,
   isValidBitcoinAddress,
@@ -12,8 +12,9 @@ import {
 import { toast } from "react-toastify";
 import CustomButton from "@/core/components/custom-button-a";
 import AnalysisProgressModal from "@/core/components/AnalysisProgressModal";
-import { CloudCog, Timer } from "lucide-react";
 import QRCode from "qrcode";
+import { backend } from "declarations/backend";
+import { jsonStringify } from "../../core/lib/canisterUtils";
 
 // Function to format token amount by removing trailing zeros
 const formatTokenAmount = (amount, tokenType) => {
@@ -81,12 +82,14 @@ export default function AssetsPage() {
   const [showAnalyeAddressModal, setShowAnalyeAddressModal] = useState(false);
   const [isAnalyzeAddressSafe, setIsAnalyzeAddressSafe] = useState(false);
   const [isAnalyzeAddressLoading, setIsAnalyzeAddressLoading] = useState(false);
+  const [analyzeAddressData, setAnalyzeAddressData] = useState(null);
 
   // Send Modal States
   const [destinationAddress, setDestinationAddress] = useState("");
   const [sendAmount, setSendAmount] = useState("");
   const [isSendLoading, setIsSendLoading] = useState(false);
   const [sendErrors, setSendErrors] = useState({});
+  const [selectedTokenForSend, setSelectedTokenForSend] = useState(null);
 
   // Function to get token type from address object
   const getTokenType = (addressObj) => {
@@ -207,13 +210,21 @@ export default function AssetsPage() {
     } else if (isNaN(sendAmount) || parseFloat(sendAmount) <= 0) {
       newErrors.amount = "Please enter a valid amount";
     } else if (
-      selectedToken?.tokenType === "Bitcoin" &&
-      selectedToken?.currentAmount
+      selectedTokenForSend?.tokenType === "Bitcoin" &&
+      selectedTokenForSend?.balances &&
+      Object.keys(selectedTokenForSend.balances).length > 0
     ) {
       // Check if amount exceeds available balance
+      const currentAmount = Object.values(selectedTokenForSend.balances).reduce(
+        (sum, balance) => sum + balance,
+        0
+      );
       const requestedSatoshis = btcToSatoshis(parseFloat(sendAmount));
-      if (requestedSatoshis > selectedToken.currentAmount) {
-        newErrors.amount = "Insufficient balance";
+      if (requestedSatoshis > currentAmount) {
+        newErrors.amount = `Insufficient balance. Available: ${formatTokenAmount(
+          currentAmount,
+          selectedTokenForSend.tokenType
+        )} ${selectedTokenForSend.name}`;
       }
     }
 
@@ -228,7 +239,7 @@ export default function AssetsPage() {
       await handleSend();
 
       // Close modal on success
-      handleCloseSendModal();
+      handleSendSuccess();
     } catch (error) {
       console.error("Error sending transaction:", error);
       setSendErrors({
@@ -252,16 +263,19 @@ export default function AssetsPage() {
     setIsSendLoading(false);
 
     console.log("sendResponse", sendResponse);
-
-    toast.success("Transaction sent successfully");
   };
 
   const handleMaxAmount = () => {
     if (
-      selectedToken?.currentAmount &&
-      selectedToken?.tokenType === "Bitcoin"
+      selectedTokenForSend?.balances &&
+      Object.keys(selectedTokenForSend.balances).length > 0 &&
+      selectedTokenForSend?.tokenType === "Bitcoin"
     ) {
-      const btcAmount = satoshisToBTC(selectedToken.currentAmount);
+      const currentAmount = Object.values(selectedTokenForSend.balances).reduce(
+        (sum, balance) => sum + balance,
+        0
+      );
+      const btcAmount = satoshisToBTC(currentAmount);
       setSendAmount(btcAmount.toString());
     }
   };
@@ -269,9 +283,20 @@ export default function AssetsPage() {
   const handleCloseSendModal = () => {
     setShowSendModal(false);
     setSelectedToken(null);
+    setSelectedTokenForSend(null);
     setDestinationAddress("");
     setSendAmount("");
     setSendErrors({});
+  };
+
+  const handleSendSuccess = () => {
+    setShowSendModal(false);
+    setSelectedToken(null);
+    setSelectedTokenForSend(null);
+    setDestinationAddress("");
+    setSendAmount("");
+    setSendErrors({});
+    toast.success("Transaction sent successfully");
   };
 
   const handleCloseReceiveModal = () => {
@@ -279,7 +304,13 @@ export default function AssetsPage() {
   };
 
   const handleSendClick = (token) => {
-    setSelectedToken(token);
+    // Pass token data including current amount to send modal
+    const tokenWithAmount = {
+      ...token,
+      currentAmount: token.currentAmount || 0,
+    };
+    setSelectedToken(tokenWithAmount);
+    setSelectedTokenForSend(tokenWithAmount);
     setShowSendModal(true);
 
     // Set initial amount based on token's current balance
@@ -287,6 +318,15 @@ export default function AssetsPage() {
       const btcAmount = satoshisToBTC(token.currentAmount);
       setSendAmount(btcAmount.toString());
     }
+  };
+
+  const handleGeneralSendClick = () => {
+    setSelectedToken(null);
+    setSelectedTokenForSend(null);
+    setDestinationAddress("");
+    setSendAmount("");
+    setSendErrors({});
+    setShowSendModal(true);
   };
 
   const handleReceiveClick = (token) => {
@@ -339,29 +379,62 @@ export default function AssetsPage() {
     return null;
   };
 
-  const validateAmount = (amount, tokenType, currentAmount) => {
+  const validateAmount = (amount, tokenType, balances) => {
     if (!amount.trim()) {
       return "Amount is required";
     }
     if (isNaN(amount) || parseFloat(amount) <= 0) {
       return "Please enter a valid amount";
     }
-    if (tokenType === "Bitcoin" && currentAmount) {
+    if (
+      tokenType === "Bitcoin" &&
+      balances &&
+      Object.keys(balances).length > 0
+    ) {
+      const currentAmount = Object.values(balances).reduce(
+        (sum, balance) => sum + balance,
+        0
+      );
       const requestedSatoshis = btcToSatoshis(parseFloat(amount));
       if (requestedSatoshis > currentAmount) {
-        return "Insufficient balance";
+        return `Insufficient balance. Available: ${formatTokenAmount(
+          currentAmount,
+          tokenType
+        )} ${tokenType}`;
       }
     }
     return null;
   };
 
-  const handleAnalyzeAddress = () => {
+  const handleAnalyzeAddress = async () => {
     const addressError = validateAddress(destinationAddress);
     const amountError = validateAmount(
       sendAmount,
-      selectedToken?.tokenType,
-      selectedToken?.currentAmount
+      selectedTokenForSend?.tokenType,
+      selectedTokenForSend?.balances
     );
+
+    // Prevent lanjut jika amount melebihi saldo
+    if (
+      selectedTokenForSend?.tokenType === "Bitcoin" &&
+      selectedTokenForSend?.balances &&
+      Object.keys(selectedTokenForSend.balances).length > 0
+    ) {
+      const currentAmount = Object.values(selectedTokenForSend.balances).reduce(
+        (sum, balance) => sum + balance,
+        0
+      );
+      if (btcToSatoshis(parseFloat(sendAmount)) > currentAmount) {
+        setSendErrors((prev) => ({
+          ...prev,
+          amount: `Insufficient balance. Available: ${formatTokenAmount(
+            currentAmount,
+            selectedTokenForSend.tokenType
+          )} ${selectedTokenForSend.name}`,
+        }));
+        return;
+      }
+    }
 
     if (addressError || amountError) {
       setSendErrors({
@@ -375,11 +448,18 @@ export default function AssetsPage() {
     setShowSendModal(false);
     setIsAnalyzeAddressLoading(true);
 
-    setTimeout(() => {
-      setIsAnalyzeAddressSafe(Math.random() < 0.5);
+    // Analyze address by community report
+    const communityReport = await backend.analyze_address(destinationAddress);
+    console.log("communityReport", communityReport);
+
+    console.log("communityReport.Ok", jsonStringify(communityReport.Ok));
+    if ("Ok" in communityReport) {
+      console.log("communityReport.Ok", communityReport.Ok.is_safe);
+      setIsAnalyzeAddressSafe(communityReport.Ok.is_safe);
+      setAnalyzeAddressData(communityReport.Ok);
       setIsAnalyzeAddressLoading(false);
       setShowAnalyeAddressModal(true);
-    }, 1000);
+    }
   };
 
   // Fetch balances when network or addresses change
@@ -569,7 +649,7 @@ export default function AssetsPage() {
                         </svg>
                       }
                       className="!w-10 !h-10 p-0 flex items-center justify-center"
-                      onClick={() => handleSendClick(tokens[0])}
+                      onClick={handleGeneralSendClick}
                     />
                   </div>
                   <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">
@@ -632,13 +712,13 @@ export default function AssetsPage() {
           <div className="bg-[#23272F] px-6 py-8 w-full max-w-sm rounded-lg shadow-lg relative flex flex-col gap-6">
             <button
               className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
-              onClick={() => setShowSendModal(false)}
+              onClick={handleCloseSendModal}
               aria-label="Close"
             >
               ×
             </button>
             <div className="text-white text-xl font-semibold mb-2">
-              Send {selectedToken.name}
+              Send {selectedToken?.name || "Token"}
             </div>
             <div className="flex flex-col items-center gap-2">
               <img
@@ -648,6 +728,58 @@ export default function AssetsPage() {
               />
             </div>
             <div className="flex flex-col gap-4">
+              {/* Token Selection Dropdown */}
+              <div>
+                <div className="text-[#B0B6BE] text-sm mb-1">Select Token</div>
+                <select
+                  className="w-full bg-[#23272F] border border-[#393E4B] rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none"
+                  value={
+                    selectedTokenForSend ? selectedTokenForSend.tokenType : ""
+                  }
+                  onChange={(e) => {
+                    const selectedTokenType = e.target.value;
+                    const token = tokens.find(
+                      (t) => t.tokenType === selectedTokenType
+                    );
+                    if (token) {
+                      const tokenWithAmount = {
+                        ...token,
+                        currentAmount: token.currentAmount || 0,
+                      };
+                      setSelectedTokenForSend(tokenWithAmount);
+                      setSelectedToken(tokenWithAmount);
+                    } else {
+                      setSelectedTokenForSend(null);
+                      setSelectedToken(null);
+                    }
+                    setDestinationAddress("");
+                    setSendAmount("");
+                    setSendErrors({});
+                  }}
+                >
+                  <option value="">Select a token</option>
+                  {tokens.map((token, index) => {
+                    // Calculate current amount for this token
+                    const currentAmount =
+                      token.balances && Object.keys(token.balances).length > 0
+                        ? Object.values(token.balances).reduce(
+                            (sum, balance) => sum + balance,
+                            0
+                          )
+                        : 0;
+
+                    return (
+                      <option key={index} value={token.tokenType}>
+                        {token.name} (
+                        {token.isLoading
+                          ? "Loading..."
+                          : formatTokenAmount(currentAmount, token.tokenType)}
+                        )
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
               <div>
                 <div className="text-[#B0B6BE] text-sm mb-1">
                   Recipient Address
@@ -656,13 +788,18 @@ export default function AssetsPage() {
                   type="text"
                   className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${
                     sendErrors.address ? "border-red-500" : "border-[#393E4B]"
+                  } ${
+                    !selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                   placeholder="ex: m1psqxsfsn3efndfm1psqxsfsnfn"
                   value={destinationAddress}
+                  disabled={!selectedTokenForSend}
                   onChange={(e) => {
-                    setDestinationAddress(e.target.value);
-                    if (sendErrors.address) {
-                      setSendErrors((prev) => ({ ...prev, address: null }));
+                    if (selectedTokenForSend) {
+                      setDestinationAddress(e.target.value);
+                      if (sendErrors.address) {
+                        setSendErrors((prev) => ({ ...prev, address: null }));
+                      }
                     }
                   }}
                 />
@@ -673,23 +810,95 @@ export default function AssetsPage() {
                 )}
               </div>
               <div>
-                <div className="text-[#B0B6BE] text-sm mb-1">
-                  Amount ({selectedToken?.name?.toUpperCase() || ""})
+                <div className="flex justify-between items-center mb-1">
+                  <div className="text-[#B0B6BE] text-sm">
+                    Amount ({selectedTokenForSend?.name?.toUpperCase() || ""})
+                  </div>
+                  <div className="text-[#B0B6BE] text-xs">
+                    Balance:{" "}
+                    {selectedTokenForSend?.isLoading
+                      ? "Loading..."
+                      : (() => {
+                          const currentAmount =
+                            selectedTokenForSend?.balances &&
+                            Object.keys(selectedTokenForSend.balances).length >
+                              0
+                              ? Object.values(
+                                  selectedTokenForSend.balances
+                                ).reduce((sum, balance) => sum + balance, 0)
+                              : 0;
+                          return formatTokenAmount(
+                            currentAmount,
+                            selectedTokenForSend?.tokenType
+                          );
+                        })()}{" "}
+                    {selectedTokenForSend?.name?.toUpperCase() || ""}
+                  </div>
                 </div>
-                <input
-                  type="number"
-                  className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${
-                    sendErrors.amount ? "border-red-500" : "border-[#393E4B]"
-                  }`}
-                  placeholder="0.00"
-                  value={sendAmount}
-                  onChange={(e) => {
-                    setSendAmount(e.target.value);
-                    if (sendErrors.amount) {
-                      setSendErrors((prev) => ({ ...prev, amount: null }));
-                    }
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    className={`w-full bg-[#23272F] border rounded px-3 py-2 pr-16 text-[#B0B6BE] text-sm outline-none ${
+                      sendErrors.amount ? "border-red-500" : "border-[#393E4B]"
+                    } ${
+                      !selectedTokenForSend
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    placeholder="0.00"
+                    value={sendAmount}
+                    disabled={!selectedTokenForSend}
+                    onChange={(e) => {
+                      if (selectedTokenForSend) {
+                        const value = e.target.value;
+                        setSendAmount(value);
+
+                        // Clear amount error when user starts typing
+                        if (sendErrors.amount) {
+                          setSendErrors((prev) => ({ ...prev, amount: null }));
+                        }
+
+                        // Validate amount in real-time
+                        if (value && !isNaN(value) && parseFloat(value) > 0) {
+                          if (
+                            selectedTokenForSend?.tokenType === "Bitcoin" &&
+                            selectedTokenForSend?.balances &&
+                            Object.keys(selectedTokenForSend.balances).length >
+                              0
+                          ) {
+                            const currentAmount = Object.values(
+                              selectedTokenForSend.balances
+                            ).reduce((sum, balance) => sum + balance, 0);
+                            const requestedSatoshis = btcToSatoshis(
+                              parseFloat(value)
+                            );
+                            if (requestedSatoshis > currentAmount) {
+                              setSendErrors((prev) => ({
+                                ...prev,
+                                amount: `Insufficient balance. Available: ${formatTokenAmount(
+                                  currentAmount,
+                                  selectedTokenForSend.tokenType
+                                )} ${selectedTokenForSend.name}`,
+                              }));
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className={`absolute right-2 top-1/2 transform -translate-y-1/2 text-xs font-medium transition-colors ${
+                      selectedTokenForSend
+                        ? "text-[#9BEB83] hover:text-white cursor-pointer"
+                        : "text-[#6B7280] cursor-not-allowed"
+                    }`}
+                    onClick={handleMaxAmount}
+                    disabled={!selectedTokenForSend}
+                  >
+                    MAX
+                  </button>
+                </div>
                 {sendErrors.amount && (
                   <div className="text-red-400 text-xs mt-1">
                     {sendErrors.amount}
@@ -699,8 +908,11 @@ export default function AssetsPage() {
             </div>
             <CustomButton
               icon="/assets/icons/analyze-address-light.svg"
-              className="mt-2 w-full justify-center"
+              className={`mt-2 w-full justify-center ${
+                !selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               onClick={handleAnalyzeAddress}
+              disabled={!selectedTokenForSend}
             >
               Analyze Address
             </CustomButton>
@@ -716,11 +928,14 @@ export default function AssetsPage() {
         <AnalysisResultModal
           isOpen={showAnalyeAddressModal}
           isSafe={isAnalyzeAddressSafe}
+          analyzeData={analyzeAddressData}
           onClose={() => {
             setShowAnalyeAddressModal(false);
+            setAnalyzeAddressData(null);
           }}
           onConfirmSend={() => {
             setShowAnalyeAddressModal(false);
+            setAnalyzeAddressData(null);
           }}
         />
       )}
@@ -852,8 +1067,41 @@ export default function AssetsPage() {
 }
 
 // Analysis Result Modal Component
-function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
+function AnalysisResultModal({
+  isOpen,
+  isSafe,
+  analyzeData,
+  onClose,
+  onConfirmSend,
+}) {
   if (!isOpen) return null;
+
+  // Function to calculate time ago from timestamp
+  const getTimeAgo = (timestamp) => {
+    const now = Date.now();
+    const timeDiff = now - Number(timestamp) / 1000000; // Convert nanoseconds to milliseconds
+    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+
+    if (days > 0) {
+      return `${days} day${days > 1 ? "s" : ""} ago`;
+    } else if (hours > 0) {
+      return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    } else {
+      return "Just now";
+    }
+  };
+
+  // Function to calculate risk score based on votes
+  const calculateRiskScore = (votesYes, votesNo) => {
+    const totalVotes = Number(votesYes) + Number(votesNo);
+    if (totalVotes === 0) return "0/100";
+
+    const yesPercentage = (Number(votesYes) / totalVotes) * 100;
+    return `${Math.round(yesPercentage)}/100`;
+  };
 
   const statusConfig = {
     safe: {
@@ -862,17 +1110,15 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
       icon: "/assets/icons/safe.png",
       title: "ADDRESS IS SAFE",
       description:
-        "This bitcoin address appears to be clean with no suspicious activity detected in our comprehensive database",
+        analyzeData?.report && analyzeData.report.length > 0
+          ? "This address has been analyzed by the community and found to be safe"
+          : "This address appears to be clean with no suspicious activity detected in our comprehensive database",
       securityTitle: "Security Checks Passed",
       checkItems: [
-        "No links to known scam addressed",
+        "No links to known scam addresses",
         "No suspicious transaction pattern detected",
       ],
-      transactions: "296",
-      totalVolume: "89.98 BTC",
-      riskScore: "17/100",
       riskScoreColor: "text-green-400",
-      lastActivity: "17 Days Ago",
     },
     danger: {
       gradientColor: "from-[#F87171]",
@@ -880,17 +1126,15 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
       icon: "/assets/icons/danger.png",
       title: "ADDRESS IS NOT SAFE",
       description:
-        "This bitcoin address appears to be flagged with suspicious activity detected in our comprehensive database",
+        analyzeData?.report && analyzeData.report.length > 0
+          ? "This address has been flagged by the community as potentially unsafe"
+          : "This address appears to be flagged with suspicious activity detected in our comprehensive database",
       securityTitle: "Security Checks Not Passed",
       checkItems: [
-        "No link to known scam addressed",
+        "Links to known scam addresses detected",
         "Suspicious transaction pattern detected",
       ],
-      transactions: "1",
-      totalVolume: "0.8 BTC",
-      riskScore: "89/100",
       riskScoreColor: "text-red-400",
-      lastActivity: "329 Days Ago",
     },
   };
 
@@ -912,7 +1156,7 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
           </div>
           <div className="w-full flex flex-col gap-6 relative z-10">
             {/* Status */}
-            <div className="rounded-lg overflow-hidden mb-2 bg-white/5">
+            <div className="rounded-lg overflow-hidden mb-2 bg-white/5 w-full">
               {/* Bagian atas dengan gradient */}
               <div className="relative w-full">
                 <div
@@ -929,7 +1173,7 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
                       {config.title}
                     </div>
                     <div className="text-[#B0B6BE] text-sm">
-                      Confidence: 96%
+                      Detected By Community
                     </div>
                   </div>
                 </div>
@@ -943,11 +1187,13 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
             </div>
             {/* Address Details */}
             <p className="text-white font-semibold text-lg">Address Details</p>
-            <div className="rounded-lg p-4 mb-2">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg p-4 mb-2 w-full">
+              <div className="grid grid-cols-2 gap-3 w-full">
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
                   <span className="text-white text-sm font-medium">
-                    {config.transactions}
+                    {analyzeData?.report && analyzeData.report.length > 0
+                      ? analyzeData.report[0].voted_by.length
+                      : "0"}
                   </span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img
@@ -955,27 +1201,34 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
                       alt="Wallet"
                       className="w-3 h-3"
                     />
-                    Transactions
+                    Total Voters
                   </span>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
                   <span className="text-white text-sm font-medium">
-                    {config.totalVolume}
+                    {analyzeData?.report && analyzeData.report.length > 0
+                      ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No`
+                      : "N/A"}
                   </span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img
                       src="/assets/icons/total-volume.svg"
-                      alt="Total Volume"
+                      alt="Votes"
                       className="w-3 h-3"
                     />
-                    Total Volume
+                    Vote Results
                   </span>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
                   <span
                     className={`text-sm font-medium ${config.riskScoreColor}`}
                   >
-                    {config.riskScore}
+                    {analyzeData?.report && analyzeData.report.length > 0
+                      ? calculateRiskScore(
+                          analyzeData.report[0].votes_yes,
+                          analyzeData.report[0].votes_no
+                        )
+                      : "0/100"}
                   </span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img
@@ -988,7 +1241,9 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
                   <span className="text-white text-sm font-medium">
-                    {config.lastActivity}
+                    {analyzeData?.report && analyzeData.report.length > 0
+                      ? getTimeAgo(analyzeData.report[0].created_at)
+                      : "N/A"}
                   </span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img
@@ -996,14 +1251,14 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
                       alt="Last Activity"
                       className="w-3 h-3"
                     />
-                    Last Activity
+                    Report Created
                   </span>
                 </div>
               </div>
             </div>
             {/* Security Checks */}
             <div
-              className={`rounded-lg px-4 py-4 mb-2 border-l-2 ${config.borderColor} relative overflow-hidden bg-white/5`}
+              className={`rounded-lg px-4 py-4 mb-2 border-l-2 ${config.borderColor} relative overflow-hidden bg-white/5 w-full`}
             >
               <div
                 className={`absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r ${config.gradientColor}/30 to-transparent pointer-events-none`}
@@ -1046,22 +1301,67 @@ function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
                 </ul>
               </div>
             </div>
+
+            {/* Report Details - Only show if there's a report */}
+            {analyzeData?.report && analyzeData.report.length > 0 && (
+              <div className="rounded-lg p-4 mb-2 bg-white/5 w-full">
+                <div className="text-white font-semibold mb-3 text-sm">
+                  Report Details
+                </div>
+                <div className="space-y-3 w-full">
+                  <div className="w-full">
+                    <div className="text-[#B0B6BE] text-xs mb-1">Category</div>
+                    <div className="text-white text-sm font-medium capitalize w-full">
+                      {analyzeData.report[0].category}
+                    </div>
+                  </div>
+                  <div className="w-full">
+                    <Link
+                      to={`/report/${analyzeData.report[0].report_id}`}
+                      className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors w-full"
+                      onClick={onClose}
+                    >
+                      <span>View Full Report</span>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M7 17L17 7M17 7H7M17 7V17"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Button Confirm Send */}
-            <div className="flex gap-3 mt-4">
+            <div className="flex gap-3 mt-4 w-full">
               <CustomButton
                 className="w-full justify-center"
                 onClick={onConfirmSend}
               >
-                Confirm Send
+                {analyzeData?.report && analyzeData.report.length > 0
+                  ? "Confirm Send"
+                  : "Continue"}
               </CustomButton>
-              {!isSafe && (
-                <NeoButton
-                  className="w-full text-white justify-center"
-                  onClick={onClose}
-                >
-                  Cancel
-                </NeoButton>
-              )}
+              {!isSafe &&
+                analyzeData?.report &&
+                analyzeData.report.length > 0 && (
+                  <NeoButton
+                    className="w-full text-white justify-center"
+                    onClick={onClose}
+                  >
+                    Cancel
+                  </NeoButton>
+                )}
             </div>
           </div>
         </div>

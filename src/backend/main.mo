@@ -11,6 +11,7 @@ import Text "mo:base/Text";
 import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
 import Nat64 "mo:base/Nat64";
+import Region "mo:base/Region";
 
 import TokenCanister "canister:token";
 
@@ -44,7 +45,7 @@ actor Fradium {
   };
 
   public type Report = {
-    report_id: Nat;
+    report_id: ReportId;
     reporter: Principal;
     chain: Text;
     address: Text;
@@ -182,48 +183,12 @@ actor Fradium {
   public query func get_report(report_id : ReportId) : async Result<Report, Text> {
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
-        if (report.report_id == Nat32.toNat(report_id)) {
+        if (report.report_id == report_id) {
           return #Ok(report);
           
         };
       };
     };
-    return #Err("Report not found");
-  };
-
-  public shared({ caller }) func delete_report(report_id : ReportId) : async Result<Text, Text> {
-    // if(Principal.isAnonymous(caller)) {
-    //     return #Err("Anonymous users can't perform this action.");
-    // };
-    
-    for ((principal, reports) in reportStore.entries()) {
-      let filtered_reports = Array.filter(reports, func (report : Report) : Bool {
-        report.report_id != Nat32.toNat(report_id)
-      });
-      
-      if (filtered_reports.size() != reports.size()) {
-        let target_report = Array.find(reports, func (report : Report) : Bool {
-          report.report_id == Nat32.toNat(report_id)
-        });
-        
-        switch (target_report) {
-          case (?report) {
-            // if (report.reporter == caller) {
-              if (filtered_reports.size() == 0) {
-                reportStore.delete(principal);
-              } else {
-                reportStore.put(principal, filtered_reports);
-              };
-              return #Ok("Report deleted successfully");
-            // } else {
-            //   return #Err("Only report owner can delete this report");
-            // };
-          };
-          case null { return #Err("Report not found"); };
-        };
-      };    
-    };
-    
     return #Err("Report not found");
   };
 
@@ -353,7 +318,7 @@ actor Fradium {
           
           switch (stakeRecordsStore.get(caller)) {
             case (?stakeRecord) {
-              if (stakeRecord.report_id == Nat32.fromNat(report.report_id)) {
+              if (stakeRecord.report_id == report.report_id) {
                 stakeAmount := stakeRecord.amount;
                 // Calculate reward for reporter
                 reward := calculate_reporter_reward(report, stakeRecord.amount);
@@ -518,7 +483,7 @@ actor Fradium {
     stakeRecordsStore.put(caller, stakeRecord);
 
     let new_report : Report = {
-      report_id = Nat32.toNat(new_report_id);
+      report_id = new_report_id;
       reporter = caller;
       chain = params.chain;
       address = params.address;
@@ -1098,55 +1063,62 @@ actor Fradium {
     };
   };
 
-  public shared({ caller }) func analyze_address(address : Text) : async Result<Bool, Text> {
+  public type GetAnalyzeAddressResult = {
+    is_safe: Bool;
+    report: ?Report;
+  };
+  public shared({ caller }) func analyze_address(address : Text) : async Result<GetAnalyzeAddressResult, Text> {
     // Cari report yang memiliki address tersebut
     var found : Bool = false;
     var isUnsafe : Bool = false;
+    var foundReport : ?Report = null;
     
     for ((_, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
         if (report.address == address) {
           found := true;
-          // Hitung total bobot vote YES dan NO
-          var totalYesWeight : Nat = 0;
-          var totalNoWeight : Nat = 0;
-          for (voter in report.voted_by.vals()) {
-            if (voter.vote == true) {
-              totalYesWeight += voter.vote_weight;
-            } else {
-              totalNoWeight += voter.vote_weight;
-            };
+          foundReport := ?report;
+          
+          // Check if voting deadline has passed
+          let currentTime = Time.now();
+          if (currentTime > report.vote_deadline) {
+            isUnsafe := is_vote_correct(report, true);
+          } else {
+            isUnsafe := false;
           };
-          // Jika bobot YES lebih besar dari NO, maka unsafe
-          isUnsafe := totalYesWeight > totalNoWeight;
         };
       };
     };
+    
     if (not found) {
-      return #Ok(true);
+      return #Ok({
+        is_safe = true;
+        report = null;
+      });
     } else {
       let isSafe = not isUnsafe;
       
       // If address is not safe, save to history
-      if (not isSafe) {
-        let historyEntry : AnalyzeAddressHistory = {
-          address = address;
-          is_safe = false;
-          analyzed_type = #CommunityVote;
-          created_at = Time.now();
-          metadata = "{}";
-        };
-        
-        let existingHistory = switch (analyzeAddressStore.get(caller)) {
-          case (?history) { history };
-          case null { [] };
-        };
-        
-        let updatedHistory = Array.append(existingHistory, [historyEntry]);
-        analyzeAddressStore.put(caller, updatedHistory);
+      let historyEntry : AnalyzeAddressHistory = {
+        address = address;
+        is_safe = isSafe;
+        analyzed_type = #CommunityVote;
+        created_at = Time.now();
+        metadata = debug_show(foundReport);
       };
-      
-      return #Ok(isSafe); // true = safe, false = unsafe
+        
+      let existingHistory = switch (analyzeAddressStore.get(caller)) {
+        case (?history) { history };
+        case null { [] };
+      };
+        
+      let updatedHistory = Array.append(existingHistory, [historyEntry]);
+      analyzeAddressStore.put(caller, updatedHistory);
+
+      return #Ok({
+        is_safe = isSafe;
+        report = foundReport;
+      });
     };
   };
 
@@ -1203,7 +1175,7 @@ actor Fradium {
     
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
-        if (report.report_id == Nat32.toNat(report_id)) {
+        if (report.report_id == report_id) {
           targetReport := ?report;
           reportOwner := ?principal;
         };
@@ -1250,6 +1222,67 @@ actor Fradium {
 
             reportStore.put(owner, updatedReports);
             return #Ok("Report deadline updated successfully");
+          };
+          case null {
+            return #Err("Report owner not found");
+          };
+        };
+      };
+    };
+  };
+
+  public shared({ caller }) func admin_delete_report(report_id : ReportId) : async Result<Text, Text> {
+    // Find the report
+    var targetReport : ?Report = null;
+    var reportOwner : ?Principal = null;
+    
+    for ((principal, reports) in reportStore.entries()) {
+      for (report in reports.vals()) {
+        if (report.report_id == report_id) {
+          targetReport := ?report;
+          reportOwner := ?principal;
+        };
+      };
+    };
+
+    switch (targetReport) {
+      case null {
+        return #Err("Report not found");
+      };
+      case (?report) {
+        // Delete the report from storage
+        switch (reportOwner) {
+          case (?owner) {
+            let existingReports = switch (reportStore.get(owner)) {
+              case (?reports) { reports };
+              case null { [] };
+            };
+
+            let filteredReports = Array.filter(existingReports, func (r : Report) : Bool {
+              r.report_id != report.report_id
+            });
+
+            if (filteredReports.size() == 0) {
+              reportStore.delete(owner);
+            } else {
+              reportStore.put(owner, filteredReports);
+            };
+
+            // Also delete associated stake records for this report
+            var stakeRecordsToDelete : [Principal] = [];
+            
+            for ((staker, stakeRecord) in stakeRecordsStore.entries()) {
+              if (stakeRecord.report_id == report_id) {
+                stakeRecordsToDelete := Array.append(stakeRecordsToDelete, [staker]);
+              };
+            };
+
+            // Delete stake records
+            for (staker in stakeRecordsToDelete.vals()) {
+              stakeRecordsStore.delete(staker);
+            };
+
+            return #Ok("Report and associated stake records deleted successfully");
           };
           case null {
             return #Err("Report owner not found");
