@@ -1,11 +1,18 @@
 import React from "react";
 
-const NeoButton = ({ children, icon, onClick, className = '', ...props }) => {
-    return (
-        <div className={`bg-[#823EFD] ${className}`}>
-            <button
-                onClick={onClick}
-                className={`
+const NeoButton = ({
+  children,
+  icon,
+  onClick,
+  className = "",
+  active,
+  ...props
+}) => {
+  return (
+    <div className={`bg-[#823EFD] ${className}`}>
+      <button
+        onClick={onClick}
+        className={`
           w-full
           flex items-center gap-3 px-4 py-3
           px-3 py-3
@@ -16,16 +23,18 @@ const NeoButton = ({ children, icon, onClick, className = '', ...props }) => {
           active:translate-y-0 active:translate-x-0
           transition-transform duration-150 ease-in-out
         `}
-                {...props}
-            >
-                {icon &&
-                    (typeof icon === "string"
-                        ? <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] " />
-                        : icon)}
-                <span className="text-[14px]">{children}</span>
-            </button>
-        </div>
-    );
+        {...props}
+      >
+        {icon &&
+          (typeof icon === "string" ? (
+            <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] " />
+          ) : (
+            icon
+          ))}
+        <span className="text-[14px]">{children}</span>
+      </button>
+    </div>
+  );
 };
 
-export default NeoButton; 
+export default NeoButton;

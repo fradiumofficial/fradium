@@ -107,7 +107,6 @@ function WalletLayoutContent() {
                   className={idx === 0 ? "mt-0" : "mt-1"}
                   as={Link}
                   to={item.path}
-                  active
                 >
                   {item.label}
                 </SidebarButton>
