@@ -104,7 +104,7 @@ dfx canister call backend vote_report '(record { stake_amount = 100000000; vote_
 # Step 7: Ubah deadline agar report selesai dan dinyatakan unsafe
 echo "Step 7: Changing deadline to make report unsafe..."
 # Set deadline ke waktu yang sudah lewat (1 jam yang lalu)
-dfx canister call backend admin_change_report_deadline "(1, 100000000)"
+dfx canister call backend admin_change_report_deadline "(0, 100000000)"
 
 echo "Dummy data creation completed!"
 echo "Address mtbZzVBwLnDmhH4pE9QynWAgh6H3aC1E6M should now be marked as unsafe"

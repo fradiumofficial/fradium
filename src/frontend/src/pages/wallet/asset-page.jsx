@@ -3,12 +3,7 @@ import { useWallet } from "@/core/providers/wallet-provider";
 import { Link } from "react-router-dom";
 import NeoButton from "@/core/components/SidebarButton";
 import { bitcoin } from "declarations/bitcoin";
-import {
-  satoshisToBTC,
-  fetchBTCPrice,
-  btcToSatoshis,
-  isValidBitcoinAddress,
-} from "../../core/lib/bitcoinUtils";
+import { satoshisToBTC, fetchBTCPrice, btcToSatoshis, isValidBitcoinAddress } from "../../core/lib/bitcoinUtils";
 import { toast } from "react-toastify";
 import CustomButton from "@/core/components/custom-button-a";
 import AnalysisProgressModal from "@/core/components/AnalysisProgressModal";
@@ -65,10 +60,7 @@ export default function AssetsPage() {
   const [tokenBalances, setTokenBalances] = useState({});
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [balanceErrors, setBalanceErrors] = useState({});
-  const [tokenPrices, setTokenPrices] = useState({});
   const [showSendModal, setShowSendModal] = useState(false);
-  const [showReceiveModal, setShowReceiveModal] = useState(false);
-  const [showSendResultSafe, setShowSendResultSafe] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
 
   // Receive Modal States
@@ -138,11 +130,7 @@ export default function AssetsPage() {
   };
 
   // Function to calculate token amount and value based on token type
-  const calculateTokenAmountAndValue = async (
-    tokenType,
-    addresses,
-    balances
-  ) => {
+  const calculateTokenAmountAndValue = async (tokenType, addresses, balances) => {
     switch (tokenType) {
       case "Bitcoin":
         if (!balances || Object.keys(balances).length === 0) {
@@ -150,10 +138,7 @@ export default function AssetsPage() {
         }
 
         // Calculate total satoshis
-        const totalSatoshis = Object.values(balances).reduce(
-          (sum, balance) => sum + balance,
-          0
-        );
+        const totalSatoshis = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
 
         // Get current BTC price
         const btcPrice = await fetchBTCPrice();
@@ -192,89 +177,38 @@ export default function AssetsPage() {
   };
 
   // Send Modal Functions
-  const handleSendConfirm = async () => {
-    // Reset errors
-    setSendErrors({});
-
-    // Validation
-    const newErrors = {};
-
-    if (!destinationAddress.trim()) {
-      newErrors.address = "Destination address is required";
-    } else if (!isValidBitcoinAddress(destinationAddress)) {
-      newErrors.address = "Invalid Bitcoin address format";
-    }
-
-    if (!sendAmount.trim()) {
-      newErrors.amount = "Amount is required";
-    } else if (isNaN(sendAmount) || parseFloat(sendAmount) <= 0) {
-      newErrors.amount = "Please enter a valid amount";
-    } else if (
-      selectedTokenForSend?.tokenType === "Bitcoin" &&
-      selectedTokenForSend?.balances &&
-      Object.keys(selectedTokenForSend.balances).length > 0
-    ) {
-      // Check if amount exceeds available balance
-      const currentAmount = Object.values(selectedTokenForSend.balances).reduce(
-        (sum, balance) => sum + balance,
-        0
-      );
-      const requestedSatoshis = btcToSatoshis(parseFloat(sendAmount));
-      if (requestedSatoshis > currentAmount) {
-        newErrors.amount = `Insufficient balance. Available: ${formatTokenAmount(
-          currentAmount,
-          selectedTokenForSend.tokenType
-        )} ${selectedTokenForSend.name}`;
-      }
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setSendErrors(newErrors);
-      return;
-    }
-
-    setIsSendLoading(true);
+  const handleConfirmSend = async () => {
     try {
-      // Call handleSend function
-      await handleSend();
-
-      // Close modal on success
-      handleSendSuccess();
-    } catch (error) {
-      console.error("Error sending transaction:", error);
-      setSendErrors({
-        general: "Failed to send transaction. Please try again.",
+      setIsSendLoading(true);
+      console.log("sendAmount", sendAmount);
+      const sendResponse = await bitcoin.send_from_p2pkh_address({
+        destination_address: destinationAddress,
+        amount_in_satoshi: btcToSatoshis(parseFloat(sendAmount)),
       });
+      setIsSendLoading(false);
+
+      console.log("sendResponse", sendResponse);
+      setShowAnalyeAddressModal(false);
+      setSelectedToken(null);
+      setSelectedTokenForSend(null);
+      setDestinationAddress("");
+      setSendAmount("");
+      setSendErrors({});
+      toast.success("Transaction sent successfully");
+    } catch (error) {
+      if (error.message.includes("Insufficient balance")) {
+        toast.error("Insufficient balance");
+      } else {
+        toast.error("Error sending transaction");
+      }
     } finally {
       setIsSendLoading(false);
     }
   };
 
-  const handleSend = async () => {
-    setIsSendLoading(true);
-    console.log("data", {
-      destination_address: destinationAddress,
-      amount_in_satoshi: btcToSatoshis(parseFloat(sendAmount)),
-    });
-    const sendResponse = await bitcoin.send_from_p2pkh_address({
-      destination_address: destinationAddress,
-      amount_in_satoshi: btcToSatoshis(parseFloat(sendAmount)),
-    });
-    setIsSendLoading(false);
-
-    console.log("sendResponse", sendResponse);
-  };
-
   const handleMaxAmount = () => {
-    if (
-      selectedTokenForSend?.balances &&
-      Object.keys(selectedTokenForSend.balances).length > 0 &&
-      selectedTokenForSend?.tokenType === "Bitcoin"
-    ) {
-      const currentAmount = Object.values(selectedTokenForSend.balances).reduce(
-        (sum, balance) => sum + balance,
-        0
-      );
+    if (selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0 && selectedTokenForSend?.tokenType === "Bitcoin") {
+      const currentAmount = Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0);
       const btcAmount = satoshisToBTC(currentAmount);
       setSendAmount(btcAmount.toString());
     }
@@ -287,20 +221,6 @@ export default function AssetsPage() {
     setDestinationAddress("");
     setSendAmount("");
     setSendErrors({});
-  };
-
-  const handleSendSuccess = () => {
-    setShowSendModal(false);
-    setSelectedToken(null);
-    setSelectedTokenForSend(null);
-    setDestinationAddress("");
-    setSendAmount("");
-    setSendErrors({});
-    toast.success("Transaction sent successfully");
-  };
-
-  const handleCloseReceiveModal = () => {
-    setOpenReceive(false);
   };
 
   const handleSendClick = (token) => {
@@ -344,9 +264,7 @@ export default function AssetsPage() {
   // Generate QR Code when QR detail is opened
   useEffect(() => {
     if (qrDetail.open && qrDetail.coin) {
-      const address = receiveAddresses.find(
-        (a) => a.label === qrDetail.coin
-      )?.address;
+      const address = receiveAddresses.find((a) => a.label === qrDetail.coin)?.address;
       if (address) {
         QRCode.toDataURL(address, {
           width: 320,
@@ -386,21 +304,11 @@ export default function AssetsPage() {
     if (isNaN(amount) || parseFloat(amount) <= 0) {
       return "Please enter a valid amount";
     }
-    if (
-      tokenType === "Bitcoin" &&
-      balances &&
-      Object.keys(balances).length > 0
-    ) {
-      const currentAmount = Object.values(balances).reduce(
-        (sum, balance) => sum + balance,
-        0
-      );
+    if (tokenType === "Bitcoin" && balances && Object.keys(balances).length > 0) {
+      const currentAmount = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
       const requestedSatoshis = btcToSatoshis(parseFloat(amount));
       if (requestedSatoshis > currentAmount) {
-        return `Insufficient balance. Available: ${formatTokenAmount(
-          currentAmount,
-          tokenType
-        )} ${tokenType}`;
+        return `Insufficient balance. Available: ${formatTokenAmount(currentAmount, tokenType)} ${tokenType}`;
       }
     }
     return null;
@@ -408,29 +316,15 @@ export default function AssetsPage() {
 
   const handleAnalyzeAddress = async () => {
     const addressError = validateAddress(destinationAddress);
-    const amountError = validateAmount(
-      sendAmount,
-      selectedTokenForSend?.tokenType,
-      selectedTokenForSend?.balances
-    );
+    const amountError = validateAmount(sendAmount, selectedTokenForSend?.tokenType, selectedTokenForSend?.balances);
 
     // Prevent lanjut jika amount melebihi saldo
-    if (
-      selectedTokenForSend?.tokenType === "Bitcoin" &&
-      selectedTokenForSend?.balances &&
-      Object.keys(selectedTokenForSend.balances).length > 0
-    ) {
-      const currentAmount = Object.values(selectedTokenForSend.balances).reduce(
-        (sum, balance) => sum + balance,
-        0
-      );
+    if (selectedTokenForSend?.tokenType === "Bitcoin" && selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0) {
+      const currentAmount = Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0);
       if (btcToSatoshis(parseFloat(sendAmount)) > currentAmount) {
         setSendErrors((prev) => ({
           ...prev,
-          amount: `Insufficient balance. Available: ${formatTokenAmount(
-            currentAmount,
-            selectedTokenForSend.tokenType
-          )} ${selectedTokenForSend.name}`,
+          amount: `Insufficient balance. Available: ${formatTokenAmount(currentAmount, selectedTokenForSend.tokenType)} ${selectedTokenForSend.name}`,
         }));
         return;
       }
@@ -467,12 +361,8 @@ export default function AssetsPage() {
     const fetchBalances = async () => {
       if (!userWallet?.addresses) return;
 
-      const networkAddresses = userWallet.addresses.filter(
-        isAddressForCurrentNetwork
-      );
-      const bitcoinAddresses = networkAddresses
-        .filter((addr) => getTokenType(addr) === "Bitcoin")
-        .map((addr) => addr.address);
+      const networkAddresses = userWallet.addresses.filter(isAddressForCurrentNetwork);
+      const bitcoinAddresses = networkAddresses.filter((addr) => getTokenType(addr) === "Bitcoin").map((addr) => addr.address);
 
       if (bitcoinAddresses.length === 0) {
         setTokenBalances({});
@@ -484,9 +374,7 @@ export default function AssetsPage() {
       setBalanceErrors({});
 
       try {
-        const { balances, errors } = await fetchBitcoinBalances(
-          bitcoinAddresses
-        );
+        const { balances, errors } = await fetchBitcoinBalances(bitcoinAddresses);
 
         setTokenBalances((prev) => ({
           ...prev,
@@ -513,9 +401,7 @@ export default function AssetsPage() {
   const getTokensForCurrentNetwork = () => {
     if (!userWallet?.addresses) return [];
 
-    const networkAddresses = userWallet.addresses.filter(
-      isAddressForCurrentNetwork
-    );
+    const networkAddresses = userWallet.addresses.filter(isAddressForCurrentNetwork);
 
     // Group addresses by token type
     const tokenGroups = {};
@@ -548,9 +434,7 @@ export default function AssetsPage() {
         addresses: data.addresses,
         balances: balances,
         isLoading: isLoadingBalances && tokenType === "Bitcoin",
-        hasError:
-          balanceErrors[tokenType] &&
-          Object.keys(balanceErrors[tokenType]).length > 0,
+        hasError: balanceErrors[tokenType] && Object.keys(balanceErrors[tokenType]).length > 0,
       };
     });
   };
@@ -562,23 +446,12 @@ export default function AssetsPage() {
       <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
         {/* Card Wallet pakai gambar utuh */}
         <div className="relative items-center w-full mx-auto">
-          <img
-            src="/assets/cek-card-wallet.png"
-            alt="Wallet Card"
-            className="block w-full max-w-full h-auto select-none pointer-events-none"
-            draggable="false"
-          />
+          <img src="/assets/cek-card-wallet.png" alt="Wallet Card" className="block w-full max-w-full h-auto select-none pointer-events-none" draggable="false" />
           {/* Overlay Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pt-20 pb-8">
-            <div className="text-white text-xs md:text-xs font-normal mb-1">
-              Total Portofolio Value
-            </div>
-            <div className="text-white text-4xl md:text-4xl font-semibold mb-1">
-              $0.00
-            </div>
-            <div className="text-green-400 text-sm font-medium mb-6 text-center">
-              Top up your wallet to start using it!
-            </div>
+            <div className="text-white text-xs md:text-xs font-normal mb-1">Total Portofolio Value</div>
+            <div className="text-white text-4xl md:text-4xl font-semibold mb-1">$0.00</div>
+            <div className="text-green-400 text-sm font-medium mb-6 text-center">Top up your wallet to start using it!</div>
             <div className="flex gap-8 w-full max-w-lg justify-center">
               {/* Receive */}
               <div className="flex flex-col flex-1">
@@ -586,29 +459,15 @@ export default function AssetsPage() {
                   <div className="absolute top-4 right-4">
                     <NeoButton
                       icon={
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 15 15"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <rect
-                            x="2"
-                            y="2"
-                            width="11"
-                            height="11"
-                            fill="#0E1117"
-                          />
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="2" y="2" width="11" height="11" fill="#0E1117" />
                         </svg>
                       }
                       className="!w-10 !h-10 p-0 flex items-center justify-center"
                       onClick={() => handleReceiveClick(tokens[0])}
                     />
                   </div>
-                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">
-                    Receive
-                  </div>
+                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Receive</div>
                 </div>
               </div>
               {/* Send */}
@@ -617,34 +476,12 @@ export default function AssetsPage() {
                   <div className="absolute top-4 right-4">
                     <NeoButton
                       icon={
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 15 15"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <mask
-                            id="mask-send"
-                            maskUnits="userSpaceOnUse"
-                            x="0"
-                            y="0"
-                            width="15"
-                            height="15"
-                          >
-                            <rect
-                              x="0"
-                              y="0"
-                              width="15"
-                              height="15"
-                              fill="#fff"
-                            />
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <mask id="mask-send" maskUnits="userSpaceOnUse" x="0" y="0" width="15" height="15">
+                            <rect x="0" y="0" width="15" height="15" fill="#fff" />
                           </mask>
                           <g mask="url(#mask-send)">
-                            <path
-                              d="M12 3V10H10.8V5.8L3.5 13.1L2.9 12.5L10.2 5.2H5V3H12Z"
-                              fill="#0E1117"
-                            />
+                            <path d="M12 3V10H10.8V5.8L3.5 13.1L2.9 12.5L10.2 5.2H5V3H12Z" fill="#0E1117" />
                           </g>
                         </svg>
                       }
@@ -652,9 +489,7 @@ export default function AssetsPage() {
                       onClick={handleGeneralSendClick}
                     />
                   </div>
-                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">
-                    Send
-                  </div>
+                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Send</div>
                 </div>
               </div>
             </div>
@@ -663,41 +498,20 @@ export default function AssetsPage() {
         {/* Token List */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">
-              Tokens ({network})
-            </h2>
+            <h2 className="text-lg font-semibold text-white">Tokens ({network})</h2>
             <div className="flex gap-4">
-              <img
-                src="/assets/icons/search.svg"
-                alt="Search"
-                className="w-5 h-5 cursor-pointer"
-              />
-              <img
-                src="/assets/icons/page_info.svg"
-                alt="Setting"
-                className="w-5 h-5 cursor-pointer"
-              />
+              <img src="/assets/icons/search.svg" alt="Search" className="w-5 h-5 cursor-pointer" />
+              <img src="/assets/icons/page_info.svg" alt="Setting" className="w-5 h-5 cursor-pointer" />
             </div>
           </div>
           <div className="flex flex-col divide-y divide-[#23272F]">
             {tokens.length > 0 ? (
-              tokens.map((token, idx) => (
-                <TokenCard
-                  key={idx}
-                  token={token}
-                  calculateTokenAmountAndValue={calculateTokenAmountAndValue}
-                  onSendClick={handleSendClick}
-                />
-              ))
+              tokens.map((token, idx) => <TokenCard key={idx} token={token} calculateTokenAmountAndValue={calculateTokenAmountAndValue} onSendClick={handleSendClick} />)
             ) : (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
-                  <div className="text-[#B0B6BE] text-sm mb-2">
-                    No tokens found for {network}
-                  </div>
-                  <div className="text-[#9BEB83] text-xs">
-                    Add addresses to see your tokens here
-                  </div>
+                  <div className="text-[#B0B6BE] text-sm mb-2">No tokens found for {network}</div>
+                  <div className="text-[#9BEB83] text-xs">Add addresses to see your tokens here</div>
                 </div>
               </div>
             )}
@@ -710,22 +524,12 @@ export default function AssetsPage() {
       {showSendModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div className="bg-[#23272F] px-6 py-8 w-full max-w-sm rounded-lg shadow-lg relative flex flex-col gap-6">
-            <button
-              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
-              onClick={handleCloseSendModal}
-              aria-label="Close"
-            >
+            <button className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold" onClick={handleCloseSendModal} aria-label="Close">
               ×
             </button>
-            <div className="text-white text-xl font-semibold mb-2">
-              Send {selectedToken?.name || "Token"}
-            </div>
+            <div className="text-white text-xl font-semibold mb-2">Send {selectedToken?.name || "Token"}</div>
             <div className="flex flex-col items-center gap-2">
-              <img
-                src="/assets/images/image-send-coin.png"
-                alt="Send Coin"
-                className="w-32 h-32 object-contain"
-              />
+              <img src="/assets/images/image-send-coin.png" alt="Send Coin" className="w-32 h-32 object-contain" />
             </div>
             <div className="flex flex-col gap-4">
               {/* Token Selection Dropdown */}
@@ -733,14 +537,10 @@ export default function AssetsPage() {
                 <div className="text-[#B0B6BE] text-sm mb-1">Select Token</div>
                 <select
                   className="w-full bg-[#23272F] border border-[#393E4B] rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none"
-                  value={
-                    selectedTokenForSend ? selectedTokenForSend.tokenType : ""
-                  }
+                  value={selectedTokenForSend ? selectedTokenForSend.tokenType : ""}
                   onChange={(e) => {
                     const selectedTokenType = e.target.value;
-                    const token = tokens.find(
-                      (t) => t.tokenType === selectedTokenType
-                    );
+                    const token = tokens.find((t) => t.tokenType === selectedTokenType);
                     if (token) {
                       const tokenWithAmount = {
                         ...token,
@@ -755,43 +555,26 @@ export default function AssetsPage() {
                     setDestinationAddress("");
                     setSendAmount("");
                     setSendErrors({});
-                  }}
-                >
+                  }}>
                   <option value="">Select a token</option>
                   {tokens.map((token, index) => {
                     // Calculate current amount for this token
-                    const currentAmount =
-                      token.balances && Object.keys(token.balances).length > 0
-                        ? Object.values(token.balances).reduce(
-                            (sum, balance) => sum + balance,
-                            0
-                          )
-                        : 0;
+                    const currentAmount = token.balances && Object.keys(token.balances).length > 0 ? Object.values(token.balances).reduce((sum, balance) => sum + balance, 0) : 0;
 
                     return (
                       <option key={index} value={token.tokenType}>
-                        {token.name} (
-                        {token.isLoading
-                          ? "Loading..."
-                          : formatTokenAmount(currentAmount, token.tokenType)}
-                        )
+                        {token.name} ({token.isLoading ? "Loading..." : formatTokenAmount(currentAmount, token.tokenType)})
                       </option>
                     );
                   })}
                 </select>
               </div>
               <div>
-                <div className="text-[#B0B6BE] text-sm mb-1">
-                  Recipient Address
-                </div>
+                <div className="text-[#B0B6BE] text-sm mb-1">Recipient Address</div>
                 <input
                   type="text"
-                  className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${
-                    sendErrors.address ? "border-red-500" : "border-[#393E4B]"
-                  } ${
-                    !selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  placeholder="ex: m1psqxsfsn3efndfm1psqxsfsnfn"
+                  className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${sendErrors.address ? "border-red-500" : "border-[#393E4B]"} ${!selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""}`}
+                  placeholder="ex: m1p2... or 1..."
                   value={destinationAddress}
                   disabled={!selectedTokenForSend}
                   onChange={(e) => {
@@ -803,34 +586,18 @@ export default function AssetsPage() {
                     }
                   }}
                 />
-                {sendErrors.address && (
-                  <div className="text-red-400 text-xs mt-1">
-                    {sendErrors.address}
-                  </div>
-                )}
+                {sendErrors.address && <div className="text-red-400 text-xs mt-1">{sendErrors.address}</div>}
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <div className="text-[#B0B6BE] text-sm">
-                    Amount ({selectedTokenForSend?.name?.toUpperCase() || ""})
-                  </div>
+                  <div className="text-[#B0B6BE] text-sm">Amount ({selectedTokenForSend?.name?.toUpperCase() || ""})</div>
                   <div className="text-[#B0B6BE] text-xs">
                     Balance:{" "}
                     {selectedTokenForSend?.isLoading
                       ? "Loading..."
                       : (() => {
-                          const currentAmount =
-                            selectedTokenForSend?.balances &&
-                            Object.keys(selectedTokenForSend.balances).length >
-                              0
-                              ? Object.values(
-                                  selectedTokenForSend.balances
-                                ).reduce((sum, balance) => sum + balance, 0)
-                              : 0;
-                          return formatTokenAmount(
-                            currentAmount,
-                            selectedTokenForSend?.tokenType
-                          );
+                          const currentAmount = selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0 ? Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0) : 0;
+                          return formatTokenAmount(currentAmount, selectedTokenForSend?.tokenType);
                         })()}{" "}
                     {selectedTokenForSend?.name?.toUpperCase() || ""}
                   </div>
@@ -838,13 +605,7 @@ export default function AssetsPage() {
                 <div className="relative">
                   <input
                     type="number"
-                    className={`w-full bg-[#23272F] border rounded px-3 py-2 pr-16 text-[#B0B6BE] text-sm outline-none ${
-                      sendErrors.amount ? "border-red-500" : "border-[#393E4B]"
-                    } ${
-                      !selectedTokenForSend
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
+                    className={`w-full bg-[#23272F] border rounded px-3 py-2 pr-16 text-[#B0B6BE] text-sm outline-none ${sendErrors.amount ? "border-red-500" : "border-[#393E4B]"} ${!selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""}`}
                     placeholder="0.00"
                     value={sendAmount}
                     disabled={!selectedTokenForSend}
@@ -860,25 +621,13 @@ export default function AssetsPage() {
 
                         // Validate amount in real-time
                         if (value && !isNaN(value) && parseFloat(value) > 0) {
-                          if (
-                            selectedTokenForSend?.tokenType === "Bitcoin" &&
-                            selectedTokenForSend?.balances &&
-                            Object.keys(selectedTokenForSend.balances).length >
-                              0
-                          ) {
-                            const currentAmount = Object.values(
-                              selectedTokenForSend.balances
-                            ).reduce((sum, balance) => sum + balance, 0);
-                            const requestedSatoshis = btcToSatoshis(
-                              parseFloat(value)
-                            );
+                          if (selectedTokenForSend?.tokenType === "Bitcoin" && selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0) {
+                            const currentAmount = Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0);
+                            const requestedSatoshis = btcToSatoshis(parseFloat(value));
                             if (requestedSatoshis > currentAmount) {
                               setSendErrors((prev) => ({
                                 ...prev,
-                                amount: `Insufficient balance. Available: ${formatTokenAmount(
-                                  currentAmount,
-                                  selectedTokenForSend.tokenType
-                                )} ${selectedTokenForSend.name}`,
+                                amount: `Insufficient balance. Available: ${formatTokenAmount(currentAmount, selectedTokenForSend.tokenType)} ${selectedTokenForSend.name}`,
                               }));
                             }
                           }
@@ -886,34 +635,14 @@ export default function AssetsPage() {
                       }
                     }}
                   />
-                  <button
-                    type="button"
-                    className={`absolute right-2 top-1/2 transform -translate-y-1/2 text-xs font-medium transition-colors ${
-                      selectedTokenForSend
-                        ? "text-[#9BEB83] hover:text-white cursor-pointer"
-                        : "text-[#6B7280] cursor-not-allowed"
-                    }`}
-                    onClick={handleMaxAmount}
-                    disabled={!selectedTokenForSend}
-                  >
+                  <button type="button" className={`absolute right-2 top-1/2 transform -translate-y-1/2 text-xs font-medium transition-colors ${selectedTokenForSend ? "text-[#9BEB83] hover:text-white cursor-pointer" : "text-[#6B7280] cursor-not-allowed"}`} onClick={handleMaxAmount} disabled={!selectedTokenForSend}>
                     MAX
                   </button>
                 </div>
-                {sendErrors.amount && (
-                  <div className="text-red-400 text-xs mt-1">
-                    {sendErrors.amount}
-                  </div>
-                )}
+                {sendErrors.amount && <div className="text-red-400 text-xs mt-1">{sendErrors.amount}</div>}
               </div>
             </div>
-            <CustomButton
-              icon="/assets/icons/analyze-address-light.svg"
-              className={`mt-2 w-full justify-center ${
-                !selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              onClick={handleAnalyzeAddress}
-              disabled={!selectedTokenForSend}
-            >
+            <CustomButton icon="/assets/icons/analyze-address-light.svg" className={`mt-2 w-full justify-center ${!selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""}`} onClick={handleAnalyzeAddress} disabled={!selectedTokenForSend}>
               Analyze Address
             </CustomButton>
           </div>
@@ -933,21 +662,15 @@ export default function AssetsPage() {
             setShowAnalyeAddressModal(false);
             setAnalyzeAddressData(null);
           }}
-          onConfirmSend={() => {
-            setShowAnalyeAddressModal(false);
-            setAnalyzeAddressData(null);
-          }}
+          onConfirmSend={handleConfirmSend}
+          isSendLoading={isSendLoading}
         />
       )}
 
       {/* Modal Receive Address */}
       {openReceive && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div
-            className={`bg-[#23272F] px-6 py-8 w-full ${
-              qrDetail.open ? "max-w-sm" : "max-w-md"
-            } rounded-lg shadow-lg relative flex flex-col gap-6`}
-          >
+          <div className={`bg-[#23272F] px-6 py-8 w-full ${qrDetail.open ? "max-w-sm" : "max-w-md"} rounded-lg shadow-lg relative flex flex-col gap-6`}>
             <button
               className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
               onClick={() => {
@@ -955,48 +678,25 @@ export default function AssetsPage() {
                 setQrDetail({ open: false, coin: null });
                 setQrCodeDataUrl("");
               }}
-              aria-label="Close"
-            >
+              aria-label="Close">
               ×
             </button>
-            <div className="text-white text-xl font-semibold mb-2">
-              {qrDetail.open ? `Receive ${qrDetail.coin}` : "Receive Coin"}
-            </div>
+            <div className="text-white text-xl font-semibold mb-2">{qrDetail.open ? `Receive ${qrDetail.coin}` : "Receive Coin"}</div>
             {qrDetail.open ? (
               // QR Detail View
               <div className="flex flex-col items-center gap-2">
-                {qrCodeDataUrl && (
-                  <img
-                    src={qrCodeDataUrl}
-                    alt="QR"
-                    className="w-full max-w-80 h-auto object-contain bg-white rounded"
-                    style={{ imageRendering: "crisp-edges" }}
-                  />
-                )}
-                <div className="text-[#B0B6BE] text-sm">
-                  Scan to receive {qrDetail.coin}
-                </div>
+                {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="QR" className="w-full max-w-80 h-auto object-contain bg-white rounded" style={{ imageRendering: "crisp-edges" }} />}
+                <div className="text-[#B0B6BE] text-sm">Scan to receive {qrDetail.coin}</div>
               </div>
             ) : (
               // Address List View
               <div className="flex flex-col gap-4">
                 {receiveAddresses.map((item, idx) => (
                   <div key={item.label} className="flex flex-col gap-1">
-                    <div className="text-white text-sm font-medium">
-                      {item.label}:
-                    </div>
+                    <div className="text-white text-sm font-medium">{item.label}:</div>
                     <div className="flex items-center gap-2 bg-[#23272F] border border-[#393E4B] rounded px-3 py-2">
-                      <span className="text-[#B0B6BE] text-sm truncate flex-1">
-                        {item.address}
-                      </span>
-                      <img
-                        src="/assets/icons/qr_code.svg"
-                        alt="QR"
-                        className="w-5 h-5 cursor-pointer"
-                        onClick={() =>
-                          setQrDetail({ open: true, coin: item.label })
-                        }
-                      />
+                      <span className="text-[#B0B6BE] text-sm truncate flex-1">{item.address}</span>
+                      <img src="/assets/icons/qr_code.svg" alt="QR" className="w-5 h-5 cursor-pointer" onClick={() => setQrDetail({ open: true, coin: item.label })} />
                       <img
                         src="/assets/icons/content_copy.svg"
                         alt="Copy"
@@ -1013,16 +713,9 @@ export default function AssetsPage() {
             )}
             {qrDetail.open && (
               <div>
-                <div className="text-[#B0B6BE] text-sm mb-1">
-                  Your {qrDetail.coin && qrDetail.coin.toLowerCase()} address:
-                </div>
+                <div className="text-[#B0B6BE] text-sm mb-1">Your {qrDetail.coin && qrDetail.coin.toLowerCase()} address:</div>
                 <div className="flex items-center gap-2 bg-[#23272F] border border-[#393E4B] rounded px-3 py-2">
-                  <span className="text-[#B0B6BE] text-sm truncate flex-1">
-                    {
-                      receiveAddresses.find((a) => a.label === qrDetail.coin)
-                        ?.address
-                    }
-                  </span>
+                  <span className="text-[#B0B6BE] text-sm truncate flex-1">{receiveAddresses.find((a) => a.label === qrDetail.coin)?.address}</span>
                 </div>
               </div>
             )}
@@ -1033,13 +726,9 @@ export default function AssetsPage() {
                     icon="/assets/icons/content_copy.svg"
                     className="w-full"
                     onClick={() => {
-                      navigator.clipboard.writeText(
-                        receiveAddresses.find((a) => a.label === qrDetail.coin)
-                          ?.address || ""
-                      );
+                      navigator.clipboard.writeText(receiveAddresses.find((a) => a.label === qrDetail.coin)?.address || "");
                       toast.success("Address copied to clipboard!");
-                    }}
-                  >
+                    }}>
                     Copy Address
                   </CustomButton>
                   <NeoButton
@@ -1051,10 +740,7 @@ export default function AssetsPage() {
                   />
                 </>
               ) : (
-                <CustomButton
-                  className="w-full"
-                  onClick={() => setOpenReceive(false)}
-                >
+                <CustomButton className="w-full" onClick={() => setOpenReceive(false)}>
                   Done
                 </CustomButton>
               )}
@@ -1067,13 +753,7 @@ export default function AssetsPage() {
 }
 
 // Analysis Result Modal Component
-function AnalysisResultModal({
-  isOpen,
-  isSafe,
-  analyzeData,
-  onClose,
-  onConfirmSend,
-}) {
+function AnalysisResultModal({ isOpen, isSafe, analyzeData, onClose, onConfirmSend, isSendLoading }) {
   if (!isOpen) return null;
 
   // Function to calculate time ago from timestamp
@@ -1081,9 +761,7 @@ function AnalysisResultModal({
     const now = Date.now();
     const timeDiff = now - Number(timestamp) / 1000000; // Convert nanoseconds to milliseconds
     const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(
-      (timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-    );
+    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
     if (days > 0) {
       return `${days} day${days > 1 ? "s" : ""} ago`;
@@ -1109,15 +787,9 @@ function AnalysisResultModal({
       borderColor: "border-[#22C55E]",
       icon: "/assets/icons/safe.png",
       title: "ADDRESS IS SAFE",
-      description:
-        analyzeData?.report && analyzeData.report.length > 0
-          ? "This address has been analyzed by the community and found to be safe"
-          : "This address appears to be clean with no suspicious activity detected in our comprehensive database",
+      description: analyzeData?.report && analyzeData.report.length > 0 ? "This address has been analyzed by the community and found to be safe" : "This address appears to be clean with no suspicious activity detected in our comprehensive database",
       securityTitle: "Security Checks Passed",
-      checkItems: [
-        "No links to known scam addresses",
-        "No suspicious transaction pattern detected",
-      ],
+      checkItems: ["No links to known scam addresses", "No suspicious transaction pattern detected"],
       riskScoreColor: "text-green-400",
     },
     danger: {
@@ -1125,15 +797,9 @@ function AnalysisResultModal({
       borderColor: "border-[#F87171]",
       icon: "/assets/icons/danger.png",
       title: "ADDRESS IS NOT SAFE",
-      description:
-        analyzeData?.report && analyzeData.report.length > 0
-          ? "This address has been flagged by the community as potentially unsafe"
-          : "This address appears to be flagged with suspicious activity detected in our comprehensive database",
+      description: analyzeData?.report && analyzeData.report.length > 0 ? "This address has been flagged by the community as potentially unsafe" : "This address appears to be flagged with suspicious activity detected in our comprehensive database",
       securityTitle: "Security Checks Not Passed",
-      checkItems: [
-        "Links to known scam addresses detected",
-        "Suspicious transaction pattern detected",
-      ],
+      checkItems: ["Links to known scam addresses detected", "Suspicious transaction pattern detected"],
       riskScoreColor: "text-red-400",
     },
   };
@@ -1143,46 +809,28 @@ function AnalysisResultModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="relative bg-[#23272F] w-full max-w-sm rounded-lg shadow-lg">
-        <button
-          className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold z-20"
-          onClick={onClose}
-          aria-label="Close"
-        >
+        <button className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold z-20" onClick={onClose} aria-label="Close">
           ×
         </button>
         <div className="p-6 max-h-[80vh] overflow-y-auto">
-          <div className="text-white text-xl font-semibold mb-6">
-            Send {"Bitcoin"}
-          </div>
+          <div className="text-white text-xl font-semibold mb-6">Send {"Bitcoin"}</div>
           <div className="w-full flex flex-col gap-6 relative z-10">
             {/* Status */}
             <div className="rounded-lg overflow-hidden mb-2 bg-white/5 w-full">
               {/* Bagian atas dengan gradient */}
               <div className="relative w-full">
-                <div
-                  className={`absolute top-0 left-0 w-full h-16 bg-gradient-to-b ${config.gradientColor} via-transparent to-transparent opacity-80 z-0`}
-                />
+                <div className={`absolute top-0 left-0 w-full h-16 bg-gradient-to-b ${config.gradientColor} via-transparent to-transparent opacity-80 z-0`} />
                 <div className="relative flex items-center gap-3 px-4 py-4 z-10">
-                  <img
-                    src={config.icon}
-                    alt={isSafe ? "Safe" : "Danger"}
-                    className="w-10 h-10 object-contain"
-                  />
+                  <img src={config.icon} alt={isSafe ? "Safe" : "Danger"} className="w-10 h-10 object-contain" />
                   <div>
-                    <div className="text-white font-bold text-base leading-tight">
-                      {config.title}
-                    </div>
-                    <div className="text-[#B0B6BE] text-sm">
-                      Detected By Community
-                    </div>
+                    <div className="text-white font-bold text-base leading-tight">{config.title}</div>
+                    <div className="text-[#B0B6BE] text-sm">Detected By Community</div>
                   </div>
                 </div>
               </div>
               {/* Bagian bawah deskripsi */}
               <div className="px-4 pb-4">
-                <div className="text-[#B0B6BE] text-xs font-normal">
-                  {config.description}
-                </div>
+                <div className="text-[#B0B6BE] text-xs font-normal">{config.description}</div>
               </div>
             </div>
             {/* Address Details */}
@@ -1190,110 +838,46 @@ function AnalysisResultModal({
             <div className="rounded-lg p-4 mb-2 w-full">
               <div className="grid grid-cols-2 gap-3 w-full">
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">
-                    {analyzeData?.report && analyzeData.report.length > 0
-                      ? analyzeData.report[0].voted_by.length
-                      : "0"}
-                  </span>
+                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? analyzeData.report[0].voted_by.length : "0"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img
-                      src="/assets/icons/wallet-grey.svg"
-                      alt="Wallet"
-                      className="w-3 h-3"
-                    />
+                    <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-3 h-3" />
                     Total Voters
                   </span>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">
-                    {analyzeData?.report && analyzeData.report.length > 0
-                      ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No`
-                      : "N/A"}
-                  </span>
+                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img
-                      src="/assets/icons/total-volume.svg"
-                      alt="Votes"
-                      className="w-3 h-3"
-                    />
+                    <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-3 h-3" />
                     Vote Results
                   </span>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span
-                    className={`text-sm font-medium ${config.riskScoreColor}`}
-                  >
-                    {analyzeData?.report && analyzeData.report.length > 0
-                      ? calculateRiskScore(
-                          analyzeData.report[0].votes_yes,
-                          analyzeData.report[0].votes_no
-                        )
-                      : "0/100"}
-                  </span>
+                  <span className={`text-sm font-medium ${config.riskScoreColor}`}>{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img
-                      src="/assets/icons/risk-score.svg"
-                      alt="Risk Score"
-                      className="w-3 h-3"
-                    />
+                    <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-3 h-3" />
                     Risk Score
                   </span>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">
-                    {analyzeData?.report && analyzeData.report.length > 0
-                      ? getTimeAgo(analyzeData.report[0].created_at)
-                      : "N/A"}
-                  </span>
+                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img
-                      src="/assets/icons/last-activity.svg"
-                      alt="Last Activity"
-                      className="w-3 h-3"
-                    />
+                    <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-3 h-3" />
                     Report Created
                   </span>
                 </div>
               </div>
             </div>
             {/* Security Checks */}
-            <div
-              className={`rounded-lg px-4 py-4 mb-2 border-l-2 ${config.borderColor} relative overflow-hidden bg-white/5 w-full`}
-            >
-              <div
-                className={`absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r ${config.gradientColor}/30 to-transparent pointer-events-none`}
-              />
+            <div className={`rounded-lg px-4 py-4 mb-2 border-l-2 ${config.borderColor} relative overflow-hidden bg-white/5 w-full`}>
+              <div className={`absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r ${config.gradientColor}/30 to-transparent pointer-events-none`} />
               <div className="relative z-10">
-                <div className="text-white font-semibold mb-2 text-sm">
-                  {config.securityTitle}
-                </div>
+                <div className="text-white font-semibold mb-2 text-sm">{config.securityTitle}</div>
                 <ul className="flex flex-col gap-1">
                   {config.checkItems.map((item, index) => (
-                    <li
-                      key={index}
-                      className={`flex items-center gap-2 ${
-                        isSafe ? "text-[#22C55E]" : "text-[#F87171]"
-                      } text-xs`}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          fill={isSafe ? "#22C55E" : "#F87171"}
-                        />
-                        <path
-                          d="M8 12l2 2 4-4"
-                          stroke="#23272F"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
+                    <li key={index} className={`flex items-center gap-2 ${isSafe ? "text-[#22C55E]" : "text-[#F87171]"} text-xs`}>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" fill={isSafe ? "#22C55E" : "#F87171"} />
+                        <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                       <span className="text-white">{item}</span>
                     </li>
@@ -1305,37 +889,17 @@ function AnalysisResultModal({
             {/* Report Details - Only show if there's a report */}
             {analyzeData?.report && analyzeData.report.length > 0 && (
               <div className="rounded-lg p-4 mb-2 bg-white/5 w-full">
-                <div className="text-white font-semibold mb-3 text-sm">
-                  Report Details
-                </div>
+                <div className="text-white font-semibold mb-3 text-sm">Report Details</div>
                 <div className="space-y-3 w-full">
                   <div className="w-full">
                     <div className="text-[#B0B6BE] text-xs mb-1">Category</div>
-                    <div className="text-white text-sm font-medium capitalize w-full">
-                      {analyzeData.report[0].category}
-                    </div>
+                    <div className="text-white text-sm font-medium capitalize w-full">{analyzeData.report[0].category}</div>
                   </div>
                   <div className="w-full">
-                    <Link
-                      to={`/report/${analyzeData.report[0].report_id}`}
-                      className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors w-full"
-                      onClick={onClose}
-                    >
+                    <Link to={`/report/${analyzeData.report[0].report_id}`} className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors w-full" onClick={onClose}>
                       <span>View Full Report</span>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M7 17L17 7M17 7H7M17 7V17"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </Link>
                   </div>
@@ -1344,24 +908,14 @@ function AnalysisResultModal({
             )}
             {/* Button Confirm Send */}
             <div className="flex gap-3 mt-4 w-full">
-              <CustomButton
-                className="w-full justify-center"
-                onClick={onConfirmSend}
-              >
-                {analyzeData?.report && analyzeData.report.length > 0
-                  ? "Confirm Send"
-                  : "Continue"}
+              <CustomButton className="w-full justify-center" disabled={isSendLoading} onClick={onConfirmSend}>
+                {isSendLoading ? "Sending..." : "Confirm Send"}
               </CustomButton>
-              {!isSafe &&
-                analyzeData?.report &&
-                analyzeData.report.length > 0 && (
-                  <NeoButton
-                    className="w-full text-white justify-center"
-                    onClick={onClose}
-                  >
-                    Cancel
-                  </NeoButton>
-                )}
+              {!isSafe && analyzeData?.report && analyzeData.report.length > 0 && (
+                <NeoButton className="w-full text-white justify-center" onClick={onClose}>
+                  Cancel
+                </NeoButton>
+              )}
             </div>
           </div>
         </div>
@@ -1386,18 +940,11 @@ function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
 
       setIsCalculating(true);
       try {
-        const result = await calculateTokenAmountAndValue(
-          token.tokenType,
-          token.addresses,
-          token.balances
-        );
+        const result = await calculateTokenAmountAndValue(token.tokenType, token.addresses, token.balances);
         setAmount(result.amount);
         setValue(result.value);
       } catch (error) {
-        console.error(
-          `Error calculating ${token.tokenType} amount and value:`,
-          error
-        );
+        console.error(`Error calculating ${token.tokenType} amount and value:`, error);
         setAmount(0);
         setValue("$0.00");
       } finally {
@@ -1406,12 +953,7 @@ function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
     };
 
     calculateAmountAndValue();
-  }, [
-    token.balances,
-    token.tokenType,
-    token.addresses,
-    calculateTokenAmountAndValue,
-  ]);
+  }, [token.balances, token.tokenType, token.addresses, calculateTokenAmountAndValue]);
 
   const handleCardClick = () => {
     // Pass token data including current amount to send modal
@@ -1423,26 +965,15 @@ function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
   };
 
   return (
-    <div
-      className="flex items-center px-2 py-4 gap-4 cursor-pointer hover:bg-[#181C22] transition-colors rounded-lg"
-      onClick={handleCardClick}
-    >
+    <div className="flex items-center px-2 py-4 gap-4 cursor-pointer hover:bg-[#181C22] transition-colors rounded-lg" onClick={handleCardClick}>
       <img src={token.icon} alt={token.name} className="w-10 h-10" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-white font-semibold text-base">
-            {token.name}
-          </span>
-          {token.symbol && (
-            <span className="text-[#B0B6BE] text-base">• {token.symbol}</span>
-          )}
+          <span className="text-white font-semibold text-base">{token.name}</span>
+          {token.symbol && <span className="text-[#B0B6BE] text-base">• {token.symbol}</span>}
         </div>
         <div className="text-[#B0B6BE] text-sm truncate">{token.desc}</div>
-        {token.hasError && (
-          <div className="text-red-400 text-xs mt-1">
-            Error fetching balance
-          </div>
-        )}
+        {token.hasError && <div className="text-red-400 text-xs mt-1">Error fetching balance</div>}
       </div>
       <div className="flex flex-col items-end gap-2">
         {token.isLoading || isCalculating ? (
@@ -1452,9 +983,7 @@ function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
           </div>
         ) : (
           <>
-            <span className="text-white font-semibold text-base">
-              {formatTokenAmount(amount, token.tokenType)}
-            </span>
+            <span className="text-white font-semibold text-base">{formatTokenAmount(amount, token.tokenType)}</span>
             <span className="text-[#B0B6BE] text-sm">{value}</span>
           </>
         )}

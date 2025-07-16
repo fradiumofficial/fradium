@@ -8,6 +8,9 @@ bitcoin-mining:
 bitcoin-balance:
 	bitcoin-cli -conf=$(CURDIR)/bitcoin.conf getbalance
 
+bitcoin-newwallet:
+	bitcoin-cli -conf=$(CURDIR)/bitcoin.conf -named createwallet wallet_name="fradium" load_on_startup=true
+
 bitcoin-utxo:
 	bitcoin-cli -conf=$(CURDIR)/bitcoin.conf listunspent
 
