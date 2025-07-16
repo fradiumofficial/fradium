@@ -25,6 +25,7 @@ dist/
 # environment variables
 .env
 
+.mops
 # Local artifacts 
 *.joblib
 
@@ -43,3 +44,5 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+bitcoin_data/*

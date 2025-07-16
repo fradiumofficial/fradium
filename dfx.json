@@ -3,7 +3,8 @@
   "canisters": {
     "backend": {
       "main": "src/backend/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "dependencies": ["token", "internet_identity"]
     },
     "frontend": {
       "dependencies": ["backend"],
@@ -23,21 +24,50 @@
       "type": "custom",
       "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
     },
-    "ransomware_detector": {
-      "type": "rust",
-      "package": "ransomware_detector",
-      "candid": "src/ai/detector_service/src/ransomware_detector.did",
-      "build": ["./bin/build.sh"]
+    "chatbot": {
+      "dependencies": ["llm"],
+      "main": "src/chatbot/chatbot.mo",
+      "type": "motoko"
+    },
+    "llm": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.did",
+      "wasm": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.wasm"
+    },
+    "token": {
+      "main": "src/token/token.mo",
+      "type": "motoko",
+      "build": "scripts/build.fradium_token.sh"
+    },
+    "bitcoin": {
+      "main": "src/bitcoin/Main.mo",
+      "type": "motoko",
+      "init_arg": "(variant { regtest })"
+    },
+    "sol_rpc": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/sol-rpc-canister/releases/latest/download/sol_rpc_canister.did",
+      "wasm": "https://github.com/dfinity/sol-rpc-canister/releases/latest/download/sol_rpc_canister.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "tghme-zyaaa-aaaar-qarca-cai"
+        }
+      },
+      "init_arg": "( record {} )"
     }
   },
   "defaults": {
-    "build": { 
+    "build": {
       "args": "",
-      "packtool": ""
+      "packtool": "mops sources"
+    },
+    "bitcoin": {
+      "enabled": true,
+      "nodes": ["127.0.0.1:18444"]
     }
   },
   "output_env_file": ".env",
-  "networks": { 
+  "networks": {
     "local": {
       "bind": "127.0.0.1:4943",
       "type": "ephemeral",
