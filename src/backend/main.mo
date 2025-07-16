@@ -96,17 +96,35 @@ actor Fradium {
   };
   // ===== END WALLET APP =====
 
+  // ===== ANALYZE ADDRESS =====
+  public type AnalyzeAddressType = {
+    #CommunityVote;
+    #AIAnalysis;
+  };
+
+  public type AnalyzeAddressHistory = {
+    address: Text;
+    is_safe: Bool;
+    analyzed_type: AnalyzeAddressType;
+    created_at: Time.Time;
+    metadata: Text;
+  };
+  // ===== END ANALYZE ADDRESS =====
+
   public type ReportId = Nat32;
 
   stable var reportsStorage : [(Principal, [Report])] = [];
   stable var faucetClaimsStorage : [(Principal, Time.Time)] = [];
   stable var stakeRecordsStorage : [(Principal, StakeRecord)] = [];
   stable var userWalletsStorage : [(Principal, UserWallet)] = [];
+  stable var analyzeAddressStorage : [(Principal, [AnalyzeAddressHistory])] = [];
 
   var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
   var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
   var stakeRecordsStore = Map.HashMap<Principal, StakeRecord>(0, Principal.equal, Principal.hash);
   var userWalletsStore = Map.HashMap<Principal, UserWallet>(0, Principal.equal, Principal.hash);
+  var analyzeAddressStore = Map.HashMap<Principal, [AnalyzeAddressHistory]>(0, Principal.equal, Principal.hash);
+
   private stable var next_report_id : ReportId = 0;
 
   // ===== SYSTEM FUNCTIONS =====
@@ -116,6 +134,7 @@ actor Fradium {
     faucetClaimsStorage := Iter.toArray(faucetClaimsStore.entries());
     stakeRecordsStorage := Iter.toArray(stakeRecordsStore.entries());
     userWalletsStorage := Iter.toArray(userWalletsStore.entries());
+    analyzeAddressStorage := Iter.toArray(analyzeAddressStore.entries());
   };
 
   system func postupgrade() {
@@ -138,6 +157,11 @@ actor Fradium {
     userWalletsStore := Map.HashMap<Principal, UserWallet>(userWalletsStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in userWalletsStorage.vals()) {
         userWalletsStore.put(key, value);
+    };
+
+    analyzeAddressStore := Map.HashMap<Principal, [AnalyzeAddressHistory]>(analyzeAddressStorage.size(), Principal.equal, Principal.hash);
+    for ((key, value) in analyzeAddressStorage.vals()) {
+        analyzeAddressStore.put(key, value);
     };
   };
 
@@ -1068,6 +1092,103 @@ actor Fradium {
       };
       case null {
         return #Err("Wallet not found. Please create a wallet first.");
+      };
+    };
+  };
+
+  public shared({ caller }) func analyze_address(address : Text) : async Result<Bool, Text> {
+    // Cari report yang memiliki address tersebut
+    var found : Bool = false;
+    var isUnsafe : Bool = false;
+    
+    for ((_, reports) in reportStore.entries()) {
+      for (report in reports.vals()) {
+        if (report.address == address) {
+          found := true;
+          // Hitung total bobot vote YES dan NO
+          var totalYesWeight : Nat = 0;
+          var totalNoWeight : Nat = 0;
+          for (voter in report.voted_by.vals()) {
+            if (voter.vote == true) {
+              totalYesWeight += voter.vote_weight;
+            } else {
+              totalNoWeight += voter.vote_weight;
+            };
+          };
+          // Jika bobot YES lebih besar dari NO, maka unsafe
+          isUnsafe := totalYesWeight > totalNoWeight;
+        };
+      };
+    };
+    if (not found) {
+      return #Ok(true);
+    } else {
+      let isSafe = not isUnsafe;
+      
+      // If address is not safe, save to history
+      if (not isSafe) {
+        let historyEntry : AnalyzeAddressHistory = {
+          address = address;
+          is_safe = false;
+          analyzed_type = #CommunityVote;
+          created_at = Time.now();
+          metadata = "{}";
+        };
+        
+        let existingHistory = switch (analyzeAddressStore.get(caller)) {
+          case (?history) { history };
+          case null { [] };
+        };
+        
+        let updatedHistory = Array.append(existingHistory, [historyEntry]);
+        analyzeAddressStore.put(caller, updatedHistory);
+      };
+      
+      return #Ok(isSafe); // true = safe, false = unsafe
+    };
+  };
+
+  public type CreateAnalyzeAddressHistoryParams = {
+    address: Text;
+    is_safe: Bool;
+    analyzed_type: AnalyzeAddressType;
+    metadata: Text;
+  };
+  public shared({ caller }) func create_analyze_address_history(params : CreateAnalyzeAddressHistoryParams) : async Result<[AnalyzeAddressHistory], Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+    
+    let historyEntry : AnalyzeAddressHistory = {
+      address = params.address;
+      is_safe = params.is_safe;
+      analyzed_type = params.analyzed_type;
+      created_at = Time.now();
+      metadata = params.metadata;
+    };
+    
+    let existingHistory = switch (analyzeAddressStore.get(caller)) {
+      case (?history) { history };
+      case null { [] };
+    };
+    
+    let updatedHistory = Array.append(existingHistory, [historyEntry]);
+    analyzeAddressStore.put(caller, updatedHistory);
+    
+    return #Ok(updatedHistory);
+  };
+
+  public shared({ caller }) func get_analyze_address_history() : async Result<[AnalyzeAddressHistory], Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+
+    switch (analyzeAddressStore.get(caller)) {
+      case (?history) {
+        return #Ok(history);
+      };
+      case null {
+        return #Ok([]);
       };
     };
   };
