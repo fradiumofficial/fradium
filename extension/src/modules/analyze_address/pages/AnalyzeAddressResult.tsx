@@ -2,13 +2,12 @@ import { SafetyCard } from "@/components/ui/custom-card";
 import ProfileHeader from "@/components/ui/header";
 import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import type { AnalyzeResult } from "../model/AnalyzeAddressModel";
 import { useState } from "react";
 
 function AnalyzeAdressResult() {
   const location = useLocation();
-  const navigate = useNavigate();
   const result = location.state?.result as AnalyzeResult;
   const [isAddressSafe, setIsAddressSafe] = useState<boolean>(result.is_ransomware === false);
   setIsAddressSafe(result.is_ransomware);

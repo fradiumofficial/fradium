@@ -42,7 +42,7 @@ function AnalyzeSmartContractResult() {
       { /* Analyze Address Section */}
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Smart Contract</h1>
-        <SafetyCard confidence={100} title={"Smart Contract"} />
+        <SafetyCard confidence={100} title={"Smart Contract"} isSafe={false} />
         <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Contract Details</h1>
         <div className="grid grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, index) => (

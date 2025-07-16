@@ -15,7 +15,7 @@ function DetailHistory() {
 
       <div className="m-4">
         <h1 className="font-semibold text-[20px] text-white mb-4">Detail History</h1>
-        <SafetyCard confidence={96} title={"Address"} />
+        <SafetyCard confidence={96} title={"Address"} isSafe={false} />
 
         {/* Address Name */}
         <div className="flex flex-col mt-4">
