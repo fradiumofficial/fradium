@@ -63,7 +63,7 @@ export default function TransactionPage() {
         <WalletLayout>
             <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
                 {/* Card Wallet pakai gambar utuh */}
-                <div className="relative items-center w-full mx-auto">
+                <div className="relative items-center max-w-full w-full mx-auto">
                     <img
                         src="/assets/cek-card-wallet.png"
                         alt="Wallet Card"
@@ -82,7 +82,7 @@ export default function TransactionPage() {
                                     <div className="absolute top-4 right-4">
                                         <TransactionButton
                                             icon="/assets/icons/received.svg"
-                                            iconSize="w-7 h-7"
+                                            iconSize="w-6 h-6"
                                             onClick={() => setOpenReceive(true)}
                                         />
                                     </div>
@@ -95,7 +95,7 @@ export default function TransactionPage() {
                                     <div className="absolute top-4 right-4">
                                         <TransactionButton
                                             icon="/assets/icons/send.svg"
-                                            iconSize="w-7 h-7"
+                                            iconSize="w-6 h-6"
                                             onClick={() => setOpenSend({ open: true, coin: 'Bitcoin' })}
                                         />
                                     </div>
