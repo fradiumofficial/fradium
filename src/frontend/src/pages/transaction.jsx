@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import WalletLayout from "../core/components/layouts/wallet-layout";
 import NeoButton from "../core/components/SidebarButton";
+import TransactionButton from "../core/components/TransactionButton";
 import CustomButton from "../core/components/custom-button-a";
 import AnalysisProgressModal from "../core/components/AnalysisProgressModal";
 
@@ -79,13 +80,9 @@ export default function TransactionPage() {
                             <div className="flex flex-col flex-1">
                                 <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
                                     <div className="absolute top-4 right-4">
-                                        <NeoButton
-                                            icon={
-                                                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <rect x="2" y="2" width="11" height="11" fill="#0E1117" />
-                                                </svg>
-                                            }
-                                            className="!w-10 !h-10 p-0 flex items-center justify-center"
+                                        <TransactionButton
+                                            icon="/assets/icons/received.svg"
+                                            iconSize="w-7 h-7"
                                             onClick={() => setOpenReceive(true)}
                                         />
                                     </div>
@@ -96,18 +93,9 @@ export default function TransactionPage() {
                             <div className="flex flex-col flex-1">
                                 <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
                                     <div className="absolute top-4 right-4">
-                                        <NeoButton
-                                            icon={
-                                                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <mask id="mask-send" maskUnits="userSpaceOnUse" x="0" y="0" width="15" height="15">
-                                                        <rect x="0" y="0" width="15" height="15" fill="#fff" />
-                                                    </mask>
-                                                    <g mask="url(#mask-send)">
-                                                        <path d="M12 3V10H10.8V5.8L3.5 13.1L2.9 12.5L10.2 5.2H5V3H12Z" fill="#0E1117" />
-                                                    </g>
-                                                </svg>
-                                            }
-                                            className="!w-10 !h-10 p-0 flex items-center justify-center"
+                                        <TransactionButton
+                                            icon="/assets/icons/send.svg"
+                                            iconSize="w-7 h-7"
                                             onClick={() => setOpenSend({ open: true, coin: 'Bitcoin' })}
                                         />
                                     </div>
