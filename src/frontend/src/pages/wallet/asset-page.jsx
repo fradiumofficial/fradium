@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useWallet } from "@/core/providers/wallet-provider";
 import NeoButton from "@/core/components/SidebarButton";
 import { bitcoin } from "declarations/bitcoin";
@@ -10,6 +10,9 @@ import {
   isValidBitcoinAddress,
 } from "../../core/lib/bitcoinUtils";
 import { toast } from "react-toastify";
+import CustomButton from "@/core/components/custom-button-a";
+import AnalysisProgressModal from "@/core/components/AnalysisProgressModal";
+import { Timer } from "lucide-react";
 
 // Function to format token amount by removing trailing zeros
 const formatTokenAmount = (amount, tokenType) => {
@@ -48,18 +51,25 @@ const tokenConfig = {
 
 export default function AssetsPage() {
   const { userWallet, network } = useWallet();
-  const [tokenBalances, setTokenBalances] = React.useState({});
-  const [isLoadingBalances, setIsLoadingBalances] = React.useState(false);
-  const [balanceErrors, setBalanceErrors] = React.useState({});
-  const [tokenPrices, setTokenPrices] = React.useState({});
-  const [showSendModal, setShowSendModal] = React.useState(false);
-  const [selectedToken, setSelectedToken] = React.useState(null);
+  const [tokenBalances, setTokenBalances] = useState({});
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
+  const [balanceErrors, setBalanceErrors] = useState({});
+  const [tokenPrices, setTokenPrices] = useState({});
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [showReceiveModal, setShowReceiveModal] = useState(false);
+  const [showSendResultSafe, setShowSendResultSafe] = useState(false);
+  const [selectedToken, setSelectedToken] = useState(null);
+
+  // Analyze Address Modal States
+  const [showAnalyeAddressModal, setShowAnalyeAddressModal] = useState(false);
+  const [isAnalyzeAddressSafe, setIsAnalyzeAddressSafe] = useState(false);
+  const [isAnalyzeAddressLoading, setIsAnalyzeAddressLoading] = useState(false);
 
   // Send Modal States
-  const [destinationAddress, setDestinationAddress] = React.useState("");
-  const [sendAmount, setSendAmount] = React.useState("");
-  const [isSendLoading, setIsSendLoading] = React.useState(false);
-  const [sendErrors, setSendErrors] = React.useState({});
+  const [destinationAddress, setDestinationAddress] = useState("");
+  const [sendAmount, setSendAmount] = useState("");
+  const [isSendLoading, setIsSendLoading] = useState(false);
+  const [sendErrors, setSendErrors] = useState({});
 
   // Function to get token type from address object
   const getTokenType = (addressObj) => {
@@ -245,6 +255,10 @@ export default function AssetsPage() {
     setSendErrors({});
   };
 
+  const handleCloseReceiveModal = () => {
+    setShowReceiveModal(false);
+  };
+
   const handleSendClick = (token) => {
     setSelectedToken(token);
     setShowSendModal(true);
@@ -256,8 +270,67 @@ export default function AssetsPage() {
     }
   };
 
+  const handleReceiveClick = (token) => {
+    setSelectedToken(token);
+    setShowReceiveModal(true);
+  };
+
+  // Validation functions
+  const validateAddress = (address) => {
+    if (!address.trim()) {
+      return "Recipient address is required";
+    }
+    if (!isValidBitcoinAddress(address)) {
+      return "Invalid Bitcoin address format";
+    }
+    return null;
+  };
+
+  const validateAmount = (amount, tokenType, currentAmount) => {
+    if (!amount.trim()) {
+      return "Amount is required";
+    }
+    if (isNaN(amount) || parseFloat(amount) <= 0) {
+      return "Please enter a valid amount";
+    }
+    if (tokenType === "Bitcoin" && currentAmount) {
+      const requestedSatoshis = btcToSatoshis(parseFloat(amount));
+      if (requestedSatoshis > currentAmount) {
+        return "Insufficient balance";
+      }
+    }
+    return null;
+  };
+
+  const handleAnalyzeAddress = () => {
+    const addressError = validateAddress(destinationAddress);
+    const amountError = validateAmount(
+      sendAmount,
+      selectedToken?.tokenType,
+      selectedToken?.currentAmount
+    );
+
+    if (addressError || amountError) {
+      setSendErrors({
+        address: addressError,
+        amount: amountError,
+      });
+      return;
+    }
+
+    // If validation passes, show result modal
+    setShowSendModal(false);
+    setIsAnalyzeAddressLoading(true);
+
+    setTimeout(() => {
+      setIsAnalyzeAddressSafe(Math.random() < 0.5);
+      setIsAnalyzeAddressLoading(false);
+      setShowAnalyeAddressModal(true);
+    }, 1000);
+  };
+
   // Fetch balances when network or addresses change
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBalances = async () => {
       if (!userWallet?.addresses) return;
 
@@ -397,6 +470,7 @@ export default function AssetsPage() {
                         </svg>
                       }
                       className="!w-10 !h-10 p-0 flex items-center justify-center"
+                      onClick={() => handleReceiveClick(tokens[0])}
                     />
                   </div>
                   <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">
@@ -406,10 +480,7 @@ export default function AssetsPage() {
               </div>
               {/* Send */}
               <div className="flex flex-col flex-1">
-                <div
-                  className="relative bg-[#23272F] h-36 w-full rounded-lg"
-                  onClick={() => handleSendClick(tokens[0])}
-                >
+                <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
                   <div className="absolute top-4 right-4">
                     <NeoButton
                       icon={
@@ -445,6 +516,7 @@ export default function AssetsPage() {
                         </svg>
                       }
                       className="!w-10 !h-10 p-0 flex items-center justify-center"
+                      onClick={() => handleSendClick(tokens[0])}
                     />
                   </div>
                   <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">
@@ -501,31 +573,379 @@ export default function AssetsPage() {
 
         {/* Send Modal */}
       </div>
-      {showSendModal && selectedToken && (
-        <SendModal
-          token={selectedToken}
-          destinationAddress={destinationAddress}
-          setDestinationAddress={setDestinationAddress}
-          sendAmount={sendAmount}
-          setSendAmount={setSendAmount}
-          isSendLoading={isSendLoading}
-          sendErrors={sendErrors}
-          onConfirm={handleSendConfirm}
-          onClose={handleCloseSendModal}
-          onMaxAmount={handleMaxAmount}
+      {/* Modal Send Coin */}
+      {showSendModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#23272F] px-6 py-8 w-full max-w-sm rounded-lg shadow-lg relative flex flex-col gap-6">
+            <button
+              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
+              onClick={() => setShowSendModal(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="text-white text-xl font-semibold mb-2">
+              Send {selectedToken.name}
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <img
+                src="/assets/images/image-send-coin.png"
+                alt="Send Coin"
+                className="w-32 h-32 object-contain"
+              />
+            </div>
+            <div className="flex flex-col gap-4">
+              <div>
+                <div className="text-[#B0B6BE] text-sm mb-1">
+                  Recipient Address
+                </div>
+                <input
+                  type="text"
+                  className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${
+                    sendErrors.address ? "border-red-500" : "border-[#393E4B]"
+                  }`}
+                  placeholder="ex: m1psqxsfsn3efndfm1psqxsfsnfn"
+                  value={destinationAddress}
+                  onChange={(e) => {
+                    setDestinationAddress(e.target.value);
+                    if (sendErrors.address) {
+                      setSendErrors((prev) => ({ ...prev, address: null }));
+                    }
+                  }}
+                />
+                {sendErrors.address && (
+                  <div className="text-red-400 text-xs mt-1">
+                    {sendErrors.address}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="text-[#B0B6BE] text-sm mb-1">
+                  Amount ({selectedToken?.name?.toUpperCase() || ""})
+                </div>
+                <input
+                  type="number"
+                  className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${
+                    sendErrors.amount ? "border-red-500" : "border-[#393E4B]"
+                  }`}
+                  placeholder="0.00"
+                  value={sendAmount}
+                  onChange={(e) => {
+                    setSendAmount(e.target.value);
+                    if (sendErrors.amount) {
+                      setSendErrors((prev) => ({ ...prev, amount: null }));
+                    }
+                  }}
+                />
+                {sendErrors.amount && (
+                  <div className="text-red-400 text-xs mt-1">
+                    {sendErrors.amount}
+                  </div>
+                )}
+              </div>
+            </div>
+            <CustomButton
+              icon="/assets/icons/analyze-address-light.svg"
+              className="mt-2 w-full justify-center"
+              onClick={handleAnalyzeAddress}
+            >
+              Analyze Address
+            </CustomButton>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Progress Analyze Address */}
+      <AnalysisProgressModal isOpen={isAnalyzeAddressLoading} />
+
+      {/* Receive Modal */}
+      {showReceiveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#23272F] px-6 py-8 w-full max-w-sm rounded-lg shadow-lg relative flex flex-col gap-6">
+            <button
+              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
+              onClick={handleCloseReceiveModal}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="text-white text-xl font-semibold mb-2">
+              Receive {selectedToken?.name || "Bitcoin"}
+            </div>
+            <div className="flex flex-col items-center gap-4">
+              <img
+                src="/assets/images/image-receive-coin.png"
+                alt="Receive Coin"
+                className="w-32 h-32 object-contain"
+              />
+              <div className="text-center">
+                <div className="text-[#B0B6BE] text-sm mb-2">
+                  Your {selectedToken?.name || "Bitcoin"} Address
+                </div>
+                <div className="bg-[#181C22] p-3 rounded border border-[#393E4B] text-white text-sm font-mono break-all">
+                  {selectedToken?.addresses?.[0] || "No address available"}
+                </div>
+              </div>
+            </div>
+            <CustomButton
+              icon="/assets/icons/copy.svg"
+              className="mt-2 w-full justify-center"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  selectedToken?.addresses?.[0] || ""
+                );
+                toast.success("Address copied to clipboard!");
+              }}
+            >
+              Copy Address
+            </CustomButton>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Hasil Analisis */}
+      {showAnalyeAddressModal && (
+        <AnalysisResultModal
+          isOpen={showAnalyeAddressModal}
+          isSafe={isAnalyzeAddressSafe}
+          onClose={() => {
+            setShowAnalyeAddressModal(false);
+          }}
+          onConfirmSend={() => {
+            setShowAnalyeAddressModal(false);
+          }}
         />
       )}
     </>
   );
 }
 
+// Analysis Result Modal Component
+function AnalysisResultModal({ isOpen, isSafe, onClose, onConfirmSend }) {
+  if (!isOpen) return null;
+
+  const statusConfig = {
+    safe: {
+      gradientColor: "from-[#22C55E]",
+      borderColor: "border-[#22C55E]",
+      icon: "/assets/icons/safe.png",
+      title: "ADDRESS IS SAFE",
+      description:
+        "This bitcoin address appears to be clean with no suspicious activity detected in our comprehensive database",
+      securityTitle: "Security Checks Passed",
+      checkItems: [
+        "No links to known scam addressed",
+        "No suspicious transaction pattern detected",
+      ],
+      transactions: "296",
+      totalVolume: "89.98 BTC",
+      riskScore: "17/100",
+      riskScoreColor: "text-green-400",
+      lastActivity: "17 Days Ago",
+    },
+    danger: {
+      gradientColor: "from-[#F87171]",
+      borderColor: "border-[#F87171]",
+      icon: "/assets/icons/danger.png",
+      title: "ADDRESS IS NOT SAFE",
+      description:
+        "This bitcoin address appears to be flagged with suspicious activity detected in our comprehensive database",
+      securityTitle: "Security Checks Not Passed",
+      checkItems: [
+        "No link to known scam addressed",
+        "Suspicious transaction pattern detected",
+      ],
+      transactions: "1",
+      totalVolume: "0.8 BTC",
+      riskScore: "89/100",
+      riskScoreColor: "text-red-400",
+      lastActivity: "329 Days Ago",
+    },
+  };
+
+  const config = statusConfig[isSafe ? "safe" : "danger"];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="relative bg-[#23272F] w-full max-w-sm rounded-lg shadow-lg">
+        <button
+          className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold z-20"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <div className="p-6 max-h-[80vh] overflow-y-auto">
+          <div className="text-white text-xl font-semibold mb-6">
+            Send {"Bitcoin"}
+          </div>
+          <div className="w-full flex flex-col gap-6 relative z-10">
+            {/* Status */}
+            <div className="rounded-lg overflow-hidden mb-2 bg-white/5">
+              {/* Bagian atas dengan gradient */}
+              <div className="relative w-full">
+                <div
+                  className={`absolute top-0 left-0 w-full h-16 bg-gradient-to-b ${config.gradientColor} via-transparent to-transparent opacity-80 z-0`}
+                />
+                <div className="relative flex items-center gap-3 px-4 py-4 z-10">
+                  <img
+                    src={config.icon}
+                    alt={isSafe ? "Safe" : "Danger"}
+                    className="w-10 h-10 object-contain"
+                  />
+                  <div>
+                    <div className="text-white font-bold text-base leading-tight">
+                      {config.title}
+                    </div>
+                    <div className="text-[#B0B6BE] text-sm">
+                      Confidence: 96%
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Bagian bawah deskripsi */}
+              <div className="px-4 pb-4">
+                <div className="text-[#B0B6BE] text-xs font-normal">
+                  {config.description}
+                </div>
+              </div>
+            </div>
+            {/* Address Details */}
+            <p className="text-white font-semibold text-lg">Address Details</p>
+            <div className="rounded-lg p-4 mb-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                  <span className="text-white text-sm font-medium">
+                    {config.transactions}
+                  </span>
+                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                    <img
+                      src="/assets/icons/wallet-grey.svg"
+                      alt="Wallet"
+                      className="w-3 h-3"
+                    />
+                    Transactions
+                  </span>
+                </div>
+                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                  <span className="text-white text-sm font-medium">
+                    {config.totalVolume}
+                  </span>
+                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                    <img
+                      src="/assets/icons/total-volume.svg"
+                      alt="Total Volume"
+                      className="w-3 h-3"
+                    />
+                    Total Volume
+                  </span>
+                </div>
+                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                  <span
+                    className={`text-sm font-medium ${config.riskScoreColor}`}
+                  >
+                    {config.riskScore}
+                  </span>
+                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                    <img
+                      src="/assets/icons/risk-score.svg"
+                      alt="Risk Score"
+                      className="w-3 h-3"
+                    />
+                    Risk Score
+                  </span>
+                </div>
+                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                  <span className="text-white text-sm font-medium">
+                    {config.lastActivity}
+                  </span>
+                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                    <img
+                      src="/assets/icons/last-activity.svg"
+                      alt="Last Activity"
+                      className="w-3 h-3"
+                    />
+                    Last Activity
+                  </span>
+                </div>
+              </div>
+            </div>
+            {/* Security Checks */}
+            <div
+              className={`rounded-lg px-4 py-4 mb-2 border-l-2 ${config.borderColor} relative overflow-hidden bg-white/5`}
+            >
+              <div
+                className={`absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r ${config.gradientColor}/30 to-transparent pointer-events-none`}
+              />
+              <div className="relative z-10">
+                <div className="text-white font-semibold mb-2 text-sm">
+                  {config.securityTitle}
+                </div>
+                <ul className="flex flex-col gap-1">
+                  {config.checkItems.map((item, index) => (
+                    <li
+                      key={index}
+                      className={`flex items-center gap-2 ${
+                        isSafe ? "text-[#22C55E]" : "text-[#F87171]"
+                      } text-xs`}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          fill={isSafe ? "#22C55E" : "#F87171"}
+                        />
+                        <path
+                          d="M8 12l2 2 4-4"
+                          stroke="#23272F"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span className="text-white">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            {/* Button Confirm Send */}
+            <div className="flex gap-3 mt-4">
+              <CustomButton
+                className="w-full justify-center"
+                onClick={onConfirmSend}
+              >
+                Confirm Send
+              </CustomButton>
+              {!isSafe && (
+                <NeoButton
+                  className="w-full text-white justify-center"
+                  onClick={onClose}
+                >
+                  Cancel
+                </NeoButton>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Separate component for token card to handle async calculations
 function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
-  const [amount, setAmount] = React.useState(0);
-  const [value, setValue] = React.useState("$0.00");
-  const [isCalculating, setIsCalculating] = React.useState(false);
+  const [amount, setAmount] = useState(0);
+  const [value, setValue] = useState("$0.00");
+  const [isCalculating, setIsCalculating] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const calculateAmountAndValue = async () => {
       if (!token.balances || Object.keys(token.balances).length === 0) {
         setAmount(0);
@@ -607,165 +1027,6 @@ function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
             <span className="text-[#B0B6BE] text-sm">{value}</span>
           </>
         )}
-      </div>
-    </div>
-  );
-}
-
-// Send Modal Component - Pure component with props only
-function SendModal({
-  token,
-  destinationAddress,
-  setDestinationAddress,
-  sendAmount,
-  setSendAmount,
-  isSendLoading,
-  sendErrors,
-  onConfirm,
-  onClose,
-  onMaxAmount,
-}) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#0F1219] rounded-lg p-6 w-full max-w-md border border-[#23272F]">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <img src={token.icon} alt={token.name} className="w-8 h-8" />
-            <h2 className="text-white text-lg font-semibold">
-              Send {token.name}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-[#B0B6BE] hover:text-white transition-colors"
-          >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-              <path
-                d="M18 6L6 18M6 6l12 12"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* Balance Info */}
-        {token.currentAmount && (
-          <div className="bg-[#23272F] rounded-md p-3 mb-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-[#B0B6BE]">Available Balance:</span>
-              <span className="text-white">
-                {formatTokenAmount(token.currentAmount, token.tokenType)}{" "}
-                {token.name}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-[#B0B6BE]">Value:</span>
-              <span className="text-white">{token.currentValue}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Form */}
-        <div className="space-y-4">
-          {/* Destination Address */}
-          <div>
-            <label className="block text-[#B0B6BE] text-sm font-medium mb-2">
-              Destination Address
-            </label>
-            <input
-              type="text"
-              value={destinationAddress}
-              onChange={(e) => setDestinationAddress(e.target.value)}
-              placeholder="Enter Bitcoin address"
-              className={`w-full px-3 py-2 bg-[#23272F] border rounded-md text-white placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#9BEB83] focus:border-transparent ${
-                sendErrors.address ? "border-red-500" : "border-[#3A3F47]"
-              }`}
-            />
-            {sendErrors.address && (
-              <p className="text-red-400 text-xs mt-1">{sendErrors.address}</p>
-            )}
-          </div>
-
-          {/* Amount */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-[#B0B6BE] text-sm font-medium">
-                Amount ({token.name})
-              </label>
-              {token.currentAmount && (
-                <button
-                  type="button"
-                  onClick={onMaxAmount}
-                  className="text-[#9BEB83] text-xs hover:text-[#7BCF6A] transition-colors"
-                >
-                  MAX
-                </button>
-              )}
-            </div>
-            <input
-              type="number"
-              value={sendAmount}
-              onChange={(e) => setSendAmount(e.target.value)}
-              placeholder="0.00000000"
-              step="0.00000001"
-              min="0"
-              className={`w-full px-3 py-2 bg-[#23272F] border rounded-md text-white placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#9BEB83] focus:border-transparent ${
-                sendErrors.amount ? "border-red-500" : "border-[#3A3F47]"
-              }`}
-            />
-            {sendErrors.amount && (
-              <p className="text-red-400 text-xs mt-1">{sendErrors.amount}</p>
-            )}
-          </div>
-
-          {/* Fee Information */}
-          <div className="bg-[#23272F] rounded-md p-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-[#B0B6BE]">Network Fee:</span>
-              <span className="text-white">~0.0001 BTC</span>
-            </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-[#B0B6BE]">Estimated Time:</span>
-              <span className="text-white">10-30 minutes</span>
-            </div>
-          </div>
-
-          {/* General Error */}
-          {sendErrors.general && (
-            <div className="text-red-400 text-sm text-center bg-red-900/20 border border-red-500/20 rounded-md p-2">
-              {sendErrors.general}
-            </div>
-          )}
-
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 bg-[#23272F] text-white rounded-md hover:bg-[#3A3F47] transition-colors"
-              disabled={isSendLoading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={isSendLoading}
-              className="flex-1 px-4 py-2 bg-[#9BEB83] text-[#0F1219] rounded-md hover:bg-[#7BCF6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSendLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0F1219]"></div>
-                  Sending...
-                </div>
-              ) : (
-                "Confirm"
-              )}
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
