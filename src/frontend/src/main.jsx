@@ -22,7 +22,7 @@ import MyReportPage from "./pages/report/my-report-page.jsx";
 import { token } from "declarations/token";
 import AuthGuard from "./core/components/auth/auth-guard.jsx";
 import AssetsPage from "./pages/wallet/asset-page.jsx";
-import AnalyseAddressPage from "./pages/analyse-address.jsx";
+import AnalyseAddressPage from "./pages/wallet/analyze-address-page.jsx";
 import AnalyseContractPage from "./pages/analyse-contract.jsx";
 import TransactionHistoryPage from "./pages/transaction-history.jsx";
 import ScanHistoryPage from "./pages/scan-history.jsx";
