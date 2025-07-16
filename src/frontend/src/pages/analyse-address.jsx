@@ -54,17 +54,16 @@ export default function AnalyseAddressPage() {
                 {/* Card utama */}
                 <div className="bg-[#181C22] border border-[#393E4B] rounded-lg shadow-lg px-8 py-8 w-full max-w-lg flex flex-col items-center relative overflow-hidden">
                     {/* Pattern background kanan atas */}
-                    <img src="/assets/pattern-sidebar.png" alt="Pattern" className="absolute top-0 right-0 w-[420px] h-auto opacity-70 z-0 pointer-events-none select-none" draggable="false" />
                     {/* Konten utama */}
                     {mode === "input" && (
                         <>
                             <img src="/assets/images/analisis.png" alt="Analyze Address" className="w-40 h-40 object-contain mb-4 select-none pointer-events-none relative z-10" draggable="false" />
-                            <div className="text-white text-2xl font-bold mb-1 text-center relative z-10">Analyze Address</div>
+                            <div className="text-[#FFFFFF] text-2xl font-bold mb-1 text-center relative z-10">Analyze Address</div>
                             <div className="text-[#B0B6BE] text-base mb-6 text-center relative z-10">Analyze address itu apa sih</div>
                             <input
                                 type="text"
                                 placeholder="Input address here..."
-                                className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-3 text-white placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#823EFD] mb-4 relative z-10"
+                                className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-3 text-[#FFFFFF] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#823EFD] mb-4 relative z-10"
                             />
                             <div className="w-full relative z-10 mb-2">
                                 <CustomButton
@@ -80,62 +79,65 @@ export default function AnalyseAddressPage() {
                     {mode === "result" && result?.type === "danger" && (
                         <div className="w-full flex flex-col gap-6 relative z-10">
                             {/* Status Danger */}
-                            <div className="rounded-lg px-0 py-0 flex flex-col gap-0 mb-2 overflow-hidden">
-                                {/* Gradient overlay atas */}
-                                <div className="relative w-full h-full">
-                                    <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-[#F87171] via-transparent to-transparent opacity-80 z-0" />
+                            <div className="rounded-lg overflow-hidden mb-2 bg-[#FFFFFF0D] bg-opacity-5">
+                                {/* Bagian atas dengan gradient */}
+                                <div className="relative w-full">
+                                    <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#FF6B6B]/15 via-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent z-0" />
                                     <div className="relative flex items-center gap-4 px-6 py-5 z-10">
                                         <img src="/assets/icons/danger.png" alt="Danger" className="w-12 h-12 object-contain" />
                                         <div>
-                                            <div className="text-white font-bold text-lg leading-tight">ADDRESS IS NOT SAFE</div>
+                                            <div className="text-[#FFFFFF] font-bold text-lg leading-tight">ADDRESS IS NOT SAFE</div>
                                             <div className="text-[#B0B6BE] text-sm">Confidence: {result.confidence}%</div>
-                                            <div className="text-[#B0B6BE] text-xs mt-1">This bitcoin address appears to be flagged with suspicious activity detected in our comprehensive database</div>
                                         </div>
                                     </div>
                                 </div>
+                                {/* Bagian bawah deskripsi */}
+                                <div className="px-6 pb-4">
+                                    <div className="text-[#B0B6BE] text-xs font-normal">This bitcoin address appears to be flagged with suspicious activity detected in our comprehensive database</div>
+                                </div>
                             </div>
                             {/* Address Details */}
-                            <p className="text-white font-semibold text-lg">Address Details</p>
-                            <div className="grid grid-cols-2 gap-4 mb-2">
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-white text-xl font-bold">{result.transactions}</span>
+                            <p className="text-[#FFFFFF] font-semibold text-lg">Address Details</p>
+                            <div className="grid grid-cols-2 gap-3 mb-2">
+                                <div className="bg-[#FFFFFF] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-[#FFFFFF] text-base font-medium">{result.transactions}</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                                         <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
                                         Transactions
                                     </span>
                                 </div>
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-white text-xl font-bold">{result.totalVolume}</span>
+                                <div className="bg-[#FFFFFF] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-[#FFFFFF] text-base font-medium">{result.totalVolume}</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                                        <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                                        <img src="/assets/icons/total-volume.svg" alt="Total Volume" className="w-4 h-4" />
                                         Total Volume
                                     </span>
                                 </div>
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-red-400 text-xl font-bold">{result.riskScore}/100</span>
+                                <div className="bg-[#FFFFFF] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-red-400 text-base font-medium">{result.riskScore}/100</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                                        <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                                        <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
                                         Risk Score
                                     </span>
                                 </div>
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-white text-xl font-bold">{result.lastActivity}</span>
+                                <div className="bg-[#FFFFFF] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-[#FFFFFF] text-base font-medium">{result.lastActivity}</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                                        <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                                        <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
                                         Last Activity
                                     </span>
                                 </div>
                             </div>
                             {/* Security Checks */}
-                            <div className="rounded-lg px-6 py-5 mb-2 border-l-2 border-[#F87171] relative overflow-hidden">
-                                <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#F87171]/30 to-transparent pointer-events-none" />
+                            <div className="rounded-lg px-6 py-5 mb-2 border-l-2 border-[#FF6B6B] relative overflow-hidden bg-[#FFFFFF] bg-opacity-5">
+                                <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent pointer-events-none" />
                                 <div className="relative z-10">
-                                    <div className="text-white font-bold mb-2">Security Checks Failed</div>
+                                    <div className="text-[#FFFFFF] font-bold mb-2">Security Checks Failed</div>
                                     <ul className="flex flex-col gap-1">
                                         {result.securityChecks.map((item, idx) => (
-                                            <li key={idx} className="flex items-center gap-2 text-[#F87171] text-sm">
-                                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#F87171" /><path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                                <span className="text-white">{item}</span>
+                                            <li key={idx} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
+                                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FF6B6B" /><path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                                <span className="text-[#FFFFFF]">{item}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -154,62 +156,65 @@ export default function AnalyseAddressPage() {
                     {mode === "result" && result?.type === "safe" && (
                         <div className="w-full flex flex-col gap-6 relative z-10">
                             {/* Status Safe */}
-                            <div className="rounded-lg px-0 py-0 flex flex-col gap-0 mb-2 overflow-hidden">
-                                {/* Gradient overlay atas */}
-                                <div className="relative w-full h-full">
-                                    <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-[#4A834C] via-transparent to-transparent opacity-80 z-0" />
+                            <div className="rounded-lg overflow-hidden mb-2 bg-[#FFFFFF] bg-opacity-5">
+                                {/* Bagian atas dengan gradient */}
+                                <div className="relative w-full">
+                                    <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#22C55E]/15 via-[#22C55E]/15 via-[#22C55E]/15 to-transparent z-0" />
                                     <div className="relative flex items-center gap-4 px-6 py-5 z-10">
                                         <img src="/assets/icons/safe.png" alt="Safe" className="w-12 h-12 object-contain" />
                                         <div>
-                                            <div className="text-white font-bold text-lg leading-tight">ADDRESS IS SAFE</div>
+                                            <div className="text-[#FFFFFF] font-bold text-lg leading-tight">ADDRESS IS SAFE</div>
                                             <div className="text-[#B0B6BE] text-sm">Confidence: {result.confidence}%</div>
-                                            <div className="text-[#B0B6BE] text-xs mt-1">This bitcoin address appears to be clean with no suspicious activity detected in our comprehensive database</div>
                                         </div>
                                     </div>
                                 </div>
+                                {/* Bagian bawah deskripsi */}
+                                <div className="px-6 pb-4">
+                                    <div className="text-[#B0B6BE] text-xs font-normal">This bitcoin address appears to be clean with no suspicious activity detected in our comprehensive database</div>
+                                </div>
                             </div>
                             {/* Address Details */}
-                            <p className="text-white font-semibold text-lg">Address Details</p>
+                            <p className="text-[#FFFFFF] font-semibold text-lg">Address Details</p>
                             <div className="grid grid-cols-2 gap-4 mb-2">
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-white text-xl font-bold">{result.transactions}</span>
+                                <div className="bg-[#FFFFFF0D] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-white text-base font-medium">{result.transactions}</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                                         <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
                                         Transactions
                                     </span>
                                 </div>
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-white text-xl font-bold">{result.totalVolume}</span>
+                                <div className="bg-[#FFFFFF0D] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-[#FFFFFF] text-base font-medium">{result.totalVolume}</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                                        <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                                        <img src="/assets/icons/total-volume.svg" alt="Total Volume" className="w-4 h-4" />
                                         Total Volume
                                     </span>
                                 </div>
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-green-400 text-xl font-bold">{result.riskScore}/100</span>
+                                <div className="bg-[#FFFFFF0D] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-green-400 text-base font-medium">{result.riskScore}/100</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                                        <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                                        <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
                                         Risk Score
                                     </span>
                                 </div>
-                                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                                    <span className="text-white text-xl font-bold">{result.lastActivity}</span>
+                                <div className="bg-[#FFFFFF0D] bg-opacity-5 rounded-lg px-4 py-3 flex flex-col">
+                                    <span className="text-[#FFFFFF] text-base font-medium">{result.lastActivity}</span>
                                     <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                                        <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                                        <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
                                         Last Activity
                                     </span>
                                 </div>
                             </div>
                             {/* Security Checks */}
-                            <div className="rounded-lg px-6 py-5 mb-2 border-l-2 border-[#4ADE80] relative overflow-hidden">
-                                <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#4A834C]/30 to-transparent pointer-events-none" />
+                            <div className="rounded-lg px-6 py-5 mb-2 border-l-2 border-[#22C55E] relative overflow-hidden bg-[#FFFFFF0D] bg-opacity-5">
+                                <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#22C55E]/15 via-[#22C55E]/15 to-transparent pointer-events-none" />
                                 <div className="relative z-10">
-                                    <div className="text-white font-bold mb-2">Security Checks Passed</div>
+                                    <div className="text-[#FFFFFF] font-bold mb-2">Security Checks Passed</div>
                                     <ul className="flex flex-col gap-1">
                                         {result.securityChecks.map((item, idx) => (
-                                            <li key={idx} className="flex items-center gap-2 text-[#9BEB83] text-sm">
-                                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#9BEB83" /><path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                                <span className="text-white">{item}</span>
+                                            <li key={idx} className="flex items-center gap-2 text-[#22C55E] text-sm">
+                                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#22C55E" /><path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                                <span className="text-[#FFFFFF]">{item}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -229,11 +234,11 @@ export default function AnalyseAddressPage() {
                 {/* Info box */}
                 {mode === "input" && (
                     <div className="w-full max-w-lg mt-6">
-                        <div className="flex items-start gap-3 bg-[#181C22] relative rounded-lg px-4 py-3 border-l-2 border-[#9BEB83] overflow-hidden">
+                        <div className="flex items-start gap-3 bg-[#FFFFFF] bg-opacity-5 relative rounded-lg px-4 py-3 border-l-2 border-[#9BEB83] overflow-hidden">
                             {/* Gradient kiri */}
-                            <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#9BEB83]/40 to-transparent pointer-events-none rounded-l-lg" />
+                            <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#9BEB83]/30 to-transparent pointer-events-none" />
                             <svg width="20" height="20" fill="none" viewBox="0 0 20 20" className="mt-0.5 relative z-10"><circle cx="10" cy="10" r="10" fill="#9BEB83" /><text x="10" y="15" textAnchor="middle" fontSize="14" fill="#23272F" fontFamily="Arial, sans-serif">i</text></svg>
-                            <span className="text-white text-sm leading-relaxed relative z-10">Sebuah informasi atau himbauan kepada user untuk memasukkan address sesuai dengan bla bla</span>
+                            <span className="text-[#FFFFFF] text-sm leading-relaxed relative z-10">Sebuah informasi atau himbauan kepada user untuk memasukkan address sesuai dengan bla bla</span>
                         </div>
                     </div>
                 )}

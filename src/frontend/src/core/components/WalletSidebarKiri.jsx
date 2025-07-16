@@ -8,8 +8,6 @@ const menu = [
     { label: "Analyse Contract", icon: "analyze-contract", path: "/analyse-contract" },
     { label: "Transaction History", icon: "transaction-history", path: "/transaction-history" },
     { label: "Scan History", icon: "history", path: "/scan-history" },
-    { label: "Setting", icon: "setting-wallet", path: "/setting" },
-    { label: "Logout", icon: "logout", path: "/logout" },
 ];
 
 function normalize(path) {
