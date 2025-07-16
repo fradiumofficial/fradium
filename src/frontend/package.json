@@ -29,6 +29,7 @@
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.479.0",
     "nprogress": "^0.2.0",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-image-crop": "^11.0.10",

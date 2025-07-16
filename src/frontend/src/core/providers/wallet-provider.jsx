@@ -19,7 +19,7 @@ export const WalletProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [userWallet, setUserWallet] = useState(null);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
-  const [network, setNetwork] = useState("testnet");
+  const [network, setNetwork] = useState("All Network");
 
   console.log("User Address", userWallet?.addresses[0]?.address);
 
@@ -49,7 +49,7 @@ export const WalletProvider = ({ children }) => {
       const response = await backend.create_wallet({
         addresses: [
           {
-            network: { Testnet: null },
+            network: { Bitcoin: null },
             token_type: { Bitcoin: null },
             address: bitcoinResponse,
           },

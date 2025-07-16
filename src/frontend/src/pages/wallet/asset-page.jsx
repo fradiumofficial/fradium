@@ -12,15 +12,25 @@ import {
 import { toast } from "react-toastify";
 import CustomButton from "@/core/components/custom-button-a";
 import AnalysisProgressModal from "@/core/components/AnalysisProgressModal";
-import { Timer } from "lucide-react";
+import { CloudCog, Timer } from "lucide-react";
+import QRCode from "qrcode";
 
 // Function to format token amount by removing trailing zeros
 const formatTokenAmount = (amount, tokenType) => {
   if (tokenType === "Bitcoin") {
     // Convert satoshis to BTC first
     const btcAmount = satoshisToBTC(amount);
+
+    if (btcAmount === 0) {
+      return "0";
+    }
+
     return btcAmount.toString().replace(/\.?0+$/, "");
   } else {
+    if (amount === 0) {
+      return "0";
+    }
+
     // For other tokens, just remove trailing zeros
     return amount.toString().replace(/\.?0+$/, "");
   }
@@ -60,6 +70,13 @@ export default function AssetsPage() {
   const [showSendResultSafe, setShowSendResultSafe] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
 
+  // Receive Modal States
+  const [openReceive, setOpenReceive] = useState(false);
+  const [qrDetail, setQrDetail] = useState({ open: false, coin: null });
+
+  // QR Code state
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+
   // Analyze Address Modal States
   const [showAnalyeAddressModal, setShowAnalyeAddressModal] = useState(false);
   const [isAnalyzeAddressSafe, setIsAnalyzeAddressSafe] = useState(false);
@@ -81,8 +98,10 @@ export default function AssetsPage() {
 
   // Function to check if address matches current network
   const isAddressForCurrentNetwork = (addressObj) => {
-    const addressNetwork =
-      addressObj.network?.Testnet == null ? "testnet" : "mainnet";
+    if (network === "All Network") {
+      return true; // Show all tokens when "All Network" is selected
+    }
+    const addressNetwork = addressObj.network;
     return addressNetwork === network;
   };
 
@@ -256,7 +275,7 @@ export default function AssetsPage() {
   };
 
   const handleCloseReceiveModal = () => {
-    setShowReceiveModal(false);
+    setOpenReceive(false);
   };
 
   const handleSendClick = (token) => {
@@ -272,8 +291,42 @@ export default function AssetsPage() {
 
   const handleReceiveClick = (token) => {
     setSelectedToken(token);
-    setShowReceiveModal(true);
+    setOpenReceive(true);
   };
+
+  // Create receive addresses array for modal
+  const receiveAddresses =
+    userWallet?.addresses?.map((addressObj) => ({
+      label: getTokenType(addressObj),
+      address: addressObj.address,
+    })) || [];
+
+  // Generate QR Code when QR detail is opened
+  useEffect(() => {
+    if (qrDetail.open && qrDetail.coin) {
+      const address = receiveAddresses.find(
+        (a) => a.label === qrDetail.coin
+      )?.address;
+      if (address) {
+        QRCode.toDataURL(address, {
+          width: 320,
+          margin: 1,
+          scale: 8,
+          color: {
+            dark: "#000000",
+            light: "#FFFFFF",
+          },
+          errorCorrectionLevel: "H",
+        })
+          .then((url) => {
+            setQrCodeDataUrl(url);
+          })
+          .catch((err) => {
+            console.error("Error generating QR code:", err);
+          });
+      }
+    }
+  }, [qrDetail.open, qrDetail.coin, receiveAddresses]);
 
   // Validation functions
   const validateAddress = (address) => {
@@ -658,52 +711,7 @@ export default function AssetsPage() {
       {/* Modal Progress Analyze Address */}
       <AnalysisProgressModal isOpen={isAnalyzeAddressLoading} />
 
-      {/* Receive Modal */}
-      {showReceiveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#23272F] px-6 py-8 w-full max-w-sm rounded-lg shadow-lg relative flex flex-col gap-6">
-            <button
-              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
-              onClick={handleCloseReceiveModal}
-              aria-label="Close"
-            >
-              ×
-            </button>
-            <div className="text-white text-xl font-semibold mb-2">
-              Receive {selectedToken?.name || "Bitcoin"}
-            </div>
-            <div className="flex flex-col items-center gap-4">
-              <img
-                src="/assets/images/image-receive-coin.png"
-                alt="Receive Coin"
-                className="w-32 h-32 object-contain"
-              />
-              <div className="text-center">
-                <div className="text-[#B0B6BE] text-sm mb-2">
-                  Your {selectedToken?.name || "Bitcoin"} Address
-                </div>
-                <div className="bg-[#181C22] p-3 rounded border border-[#393E4B] text-white text-sm font-mono break-all">
-                  {selectedToken?.addresses?.[0] || "No address available"}
-                </div>
-              </div>
-            </div>
-            <CustomButton
-              icon="/assets/icons/copy.svg"
-              className="mt-2 w-full justify-center"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  selectedToken?.addresses?.[0] || ""
-                );
-                toast.success("Address copied to clipboard!");
-              }}
-            >
-              Copy Address
-            </CustomButton>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Hasil Analisis */}
+      {/* Modal Analyze Result */}
       {showAnalyeAddressModal && (
         <AnalysisResultModal
           isOpen={showAnalyeAddressModal}
@@ -715,6 +723,129 @@ export default function AssetsPage() {
             setShowAnalyeAddressModal(false);
           }}
         />
+      )}
+
+      {/* Modal Receive Address */}
+      {openReceive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div
+            className={`bg-[#23272F] px-6 py-8 w-full ${
+              qrDetail.open ? "max-w-sm" : "max-w-md"
+            } rounded-lg shadow-lg relative flex flex-col gap-6`}
+          >
+            <button
+              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
+              onClick={() => {
+                setOpenReceive(false);
+                setQrDetail({ open: false, coin: null });
+                setQrCodeDataUrl("");
+              }}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="text-white text-xl font-semibold mb-2">
+              {qrDetail.open ? `Receive ${qrDetail.coin}` : "Receive Coin"}
+            </div>
+            {qrDetail.open ? (
+              // QR Detail View
+              <div className="flex flex-col items-center gap-2">
+                {qrCodeDataUrl && (
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="QR"
+                    className="w-full max-w-80 h-auto object-contain bg-white rounded"
+                    style={{ imageRendering: "crisp-edges" }}
+                  />
+                )}
+                <div className="text-[#B0B6BE] text-sm">
+                  Scan to receive {qrDetail.coin}
+                </div>
+              </div>
+            ) : (
+              // Address List View
+              <div className="flex flex-col gap-4">
+                {receiveAddresses.map((item, idx) => (
+                  <div key={item.label} className="flex flex-col gap-1">
+                    <div className="text-white text-sm font-medium">
+                      {item.label}:
+                    </div>
+                    <div className="flex items-center gap-2 bg-[#23272F] border border-[#393E4B] rounded px-3 py-2">
+                      <span className="text-[#B0B6BE] text-sm truncate flex-1">
+                        {item.address}
+                      </span>
+                      <img
+                        src="/assets/icons/qr_code.svg"
+                        alt="QR"
+                        className="w-5 h-5 cursor-pointer"
+                        onClick={() =>
+                          setQrDetail({ open: true, coin: item.label })
+                        }
+                      />
+                      <img
+                        src="/assets/icons/content_copy.svg"
+                        alt="Copy"
+                        className="w-5 h-5 cursor-pointer"
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.address);
+                          toast.success("Address copied to clipboard!");
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {qrDetail.open && (
+              <div>
+                <div className="text-[#B0B6BE] text-sm mb-1">
+                  Your {qrDetail.coin && qrDetail.coin.toLowerCase()} address:
+                </div>
+                <div className="flex items-center gap-2 bg-[#23272F] border border-[#393E4B] rounded px-3 py-2">
+                  <span className="text-[#B0B6BE] text-sm truncate flex-1">
+                    {
+                      receiveAddresses.find((a) => a.label === qrDetail.coin)
+                        ?.address
+                    }
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 mt-2">
+              {qrDetail.open ? (
+                <>
+                  <CustomButton
+                    icon="/assets/icons/content_copy.svg"
+                    className="w-full"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        receiveAddresses.find((a) => a.label === qrDetail.coin)
+                          ?.address || ""
+                      );
+                      toast.success("Address copied to clipboard!");
+                    }}
+                  >
+                    Copy Address
+                  </CustomButton>
+                  <NeoButton
+                    icon="/assets/icons/share.svg"
+                    className="!w-12 !h-12 flex items-center justify-center"
+                    onClick={() => {
+                      /* share logic */
+                    }}
+                  />
+                </>
+              ) : (
+                <CustomButton
+                  className="w-full"
+                  onClick={() => setOpenReceive(false)}
+                >
+                  Done
+                </CustomButton>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

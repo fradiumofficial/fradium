@@ -73,8 +73,10 @@ actor Fradium {
 
   // ===== WALLET APP =====
   public type Network = {
-    #Testnet;
-    #Mainnet;
+    #Ethereum;
+    #Solana;
+    #Bitcoin;
+    #ICP;
   };
 
   public type TokenType = {

@@ -199,24 +199,54 @@ function WalletLayoutContent() {
                 <div className="absolute top-full left-0 mt-2 w-full bg-[#23272F] rounded-md shadow-lg border border-[#3A3F47] z-50">
                   <div className="py-1">
                     <button
-                      onClick={() => handleNetworkChange("mainnet")}
+                      onClick={() => handleNetworkChange("All Network")}
                       className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        network === "mainnet"
+                        network === "All Network"
                           ? "bg-[#3A3F47] text-[#9BEB83]"
                           : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
                       }`}
                     >
-                      Mainnet
+                      All Network (default)
                     </button>
                     <button
-                      onClick={() => handleNetworkChange("testnet")}
+                      onClick={() => handleNetworkChange("Bitcoin")}
                       className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        network === "testnet"
+                        network === "Bitcoin"
                           ? "bg-[#3A3F47] text-[#9BEB83]"
                           : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
                       }`}
                     >
-                      Testnet
+                      Bitcoin
+                    </button>
+                    <button
+                      onClick={() => handleNetworkChange("Ethereum")}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        network === "Ethereum"
+                          ? "bg-[#3A3F47] text-[#9BEB83]"
+                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
+                      }`}
+                    >
+                      Ethereum
+                    </button>
+                    <button
+                      onClick={() => handleNetworkChange("Solana")}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        network === "Solana"
+                          ? "bg-[#3A3F47] text-[#9BEB83]"
+                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
+                      }`}
+                    >
+                      Solana
+                    </button>
+                    <button
+                      onClick={() => handleNetworkChange("ICP")}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        network === "ICP"
+                          ? "bg-[#3A3F47] text-[#9BEB83]"
+                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
+                      }`}
+                    >
+                      ICP
                     </button>
                   </div>
                 </div>
