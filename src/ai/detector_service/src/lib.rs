@@ -651,158 +651,170 @@ pub async fn analyze_address(address: String) -> Result<RansomwareResult, String
 }
 
 async fn fetch_transactions(address: &str) -> Result<Vec<Value>, String> {
-    let mut all_transactions = Vec::new();
-    let mut offset = 0;
+    const MAX_TRANSACTIONS: u32 = 500;
     
-    // ✅ FIX 1: Use a safer, smaller page size and a total transaction limit.
-    const LIMIT: u32 = 50; // A much safer page size
-    const MAX_TRANSACTIONS: u32 = 500; // Safety break: Fetch a max of 500 transactions.
+    ic_cdk::println!("🚀 [fetch_transactions] Starting for address: {}", address);
+    
+    // 🔥 GUNAKAN MEMPOOL.SPACE API
+    let url = format!("https://mempool.space/api/address/{}/txs", address);
+    
+    ic_cdk::println!("📡 [fetch_transactions] Requesting URL: {}", url);
+    
+    let request = CanisterHttpRequestArgument {
+        url: url.clone(),
+        method: HttpMethod::GET,
+        body: None,
+        max_response_bytes: Some(2_000_000), // 2MB limit
+        transform: None,
+        headers: vec![
+            ic_cdk::api::management_canister::http_request::HttpHeader {
+                name: "User-Agent".to_string(),
+                value: "Mozilla/5.0 (compatible; ICBot/1.0)".to_string(),
+            },
+            ic_cdk::api::management_canister::http_request::HttpHeader {
+                name: "Accept".to_string(),
+                value: "application/json".to_string(),
+            },
+        ],
+    };
 
-    ic_cdk::println!("Fetching up to {} transactions for address {}", MAX_TRANSACTIONS, address);
-
-    loop {
-        let url = format!(
-            "https://blockchain.info/rawaddr/{}?limit={}&offset={}",
-            address, LIMIT, offset
-        );
-        ic_cdk::println!("Fetching page (offset {}): {}", offset, url);
-
-        let request = CanisterHttpRequestArgument {
-            url,
-            method: HttpMethod::GET,
-            body: None,
-            max_response_bytes: Some(2_000_000), // The IC's hard limit
-            transform: None,
-            headers: vec![],
-        };
-        
-        let cycles = 40_000_000_000u128;
-
-        match http_request(request, cycles).await {
-            Ok((response,)) => {
-                let status_code: u64 = response.status.0.to_u64().unwrap_or(0);
+    match http_request(request, 25_000_000_000).await {
+        Ok((response,)) => {
+            let status_code_nat = response.status;
+            let status_code = status_code_nat.0.to_u32().unwrap_or(0);
+            ic_cdk::println!("📊 [fetch_transactions] Response status: {}", status_code);
+            
+            if status_code >= 200 && status_code < 300 {
+                let body_str = String::from_utf8(response.body)
+                    .map_err(|e| format!("Failed to parse response body as UTF-8: {}", e))?;
                 
-                // ✅ FIX 3: Handle API errors for invalid addresses
-                if status_code >= 400 {
-                    // blockchain.info returns non-JSON text for errors like "Invalid Bitcoin Address"
-                    let error_message = String::from_utf8_lossy(&response.body);
-                    return Err(format!(
-                        "API Error ({}): {}",
-                        status_code, error_message
-                    ));
-                }
-
-                // Try to parse as JSON, if it fails, it might be an unhandled error from the API
-                let json: Value = serde_json::from_slice(&response.body)
-                    .map_err(|e| format!("Failed to parse API JSON response: {}. Body: {}", e, String::from_utf8_lossy(&response.body)))?;
+                // Parse JSON response sebagai array transaksi
+                let transactions: Vec<Value> = serde_json::from_str(&body_str)
+                    .map_err(|e| format!("Failed to parse JSON: {}", e))?;
                 
-                let transactions = json["txs"].as_array().unwrap_or(&vec![]).clone();
-                let num_fetched = transactions.len();
-                all_transactions.extend(transactions);
-
-                // If we fetched fewer than the limit, it means we've reached the end of the history
-                if num_fetched < LIMIT as usize {
-                    break;
-                }
+                ic_cdk::println!("✅ [fetch_transactions] Successfully fetched {} transactions", transactions.len());
                 
-                offset += LIMIT;
-                // If we have hit our total transaction limit, stop fetching.
-                if offset >= MAX_TRANSACTIONS {
-                    ic_cdk::println!("Reached max transaction limit of {}. Stopping pagination.", MAX_TRANSACTIONS);
-                    break;
-                }
-            }
-            Err((code, msg)) => {
-                if msg.contains("Http body exceeds size limit") {
-                    // This is a special case for "mega-whale" addresses
-                    let error_msg = format!(
-                        "Address history is too large. Processed {} transactions before hitting 2MB API limit.",
-                        all_transactions.len()
-                    );
-                    ic_cdk::println!("{}", error_msg);
-                    // We can choose to either return an error OR proceed with the data we have.
-                    // Let's proceed with the data we managed to get.
-                    break; 
-                }
-                return Err(format!("Outbound call failed: {:?} - {}", code, msg));
+                // Limit ke MAX_TRANSACTIONS
+                let limited_transactions: Vec<Value> = transactions
+                    .into_iter()
+                    .take(MAX_TRANSACTIONS as usize)
+                    .collect();
+                
+                ic_cdk::println!("📝 [fetch_transactions] Limited to {} transactions", limited_transactions.len());
+                Ok(limited_transactions)
+            } else {
+                let error_body = String::from_utf8_lossy(&response.body);
+                Err(format!("API Error ({}): {}", status_code, error_body))
             }
         }
+        Err((r, m)) => {
+            ic_cdk::println!("❌ [fetch_transactions] HTTP request failed: {:?} - {}", r, m);
+            Err(format!("HTTP request failed: {:?} - {}", r, m))
+        }
     }
-    
-    ic_cdk::println!("Total transactions to be analyzed: {}", all_transactions.len());
-    Ok(all_transactions)
 }
 
+// Update extract_features function untuk Mempool.space format
 fn extract_features(transactions: &[Value], target_address: &str) -> Result<Vec<f32>, String> {
-    let mut features = HashMap::new();
+    ic_cdk::println!("🔍 [extract_features] Extracting features from {} transactions for address: {}", transactions.len(), target_address);
     
-    let mut block_heights_u64 = Vec::new();
-    let mut sent_blocks_u64 = Vec::new();
-    let mut received_blocks_u64 = Vec::new();
-
-    let mut sent_values_btc = Vec::new();
-    let mut received_values_btc = Vec::new();
-    let mut all_transaction_values_btc = Vec::new();
-    let mut all_fees_btc = Vec::new();
+    let mut features: HashMap<String, f64> = HashMap::new();
+    
+    // Arrays untuk data processing
+    let mut block_heights: Vec<f64> = Vec::new();
+    let mut sent_blocks: Vec<f64> = Vec::new();
+    let mut received_blocks: Vec<f64> = Vec::new();
+    let mut sent_values_btc: Vec<f64> = Vec::new();
+    let mut received_values_btc: Vec<f64> = Vec::new();
+    let mut all_fees_btc: Vec<f64> = Vec::new();
+    let mut all_transaction_values_btc: Vec<f64> = Vec::new();
     let mut address_interaction_counts: HashMap<String, u32> = HashMap::new();
     
     const SATOSHI_TO_BTC: f64 = 100_000_000.0;
-
+    
+    // Process setiap transaksi dengan format Mempool.space
     for tx in transactions {
-        let tx_block = tx["block_height"].as_u64().unwrap_or(0);
-        let tx_fee_satoshi = tx["fee"].as_u64().unwrap_or(0) as f64;
-        
-        if tx_block > 0 {
-            block_heights_u64.push(tx_block);
+        // Ambil block height dari status.block_height
+        let block_height = tx["status"]["block_height"].as_f64().unwrap_or(0.0);
+        if block_height > 0.0 {
+            block_heights.push(block_height);
         }
+        
+        // Process fee (sudah dalam satoshi di Mempool.space)
+        let tx_fee_satoshi = tx["fee"].as_f64().unwrap_or(0.0);
         all_fees_btc.push(tx_fee_satoshi / SATOSHI_TO_BTC);
         
+        // Check if this address is sender (ada di vin)
         let mut is_sender = false;
         let mut total_sent_satoshi = 0.0;
-        if let Some(inputs) = tx["inputs"].as_array() {
+        
+        if let Some(inputs) = tx["vin"].as_array() {
             for input in inputs {
-                if let Some(prev_out) = input.get("prev_out") {
-                    if prev_out["addr"].as_str() == Some(target_address) {
-                        is_sender = true;
-                        total_sent_satoshi += prev_out["value"].as_u64().unwrap_or(0) as f64;
+                if let Some(prevout) = input["prevout"].as_object() {
+                    if let Some(addr) = prevout["scriptpubkey_address"].as_str() {
+                        if addr == target_address {
+                            is_sender = true;
+                            if let Some(value) = prevout["value"].as_f64() {
+                                total_sent_satoshi += value;
+                            }
+                        }
+                        // Count interactions
+                        *address_interaction_counts.entry(addr.to_string()).or_insert(0) += 1;
                     }
                 }
             }
         }
         
+        // Check if this address is receiver (ada di vout)
         let mut total_received_satoshi = 0.0;
-        if let Some(outputs) = tx["out"].as_array() {
+        if let Some(outputs) = tx["vout"].as_array() {
             for output in outputs {
-                if output["addr"].as_str() == Some(target_address) {
-                    total_received_satoshi += output["value"].as_u64().unwrap_or(0) as f64;
+                if let Some(addr) = output["scriptpubkey_address"].as_str() {
+                    if addr == target_address {
+                        if let Some(value) = output["value"].as_f64() {
+                            total_received_satoshi += value;
+                        }
+                    }
+                    // Count interactions
+                    *address_interaction_counts.entry(addr.to_string()).or_insert(0) += 1;
                 }
             }
         }
-
+        
+        // Add to appropriate arrays
         if is_sender {
-            let sent_btc = total_sent_satoshi / SATOSHI_TO_BTC;
-            sent_values_btc.push(sent_btc);
-            all_transaction_values_btc.push(sent_btc);
-            if tx_block > 0 {
-                sent_blocks_u64.push(tx_block);
-            }
-        }
-
-        if total_received_satoshi > 0.0 {
-             let received_btc = total_received_satoshi / SATOSHI_TO_BTC;
-            received_values_btc.push(received_btc);
-            all_transaction_values_btc.push(received_btc);
-            if tx_block > 0 {
-                received_blocks_u64.push(tx_block);
+            sent_values_btc.push(total_sent_satoshi / SATOSHI_TO_BTC);
+            if block_height > 0.0 {
+                sent_blocks.push(block_height);
             }
         }
         
+        if total_received_satoshi > 0.0 {
+            received_values_btc.push(total_received_satoshi / SATOSHI_TO_BTC);
+            if block_height > 0.0 {
+                received_blocks.push(block_height);
+            }
+        }
+        
+        // Add total transaction value
+        let total_tx_value = total_sent_satoshi.max(total_received_satoshi);
+        if total_tx_value > 0.0 {
+            all_transaction_values_btc.push(total_tx_value / SATOSHI_TO_BTC);
+        }
+        
+        // Extract counterparties
         extract_counterparties(tx, target_address, &mut address_interaction_counts);
     }
     
+    // Convert Vec<f64> to Vec<u64> for block heights and blocks
+    let block_heights_u64: Vec<u64> = block_heights.iter().map(|&x| x as u64).collect();
+    let sent_blocks_u64: Vec<u64> = sent_blocks.iter().map(|&x| x as u64).collect();
+    let received_blocks_u64: Vec<u64> = received_blocks.iter().map(|&x| x as u64).collect();
+
+    // Populate base features
     populate_base_features(
         &mut features,
-        transactions.len(),
+        transactions.len() as usize,
         &sent_values_btc,
         &received_values_btc,
         &all_transaction_values_btc,
@@ -810,19 +822,50 @@ fn extract_features(transactions: &[Value], target_address: &str) -> Result<Vec<
         &block_heights_u64,
         &sent_blocks_u64,
         &received_blocks_u64,
-        &address_interaction_counts,
+        &address_interaction_counts
     );
     
+    // Create enhanced pattern features
     create_enhanced_pattern_features(&mut features);
     
-    let feature_vector: Vec<f32> = get_feature_names()
-        .into_iter()
-        .map(|name| *features.get(&name).unwrap_or(&0.0) as f32)
+    // Convert to ordered feature vector
+    let feature_names = get_feature_names();
+    let feature_vector: Vec<f32> = feature_names
+        .iter()
+        .map(|name| features.get(name).unwrap_or(&0.0) as &f64)
+        .map(|&val| val as f32)
         .collect();
     
+    ic_cdk::println!("✅ [extract_features] Extracted {} features", feature_vector.len());
     Ok(feature_vector)
 }
 
+// Update extract_counterparties untuk format Mempool.space
+fn extract_counterparties(tx: &Value, target_address: &str, interaction_counts: &mut HashMap<String, u32>) {
+    // Extract dari vin (inputs)
+    if let Some(inputs) = tx["vin"].as_array() {
+        for input in inputs {
+            if let Some(prevout) = input["prevout"].as_object() {
+                if let Some(addr) = prevout["scriptpubkey_address"].as_str() {
+                    if addr != target_address {
+                        *interaction_counts.entry(addr.to_string()).or_insert(0) += 1;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Extract dari vout (outputs)  
+    if let Some(outputs) = tx["vout"].as_array() {
+        for output in outputs {
+            if let Some(addr) = output["scriptpubkey_address"].as_str() {
+                if addr != target_address {
+                    *interaction_counts.entry(addr.to_string()).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+}
 fn populate_base_features(
     features: &mut HashMap<String, f64>,
     total_tx_count: usize,
@@ -992,27 +1035,6 @@ fn predict_ransomware(
 }
 
 // --- HELPER FUNCTIONS ---
-
-fn extract_counterparties(tx: &Value, target_address: &str, interaction_counts: &mut HashMap<String, u32>) {
-    if let Some(inputs) = tx["inputs"].as_array() {
-        for input in inputs {
-            if let Some(addr) = input.get("prev_out").and_then(|po| po["addr"].as_str()) {
-                if addr != target_address {
-                    *interaction_counts.entry(addr.to_string()).or_insert(0) += 1;
-                }
-            }
-        }
-    }
-    if let Some(outputs) = tx["out"].as_array() {
-        for output in outputs {
-            if let Some(addr) = output["addr"].as_str() {
-                if addr != target_address {
-                    *interaction_counts.entry(addr.to_string()).or_insert(0) += 1;
-                }
-            }
-        }
-    }
-}
 
 fn calculate_block_intervals(block_heights: &[f64]) -> Vec<f64> {
     if block_heights.len() < 2 { return vec![]; }

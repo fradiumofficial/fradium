@@ -1,7 +1,9 @@
 import { getFromLocalStorage, isCacheFresh, saveToLocalStorage } from "@/lib/localStorage";
-import type { AnalyzeResult, MempoolAddressTransaction, Transaction } from "../model/AnalyzeAddressModel";
+import type { AddressInteractionCounts, AnalyzeResult, Features, MempoolAddressTransaction, Transaction } from "../model/AnalyzeAddressModel";
 import axios from "axios";
 import { createRansomwareDetectorActor } from "@/canister/canister_handler";
+
+const SATOSHI_TO_BTC = 100_000_000;
 
 /**
  * Mengadaptasi transaksi dari Mempool Space ke format yang sesuai dengan model AnalyzeAddress.
@@ -34,7 +36,7 @@ function adaptMempoolTransaction(tx: MempoolAddressTransaction): Transaction {
  * @returns Daftar transaksi yang terkait dengan alamat tersebut.
  */
 export async function fetchTransactions(address: string): Promise<Transaction[]> {
-    const MAX_TRANSACTIONS = 100;
+    const MAX_TRANSACTIONS = 500;
     const cacheKey = `analyze_address_${address}`;
     const cacheTimeKey = `${cacheKey}-timestamp`;
 
@@ -85,202 +87,170 @@ export async function fetchTransactions(address: string): Promise<Transaction[]>
     }
 } 
 
-/**
- * Mengekstrak vektor fitur dari daftar transaksi sesuai dengan urutan yang dibutuhkan model AI.
- * @param transactions Array transaksi dari `fetchTransactions`.
- * @param targetAddress Alamat Bitcoin yang sedang dianalisis.
- * @returns Array angka (vektor fitur) yang siap dikirim ke Canister.
- */
-export function extractFeatures(transactions: Transaction[], targetAddress: string): number[] {
-    const features: { [key: string]: number } = {};
-    const SATOSHI_TO_BTC = 100_000_000.0;
+export function extractFeatures(
+  transactions: Transaction[], 
+  targetAddress: string
+): number[] {
+  console.log(`Extracting features from ${transactions.length} transactions for address: ${targetAddress}`);
+  
+  const features: Features = {};
+  
+  // Separate arrays for different data types
+  const blockHeights: number[] = [];
+  const sentBlocks: number[] = [];
+  const receivedBlocks: number[] = [];
+  const sentValuesBtc: number[] = [];
+  const receivedValuesBtc: number[] = [];
+  const allTransactionValuesBtc: number[] = [];
+  const allFeesBtc: number[] = [];
+  const addressInteractionCounts: AddressInteractionCounts = {};
+
+  // Process each transaction
+  for (const tx of transactions) {
+    const blockHeight = tx.block_height || 0;
+    const feeInBtc = (tx.fee || 0) / SATOSHI_TO_BTC;
+
+    if (blockHeight > 0) {
+      blockHeights.push(blockHeight);
+    }
+    allFeesBtc.push(feeInBtc);
+
+    const { isSender, totalSentSatoshi } = checkIfSender(tx, targetAddress);
+    const totalReceivedSatoshi = calculateReceivedAmount(tx, targetAddress);
+
+    const sentBtc = totalSentSatoshi / SATOSHI_TO_BTC;
+    const receivedBtc = totalReceivedSatoshi / SATOSHI_TO_BTC;
+
+    // Tentukan nilai utama transaksi untuk alamat ini.
+    // Biasanya adalah nilai terbesar yang keluar (jika mengirim) atau masuk.
+    const primaryTxValue = Math.max(sentBtc, receivedBtc);
     
-    // Inisialisasi variabel untuk pengumpulan data
-    const blockHeights: number[] = [];
-    const sentBlocks: number[] = [];
-    const receivedBlocks: number[] = [];
-    
-    const sentValuesBtc: number[] = [];
-    const receivedValuesBtc: number[] = [];
-    const allTransactionValuesBtc: number[] = [];
-    const allFeesBtc: number[] = [];
-    const addressInteractionCounts = new Map<string, number>();
-
-    // 1. Loop melalui setiap transaksi untuk mengumpulkan data mentah
-    for (const tx of transactions) {
-        if (tx.block_height) {
-            blockHeights.push(tx.block_height);
-        }
-        allFeesBtc.push(tx.fee / SATOSHI_TO_BTC);
-        
-        let isSender = false;
-        let totalSentSatoshi = 0;
-        for (const input of tx.inputs) {
-            if (input.prev_out?.addr === targetAddress) {
-                isSender = true;
-                totalSentSatoshi += input.prev_out.value;
-            }
-             // Hitung interaksi dengan alamat lain
-            if (input.prev_out?.addr && input.prev_out.addr !== targetAddress) {
-                addressInteractionCounts.set(input.prev_out.addr, (addressInteractionCounts.get(input.prev_out.addr) || 0) + 1);
-            }
-        }
-        
-        let totalReceivedSatoshi = 0;
-        for (const output of tx.outputs) {
-            if (output.addr === targetAddress) {
-                totalReceivedSatoshi += output.value;
-            }
-            // Hitung interaksi dengan alamat lain
-            if (output.addr && output.addr !== targetAddress) {
-                addressInteractionCounts.set(output.addr, (addressInteractionCounts.get(output.addr) || 0) + 1);
-            }
-        }
-
-        if (isSender) {
-            const sentBtc = totalSentSatoshi / SATOSHI_TO_BTC;
-            sentValuesBtc.push(sentBtc);
-            allTransactionValuesBtc.push(sentBtc);
-            if (tx.block_height) sentBlocks.push(tx.block_height);
-        }
-
-        if (totalReceivedSatoshi > 0) {
-            const receivedBtc = totalReceivedSatoshi / SATOSHI_TO_BTC;
-            receivedValuesBtc.push(receivedBtc);
-            allTransactionValuesBtc.push(receivedBtc);
-            if (tx.block_height) receivedBlocks.push(tx.block_height);
-        }
+    // Pastikan hanya satu nilai utama per transaksi yang ditambahkan.
+    if (primaryTxValue > 0) {
+      allTransactionValuesBtc.push(primaryTxValue);
     }
 
-    // 2. Hitung fitur-fitur dasar
-    features['num_txs_as_sender'] = sentValuesBtc.length;
-    features['num_txs_as_receiver'] = receivedValuesBtc.length;
-    features['total_txs'] = transactions.length;
-
-    if (blockHeights.length > 0) {
-        const minBlock = Math.min(...blockHeights);
-        const maxBlock = Math.max(...blockHeights);
-        features['first_block_appeared_in'] = minBlock;
-        features['last_block_appeared_in'] = maxBlock;
-        features['lifetime_in_blocks'] = maxBlock - minBlock;
-        features['num_timesteps_appeared_in'] = new Set(blockHeights).size;
-    }
-    
-    if (sentBlocks.length > 0) features['first_sent_block'] = Math.min(...sentBlocks);
-    if (receivedBlocks.length > 0) features['first_received_block'] = Math.min(...receivedBlocks);
-
-    // Hitung statistik menggunakan helper function
-    const btcTransactedStats = calculateStats(allTransactionValuesBtc);
-    for (const key in btcTransactedStats) features[`btc_transacted_${key}`] = btcTransactedStats[key];
-    
-    const btcSentStats = calculateStats(sentValuesBtc);
-    for (const key in btcSentStats) features[`btc_sent_${key}`] = btcSentStats[key];
-
-    const btcReceivedStats = calculateStats(receivedValuesBtc);
-    for (const key in btcReceivedStats) features[`btc_received_${key}`] = btcReceivedStats[key];
-
-    const feesStats = calculateStats(allFeesBtc);
-    for (const key in feesStats) features[`fees_${key}`] = feesStats[key];
-
-    const feeShares = allFeesBtc.map((fee, i) => allTransactionValuesBtc[i] > 0 ? (fee / allTransactionValuesBtc[i]) * 100 : 0);
-    const feeSharesStats = calculateStats(feeShares);
-    for (const key in feeSharesStats) features[`fees_as_share_${key}`] = feeSharesStats[key];
-
-    const blockIntervals = calculateIntervals(blockHeights);
-    const blockIntervalsStats = calculateStats(blockIntervals);
-    for (const key in blockIntervalsStats) features[`blocks_btwn_txs_${key}`] = blockIntervalsStats[key];
-
-    const sentBlockIntervals = calculateIntervals(sentBlocks);
-    const sentBlockIntervalsStats = calculateStats(sentBlockIntervals);
-    for (const key in sentBlockIntervalsStats) features[`blocks_btwn_input_txs_${key}`] = sentBlockIntervalsStats[key];
-    
-    const receivedBlockIntervals = calculateIntervals(receivedBlocks);
-    const receivedBlockIntervalsStats = calculateStats(receivedBlockIntervals);
-    for (const key in receivedBlockIntervalsStats) features[`blocks_btwn_output_txs_${key}`] = receivedBlockIntervalsStats[key];
-
-    const interactionCounts = Array.from(addressInteractionCounts.values());
-    const interactionStats = calculateStats(interactionCounts);
-    for (const key in interactionStats) features[`transacted_w_address_${key}`] = interactionStats[key];
-    features['num_addr_transacted_multiple'] = interactionCounts.filter(count => count > 1).length;
-
-    features['Time step'] = new Set(blockHeights).size;
-    
-    // 3. Hitung fitur-fitur pola yang lebih kompleks (enhanced pattern features)
-    const get = (k: string) => features[k] || 0.0;
-    const getDiv = (k: string) => { const v = get(k); return v === 0.0 ? 1.0 : v; };
-    
-    features['partner_transaction_ratio'] = get('transacted_w_address_total') / (get('total_txs') + 1e-8);
-    features['activity_density'] = get('total_txs') / (getDiv('lifetime_in_blocks') + 1e-8);
-    features['transaction_size_variance'] = (get('btc_transacted_max') - get('btc_transacted_min')) / (getDiv('btc_transacted_mean') + 1e-8);
-    features['flow_imbalance'] = (get('btc_sent_total') - get('btc_received_total')) / (getDiv('btc_transacted_total') + 1e-8);
-    features['temporal_spread'] = (get('last_block_appeared_in') - get('first_block_appeared_in')) / (getDiv('num_timesteps_appeared_in') + 1e-8);
-    features['fee_percentile'] = get('fees_total') / (getDiv('btc_transacted_total') + 1e-8);
-    features['interaction_intensity'] = get('num_addr_transacted_multiple') / (getDiv('transacted_w_address_total') + 1e-8);
-    features['value_per_transaction'] = get('btc_transacted_total') / (getDiv('total_txs') + 1e-8);
-    features['burst_activity'] = get('total_txs') * features['activity_density'];
-    features['mixing_intensity'] = features['partner_transaction_ratio'] * features['interaction_intensity'];
-    
-    // 4. Susun vektor fitur dalam URUTAN YANG BENAR
-    // Urutan ini SANGAT PENTING dan harus sama persis dengan yang ada di Rust.
-    const featureNames = [
-        "Time step", "num_txs_as_sender", "num_txs_as_receiver", "first_block_appeared_in", 
-        "last_block_appeared_in", "lifetime_in_blocks", "total_txs", "first_sent_block", 
-        "first_received_block", "num_timesteps_appeared_in", "btc_transacted_total", 
-        "btc_transacted_min", "btc_transacted_max", "btc_transacted_mean", "btc_transacted_median",
-        "btc_sent_total", "btc_sent_min", "btc_sent_max", "btc_sent_mean", "btc_sent_median",
-        "btc_received_total", "btc_received_min", "btc_received_max", "btc_received_mean", 
-        "btc_received_median", "fees_total", "fees_min", "fees_max", "fees_mean", "fees_median",
-        "fees_as_share_total", "fees_as_share_min", "fees_as_share_max", "fees_as_share_mean", 
-        "fees_as_share_median", "blocks_btwn_txs_total", "blocks_btwn_txs_min", "blocks_btwn_txs_max",
-        "blocks_btwn_txs_mean", "blocks_btwn_txs_median", "blocks_btwn_input_txs_total", 
-        "blocks_btwn_input_txs_min", "blocks_btwn_input_txs_max", "blocks_btwn_input_txs_mean",
-        "blocks_btwn_input_txs_median", "blocks_btwn_output_txs_total", "blocks_btwn_output_txs_min",
-        "blocks_btwn_output_txs_max", "blocks_btwn_output_txs_mean", "blocks_btwn_output_txs_median",
-        "num_addr_transacted_multiple", "transacted_w_address_total", "transacted_w_address_min",
-        "transacted_w_address_max", "transacted_w_address_mean", "transacted_w_address_median",
-        "partner_transaction_ratio", "activity_density", "transaction_size_variance", 
-        "flow_imbalance", "temporal_spread", "fee_percentile", "interaction_intensity",
-        "value_per_transaction", "burst_activity", "mixing_intensity",
-    ];
-
-    return featureNames.map(name => features[name] || 0.0);
-}
-
-const calculateStats = (values: number[]): { [key: string]: number } => {
-    if (values.length === 0) {
-        return { 
-            total: 0,
-            min: 0,
-            max: 0,
-            mean: 0,
-            median: 0,
-        };
+    // Tetap kumpulkan statistik terpisah untuk mengirim dan menerima.
+    if (isSender) {
+      sentValuesBtc.push(sentBtc);
+      if (blockHeight > 0) {
+        sentBlocks.push(blockHeight);
+      }
     }
 
-    const sum = values.reduce((a, b) => a + b, 0);
-    const mean = sum /values.length;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
+    if (totalReceivedSatoshi > 0) {
+      receivedValuesBtc.push(receivedBtc);
+      if (blockHeight > 0) {
+        receivedBlocks.push(blockHeight);
+      }
+    }
 
-    const sorted = [...values].sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    const median = sorted.length % 2 !== 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-
-    return { total: sum, min, max, mean, median };
+    extractCounterparties(tx, targetAddress, addressInteractionCounts);
+  }
+  
+  // Populate base features
+  populateBaseFeatures(
+    features,
+    transactions.length,
+    sentValuesBtc,
+    receivedValuesBtc,
+    allTransactionValuesBtc,
+    allFeesBtc,
+    blockHeights,
+    sentBlocks,
+    receivedBlocks,
+    addressInteractionCounts
+  );
+  
+  // Create enhanced pattern features
+  createEnhancedPatternFeatures(features);
+  
+  // Convert to ordered feature vector
+  const featureVector = getFeatureNames().map(name => features[name] || 0);
+  
+  console.log(`Extracted ${featureVector.length} features`);
+  return featureVector;
 }
 
-const calculateIntervals = (blocks: number[]): number[] => {
-    if (blocks.length < 2) return [];
-    const sorted = [...blocks].sort((a, b) => a - b);
-    return sorted.slice(1).map((block, index) => block - sorted[index]);
+function populateBaseFeatures(
+  features: Features,
+  totalTxCount: number,
+  sentValuesBtc: number[],
+  receivedValuesBtc: number[],
+  allValuesBtc: number[],
+  allFeesBtc: number[],
+  blockHeights: number[],
+  sentBlocks: number[],
+  receivedBlocks: number[],
+  addressInteractionCounts: AddressInteractionCounts
+): void {
+  // Basic transaction counts
+  features["num_txs_as_sender"] = sentValuesBtc.length;
+  features["num_txs_as_receiver"] = receivedValuesBtc.length;
+  features["total_txs"] = totalTxCount;
+  
+  // Block-related features
+  if (blockHeights.length > 0) {
+    const minBlock = Math.min(...blockHeights);
+    const maxBlock = Math.max(...blockHeights);
+    
+    features["first_block_appeared_in"] = minBlock;
+    features["last_block_appeared_in"] = maxBlock;
+    features["lifetime_in_blocks"] = maxBlock - minBlock;
+    
+    const uniqueBlocks = new Set(blockHeights);
+    features["num_timesteps_appeared_in"] = uniqueBlocks.size;
+  }
+
+  // First transaction blocks
+  if (sentBlocks.length > 0) {
+    features["first_sent_block"] = Math.min(...sentBlocks);
+  }
+  if (receivedBlocks.length > 0) {
+    features["first_received_block"] = Math.min(...receivedBlocks);
+  }
+
+  // Statistical features for different value types
+  insertStats(features, "btc_transacted", allValuesBtc);
+  insertStats(features, "btc_sent", sentValuesBtc);
+  insertStats(features, "btc_received", receivedValuesBtc);
+  insertStats(features, "fees", allFeesBtc);
+  
+  // =======================================================================
+  // 🔥 PERBAIKAN LOGIKA feeShares DI SINI
+  // =======================================================================
+  const feeShares: number[] = [];
+  // Gunakan panjang array terpendek untuk iterasi yang aman (meniru fungsi .zip di Rust)
+  const shortestLength = Math.min(allFeesBtc.length, allValuesBtc.length);
+  for (let i = 0; i < shortestLength; i++) {
+    const fee = allFeesBtc[i];
+    const value = allValuesBtc[i];
+    if (value > 0) {
+      const share = (fee / value) * 100;
+      if (share > 0) {
+        feeShares.push(share);
+      }
+    }
+  }
+  insertStats(features, "fees_as_share", feeShares);
+  
+  // Block interval statistics
+  insertStats(features, "blocks_btwn_txs", calculateBlockIntervals(blockHeights));
+  insertStats(features, "blocks_btwn_input_txs", calculateBlockIntervals(sentBlocks));
+  insertStats(features, "blocks_btwn_output_txs", calculateBlockIntervals(receivedBlocks));
+
+  // Address interaction features
+  const interactionCounts = Object.values(addressInteractionCounts);
+  insertStats(features, "transacted_w_address", interactionCounts);
+  
+  const multipleInteractions = interactionCounts.filter(count => count > 1).length;
+  features["num_addr_transacted_multiple"] = multipleInteractions;
+
+  // Time step feature
+  const uniqueBlocks = new Set(blockHeights);
+  features["Time step"] = uniqueBlocks.size;
 }
 
-/**
- * Analyze address by sending features to the ICP canister
- * @param address Bitcoin address to analyze
- * @param features Feature vector extracted from transactions
- * @returns Analysis result from the AI model
- */
 export async function analyzeAddressWithCanister(address: string, features: number[]): Promise<AnalyzeResult> {
   try {
     console.log(`Sending analysis request to canister for address: ${address}`);
@@ -316,7 +286,7 @@ export async function analyzeAddressWithCanister(address: string, features: numb
       confidence_level: result.confidence_level,
       threshold_used: result.threshold_used,
       transactions_analyzed: result.transactions_analyzed,
-      confidence: result.confidence,
+      confidence: result.confidence ?? 0,
       features: features
     };
 
@@ -356,4 +326,180 @@ export async function performCompleteAnalysis(address: string): Promise<AnalyzeR
     console.error(`Complete analysis failed:`, error);
     throw error;
   }
+}
+
+function checkIfSender(tx: Transaction, targetAddress: string): { isSender: boolean; totalSentSatoshi: number } {
+  let isSender = false;
+  let totalSentSatoshi = 0;
+  
+  if (tx.inputs) {
+    for (const input of tx.inputs) {
+      if (input.prev_out?.addr === targetAddress) {
+        isSender = true;
+        totalSentSatoshi += input.prev_out?.value || 0;
+      }
+    }
+  }
+  
+  return { isSender, totalSentSatoshi };
+}
+
+function calculateReceivedAmount(tx: Transaction, targetAddress: string): number {
+  let totalReceivedSatoshi = 0;
+  
+  if (tx.outputs) {
+    for (const output of tx.outputs) {
+      if (output.addr === targetAddress) {
+        totalReceivedSatoshi += output.value || 0;
+      }
+    }
+  }
+  
+  return totalReceivedSatoshi;
+}
+
+function getFeatureNames(): string[] {
+  return [
+    "Time step", "num_txs_as_sender", "num_txs_as_receiver", "first_block_appeared_in", 
+    "last_block_appeared_in", "lifetime_in_blocks", "total_txs", "first_sent_block", 
+    "first_received_block", "num_timesteps_appeared_in", "btc_transacted_total", 
+    "btc_transacted_min", "btc_transacted_max", "btc_transacted_mean", "btc_transacted_median",
+    "btc_sent_total", "btc_sent_min", "btc_sent_max", "btc_sent_mean", "btc_sent_median",
+    "btc_received_total", "btc_received_min", "btc_received_max", "btc_received_mean", 
+    "btc_received_median", "fees_total", "fees_min", "fees_max", "fees_mean", "fees_median",
+    "fees_as_share_total", "fees_as_share_min", "fees_as_share_max", "fees_as_share_mean", 
+    "fees_as_share_median", "blocks_btwn_txs_total", "blocks_btwn_txs_min", "blocks_btwn_txs_max",
+    "blocks_btwn_txs_mean", "blocks_btwn_txs_median", "blocks_btwn_input_txs_total", 
+    "blocks_btwn_input_txs_min", "blocks_btwn_input_txs_max", "blocks_btwn_input_txs_mean",
+    "blocks_btwn_input_txs_median", "blocks_btwn_output_txs_total", "blocks_btwn_output_txs_min",
+    "blocks_btwn_output_txs_max", "blocks_btwn_output_txs_mean", "blocks_btwn_output_txs_median",
+    "num_addr_transacted_multiple", "transacted_w_address_total", "transacted_w_address_min",
+    "transacted_w_address_max", "transacted_w_address_mean", "transacted_w_address_median",
+    "partner_transaction_ratio", "activity_density", "transaction_size_variance", 
+    "flow_imbalance", "temporal_spread", "fee_percentile", "interaction_intensity",
+    "value_per_transaction", "burst_activity", "mixing_intensity"
+  ];
+}
+
+function insertStats(features: Features, prefix: string, values: number[]): void {
+  if (values.length === 0) {
+    return;
+  }
+  
+  // Calculate basic statistics
+  const sum = values.reduce((acc, val) => acc + val, 0);
+  const mean = sum / values.length;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  
+  // Calculate median
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sortedValues.length / 2);
+  const median = sortedValues.length % 2 === 0
+    ? (sortedValues[mid - 1] + sortedValues[mid]) / 2
+    : sortedValues[mid];
+  
+  // Store statistics
+  features[`${prefix}_total`] = sum;
+  features[`${prefix}_mean`] = mean;
+  features[`${prefix}_min`] = min;
+  features[`${prefix}_max`] = max;
+  features[`${prefix}_median`] = median;
+}
+
+function extractCounterparties(
+  tx: Transaction, 
+  targetAddress: string, 
+  interactionCounts: AddressInteractionCounts
+): void {
+  // Gunakan Set untuk memastikan setiap alamat lawan hanya dihitung sekali per transaksi.
+  const uniqueCounterpartiesInTx = new Set<string>();
+
+  // Kumpulkan semua alamat lawan yang unik dari semua input.
+  if (tx.inputs) {
+    for (const input of tx.inputs) {
+      const addr = input.prev_out?.addr;
+      if (addr && addr !== targetAddress) {
+        uniqueCounterpartiesInTx.add(addr);
+      }
+    }
+  }
+  
+  // Kumpulkan semua alamat lawan yang unik dari semua output.
+  if (tx.outputs) {
+    for (const output of tx.outputs) {
+      const addr = output.addr;
+      if (addr && addr !== targetAddress) {
+        uniqueCounterpartiesInTx.add(addr);
+      }
+    }
+  }
+
+  // Sekarang, perbarui hitungan global untuk setiap alamat unik yang ditemukan dalam transaksi ini.
+  for (const uniqueAddr of uniqueCounterpartiesInTx) {
+    interactionCounts[uniqueAddr] = (interactionCounts[uniqueAddr] || 0) + 1;
+  }
+}
+
+/**
+ * Calculates intervals between consecutive block heights
+ */
+function calculateBlockIntervals(blockHeights: number[]): number[] {
+  if (blockHeights.length < 2) {
+    return [];
+  }
+  
+  const sortedBlocks = [...blockHeights].sort((a, b) => a - b);
+  const intervals: number[] = [];
+  
+  for (let i = 1; i < sortedBlocks.length; i++) {
+    intervals.push(sortedBlocks[i] - sortedBlocks[i - 1]);
+  }
+  
+  return intervals;
+}
+
+function createEnhancedPatternFeatures(features: Features): void {
+  const get = (key: string): number => features[key] || 0;
+  const getDiv = (key: string): number => {
+    const v = features[key] || 0;
+    return v === 0 ? 1 : v;
+  };
+
+  const transactedWithAddressTotal = get("transacted_w_address_total");
+  const totalTxs                = get("total_txs");
+  const lifetimeInBlocks        = getDiv("lifetime_in_blocks");
+  const btcTransactedMax        = get("btc_transacted_max");
+  const btcTransactedMin        = get("btc_transacted_min");
+  const btcTransactedMean       = getDiv("btc_transacted_mean");
+  const btcSentTotal            = get("btc_sent_total");
+  const btcReceivedTotal        = get("btc_received_total");
+  const btcTransactedTotalDiv   = getDiv("btc_transacted_total");
+  const lastBlockAppearedIn     = get("last_block_appeared_in");
+  const firstBlockAppearedIn    = get("first_block_appeared_in");
+  const numTimestepsAppearedIn  = getDiv("num_timesteps_appeared_in");
+  const feesTotal               = get("fees_total");
+  const numAddrTransMultiple    = get("num_addr_transacted_multiple");
+
+  const partnerRatio       = transactedWithAddressTotal / (totalTxs + 1e-8);
+  const activityDensity    = totalTxs / (lifetimeInBlocks + 1e-8);
+  const txVariance         = (btcTransactedMax - btcTransactedMin) / (btcTransactedMean + 1e-8);
+  const flowImbalance      = (btcSentTotal - btcReceivedTotal) / (btcTransactedTotalDiv + 1e-8);
+  const temporalSpread     = (lastBlockAppearedIn - firstBlockAppearedIn) / (numTimestepsAppearedIn + 1e-8);
+  const feePercentile      = feesTotal / (btcTransactedTotalDiv + 1e-8);
+  const interactionIntensity = numAddrTransMultiple / (transactedWithAddressTotal + 1e-8);
+  const valuePerTransaction   = get("btc_transacted_total") / (totalTxs + 1e-8);
+  const burstActivity         = totalTxs * activityDensity;
+  const mixingIntensity       = partnerRatio * interactionIntensity;
+
+  features["partner_transaction_ratio"]   = partnerRatio;
+  features["activity_density"]            = activityDensity;
+  features["transaction_size_variance"]   = txVariance;
+  features["flow_imbalance"]              = flowImbalance;
+  features["temporal_spread"]             = temporalSpread;
+  features["fee_percentile"]              = feePercentile;
+  features["interaction_intensity"]       = interactionIntensity;
+  features["value_per_transaction"]       = valuePerTransaction;
+  features["burst_activity"]              = burstActivity;
+  features["mixing_intensity"]            = mixingIntensity;
 }

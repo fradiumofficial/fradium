@@ -52,3 +52,11 @@ export interface AnalyzeResult {
   confidence: number;
   features?: number[];
 }
+
+export interface Features {
+  [key: string]: number;
+}
+
+export interface AddressInteractionCounts {
+  [address: string]: number;
+}

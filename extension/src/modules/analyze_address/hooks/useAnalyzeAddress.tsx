@@ -39,7 +39,18 @@ export function useAnalyzeAddress() {
 
         } catch (err: any) {
             console.error("❌ Analysis failed:", err);
-            const errorMessage = err.message || "An unexpected error occurred during analysis.";
+    
+            // More specific error messages
+            let errorMessage = "An unexpected error occurred during analysis.";
+            
+            if (err.message.includes('No transactions found')) {
+            errorMessage = "No transactions found for this address. Please check if the address has any transaction history.";
+            } else if (err.message.includes('Canister error')) {
+            errorMessage = "AI analysis service is currently unavailable. Please try again later.";
+            } else if (err.message.includes('Network')) {
+            errorMessage = "Network error. Please check your internet connection.";
+            }
+            
             setError(errorMessage);
             return null;
         } finally {

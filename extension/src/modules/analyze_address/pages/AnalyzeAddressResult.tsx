@@ -4,13 +4,23 @@ import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
 import { useLocation } from "react-router-dom";
 import type { AnalyzeResult } from "../model/AnalyzeAddressModel";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function AnalyzeAdressResult() {
   const location = useLocation();
   const result = location.state?.result as AnalyzeResult;
-  const [isAddressSafe, setIsAddressSafe] = useState<boolean>(result.is_ransomware === false);
-  setIsAddressSafe(result.is_ransomware);
+  
+  // Inisialisasi state dengan nilai yang benar langsung
+  const [isAddressSafe, setIsAddressSafe] = useState<boolean>(() => {
+    return result?.is_ransomware === false;
+  });
+
+  // Gunakan useEffect untuk update state jika result berubah
+  useEffect(() => {
+    if (result) {
+      setIsAddressSafe(result.is_ransomware === false);
+    }
+  }, [result]);
 
   const getSecurityCheckItems = () => {
     if (isAddressSafe) {
@@ -38,7 +48,7 @@ function AnalyzeAdressResult() {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 20 20"
       fill="currentColor"
-      className="w-5 h-5 text-green-400" // Warna ikon diatur di sini
+      className="w-5 h-5 text-green-400"
     >
       <path
         fillRule="evenodd"
@@ -48,17 +58,26 @@ function AnalyzeAdressResult() {
     </svg>
   );
 
-  return (
-    <div className="w-[400px] h-] space-y-4 bg-[#25262B] text-white shadow-md">
+  // Guard clause untuk menangani case ketika result tidak ada
+  if (!result) {
+    return (
+      <div className="w-[400px] h-full flex items-center justify-center bg-[#25262B] text-white">
+        <p>No analysis result found</p>
+      </div>
+    );
+  }
 
-      { /* Header Sections */}
+  return (
+    <div className="w-[400px] h-full space-y-4 bg-[#25262B] text-white shadow-md">
+
+      {/* Header Sections */}
       <ProfileHeader
           mainAvatarSrc='https://github.com/shadcn.png'
           mainAvatarFallback='N'
           address={result.address}
         />
 
-      { /* Analyze Address Section */}
+      {/* Analyze Address Section */}
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>
         <SafetyCard confidence={result.confidence} title={"Address"} isSafe={isAddressSafe} />
@@ -76,7 +95,7 @@ function AnalyzeAdressResult() {
         </div>
       </div>
 
-      { /* Security Checks Passed */}
+      {/* Security Checks Passed */}
       <div className="m-4">
         <div className="w-full max-w-md ps-[2px] bg-green-500">
           <div className="bg-gradient-to-r from-[#4A834C] to-[#35373E] bg-slate-800 p-6 mt-[20px]">
@@ -93,7 +112,7 @@ function AnalyzeAdressResult() {
         </div>
       </div>
 
-      { /* Action Button */}
+      {/* Action Button */}
       <div className="p-4">
         <NeoButton icon={Wallet} onClick={() => console.log("Action Button Clicked")}>Complete</NeoButton>  
       </div>
@@ -101,4 +120,4 @@ function AnalyzeAdressResult() {
   );
 }
 
-export default AnalyzeAdressResult
+export default AnalyzeAdressResult;
