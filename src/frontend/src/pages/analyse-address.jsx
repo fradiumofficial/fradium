@@ -225,8 +225,8 @@ export default function AnalyseAddressPage() {
         </div>
         {/* Info box */}
         {mode === "input" && (
-          <div className="w-full max-w-lg mt-6">
-            <div className="flex items-start gap-3 bg-[#FFFFFF] bg-opacity-5 relative rounded-lg px-4 py-3 border-l-2 border-[#9BEB83] overflow-hidden">
+          <div className="w-full max-w-xl mt-6">
+            <div className="flex items-start gap-3 bg-[#FFFFFF] bg-opacity-5 relative px-4 py-3 border-l-2 border-[#9BEB83] overflow-hidden">
               {/* Gradient kiri */}
               <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#9BEB83]/30 to-transparent pointer-events-none" />
               <svg width="20" height="20" fill="none" viewBox="0 0 20 20" className="mt-0.5 relative z-10">
@@ -235,7 +235,9 @@ export default function AnalyseAddressPage() {
                   i
                 </text>
               </svg>
-              <span className="text-[#FFFFFF] text-sm leading-relaxed relative z-10">Sebuah informasi atau himbauan kepada user untuk memasukkan address sesuai dengan bla bla</span>
+              <span className="text-[#FFFFFF] text-sm leading-relaxed relative z-10">
+                Paste a smart contract address or source code. You can usually find contract addresses on blockchain explorers like Etherscan or BscScan.
+              </span>
             </div>
           </div>
         )}

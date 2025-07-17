@@ -88,16 +88,15 @@ function WalletLayoutContent() {
         {/* Logo dan Brand */}
         <div>
           <div className="flex items-center gap-3 mb-12">
-            <img src="/logo.svg" alt="Fradium Logo" />
+            <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
           </div>
           {/* Menu */}
           <nav className="flex flex-col gap-1">
             {menu.map((item, idx) => {
               const isActive =
                 normalize(location.pathname) === normalize(item.path);
-              const iconSrc = `/assets/icons/${item.icon}-${
-                isActive ? "dark" : "light"
-              }.svg`;
+              const iconSrc = `/assets/icons/${item.icon}-${isActive ? "dark" : "light"
+                }.svg`;
               return isActive ? (
                 <SidebarButton
                   key={item.label}
@@ -114,9 +113,8 @@ function WalletLayoutContent() {
                 <button
                   key={item.label}
                   onClick={item.onClick}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${
-                    idx === 0 ? "mt-0" : "mt-1"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"
+                    }`}
                 >
                   <img src={iconSrc} alt={item.label} className="w-5 h-5" />
                   <span>{item.label}</span>
@@ -125,9 +123,8 @@ function WalletLayoutContent() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${
-                    idx === 0 ? "mt-0" : "mt-1"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"
+                    }`}
                 >
                   <img src={iconSrc} alt={item.label} className="w-5 h-5" />
                   <span>{item.label}</span>
@@ -180,9 +177,8 @@ function WalletLayoutContent() {
                   height="16"
                   fill="none"
                   viewBox="0 0 24 24"
-                  className={`ml-2 transition-transform duration-200 ${
-                    isDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`ml-2 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
+                    }`}
                 >
                   <path
                     d="M7 10l5 5 5-5"
@@ -200,51 +196,46 @@ function WalletLayoutContent() {
                   <div className="py-1">
                     <button
                       onClick={() => handleNetworkChange("All Network")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        network === "All Network"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "All Network"
                           ? "bg-[#3A3F47] text-[#9BEB83]"
                           : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                      }`}
+                        }`}
                     >
                       All Network (default)
                     </button>
                     <button
                       onClick={() => handleNetworkChange("Bitcoin")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        network === "Bitcoin"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "Bitcoin"
                           ? "bg-[#3A3F47] text-[#9BEB83]"
                           : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                      }`}
+                        }`}
                     >
                       Bitcoin
                     </button>
                     <button
                       onClick={() => handleNetworkChange("Ethereum")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        network === "Ethereum"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "Ethereum"
                           ? "bg-[#3A3F47] text-[#9BEB83]"
                           : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                      }`}
+                        }`}
                     >
                       Ethereum
                     </button>
                     <button
                       onClick={() => handleNetworkChange("Solana")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        network === "Solana"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "Solana"
                           ? "bg-[#3A3F47] text-[#9BEB83]"
                           : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                      }`}
+                        }`}
                     >
                       Solana
                     </button>
                     <button
                       onClick={() => handleNetworkChange("ICP")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        network === "ICP"
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "ICP"
                           ? "bg-[#3A3F47] text-[#9BEB83]"
                           : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                      }`}
+                        }`}
                     >
                       ICP
                     </button>
