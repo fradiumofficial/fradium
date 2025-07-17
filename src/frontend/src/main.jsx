@@ -24,7 +24,7 @@ import AuthGuard from "./core/components/auth/auth-guard.jsx";
 import AssetsPage from "./pages/wallet/asset-page.jsx";
 import AnalyseAddressPage from "./pages/wallet/analyze-address-page.jsx";
 import AnalyseContractPage from "./pages/analyse-contract.jsx";
-import TransactionHistoryPage from "./pages/transaction-history.jsx";
+import TransactionHistoryPage from "./pages/wallet/transaction-history.jsx";
 import ScanHistoryPage from "./pages/wallet/scan-history-page.jsx";
 import SettingPage from "./pages/setting.jsx";
 import { bitcoin } from "declarations/bitcoin";
