@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import warnings
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
 
@@ -77,13 +80,131 @@ def fetch_contract_files(address):
             f.write(source_code)
         return filepath
 
+def install_sol_merger():
+    """Install sol-merger locally if not exists"""
+    try:
+        result = subprocess.run(["npx", "sol-merger", "--version"], capture_output=True, text=True, cwd=".")
+        if result.returncode == 0:
+            return True
+    except:
+        pass
+    
+    try:
+        print("[DEBUG] Installing sol-merger...")
+        result = subprocess.run(["npm", "install", "sol-merger"], capture_output=True, text=True, cwd=".")
+        return result.returncode == 0
+    except:
+        return False
+
+def flatten_with_sol_merger(filepath):
+    """Try flattening with sol-merger which handles cyclic dependencies better"""
+    try:
+        result = subprocess.run(
+            ["npx", "sol-merger", filepath, "--export-plugin", "Flattened"], 
+            capture_output=True, 
+            text=True, 
+            cwd="."
+        )
+        
+        if result.returncode == 0 and result.stdout.strip():
+            with open(FLATTENED_FILE, "w") as f:
+                f.write(result.stdout)
+            return result.stdout
+        else:
+            raise Exception(f"sol-merger error: {result.stderr}")
+    except Exception as e:
+        raise Exception(f"sol-merger failed: {str(e)}")
+
+def analyze_without_flattening(main_contract_path):
+    """Analyze contract directly without flattening to avoid cyclic dependency issues"""
+    env = os.environ.copy()
+    env["PYTHONWARNINGS"] = "ignore"
+
+    # Try analyzing the main contract file directly
+    mythril_cmd = ["myth", "analyze", main_contract_path, "-o", "json", "-t", "5", "--execution-timeout", "3"]
+    print(mythril_cmd)
+    
+    result = subprocess.run(
+        mythril_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=env
+    )
+
+    combined_output = result.stdout + "\n" + result.stderr
+
+    # Bersihkan warning `pkg_resources`
+    clean_output = "\n".join([
+        line for line in combined_output.splitlines()
+        if "pkg_resources is deprecated" not in line
+    ])
+
+    try:
+        data = json.loads(clean_output)
+        return data
+    except Exception:
+        raise Exception(f"Mythril direct analysis error: {clean_output}")
+
 def flatten_contract(filepath):
+    """Enhanced flattening with multiple fallback strategies"""
+    
+    # Strategy 1: Try hardhat flatten first
     result = subprocess.run(["npx", "hardhat", "flatten", filepath], capture_output=True, text=True, cwd=".")
-    if result.returncode != 0:
-        raise Exception(f"Flatten error: {result.stderr}")
-    with open(FLATTENED_FILE, "w") as f:
-        f.write(result.stdout)
-    return result.stdout  # return content too
+    
+    if result.returncode == 0:
+        with open(FLATTENED_FILE, "w") as f:
+            f.write(result.stdout)
+        return result.stdout
+    
+    # Check specific error types
+    error_msg = result.stderr.lower()
+    
+    # Strategy 2: Handle missing dependencies
+    if "is not installed" in error_msg and "try installing it using npm" in error_msg:
+        missing_deps = parse_missing_dependencies(result.stderr)
+        
+        if missing_deps:
+            print(f"[DEBUG] Found missing dependencies: {missing_deps}")
+            
+            # Try to install missing dependencies
+            all_installed = True
+            for dep in missing_deps:
+                if not install_missing_dependency(dep):
+                    all_installed = False
+                    break
+            
+            if all_installed:
+                # Try flattening again after installing dependencies
+                print("[DEBUG] Retrying flatten after installing dependencies...")
+                retry_result = subprocess.run(
+                    ["npx", "hardhat", "flatten", filepath], 
+                    capture_output=True, 
+                    text=True, 
+                    cwd="."
+                )
+                if retry_result.returncode == 0:
+                    with open(FLATTENED_FILE, "w") as f:
+                        f.write(retry_result.stdout)
+                    return retry_result.stdout
+    
+    # Strategy 3: Handle cyclic dependencies with sol-merger
+    if "cyclic dependencies" in error_msg or "hh603" in error_msg:
+        print("[DEBUG] Detected cyclic dependencies, trying sol-merger...")
+        
+        if install_sol_merger():
+            try:
+                return flatten_with_sol_merger(filepath)
+            except Exception as sol_merger_error:
+                print(f"[DEBUG] sol-merger failed: {sol_merger_error}")
+                # Continue to Strategy 4
+        
+        # Strategy 4: Analyze without flattening
+        print("[DEBUG] Trying direct analysis without flattening...")
+        raise Exception("SKIP_FLATTENING")  # Signal to use direct analysis
+    
+    # If all strategies fail, raise the original error
+    raise Exception(f"Flatten error: {result.stderr}")
 
 def extract_solidity_version(code):
     # cari semua pragma
@@ -105,7 +226,7 @@ def analyze_with_mythril(solc_version=None):
     env = os.environ.copy()
     env["PYTHONWARNINGS"] = "ignore"
 
-    mythril_cmd = ["myth", "analyze", FLATTENED_FILE, "-o", "json"]
+    mythril_cmd = ["myth", "analyze", FLATTENED_FILE, "-o", "json", "-t", "10", "--execution-timeout", "3"]
     if solc_version:
         mythril_cmd += ["--solv", solc_version]
 
@@ -196,6 +317,32 @@ def fix_import_paths(file_path):
     with open(file_path, "w") as f:
         f.write(code)
 
+def install_missing_dependency(package_name):
+    """Install missing npm package for contract analysis"""
+    try:
+        print(f"[DEBUG] Installing missing package: {package_name}")
+        result = subprocess.run(
+            ["npm", "install", package_name], 
+            capture_output=True, 
+            text=True, 
+            cwd="."
+        )
+        if result.returncode == 0:
+            print(f"[DEBUG] Successfully installed {package_name}")
+            return True
+        else:
+            print(f"[DEBUG] Failed to install {package_name}: {result.stderr}")
+            return False
+    except Exception as e:
+        print(f"[DEBUG] Error installing {package_name}: {str(e)}")
+        return False
+
+def parse_missing_dependencies(error_output):
+    """Extract missing package names from Hardhat error"""
+    import_pattern = r"The library (@[\w\-\/]+)"
+    matches = re.findall(import_pattern, error_output)
+    return list(set(matches))  # remove duplicates
+
 @app.route("/", methods=["GET"])
 def check():
     return jsonify({"message": "ITS WORK!"})
@@ -212,19 +359,42 @@ def analyze():
     try:
         contract_path = fetch_contract_files(address)
         fix_import_paths(contract_path)
-        flattened_code = flatten_contract(contract_path)
+        
+        try:
+            flattened_code = flatten_contract(contract_path)
+            version = extract_solidity_version(flattened_code)
+            
+            if not version:
+                raise Exception("Solidity version pragma not found.")
 
-        version = extract_solidity_version(flattened_code)
-        if not version:
-            raise Exception("Solidity version pragma not found.")
+            print("[DEBUG] pragma version:", version)  
+            switch_solc_version(version)
+            print("[DEBUG] Analyzing with Mythril...")
+            raw_report = analyze_with_mythril(version)
+            
+        except Exception as flatten_error:
+            if "SKIP_FLATTENING" in str(flatten_error):
+                print("[DEBUG] Skipping flattening due to cyclic dependencies...")
+                print("[DEBUG] Analyzing contract directly...")
+                
+                # Read the main contract to get version
+                with open(contract_path, "r") as f:
+                    contract_code = f.read()
+                
+                version = extract_solidity_version(contract_code)
+                if version:
+                    print(f"[DEBUG] Found version in main contract: {version}")
+                    switch_solc_version(version)
+                
+                # Use direct analysis without flattening
+                raw_report = analyze_without_flattening(contract_path)
+            else:
+                # Re-raise other flattening errors
+                raise flatten_error
 
-        print("[DEBUG] pragma version:", version)  
-
-        switch_solc_version(version)
-        raw_report = analyze_with_mythril(version)
         report = format_report(raw_report)
-
         return jsonify({"report": report})
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -235,4 +405,4 @@ def analyze():
             shutil.rmtree(CONTRACT_DIR)
 
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=5000)
+    app.run(debug=False, host="0.0.0.0", port=5001)

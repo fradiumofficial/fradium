@@ -9,6 +9,11 @@
     "hardhat": "^2.21.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.4.0"
+    "@account-abstraction/contracts": "^0.6.0",
+    "@chainlink/contracts": "^0.8.0",
+    "@openzeppelin/contracts": "^4.4.0",
+    "@uniswap/v3-core": "^1.0.1",
+    "@uniswap/v3-periphery": "^1.4.3",
+    "sol-merger": "^4.4.2"
   }
 }
