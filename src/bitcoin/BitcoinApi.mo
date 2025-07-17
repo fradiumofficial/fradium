@@ -8,6 +8,7 @@ module {
   type Network = Types.Network;
   type BitcoinAddress = Types.BitcoinAddress;
   type GetUtxosResponse = Types.GetUtxosResponse;
+  type UtxosFilter = Types.UtxosFilter;
   type MillisatoshiPerVByte = Types.MillisatoshiPerVByte;
   type GetBalanceRequest = Types.GetBalanceRequest;
   type GetUtxosRequest = Types.GetUtxosRequest;
@@ -54,6 +55,16 @@ module {
         address;
         network;
         filter = null;
+    })
+  };
+
+  /// Returns the UTXOs of the given Bitcoin address with filter support.
+  public func get_utxos_with_filter(network : Network, address : BitcoinAddress, filter : ?UtxosFilter) : async GetUtxosResponse {
+    ExperimentalCycles.add<system>(GET_UTXOS_COST_CYCLES);
+    await management_canister_actor.bitcoin_get_utxos({
+        address;
+        network;
+        filter;
     })
   };
 

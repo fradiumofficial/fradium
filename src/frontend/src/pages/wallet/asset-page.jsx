@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useWallet } from "@/core/providers/wallet-provider";
-import { Link } from "react-router-dom";
 import NeoButton from "@/core/components/SidebarButton";
 import { bitcoin } from "declarations/bitcoin";
-import { satoshisToBTC, fetchBTCPrice, btcToSatoshis, isValidBitcoinAddress } from "../../core/lib/bitcoinUtils";
+import { satoshisToBTC, fetchBTCPrice, btcToSatoshis } from "@/core/lib/bitcoinUtils";
 import { toast } from "react-toastify";
 import CustomButton from "@/core/components/custom-button-a";
 import AnalysisProgressModal from "@/core/components/AnalysisProgressModal";
@@ -181,13 +180,44 @@ export default function AssetsPage() {
     try {
       setIsSendLoading(true);
       console.log("sendAmount", sendAmount);
+
+      // Get sender Bitcoin address
+      const bitcoinAddress = userWallet?.addresses?.find((addr) => addr.network === "Bitcoin" && addr.token_type?.Bitcoin !== undefined)?.address;
+
       const sendResponse = await bitcoin.send_from_p2pkh_address({
         destination_address: destinationAddress,
         amount_in_satoshi: btcToSatoshis(parseFloat(sendAmount)),
       });
-      setIsSendLoading(false);
 
       console.log("sendResponse", sendResponse);
+
+      // Create transaction history entry with pending status
+      try {
+        const transactionHistoryParams = {
+          chain: { Bitcoin: null },
+          direction: { Send: null },
+          amount: btcToSatoshis(parseFloat(sendAmount)),
+          timestamp: BigInt(Date.now() * 1000000), // Convert to nanoseconds
+          details: {
+            Bitcoin: {
+              txid: sendResponse,
+              from_address: bitcoinAddress ? [bitcoinAddress] : [],
+              to_address: destinationAddress,
+              fee_satoshi: [],
+              block_height: [],
+            },
+          },
+          note: [`Sent ${sendAmount} Bitcoin to ${destinationAddress.slice(0, 12)}...`],
+        };
+
+        const historyResult = await backend.create_transaction_history(transactionHistoryParams);
+        console.log("Transaction history created:", historyResult);
+      } catch (historyError) {
+        console.error("Failed to create transaction history:", historyError);
+        // Don't fail the whole transaction if history creation fails
+      }
+
+      setIsSendLoading(false);
       setShowAnalyeAddressModal(false);
       setSelectedToken(null);
       setSelectedTokenForSend(null);
@@ -290,9 +320,6 @@ export default function AssetsPage() {
   const validateAddress = (address) => {
     if (!address.trim()) {
       return "Recipient address is required";
-    }
-    if (!isValidBitcoinAddress(address)) {
-      return "Invalid Bitcoin address format";
     }
     return null;
   };

@@ -2,6 +2,8 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
+import Nat8 "mo:base/Nat8";
+import Nat32 "mo:base/Nat32";
 
 import BitcoinApi "BitcoinApi";
 import P2pkh "P2pkh";
@@ -22,6 +24,13 @@ actor class BasicBitcoin(network : Types.Network) {
   type EcdsaCanisterActor = Types.EcdsaCanisterActor;
   type SchnorrCanisterActor = Types.SchnorrCanisterActor;
   type P2trDerivationPaths = Types.P2trDerivationPaths;
+
+  public type UtxoInfo = {
+    txidHex : Text;
+    vout : Nat32;
+    value : Nat64;
+    height : Nat32;
+  };
 
   /// The Bitcoin network to connect to.
   ///
@@ -52,9 +61,93 @@ actor class BasicBitcoin(network : Types.Network) {
     await BitcoinApi.get_balance(NETWORK, address);
   };
 
-  /// Returns the UTXOs of the given Bitcoin address.
+  /// Returns the UTXOs of the given Bitcoin address
   public func get_utxos(address : BitcoinAddress) : async GetUtxosResponse {
-    await BitcoinApi.get_utxos(NETWORK, address);
+    let utxos = await BitcoinApi.get_utxos(NETWORK, address);
+    return utxos;
+  };
+
+  // Convert Blob (little‑endian) to big‑endian hex string
+  func blobToTxidHex(txid : Blob) : Text {
+    let bytes = Blob.toArray(txid);
+    let reversed = Array.reverse<Nat8>(bytes);
+    let hexChars = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
+    let hex = Array.map<Nat8, Text>(reversed, func (b) {
+      let hi = b / 16;
+      let lo = b % 16;
+      hexChars[Nat8.toNat(hi)] # hexChars[Nat8.toNat(lo)]
+    });
+    Text.join("", hex.vals())
+  };
+
+  // Return the utxo info of the given address
+  public func get_utxos_info(address : Text) : async [UtxoInfo] {
+    let resp = await BitcoinApi.get_utxos(NETWORK, address);
+    
+    var out : [UtxoInfo] = [];
+    for (utxo in resp.utxos.vals()) {
+      let txidHex = blobToTxidHex(utxo.outpoint.txid);
+      out := Array.append(out, [{
+        txidHex = txidHex;
+        vout = utxo.outpoint.vout;
+        value = utxo.value;
+        height = utxo.height;
+      }]);
+    };
+    return out;
+  };
+
+  /// Returns ALL UTXOs of the given Bitcoin address
+  public func get_all_utxos(address : BitcoinAddress) : async [UtxoInfo] {
+    // Set min confirmations for regtest
+    let minConfirmations = if (NETWORK == #regtest) { ?1 } else { null };
+    let initialFilter : ?Types.UtxosFilter = switch (minConfirmations) {
+      case (?confirmations) { ?#MinConfirmations(Nat32.fromNat(confirmations)) };
+      case null { null };
+    };
+    
+    // Get first page
+    var utxosResponse = await BitcoinApi.get_utxos_with_filter(NETWORK, address, initialFilter);
+    var allUtxos : [UtxoInfo] = [];
+    
+    // Convert first page
+    for (utxo in utxosResponse.utxos.vals()) {
+      let txidHex = blobToTxidHex(utxo.outpoint.txid);
+      allUtxos := Array.append(allUtxos, [{
+        txidHex = txidHex;
+        vout = utxo.outpoint.vout;
+        value = utxo.value;
+        height = utxo.height;
+      }]);
+    };
+    
+    // Get remaining pages
+    var nextPage = utxosResponse.next_page;
+    while (nextPage != null) {
+      switch (nextPage) {
+        case (?page) {
+          utxosResponse := await BitcoinApi.get_utxos_with_filter(NETWORK, address, ?#Page(page));
+          
+          // Convert current page
+          for (utxo in utxosResponse.utxos.vals()) {
+            let txidHex = blobToTxidHex(utxo.outpoint.txid);
+            allUtxos := Array.append(allUtxos, [{
+              txidHex = txidHex;
+              vout = utxo.outpoint.vout;
+              value = utxo.value;
+              height = utxo.height;
+            }]);
+          };
+          
+          nextPage := utxosResponse.next_page;
+        };
+        case null {
+          nextPage := null;
+        };
+      };
+    };
+    
+    return allUtxos;
   };
 
   /// Returns the 100 fee percentiles measured in millisatoshi/vbyte.
