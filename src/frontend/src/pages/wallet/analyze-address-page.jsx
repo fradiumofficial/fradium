@@ -121,34 +121,65 @@ export default function AnalyseAddressPage() {
   return (
     <>
       <div className="flex flex-col items-center justify-center min-h-[80vh] w-full">
-        {/* Card utama */}
-        <div className="bg-[#181C22] border border-[#393E4B] rounded-lg shadow-lg px-8 py-8 w-full max-w-lg flex flex-col items-center relative overflow-hidden">
-          {/* Pattern background kanan atas */}
-          <img src="/assets/pattern-sidebar.png" alt="Pattern" className="absolute top-0 right-0 w-[420px] h-auto opacity-70 z-0 pointer-events-none select-none" draggable="false" />
+        {/* Card utama - styling sesuai analyse-address.jsx */}
+        <div className="w-full max-w-xl bg-[#1A1D23] border border-[#2A2D35] rounded-md p-8 relative overflow-hidden">
+          {/* Pattern background - pattern-topside.png */}
+          <img
+            src="/assets/images/pattern-topside.png"
+            alt="Pattern"
+            className="absolute top-0 right-0 w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top"
+          />
+
           {/* Konten utama */}
           {mode === "input" && (
             <>
-              <img src="/assets/images/analisis.png" alt="Analyze Address" className="w-40 h-40 object-contain mb-4 select-none pointer-events-none relative z-10" draggable="false" />
-              <div className="text-white text-2xl font-bold mb-1 text-center relative z-10">Analyze Address</div>
-              <div className="text-[#B0B6BE] text-base mb-6 text-center relative z-10">Analyze address itu apa sih</div>
-              <input
-                type="text"
-                placeholder="Input address here..."
-                className={`w-full bg-[#23272F] border rounded-lg px-4 py-3 text-white placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#823EFD] mb-4 relative z-10 ${addressError ? "border-red-500" : "border-[#393E4B]"} ${isAnalyzing ? "opacity-50 cursor-not-allowed" : ""}`}
-                value={address}
-                disabled={isAnalyzing}
-                onChange={(e) => {
-                  if (!isAnalyzing) {
-                    setAddress(e.target.value);
-                    if (addressError) {
-                      setAddressError("");
+              {/* Icon Container */}
+              <div className="flex justify-center mb-2 relative z-10">
+                <img
+                  src="/assets/images/analisis.png"
+                  alt="Analyze Address"
+                  className="w-48 h-48"
+                />
+              </div>
+
+              {/* Title */}
+              <h1 className="text-white text-xl font-semibold mb-1 text-center relative z-10">
+                Analyze Address
+              </h1>
+
+              {/* Description */}
+              <p className="text-gray-400 max-w-sm text-sm font-normal text-center mb-6 mx-auto relative z-10">
+                Scan a bitcoin address to detect suspicious activity and potential scams.
+              </p>
+
+              {/* Input Container */}
+              <div className="w-full bg-[#0F1219] border border-[#2A2D35] rounded-sm p-4 mb-6 relative z-10">
+                <input
+                  type="text"
+                  placeholder="Input address here..."
+                  className={`w-full bg-transparent text-gray-400 text-base outline-none placeholder-gray-500 ${isAnalyzing ? "opacity-50 cursor-not-allowed" : ""}`}
+                  value={address}
+                  disabled={isAnalyzing}
+                  onChange={(e) => {
+                    if (!isAnalyzing) {
+                      setAddress(e.target.value);
+                      if (addressError) {
+                        setAddressError("");
+                      }
                     }
-                  }
-                }}
-              />
+                  }}
+                />
+              </div>
               {addressError && <div className="text-red-400 text-xs mb-4 relative z-10">{addressError}</div>}
-              <div className="w-full relative z-10 mb-2">
-                <CustomButton icon={<img src="/assets/icons/analyze-address-light.svg" alt="Analyze" className="w-5 h-5" />} className="w-full" onClick={handleAnalyze} disabled={isAnalyzing}>
+
+              {/* Analyze Button - Full Width */}
+              <div className="w-full relative z-10">
+                <CustomButton
+                  icon="/assets/icons/analyze-address-light.svg"
+                  className="w-full"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                >
                   {isAnalyzing ? "Analyzing..." : "Analyse Address"}
                 </CustomButton>
               </div>
@@ -157,65 +188,71 @@ export default function AnalyseAddressPage() {
           {mode === "result" && !isAnalyzeAddressSafe && (
             <div className="w-full flex flex-col gap-6 relative z-10">
               {/* Status Danger */}
-              <div className="rounded-lg px-0 py-0 flex flex-col gap-0 mb-2 overflow-hidden">
-                {/* Gradient overlay atas */}
-                <div className="relative w-full h-full">
-                  <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-[#F87171] via-transparent to-transparent opacity-80 z-0" />
-                  <div className="relative flex items-center gap-4 px-6 py-5 z-10">
+              <span className="text-[#FFFFFF] font-semibold text-xl">Analyze Address</span>
+              <div className="overflow-hidden mb-2 bg-[#FFFFFF] bg-opacity-5">
+                {/* Bagian atas dengan gradient */}
+                <div className="relative w-full">
+                  <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#FF6B6B]/15 via-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent z-0" />
+                  <div className="relative flex items-center gap-4 px-6 pt-4 pb-2 z-10">
                     <img src={config.icon} alt="Danger" className="w-12 h-12 object-contain" />
                     <div>
-                      <div className="text-white font-bold text-lg leading-tight">{config.title}</div>
-                      <div className="text-[#B0B6BE] text-sm">Detected By Community</div>
-                      <div className="text-[#B0B6BE] text-xs mt-1">{config.description}</div>
+                      <div className="text-[#FFFFFF] font-semibold text-sm leading-tight">{config.title}</div>
+                      <div className="text-[#B0B6BE] text-xs">Detected By Community</div>
                     </div>
                   </div>
                 </div>
+                {/* Bagian bawah deskripsi */}
+                <div className="px-6 pb-4">
+                  <div className="text-[#B0B6BE] text-sm font-normal">{config.description}</div>
+                </div>
               </div>
+
               {/* Address Details */}
-              <p className="text-white font-semibold text-lg">Address Details</p>
-              <div className="grid grid-cols-2 gap-4 mb-2">
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-white text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? analyzeAddressData.report[0].voted_by.length : "0"}</span>
+              <p className="text-[#FFFFFF] font-semibold text-lg">Address Details</p>
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-white text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? analyzeAddressData.report[0].voted_by.length : "0"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
                     Total Voters
                   </span>
                 </div>
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-white text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? `${analyzeAddressData.report[0].votes_yes} Yes / ${analyzeAddressData.report[0].votes_no} No` : "N/A"}</span>
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-[#FFFFFF] text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? `${analyzeAddressData.report[0].votes_yes} Yes / ${analyzeAddressData.report[0].votes_no} No` : "N/A"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-4 h-4" />
                     Vote Results
                   </span>
                 </div>
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-red-400 text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? calculateRiskScore(analyzeAddressData.report[0].votes_yes, analyzeAddressData.report[0].votes_no) : "0/100"}</span>
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-red-400 text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? calculateRiskScore(analyzeAddressData.report[0].votes_yes, analyzeAddressData.report[0].votes_no) : "0/100"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
                     Risk Score
                   </span>
                 </div>
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-white text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? getTimeAgo(analyzeAddressData.report[0].created_at) : "N/A"}</span>
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-[#FFFFFF] text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? getTimeAgo(analyzeAddressData.report[0].created_at) : "N/A"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
                     Report Created
                   </span>
                 </div>
               </div>
+
               {/* Security Checks */}
-              <div className="rounded-lg px-6 py-5 mb-2 border-l-2 border-[#F87171] relative overflow-hidden">
-                <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#F87171]/30 to-transparent pointer-events-none" />
+              <div className="px-6 py-5 mb-2 border-l-2 border-[#FF6B6B] relative overflow-hidden bg-[#FFFFFF0D] bg-opacity-5">
+                <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent pointer-events-none" />
                 <div className="relative z-10">
-                  <div className="text-white font-bold mb-2">{config.securityTitle}</div>
+                  <div className="text-[#FFFFFF] font-bold mb-2">{config.securityTitle}</div>
                   <ul className="flex flex-col gap-1">
                     {config.checkItems.map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-[#F87171] text-sm">
+                      <li key={idx} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
                         <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" fill="#F87171" />
+                          <circle cx="12" cy="12" r="10" fill="#FF6B6B" />
                           <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <span className="text-white">{item}</span>
+                        <span className="text-[#FFFFFF]">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -224,9 +261,9 @@ export default function AnalyseAddressPage() {
 
               {/* Report Details - Only show if there's a report */}
               {analyzeAddressData?.report && analyzeAddressData.report.length > 0 && (
-                <div className="rounded-lg px-6 py-5 mb-2 bg-[#23272F] relative overflow-hidden">
+                <div className="px-6 py-5 mb-2 bg-[#FFFFFF0D] bg-opacity-5 relative overflow-hidden">
                   <div className="relative z-10">
-                    <div className="text-white font-bold mb-3">Report Details</div>
+                    <div className="text-[#FFFFFF] font-bold mb-3">Report Details</div>
                     <div className="space-y-3">
                       <div>
                         <div className="text-[#B0B6BE] text-sm mb-1">Category</div>
@@ -247,7 +284,7 @@ export default function AnalyseAddressPage() {
 
               {/* Button Analyze Other */}
               <button
-                className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#99E39E] font-light flex items-center justify-center gap-2 hover:bg-[#23282f] transition"
+                className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition"
                 onClick={() => {
                   setMode("input");
                   setAnalyzeAddressData(null);
@@ -261,65 +298,71 @@ export default function AnalyseAddressPage() {
           {mode === "result" && isAnalyzeAddressSafe && (
             <div className="w-full flex flex-col gap-6 relative z-10">
               {/* Status Safe */}
-              <div className="rounded-lg px-0 py-0 flex flex-col gap-0 mb-2 overflow-hidden">
-                {/* Gradient overlay atas */}
-                <div className="relative w-full h-full">
-                  <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-[#4A834C] via-transparent to-transparent opacity-80 z-0" />
-                  <div className="relative flex items-center gap-4 px-6 py-5 z-10">
+              <span className="text-[#FFFFFF] font-semibold text-xl">Analyze Address</span>
+              <div className="overflow-hidden mb-2 bg-[#FFFFFF] bg-opacity-5">
+                {/* Bagian atas dengan gradient */}
+                <div className="relative w-full">
+                  <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#22C55E]/15 via-[#22C55E]/15 via-[#22C55E]/15 to-transparent z-0" />
+                  <div className="relative flex items-center gap-4 px-6 pt-4 pb-2 z-10">
                     <img src={config.icon} alt="Safe" className="w-12 h-12 object-contain" />
                     <div>
-                      <div className="text-white font-bold text-lg leading-tight">{config.title}</div>
-                      <div className="text-[#B0B6BE] text-sm">Detected By Community</div>
-                      <div className="text-[#B0B6BE] text-xs mt-1">{config.description}</div>
+                      <div className="text-[#FFFFFF] font-semibold text-sm leading-tight">{config.title}</div>
+                      <div className="text-[#B0B6BE] text-xs">Detected By Community</div>
                     </div>
                   </div>
                 </div>
+                {/* Bagian bawah deskripsi */}
+                <div className="px-6 pb-4">
+                  <div className="text-[#B0B6BE] text-sm font-normal">{config.description}</div>
+                </div>
               </div>
+
               {/* Address Details */}
-              <p className="text-white font-semibold text-lg">Address Details</p>
-              <div className="grid grid-cols-2 gap-4 mb-2">
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-white text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? analyzeAddressData.report[0].voted_by.length : "0"}</span>
+              <p className="text-[#FFFFFF] font-semibold text-lg">Address Details</p>
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-white text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? analyzeAddressData.report[0].voted_by.length : "0"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
                     Total Voters
                   </span>
                 </div>
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-white text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? `${analyzeAddressData.report[0].votes_yes} Yes / ${analyzeAddressData.report[0].votes_no} No` : "N/A"}</span>
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-[#FFFFFF] text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? `${analyzeAddressData.report[0].votes_yes} Yes / ${analyzeAddressData.report[0].votes_no} No` : "N/A"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-4 h-4" />
                     Vote Results
                   </span>
                 </div>
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-green-400 text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? calculateRiskScore(analyzeAddressData.report[0].votes_yes, analyzeAddressData.report[0].votes_no) : "0/100"}</span>
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-[#9BE4A0] text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? calculateRiskScore(analyzeAddressData.report[0].votes_yes, analyzeAddressData.report[0].votes_no) : "0/100"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
                     Risk Score
                   </span>
                 </div>
-                <div className="bg-[#23272F] rounded-lg px-4 py-3 flex flex-col">
-                  <span className="text-white text-xl font-bold">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? getTimeAgo(analyzeAddressData.report[0].created_at) : "N/A"}</span>
+                <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                  <span className="text-[#FFFFFF] text-base font-medium">{analyzeAddressData?.report && analyzeAddressData.report.length > 0 ? getTimeAgo(analyzeAddressData.report[0].created_at) : "N/A"}</span>
                   <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
                     <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
                     Report Created
                   </span>
                 </div>
               </div>
+
               {/* Security Checks */}
-              <div className="rounded-lg px-6 py-5 mb-2 border-l-2 border-[#4ADE80] relative overflow-hidden">
-                <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#4A834C]/30 to-transparent pointer-events-none" />
+              <div className="px-6 py-5 mb-2 border-l-2 border-[#9BE4A0] relative overflow-hidden bg-[#FFFFFF0D] bg-opacity-5">
+                <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#22C55E]/15 via-[#22C55E]/15 to-transparent pointer-events-none" />
                 <div className="relative z-10">
-                  <div className="text-white font-bold mb-2">{config.securityTitle}</div>
+                  <div className="text-[#FFFFFF] font-bold mb-2">{config.securityTitle}</div>
                   <ul className="flex flex-col gap-1">
                     {config.checkItems.map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-[#9BEB83] text-sm">
+                      <li key={idx} className="flex items-center gap-2 text-[#22C55E] text-sm">
                         <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" fill="#9BEB83" />
+                          <circle cx="12" cy="12" r="10" fill="#9BE4A0" />
                           <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <span className="text-white">{item}</span>
+                        <span className="text-[#FFFFFF]">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -328,9 +371,9 @@ export default function AnalyseAddressPage() {
 
               {/* Report Details - Only show if there's a report */}
               {analyzeAddressData?.report && analyzeAddressData.report.length > 0 && (
-                <div className="rounded-lg px-6 py-5 mb-2 bg-[#23272F] relative overflow-hidden">
+                <div className="px-6 py-5 mb-2 bg-[#FFFFFF0D] bg-opacity-5 relative overflow-hidden">
                   <div className="relative z-10">
-                    <div className="text-white font-bold mb-3">Report Details</div>
+                    <div className="text-[#FFFFFF] font-bold mb-3">Report Details</div>
                     <div className="space-y-3">
                       <div>
                         <div className="text-[#B0B6BE] text-sm mb-1">Category</div>
@@ -351,7 +394,7 @@ export default function AnalyseAddressPage() {
 
               {/* Button Analyze Other */}
               <button
-                className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#4ADE80] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition"
+                className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition"
                 onClick={() => {
                   setMode("input");
                   setAnalyzeAddressData(null);
@@ -363,19 +406,21 @@ export default function AnalyseAddressPage() {
             </div>
           )}
         </div>
-        {/* Info box */}
+        {/* Info box - sesuai analyse-address.jsx */}
         {mode === "input" && (
-          <div className="w-full max-w-lg mt-6">
-            <div className="flex items-start gap-3 bg-[#181C22] relative rounded-lg px-4 py-3 border-l-2 border-[#9BEB83] overflow-hidden">
+          <div className="w-full max-w-xl mt-6">
+            <div className="flex items-start gap-3 bg-[#FFFFFF] bg-opacity-5 relative px-4 py-3 border-l-2 border-[#9BEB83] overflow-hidden">
               {/* Gradient kiri */}
-              <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#9BEB83]/40 to-transparent pointer-events-none rounded-l-lg" />
+              <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#9BEB83]/30 to-transparent pointer-events-none" />
               <svg width="20" height="20" fill="none" viewBox="0 0 20 20" className="mt-0.5 relative z-10">
                 <circle cx="10" cy="10" r="10" fill="#9BEB83" />
                 <text x="10" y="15" textAnchor="middle" fontSize="14" fill="#23272F" fontFamily="Arial, sans-serif">
                   i
                 </text>
               </svg>
-              <span className="text-white text-sm leading-relaxed relative z-10">Sebuah informasi atau himbauan kepada user untuk memasukkan address sesuai dengan bla bla</span>
+              <span className="text-[#FFFFFF] text-sm leading-relaxed relative z-10">
+                Paste a bitcoin address or wallet address. You can usually find addresses on blockchain explorers like Blockchain.info or Blockchair.
+              </span>
             </div>
           </div>
         )}
