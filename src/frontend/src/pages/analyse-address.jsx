@@ -40,14 +40,14 @@ export default function AnalyseAddressPage() {
 
   return (
     <WalletLayout>
-      <div className="flex flex-col items-center justify-center min-h-[80vh] w-full">
+      <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
         {/* Card utama - styling sesuai analyse-contract.jsx */}
-        <div className="w-full max-w-xl bg-[#1A1D23] border border-[#2A2D35] rounded-md p-8 relative overflow-hidden">
+        <div className="w-full bg-[#1A1D23] border border-[#2A2D35] rounded-md p-8 relative overflow-hidden">
           {/* Pattern background - sesuai analyse-contract.jsx */}
           <img
-            src="/assets/images/pattern-topside.svg"
+            src="/assets/images/pattern-topside.png"
             alt="Pattern"
-            className="absolute top-0 right-0 w-32 h-32 opacity-20 z-0 pointer-events-none select-none"
+            className="absolute top-0 right-0 w-full h-32 opacity-30 z-0 pointer-events-none select-none object-cover object-right-top"
           />
 
           {/* Konten utama */}
@@ -266,9 +266,9 @@ export default function AnalyseAddressPage() {
             </div>
           )}
         </div>
-        {/* Info box - sesuai analyse-contract.jsx */}
+        {/* Info box - sesuai analyse-address.jsx */}
         {mode === "input" && (
-          <div className="w-full max-w-xl mt-6">
+          <div className="w-full">
             <div className="flex items-start gap-3 bg-[#FFFFFF] bg-opacity-5 relative px-4 py-3 border-l-2 border-[#9BEB83] overflow-hidden">
               {/* Gradient kiri */}
               <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#9BEB83]/30 to-transparent pointer-events-none" />
