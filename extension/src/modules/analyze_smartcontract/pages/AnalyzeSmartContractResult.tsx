@@ -2,8 +2,24 @@ import { SafetyCard } from "@/components/ui/custom-card";
 import ProfileHeader from "@/components/ui/header";
 import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
+import type { Report } from "../model/AnalyzeSmartcontractModel";
 
-function AnalyzeSmartContractResult() {
+interface AnalyzeSmartContractResultProps {
+  report: Report;
+  address: string;
+}
+
+function AnalyzeSmartContractResult({ report, address }: AnalyzeSmartContractResultProps) {
+  const { summary, issues } = report;
+
+  const contractDetails = [
+    { label: 'Total Issues', value: summary.total_issues, icon: Wallet },
+    { label: 'High Severity', value: summary.high, icon: Wallet },
+    { label: 'Medium Severity', value: summary.medium, icon: Wallet },
+    { label: 'Low Severity', value: summary.low, icon: Wallet },
+  ];
+
+  const isSafe = summary.high === 0; 
 
   // Komponen untuk ikon centang (SVG)
   const CheckIcon: React.FC = () => (

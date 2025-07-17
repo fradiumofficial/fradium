@@ -7,9 +7,14 @@
     "default_popup": "index.html"
   },
   "permissions": [
-    "contextMenus"
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://fradium.motionlaboratory.com/*"
   ],
   "background": {
-    "service_worker": "./assets/background.js"
+    "service_worker": "./assets/background.js",
+    "type": "module"
   }
 }
