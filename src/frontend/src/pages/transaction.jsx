@@ -32,12 +32,6 @@ const tokens = [
   },
 ];
 
-const receiveAddresses = [
-  { label: "Bitcoin", address: "m1psqxsfsn3efndfm1psqxsfsnfd723bu7an" },
-  { label: "Ethereum", address: "m1psqxsfsn3efndfm1psqxsfsnfd723bu7an" },
-  { label: "Fradium", address: "m1psqxsfsn3efndfm1psqxsfsnfd723bu7an" },
-];
-
 export default function TransactionPage() {
   const [openReceive, setOpenReceive] = useState(false);
   const [qrDetail, setQrDetail] = useState({ open: false, coin: null });

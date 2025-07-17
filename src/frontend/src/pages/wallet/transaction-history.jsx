@@ -24,6 +24,19 @@ const formatTokenAmount = (amount, tokenType) => {
   }
 };
 
+// Format timestamp to readable date
+const formatTransactionDate = (timestamp) => {
+  // Convert nanoseconds to milliseconds
+  const date = new Date(Number(timestamp) / 1000000);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${month}/${day}/${year} ${hours}:${minutes}`;
+};
+
 // Mapping functions for backend data
 const mapChainToIcon = (chain) => {
   switch (chain) {
@@ -156,6 +169,13 @@ export default function TransactionHistoryPage() {
     if (searchQuery.trim()) {
       filtered = filtered.filter((tx) => tx.title.toLowerCase().includes(searchQuery.toLowerCase()) || tx.coin.toLowerCase().includes(searchQuery.toLowerCase()) || tx.status.toLowerCase().includes(searchQuery.toLowerCase()));
     }
+
+    // Sort by timestamp (newest first)
+    filtered = filtered.sort((a, b) => {
+      const timestampA = Number(a.rawData.timestamp);
+      const timestampB = Number(b.rawData.timestamp);
+      return timestampB - timestampA; // Descending order (newest first)
+    });
 
     setFilteredTransactions(filtered);
   }, [transactions, filters, searchQuery]);
@@ -411,13 +431,13 @@ export default function TransactionHistoryPage() {
                     </div>
                   </div>
 
-                  {/* Right Side - Amount */}
+                  {/* Right Side - Amount and Date */}
                   <div className="flex flex-col items-end gap-1">
                     <span className={`text-base font-medium ${transaction.amount > 0 ? "text-[#9BE4A0]" : "text-[#E49B9C]"}`}>
-                      {transaction.amount > 0 ? "+" : ""}
+                      {transaction.amount > 0 ? "+" : "-"}
                       {formatTokenAmount(Math.abs(transaction.rawAmount), transaction.tokenType)} {mapChainToCoin(transaction.tokenType)}
                     </span>
-                    <span className="text-[#B0B6BE] text-sm">${Math.abs(transaction.amount).toFixed(2)}</span>
+                    <span className="text-[#B0B6BE] text-sm">{formatTransactionDate(transaction.rawData.timestamp)}</span>
                   </div>
                 </div>
                 {/* Divider */}
