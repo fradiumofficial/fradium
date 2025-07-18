@@ -276,14 +276,17 @@ export default function TransactionHistoryPage() {
 
   return (
     <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4">
+        <h1 className="text-white text-2xl font-semibold">Transaction History</h1>
+        <p className="text-[#B0B6BE] text-base font-normal">Track every move, stay in control. Your complete transaction timeline with real-time updates and intelligent status detection.</p>
+      </div>
+
       {/* Transaction List Section */}
       <div>
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-white text-lg font-semibold">Transaction History</h2>
-            <p className="text-[#B0B6BE] text-sm leading-relaxed">Track every move, stay in control. Your complete transaction timeline with real-time updates and intelligent status detection.</p>
-          </div>
-          <div className="flex gap-4 flex-shrink-0">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-white text-lg font-semibold">List of transactions</h2>
+          <div className="flex gap-4">
             <div className="relative">
               <img src="/assets/icons/search.svg" alt="Search" className={`w-5 h-5 cursor-pointer transition-colors ${showSearchInput ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleSearchToggle} />
             </div>
