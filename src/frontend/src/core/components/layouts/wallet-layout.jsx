@@ -43,15 +43,6 @@ function WalletLayoutContent() {
       path: "/wallet/transaction-history",
     },
     { label: "Scan History", icon: "history", path: "/wallet/scan-history" },
-    { label: "Setting", icon: "setting-wallet", path: "/wallet/setting" },
-    {
-      label: "Logout",
-      icon: "logout",
-      onClick: () => {
-        navigate("/");
-        logout();
-      },
-    },
   ];
 
   // Close dropdown when clicking outside

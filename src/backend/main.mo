@@ -84,6 +84,7 @@ actor Fradium {
     #Bitcoin;
     #Ethereum;
     #Solana;
+    #Unknown;
   };
 
   public type WalletAddress = {
@@ -100,15 +101,16 @@ actor Fradium {
   // ===== END WALLET APP =====
 
   // ===== ANALYZE ADDRESS =====
-  public type AnalyzeAddressType = {
+  public type AnalyzeHistoryType = {
     #CommunityVote;
     #AIAnalysis;
   };
 
-  public type AnalyzeAddressHistory = {
+  public type AnalyzeHistory = {
     address: Text;
     is_safe: Bool;
-    analyzed_type: AnalyzeAddressType;
+    analyzed_type: AnalyzeHistoryType;
+    token_type: TokenType;
     created_at: Time.Time;
     metadata: Text;
   };
@@ -174,15 +176,17 @@ actor Fradium {
   stable var faucetClaimsStorage : [(Principal, Time.Time)] = [];
   stable var stakeRecordsStorage : [(Principal, StakeRecord)] = [];
   stable var userWalletsStorage : [(Principal, UserWallet)] = [];
-  stable var analyzeAddressStorage : [(Principal, [AnalyzeAddressHistory])] = [];
+  stable var analyzeAddressStorage : [(Principal, [AnalyzeHistory])] = [];
   stable var transactionHistoryStorage : [(Principal, [TransactionEntry])] = [];
+  stable var analyzeHistoryStorage : [(Principal, [AnalyzeHistory])] = [];
 
   var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
   var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
   var stakeRecordsStore = Map.HashMap<Principal, StakeRecord>(0, Principal.equal, Principal.hash);
   var userWalletsStore = Map.HashMap<Principal, UserWallet>(0, Principal.equal, Principal.hash);
-  var analyzeAddressStore = Map.HashMap<Principal, [AnalyzeAddressHistory]>(0, Principal.equal, Principal.hash);
+  var analyzeAddressStore = Map.HashMap<Principal, [AnalyzeHistory]>(0, Principal.equal, Principal.hash);
   var transactionHistoryStore = Map.HashMap<Principal, [TransactionEntry]>(0, Principal.equal, Principal.hash);
+  var analyzeHistoryStore = Map.HashMap<Principal, [AnalyzeHistory]>(0, Principal.equal, Principal.hash);
 
   private stable var next_report_id : ReportId = 0;
 
@@ -195,6 +199,7 @@ actor Fradium {
     userWalletsStorage := Iter.toArray(userWalletsStore.entries());
     analyzeAddressStorage := Iter.toArray(analyzeAddressStore.entries());
     transactionHistoryStorage := Iter.toArray(transactionHistoryStore.entries());
+    analyzeHistoryStorage := Iter.toArray(analyzeHistoryStore.entries());
   };
 
   system func postupgrade() {
@@ -219,7 +224,7 @@ actor Fradium {
         userWalletsStore.put(key, value);
     };
 
-    analyzeAddressStore := Map.HashMap<Principal, [AnalyzeAddressHistory]>(analyzeAddressStorage.size(), Principal.equal, Principal.hash);
+    analyzeAddressStore := Map.HashMap<Principal, [AnalyzeHistory]>(analyzeAddressStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in analyzeAddressStorage.vals()) {
         analyzeAddressStore.put(key, value);
     };
@@ -227,6 +232,11 @@ actor Fradium {
     transactionHistoryStore := Map.HashMap<Principal, [TransactionEntry]>(transactionHistoryStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in transactionHistoryStorage.vals()) {
         transactionHistoryStore.put(key, value);
+    };
+
+    analyzeHistoryStore := Map.HashMap<Principal, [AnalyzeHistory]>(analyzeHistoryStorage.size(), Principal.equal, Principal.hash);
+    for ((key, value) in analyzeHistoryStorage.vals()) {
+        analyzeHistoryStore.put(key, value);
     };
   };
 
@@ -1125,6 +1135,7 @@ actor Fradium {
     };
   };
 
+  // ===== ANALYZE ADDRESS =====
   public type GetAnalyzeAddressResult = {
     is_safe: Bool;
     report: ?Report;
@@ -1161,12 +1172,13 @@ actor Fradium {
       let isSafe = not isUnsafe;
       
       // If address is not safe, save to history
-      let historyEntry : AnalyzeAddressHistory = {
+      let historyEntry : AnalyzeHistory = {
         address = address;
         is_safe = isSafe;
         analyzed_type = #CommunityVote;
         created_at = Time.now();
         metadata = debug_show(foundReport);
+        token_type = #Bitcoin;
       };
         
       let existingHistory = switch (analyzeAddressStore.get(caller)) {
@@ -1184,23 +1196,25 @@ actor Fradium {
     };
   };
 
-  public type CreateAnalyzeAddressHistoryParams = {
+  public type CreateAnalyzeHistoryParams = {
     address: Text;
     is_safe: Bool;
-    analyzed_type: AnalyzeAddressType;
+    analyzed_type: AnalyzeHistoryType;
     metadata: Text;
+    token_type: TokenType;
   };
-  public shared({ caller }) func create_analyze_address_history(params : CreateAnalyzeAddressHistoryParams) : async Result<[AnalyzeAddressHistory], Text> {
+  public shared({ caller }) func create_analyze_history(params : CreateAnalyzeHistoryParams) : async Result<[AnalyzeHistory], Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
     
-    let historyEntry : AnalyzeAddressHistory = {
+    let historyEntry : AnalyzeHistory = {
       address = params.address;
       is_safe = params.is_safe;
       analyzed_type = params.analyzed_type;
       created_at = Time.now();
       metadata = params.metadata;
+      token_type = params.token_type;
     };
     
     let existingHistory = switch (analyzeAddressStore.get(caller)) {
@@ -1214,7 +1228,7 @@ actor Fradium {
     return #Ok(updatedHistory);
   };
 
-  public shared({ caller }) func get_analyze_address_history() : async Result<[AnalyzeAddressHistory], Text> {
+  public shared({ caller }) func get_analyze_history() : async Result<[AnalyzeHistory], Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -1375,7 +1389,8 @@ actor Fradium {
     
     return #Ok(updatedHistory);
   };
-  
+
+
   // ADMIN - DEBUG ONLY - DELETE LATER
   public func admin_change_report_deadline(report_id : ReportId, new_deadline : Time.Time) : async Result<Text, Text> {
     // Find the report
