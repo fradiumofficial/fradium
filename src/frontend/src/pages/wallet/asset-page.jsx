@@ -479,7 +479,7 @@ export default function AssetsPage() {
           <img
             src="/assets/images/pattern-topside.png"
             alt="Pattern"
-            className="absolute top-0 right-0 w-full w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top"
+            className="absolute top-0 right-0 w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top"
           />
 
           {/* Character Illustration - Positioned at top center */}
@@ -852,115 +852,226 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, onClose, onConfirmSe
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="relative bg-[#23272F] w-full max-w-sm rounded-lg shadow-lg">
+      <div className="relative bg-[#1A1D23] w-full max-w-xl rounded-md shadow-lg border border-[#2A2D35] overflow-hidden">
         <button className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold z-20" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <div className="p-6 max-h-[80vh] overflow-y-auto">
-          <div className="text-white text-xl font-semibold mb-6">Send {"Bitcoin"}</div>
+        <div className="p-8 max-h-[80vh] overflow-y-auto">
           <div className="w-full flex flex-col gap-6 relative z-10">
-            {/* Status */}
-            <div className="rounded-lg overflow-hidden mb-2 bg-white/5 w-full">
-              {/* Bagian atas dengan gradient */}
-              <div className="relative w-full">
-                <div className={`absolute top-0 left-0 w-full h-16 bg-gradient-to-b ${config.gradientColor} via-transparent to-transparent opacity-80 z-0`} />
-                <div className="relative flex items-center gap-3 px-4 py-4 z-10">
-                  <img src={config.icon} alt={isSafe ? "Safe" : "Danger"} className="w-10 h-10 object-contain" />
-                  <div>
-                    <div className="text-white font-bold text-base leading-tight">{config.title}</div>
-                    <div className="text-[#B0B6BE] text-sm">Detected By Community</div>
+            {/* Status Safe */}
+            {isSafe && (
+              <>
+                <span className="text-[#FFFFFF] font-semibold text-xl">Analyze Address</span>
+                <div className="overflow-hidden mb-2 bg-[#FFFFFF] bg-opacity-5 rounded-md">
+                  {/* Bagian atas dengan gradient */}
+                  <div className="relative w-full">
+                    <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#22C55E]/15 via-[#22C55E]/15 to-transparent z-0" />
+                    <div className="relative flex items-center gap-4 px-6 pt-4 pb-2 z-10">
+                      <img src={config.icon} alt="Safe" className="w-12 h-12 object-contain" />
+                      <div>
+                        <div className="text-[#FFFFFF] font-semibold text-sm leading-tight">{config.title}</div>
+                        <div className="text-[#B0B6BE] text-xs">Detected By Community</div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Bagian bawah deskripsi */}
+                  <div className="px-6 pb-4">
+                    <div className="text-[#B0B6BE] text-sm font-normal">{config.description}</div>
                   </div>
                 </div>
-              </div>
-              {/* Bagian bawah deskripsi */}
-              <div className="px-4 pb-4">
-                <div className="text-[#B0B6BE] text-xs font-normal">{config.description}</div>
-              </div>
-            </div>
-            {/* Address Details */}
-            <p className="text-white font-semibold text-lg">Address Details</p>
-            <div className="rounded-lg p-4 mb-2 w-full">
-              <div className="grid grid-cols-2 gap-3 w-full">
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? analyzeData.report[0].voted_by.length : "0"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-3 h-3" />
-                    Total Voters
-                  </span>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-3 h-3" />
-                    Vote Results
-                  </span>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className={`text-sm font-medium ${config.riskScoreColor}`}>{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-3 h-3" />
-                    Risk Score
-                  </span>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-3 h-3" />
-                    Report Created
-                  </span>
-                </div>
-              </div>
-            </div>
-            {/* Security Checks */}
-            <div className={`rounded-lg px-4 py-4 mb-2 border-l-2 ${config.borderColor} relative overflow-hidden bg-white/5 w-full`}>
-              <div className={`absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r ${config.gradientColor}/30 to-transparent pointer-events-none`} />
-              <div className="relative z-10">
-                <div className="text-white font-semibold mb-2 text-sm">{config.securityTitle}</div>
-                <ul className="flex flex-col gap-1">
-                  {config.checkItems.map((item, index) => (
-                    <li key={index} className={`flex items-center gap-2 ${isSafe ? "text-[#22C55E]" : "text-[#F87171]"} text-xs`}>
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" fill={isSafe ? "#22C55E" : "#F87171"} />
-                        <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="text-white">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
 
-            {/* Report Details - Only show if there's a report */}
-            {analyzeData?.report && analyzeData.report.length > 0 && (
-              <div className="rounded-lg p-4 mb-2 bg-white/5 w-full">
-                <div className="text-white font-semibold mb-3 text-sm">Report Details</div>
-                <div className="space-y-3 w-full">
-                  <div className="w-full">
-                    <div className="text-[#B0B6BE] text-xs mb-1">Category</div>
-                    <div className="text-white text-sm font-medium capitalize w-full">{analyzeData.report[0].category}</div>
+                {/* Address Details */}
+                <p className="text-[#FFFFFF] font-semibold text-lg">Address Details</p>
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col rounded-md">
+                    <span className="text-white text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? analyzeData.report[0].voted_by.length : "0"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                      Total Voters
+                    </span>
                   </div>
-                  <div className="w-full">
-                    <a href={`/reports/${analyzeData.report[0].report_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors w-full">
-                      <span>View Full Report</span>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </a>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col rounded-md">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-4 h-4" />
+                      Vote Results
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col rounded-md">
+                    <span className="text-[#9BE4A0] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
+                      Risk Score
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col rounded-md">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
+                      Report Created
+                    </span>
                   </div>
                 </div>
-              </div>
+
+                {/* Security Checks */}
+                <div className="px-6 py-5 mb-2 border-l-2 border-[#9BE4A0] relative overflow-hidden bg-[#FFFFFF0D] bg-opacity-5 rounded-md">
+                  <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#22C55E]/15 via-[#22C55E]/15 to-transparent pointer-events-none" />
+                  <div className="relative z-10">
+                    <div className="text-[#FFFFFF] font-bold mb-2">{config.securityTitle}</div>
+                    <ul className="flex flex-col gap-1">
+                      {config.checkItems.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-[#22C55E] text-sm">
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="#9BE4A0" />
+                            <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className="text-[#FFFFFF]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Report Details - Only show if there's a report */}
+                {analyzeData?.report && analyzeData.report.length > 0 && (
+                  <div className="px-6 py-5 mb-2 bg-[#FFFFFF0D] bg-opacity-5 relative overflow-hidden rounded-md">
+                    <div className="relative z-10">
+                      <div className="text-[#FFFFFF] font-bold mb-3">Report Details</div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-[#B0B6BE] text-sm mb-1">Category</div>
+                          <div className="text-white text-base font-medium capitalize">{analyzeData.report[0].category}</div>
+                        </div>
+                        <div>
+                          <a href={`/reports/${analyzeData.report[0].report_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors">
+                            <span>View Full Report</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Button Confirm Send */}
+                <button
+                  className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition"
+                  onClick={onConfirmSend}
+                  disabled={isSendLoading}
+                >
+                  {isSendLoading ? "Sending..." : "Confirm Send"}
+                </button>
+              </>
             )}
-            {/* Button Confirm Send */}
-            <div className="flex gap-3 mt-4 w-full">
-              <CustomButton className="w-full justify-center" disabled={isSendLoading} onClick={onConfirmSend}>
-                {isSendLoading ? "Sending..." : "Confirm Send"}
-              </CustomButton>
-              {!isSafe && analyzeData?.report && analyzeData.report.length > 0 && (
-                <NeoButton className="w-full text-white justify-center" onClick={onClose}>
-                  Cancel
-                </NeoButton>
-              )}
-            </div>
+            {/* Danger mode tetap pakai styling lama */}
+            {!isSafe && (
+              <>
+                <span className="text-[#FFFFFF] font-semibold text-xl">Analyze Address</span>
+                <div className="overflow-hidden mb-2 bg-[#FFFFFF] bg-opacity-5">
+                  {/* Bagian atas dengan gradient */}
+                  <div className="relative w-full">
+                    <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent z-0" />
+                    <div className="relative flex items-center gap-4 px-6 pt-4 pb-2 z-10">
+                      <img src={config.icon} alt="Danger" className="w-12 h-12 object-contain" />
+                      <div>
+                        <div className="text-[#FFFFFF] font-semibold text-sm leading-tight">{config.title}</div>
+                        <div className="text-[#B0B6BE] text-xs">Detected By Community</div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Bagian bawah deskripsi */}
+                  <div className="px-6 pb-4">
+                    <div className="text-[#B0B6BE] text-sm font-normal">{config.description}</div>
+                  </div>
+                </div>
+
+                {/* Address Details */}
+                <p className="text-[#FFFFFF] font-semibold text-lg">Address Details</p>
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-white text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? analyzeData.report[0].voted_by.length : "0"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                      Total Voters
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-4 h-4" />
+                      Vote Results
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-red-400 text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
+                      Risk Score
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
+                      Report Created
+                    </span>
+                  </div>
+                </div>
+
+                {/* Security Checks */}
+                <div className="px-6 py-5 mb-2 border-l-2 border-[#FF6B6B] relative overflow-hidden bg-[#FFFFFF0D] bg-opacity-5">
+                  <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent pointer-events-none" />
+                  <div className="relative z-10">
+                    <div className="text-[#FFFFFF] font-bold mb-2">{config.securityTitle}</div>
+                    <ul className="flex flex-col gap-1">
+                      {config.checkItems.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="#FF6B6B" />
+                            <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className="text-[#FFFFFF]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Report Details - Only show if there's a report */}
+                {analyzeData?.report && analyzeData.report.length > 0 && (
+                  <div className="px-6 py-5 mb-2 bg-[#FFFFFF0D] bg-opacity-5 relative overflow-hidden">
+                    <div className="relative z-10">
+                      <div className="text-[#FFFFFF] font-bold mb-3">Report Details</div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-[#B0B6BE] text-sm mb-1">Category</div>
+                          <div className="text-white text-base font-medium capitalize">{analyzeData.report[0].category}</div>
+                        </div>
+                        <div>
+                          <a href={`/reports/${analyzeData.report[0].report_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors">
+                            <span>View Full Report</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Button Confirm Send */}
+                <button
+                  className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition"
+                  onClick={onClose}
+                  disabled={isSendLoading}
+                >
+                  {isSendLoading ? "Sending..." : "Cancel"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
