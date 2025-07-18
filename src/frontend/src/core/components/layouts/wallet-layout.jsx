@@ -467,7 +467,13 @@ function WalletLayoutContent() {
                       </div>
                     </button>
 
-                    <button className="w-full text-sm transition-colors group">
+                    <button
+                      className="w-full text-sm transition-colors group"
+                      onClick={() => {
+                        navigate("/wallet/setting");
+                        setIsProfileDropdownOpen(false);
+                      }}
+                    >
                       <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
                         <img src="/assets/icons/setting-green.svg" alt="Settings" />
                         <span className="text-white">Settings</span>
