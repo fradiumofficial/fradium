@@ -87,7 +87,9 @@ function WalletLayoutContent() {
         {/* Logo dan Brand */}
         <div>
           <div className="flex items-center gap-3 mb-12">
-            <img src="/logo.svg" alt="Fradium Logo" />
+            <Link to="/">
+              <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
+            </Link>
           </div>
           {/* Menu */}
           <nav className="flex flex-col gap-1">

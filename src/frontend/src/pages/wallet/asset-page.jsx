@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useWallet } from "@/core/providers/wallet-provider";
+import { useAuth } from "../../core/providers/auth-provider";
+import { useWallet } from "../../core/providers/wallet-provider";
+import TransactionButton from "../../core/components/TransactionButton";
 import NeoButton from "@/core/components/SidebarButton";
 import { bitcoin } from "declarations/bitcoin";
 import { satoshisToBTC, fetchBTCPrice, btcToSatoshis } from "@/core/lib/bitcoinUtils";
@@ -471,52 +473,67 @@ export default function AssetsPage() {
   return (
     <>
       <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
-        {/* Card Wallet pakai gambar utuh */}
-        <div className="relative items-center w-full mx-auto">
-          <img src="/assets/cek-card-wallet.png" alt="Wallet Card" className="block w-full max-w-full h-auto select-none pointer-events-none" draggable="false" />
-          {/* Overlay Content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pt-20 pb-8">
-            <div className="text-white text-xs md:text-xs font-normal mb-1">Total Portofolio Value</div>
-            <div className="text-white text-4xl md:text-4xl font-semibold mb-1">$0.00</div>
-            <div className="text-green-400 text-sm font-medium mb-6 text-center">Top up your wallet to start using it!</div>
-            <div className="flex gap-8 w-full max-w-lg justify-center">
-              {/* Receive */}
-              <div className="flex flex-col flex-1">
-                <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
+        {/* Card Wallet - Sesuai Referensi */}
+        <div className="relative w-full bg-white bg-opacity-5 pb-4 overflow-hidden border border-[#393E4B]">
+          {/* Pattern Background */}
+          <img
+            src="/assets/images/pattern-topside.png"
+            alt="Pattern"
+            className="absolute top-0 right-0 w-full w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top"
+          />
+
+          {/* Character Illustration - Positioned at top center */}
+          <div className="relative z-10 flex justify-center mb-2">
+            <img
+              src="/assets/images/illus-wallet.png"
+              alt="Wallet Character"
+              className="w-full object-contain object-center"
+            />
+          </div>
+
+          {/* Content */}
+          <div className="relative z-20 text-center">
+            <div className="text-white text-sm font-normal mb-1">Total Portfolio Value</div>
+            <div className="text-white text-3xl font-semibold mb-1">$0.00</div>
+            <div className="text-[#9BE4A0] text-base font-medium mb-6">Top up your wallet to start using it!</div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 w-full max-w-lg mx-auto">
+              {/* Receive Button */}
+              <div className="flex-1">
+                <div className="relative bg-white bg-opacity-10 h-32 w-full p-4 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={() => handleReceiveClick(tokens[0])}>
                   <div className="absolute top-4 right-4">
-                    <NeoButton
-                      icon={
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="2" y="2" width="11" height="11" fill="#0E1117" />
-                        </svg>
-                      }
-                      className="!w-10 !h-10 p-0 flex items-center justify-center"
-                      onClick={() => handleReceiveClick(tokens[0])}
+                    <TransactionButton
+                      icon="/assets/icons/received.svg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReceiveClick(tokens[0]);
+                      }}
+                      iconSize="w-6 h-6"
                     />
                   </div>
-                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Receive</div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="text-white text-xl font-semibold">Receive</div>
+                  </div>
                 </div>
               </div>
-              {/* Send */}
-              <div className="flex flex-col flex-1">
-                <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
+
+              {/* Send Button */}
+              <div className="flex-1">
+                <div className="relative bg-white bg-opacity-10 h-32 w-full p-4 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={handleGeneralSendClick}>
                   <div className="absolute top-4 right-4">
-                    <NeoButton
-                      icon={
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <mask id="mask-send" maskUnits="userSpaceOnUse" x="0" y="0" width="15" height="15">
-                            <rect x="0" y="0" width="15" height="15" fill="#fff" />
-                          </mask>
-                          <g mask="url(#mask-send)">
-                            <path d="M12 3V10H10.8V5.8L3.5 13.1L2.9 12.5L10.2 5.2H5V3H12Z" fill="#0E1117" />
-                          </g>
-                        </svg>
-                      }
-                      className="!w-10 !h-10 p-0 flex items-center justify-center"
-                      onClick={handleGeneralSendClick}
+                    <TransactionButton
+                      icon="/assets/icons/send.svg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGeneralSendClick();
+                      }}
+                      iconSize="w-6 h-6"
                     />
                   </div>
-                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Send</div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="text-white text-xl font-semibold">Send</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -623,9 +640,9 @@ export default function AssetsPage() {
                     {selectedTokenForSend?.isLoading
                       ? "Loading..."
                       : (() => {
-                          const currentAmount = selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0 ? Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0) : 0;
-                          return formatTokenAmount(currentAmount, selectedTokenForSend?.tokenType);
-                        })()}{" "}
+                        const currentAmount = selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0 ? Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0) : 0;
+                        return formatTokenAmount(currentAmount, selectedTokenForSend?.tokenType);
+                      })()}{" "}
                     {selectedTokenForSend?.name?.toUpperCase() || ""}
                   </div>
                 </div>
