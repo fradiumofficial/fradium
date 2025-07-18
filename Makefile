@@ -21,7 +21,7 @@ bitcoin-getaddress:
 	bitcoin-cli -conf=$(CURDIR)/bitcoin.conf getaddressesbylabel "fradium"
 
 bitcoin-send:
-	bitcoin-cli -conf=$(CURDIR)/bitcoin.conf sendtoaddress $(address) 2.005
+	bitcoin-cli -conf=$(CURDIR)/bitcoin.conf sendtoaddress $(address) $(amount)
 	bitcoin-cli -conf=$(CURDIR)/bitcoin.conf generatetoaddress 1 mtbZzVBwLnDmhH4pE9QynWAgh6H3aC1E6M
 
 bitcoin-mint:

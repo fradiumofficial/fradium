@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useWallet } from "@/core/providers/wallet-provider";
+import { useAuth } from "../../core/providers/auth-provider";
+import { useWallet } from "../../core/providers/wallet-provider";
+import TransactionButton from "../../core/components/TransactionButton";
 import NeoButton from "@/core/components/SidebarButton";
 import { bitcoin } from "declarations/bitcoin";
 import { satoshisToBTC, fetchBTCPrice, btcToSatoshis } from "@/core/lib/bitcoinUtils";
 import { toast } from "react-toastify";
 import CustomButton from "@/core/components/custom-button-a";
-import AnalysisProgressModal from "@/core/components/AnalysisProgressModal";
+import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal";
 import QRCode from "qrcode";
 import { backend } from "declarations/backend";
+import { ransomware_detector } from "declarations/ransomware_detector";
 import { jsonStringify } from "../../core/lib/canisterUtils";
 
 // Function to format token amount by removing trailing zeros
@@ -74,6 +77,8 @@ export default function AssetsPage() {
   const [isAnalyzeAddressSafe, setIsAnalyzeAddressSafe] = useState(false);
   const [isAnalyzeAddressLoading, setIsAnalyzeAddressLoading] = useState(false);
   const [analyzeAddressData, setAnalyzeAddressData] = useState(null);
+  const [aiAnalysisData, setAiAnalysisData] = useState(null);
+  const [analysisSource, setAnalysisSource] = useState(""); // "community" | "ai"
 
   // Send Modal States
   const [destinationAddress, setDestinationAddress] = useState("");
@@ -88,6 +93,37 @@ export default function AssetsPage() {
     if (addressObj.token_type?.Ethereum == null) return "Ethereum";
     if (addressObj.token_type?.Solana == null) return "Solana";
     return "Unknown";
+  };
+
+  // Auto-detect blockchain network from address (from create-report-page.jsx)
+  const detectChain = (address) => {
+    if (!address) return "Unknown";
+
+    // Simple chain detection based on address format
+    if (address.startsWith("0x") && address.length === 42) {
+      return "Ethereum";
+    } else if (address.startsWith("bc1") || address.startsWith("1") || address.startsWith("3")) {
+      return "Bitcoin";
+    } else if (address.length === 44) {
+      return "Solana";
+    } else if (address.startsWith("cosmos")) {
+      return "Cosmos";
+    }
+    return "Unknown";
+  };
+
+  // Convert chain name to token type variant
+  const getTokenTypeVariant = (chainName) => {
+    switch (chainName) {
+      case "Bitcoin":
+        return { Bitcoin: null };
+      case "Ethereum":
+        return { Ethereum: null };
+      case "Solana":
+        return { Solana: null };
+      default:
+        return { Unknown: null };
+    }
   };
 
   // Function to check if address matches current network
@@ -369,15 +405,137 @@ export default function AssetsPage() {
     setShowSendModal(false);
     setIsAnalyzeAddressLoading(true);
 
-    // Analyze address by community report
-    const communityReport = await backend.analyze_address(destinationAddress);
-    console.log("communityReport", communityReport);
+    try {
+      // Analyze address by community report
+      const communityReport = await backend.analyze_address(destinationAddress);
+      console.log("communityReport", communityReport);
 
-    console.log("communityReport.Ok", jsonStringify(communityReport.Ok));
-    if ("Ok" in communityReport) {
-      console.log("communityReport.Ok", communityReport.Ok.is_safe);
-      setIsAnalyzeAddressSafe(communityReport.Ok.is_safe);
-      setAnalyzeAddressData(communityReport.Ok);
+      if ("Ok" in communityReport) {
+        if (communityReport.Ok.is_safe) {
+          console.log("communityReport.Ok.is_safe", communityReport.Ok.is_safe);
+          // If safe by community, also check AI analysis
+          const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
+          console.log("ransomwareReport", jsonStringify(ransomwareReport));
+
+          if ("Ok" in ransomwareReport) {
+            if (ransomwareReport.Ok.is_ransomware) {
+              // AI detected as unsafe
+              setIsAnalyzeAddressSafe(false);
+              setAiAnalysisData(ransomwareReport.Ok);
+              setAnalysisSource("ai");
+
+              // Create analyze history for AI analysis (unsafe)
+              try {
+                await backend.create_analyze_history({
+                  address: destinationAddress,
+                  is_safe: false,
+                  analyzed_type: { AIAnalysis: null },
+                  metadata: jsonStringify(ransomwareReport.Ok),
+                  token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+                });
+                console.log("AI analysis history (unsafe) saved successfully");
+              } catch (historyError) {
+                console.error("Failed to save AI analysis history:", historyError);
+              }
+            } else {
+              // AI detected as safe, but use community result
+              setIsAnalyzeAddressSafe(true);
+              setAnalyzeAddressData(communityReport.Ok);
+              setAnalysisSource("community");
+
+              // Create analyze history for Community analysis (safe)
+              try {
+                await backend.create_analyze_history({
+                  address: destinationAddress,
+                  is_safe: true,
+                  analyzed_type: { CommunityVote: null },
+                  metadata: jsonStringify(communityReport.Ok),
+                  token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+                });
+                console.log("Community analysis history (safe) saved successfully");
+              } catch (historyError) {
+                console.error("Failed to save community analysis history:", historyError);
+              }
+            }
+          } else {
+            // Fall back to community result (safe)
+            setIsAnalyzeAddressSafe(true);
+            setAnalyzeAddressData(communityReport.Ok);
+            setAnalysisSource("community");
+
+            // Create analyze history for Community analysis (safe)
+            try {
+              await backend.create_analyze_history({
+                address: destinationAddress,
+                is_safe: true,
+                analyzed_type: { CommunityVote: null },
+                metadata: jsonStringify(communityReport.Ok),
+                token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+              });
+              console.log("Community analysis history (safe) saved successfully");
+            } catch (historyError) {
+              console.error("Failed to save community analysis history:", historyError);
+            }
+          }
+        } else {
+          // If not safe by community, use community result
+          setIsAnalyzeAddressSafe(false);
+          setAnalyzeAddressData(communityReport.Ok);
+          setAnalysisSource("community");
+
+          // Create analyze history for Community analysis (unsafe)
+          try {
+            await backend.create_analyze_history({
+              address: destinationAddress,
+              is_safe: false,
+              analyzed_type: { CommunityVote: null },
+              metadata: jsonStringify(communityReport.Ok),
+              token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+            });
+            console.log("Community analysis history (unsafe) saved successfully");
+          } catch (historyError) {
+            console.error("Failed to save community analysis history:", historyError);
+          }
+        }
+      } else {
+        // If no community report, try AI analysis
+        const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
+        console.log("ransomwareReport", jsonStringify(ransomwareReport));
+
+        if ("Ok" in ransomwareReport) {
+          const isSafe = !ransomwareReport.Ok.is_ransomware;
+          setIsAnalyzeAddressSafe(isSafe);
+          setAiAnalysisData(ransomwareReport.Ok);
+          setAnalysisSource("ai");
+
+          // Create analyze history for AI analysis
+          try {
+            await backend.create_analyze_history({
+              address: destinationAddress,
+              is_safe: isSafe,
+              analyzed_type: { AIAnalysis: null },
+              metadata: jsonStringify(ransomwareReport.Ok),
+              token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+            });
+            console.log(`AI analysis history (${isSafe ? "safe" : "unsafe"}) saved successfully`);
+          } catch (historyError) {
+            console.error("Failed to save AI analysis history:", historyError);
+          }
+        } else {
+          // If AI also fails, default to safe but no analysis source
+          setIsAnalyzeAddressSafe(true);
+          setAnalyzeAddressData(null);
+          setAnalysisSource("");
+          console.log("No analysis available, defaulting to safe");
+        }
+      }
+    } catch (error) {
+      console.error("Error analyzing address:", error);
+      // Default to safe if analysis fails
+      setIsAnalyzeAddressSafe(true);
+      setAnalyzeAddressData(null);
+      setAnalysisSource("");
+    } finally {
       setIsAnalyzeAddressLoading(false);
       setShowAnalyeAddressModal(true);
     }
@@ -471,52 +629,59 @@ export default function AssetsPage() {
   return (
     <>
       <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
-        {/* Card Wallet pakai gambar utuh */}
-        <div className="relative items-center w-full mx-auto">
-          <img src="/assets/cek-card-wallet.png" alt="Wallet Card" className="block w-full max-w-full h-auto select-none pointer-events-none" draggable="false" />
-          {/* Overlay Content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-4 pt-20 pb-8">
-            <div className="text-white text-xs md:text-xs font-normal mb-1">Total Portofolio Value</div>
-            <div className="text-white text-4xl md:text-4xl font-semibold mb-1">$0.00</div>
-            <div className="text-green-400 text-sm font-medium mb-6 text-center">Top up your wallet to start using it!</div>
-            <div className="flex gap-8 w-full max-w-lg justify-center">
-              {/* Receive */}
-              <div className="flex flex-col flex-1">
-                <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
+        {/* Card Wallet - Sesuai Referensi */}
+        <div className="relative w-full bg-white bg-opacity-5 pb-4 overflow-hidden border border-[#393E4B]">
+          {/* Pattern Background */}
+          <img src="/assets/images/pattern-topside.png" alt="Pattern" className="absolute top-0 right-0 w-full w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top" />
+
+          {/* Character Illustration - Positioned at top center */}
+          <div className="relative z-10 flex justify-center mb-2">
+            <img src="/assets/images/illus-wallet.png" alt="Wallet Character" className="w-full object-contain object-center" />
+          </div>
+
+          {/* Content */}
+          <div className="relative z-20 text-center">
+            <div className="text-white text-sm font-normal mb-1">Total Portfolio Value</div>
+            <div className="text-white text-3xl font-semibold mb-1">$0.00</div>
+            <div className="text-[#9BE4A0] text-base font-medium mb-6">Top up your wallet to start using it!</div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 w-full max-w-lg mx-auto">
+              {/* Receive Button */}
+              <div className="flex-1">
+                <div className="relative bg-white bg-opacity-10 h-32 w-full p-4 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={() => handleReceiveClick(tokens[0])}>
                   <div className="absolute top-4 right-4">
-                    <NeoButton
-                      icon={
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="2" y="2" width="11" height="11" fill="#0E1117" />
-                        </svg>
-                      }
-                      className="!w-10 !h-10 p-0 flex items-center justify-center"
-                      onClick={() => handleReceiveClick(tokens[0])}
+                    <TransactionButton
+                      icon="/assets/icons/received.svg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReceiveClick(tokens[0]);
+                      }}
+                      iconSize="w-6 h-6"
                     />
                   </div>
-                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Receive</div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="text-white text-xl font-semibold">Receive</div>
+                  </div>
                 </div>
               </div>
-              {/* Send */}
-              <div className="flex flex-col flex-1">
-                <div className="relative bg-[#23272F] h-36 w-full rounded-lg">
+
+              {/* Send Button */}
+              <div className="flex-1">
+                <div className="relative bg-white bg-opacity-10 h-32 w-full p-4 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={handleGeneralSendClick}>
                   <div className="absolute top-4 right-4">
-                    <NeoButton
-                      icon={
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <mask id="mask-send" maskUnits="userSpaceOnUse" x="0" y="0" width="15" height="15">
-                            <rect x="0" y="0" width="15" height="15" fill="#fff" />
-                          </mask>
-                          <g mask="url(#mask-send)">
-                            <path d="M12 3V10H10.8V5.8L3.5 13.1L2.9 12.5L10.2 5.2H5V3H12Z" fill="#0E1117" />
-                          </g>
-                        </svg>
-                      }
-                      className="!w-10 !h-10 p-0 flex items-center justify-center"
-                      onClick={handleGeneralSendClick}
+                    <TransactionButton
+                      icon="/assets/icons/send.svg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGeneralSendClick();
+                      }}
+                      iconSize="w-6 h-6"
                     />
                   </div>
-                  <div className="text-white text-lg font-semibold mt-24 ml-2 text-left">Send</div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="text-white text-xl font-semibold">Send</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -617,7 +782,7 @@ export default function AssetsPage() {
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <div className="text-[#B0B6BE] text-sm">Amount ({selectedTokenForSend?.name?.toUpperCase() || ""})</div>
+                  <div className="text-[#B0B6BE] text-sm">Amount {selectedTokenForSend?.name?.toUpperCase() || ""}</div>
                   <div className="text-[#B0B6BE] text-xs">
                     Balance:{" "}
                     {selectedTokenForSend?.isLoading
@@ -677,7 +842,7 @@ export default function AssetsPage() {
       )}
 
       {/* Modal Progress Analyze Address */}
-      <AnalysisProgressModal isOpen={isAnalyzeAddressLoading} />
+      <AnalyzeProgressModal isOpen={isAnalyzeAddressLoading} />
 
       {/* Modal Analyze Result */}
       {showAnalyeAddressModal && (
@@ -685,9 +850,13 @@ export default function AssetsPage() {
           isOpen={showAnalyeAddressModal}
           isSafe={isAnalyzeAddressSafe}
           analyzeData={analyzeAddressData}
+          aiAnalysisData={aiAnalysisData}
+          analysisSource={analysisSource}
           onClose={() => {
             setShowAnalyeAddressModal(false);
             setAnalyzeAddressData(null);
+            setAiAnalysisData(null);
+            setAnalysisSource("");
           }}
           onConfirmSend={handleConfirmSend}
           isSendLoading={isSendLoading}
@@ -780,7 +949,7 @@ export default function AssetsPage() {
 }
 
 // Analysis Result Modal Component
-function AnalysisResultModal({ isOpen, isSafe, analyzeData, onClose, onConfirmSend, isSendLoading }) {
+function AnalysisResultModal({ isOpen, isSafe, analyzeData, aiAnalysisData, analysisSource, onClose, onConfirmSend, isSendLoading }) {
   if (!isOpen) return null;
 
   // Function to calculate time ago from timestamp
@@ -808,30 +977,37 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, onClose, onConfirmSe
     return `${Math.round(yesPercentage)}/100`;
   };
 
-  const statusConfig = {
-    safe: {
-      gradientColor: "from-[#22C55E]",
-      borderColor: "border-[#22C55E]",
-      icon: "/assets/icons/safe.png",
-      title: "ADDRESS IS SAFE",
-      description: analyzeData?.report && analyzeData.report.length > 0 ? "This address has been analyzed by the community and found to be safe" : "This address appears to be clean with no suspicious activity detected in our comprehensive database",
-      securityTitle: "Security Checks Passed",
-      checkItems: ["No links to known scam addresses", "No suspicious transaction pattern detected"],
-      riskScoreColor: "text-green-400",
-    },
-    danger: {
-      gradientColor: "from-[#F87171]",
-      borderColor: "border-[#F87171]",
-      icon: "/assets/icons/danger.png",
-      title: "ADDRESS IS NOT SAFE",
-      description: analyzeData?.report && analyzeData.report.length > 0 ? "This address has been flagged by the community as potentially unsafe" : "This address appears to be flagged with suspicious activity detected in our comprehensive database",
-      securityTitle: "Security Checks Not Passed",
-      checkItems: ["Links to known scam addresses detected", "Suspicious transaction pattern detected"],
-      riskScoreColor: "text-red-400",
-    },
+  const getStatusConfig = () => {
+    const isCommunitySource = analysisSource === "community";
+    const isAiSource = analysisSource === "ai";
+
+    return {
+      safe: {
+        gradientColor: "from-[#22C55E]",
+        borderColor: "border-[#22C55E]",
+        icon: "/assets/icons/safe.png",
+        title: "ADDRESS IS SAFE",
+        description: isCommunitySource ? (analyzeData?.report && analyzeData.report.length > 0 ? "This address has been analyzed by the community and found to be safe" : "This address appears to be clean with no suspicious activity detected in our comprehensive database") : "This address has been analyzed by our AI system and appears to be safe with no ransomware activity detected",
+        securityTitle: "Security Checks Passed",
+        checkItems: isCommunitySource ? ["No links to known scam addresses", "No suspicious transaction pattern detected"] : ["No ransomware activity detected", "Passed AI security analysis"],
+        riskScoreColor: "text-green-400",
+        detectedBy: isCommunitySource ? "Detected By Community" : "Detected By AI Analysis",
+      },
+      danger: {
+        gradientColor: "from-[#F87171]",
+        borderColor: "border-[#F87171]",
+        icon: "/assets/icons/danger.png",
+        title: "ADDRESS IS NOT SAFE",
+        description: isCommunitySource ? (analyzeData?.report && analyzeData.report.length > 0 ? "This address has been flagged by the community as potentially unsafe" : "This address appears to be flagged with suspicious activity detected in our comprehensive database") : "This address has been flagged by our AI system as potential ransomware with high confidence",
+        securityTitle: "Security Checks Not Passed",
+        checkItems: isCommunitySource ? ["Links to known scam addresses detected", "Suspicious transaction pattern detected"] : ["Ransomware activity detected", "Failed AI security analysis"],
+        riskScoreColor: "text-red-400",
+        detectedBy: isCommunitySource ? "Detected By Community" : "Detected By AI Analysis",
+      },
+    };
   };
 
-  const config = statusConfig[isSafe ? "safe" : "danger"];
+  const config = getStatusConfig()[isSafe ? "safe" : "danger"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -851,7 +1027,7 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, onClose, onConfirmSe
                   <img src={config.icon} alt={isSafe ? "Safe" : "Danger"} className="w-10 h-10 object-contain" />
                   <div>
                     <div className="text-white font-bold text-base leading-tight">{config.title}</div>
-                    <div className="text-[#B0B6BE] text-sm">Detected By Community</div>
+                    <div className="text-[#B0B6BE] text-sm">{config.detectedBy}</div>
                   </div>
                 </div>
               </div>
@@ -864,34 +1040,69 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, onClose, onConfirmSe
             <p className="text-white font-semibold text-lg">Address Details</p>
             <div className="rounded-lg p-4 mb-2 w-full">
               <div className="grid grid-cols-2 gap-3 w-full">
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? analyzeData.report[0].voted_by.length : "0"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-3 h-3" />
-                    Total Voters
-                  </span>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-3 h-3" />
-                    Vote Results
-                  </span>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className={`text-sm font-medium ${config.riskScoreColor}`}>{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-3 h-3" />
-                    Risk Score
-                  </span>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
-                  <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
-                  <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
-                    <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-3 h-3" />
-                    Report Created
-                  </span>
-                </div>
+                {analysisSource === "community" ? (
+                  <>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? analyzeData.report[0].voted_by.length : "0"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-3 h-3" />
+                        Total Voters
+                      </span>
+                    </div>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-3 h-3" />
+                        Vote Results
+                      </span>
+                    </div>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className={`text-sm font-medium ${config.riskScoreColor}`}>{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-3 h-3" />
+                        Risk Score
+                      </span>
+                    </div>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className="text-white text-sm font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-3 h-3" />
+                        Report Created
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className="text-white text-sm font-medium">{aiAnalysisData?.transactions_analyzed || "0"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/total-volume.svg" alt="Transactions" className="w-3 h-3" />
+                        Transactions Analyzed
+                      </span>
+                    </div>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className="text-white text-sm font-medium">{aiAnalysisData?.confidence_level || "N/A"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/risk-score.svg" alt="Confidence" className="w-3 h-3" />
+                        Confidence Level
+                      </span>
+                    </div>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className={`text-sm font-medium ${config.riskScoreColor}`}>{aiAnalysisData ? `${Math.round(aiAnalysisData.ransomware_probability * 100)}/100` : "0/100"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-3 h-3" />
+                        Ransomware Probability
+                      </span>
+                    </div>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 flex flex-col">
+                      <span className="text-white text-sm font-medium">{aiAnalysisData ? aiAnalysisData.threshold_used.toFixed(2) : "N/A"}</span>
+                      <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                        <img src="/assets/icons/last-activity.svg" alt="Threshold" className="w-3 h-3" />
+                        AI Threshold
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             {/* Security Checks */}
@@ -913,8 +1124,8 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, onClose, onConfirmSe
               </div>
             </div>
 
-            {/* Report Details - Only show if there's a report */}
-            {analyzeData?.report && analyzeData.report.length > 0 && (
+            {/* Report Details - Only show if there's a community report */}
+            {analysisSource === "community" && analyzeData?.report && analyzeData.report.length > 0 && (
               <div className="rounded-lg p-4 mb-2 bg-white/5 w-full">
                 <div className="text-white font-semibold mb-3 text-sm">Report Details</div>
                 <div className="space-y-3 w-full">
