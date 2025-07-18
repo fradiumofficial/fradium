@@ -2,7 +2,7 @@ import { SafetyCard } from "@/components/ui/custom-card";
 import ProfileHeader from "@/components/ui/header";
 import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
-import type { Report } from "../model/AnalyzeSmartcontractModel";
+import type { Report } from "../model/AnalyzeSmartContractModel";
 
 interface AnalyzeSmartContractResultProps {
   report: Report;

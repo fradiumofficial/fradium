@@ -3,7 +3,7 @@ import React from "react";
 interface NeoButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: string;
   children: React.ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
   classname?: string;
 }
 
@@ -11,6 +11,7 @@ const NeoButton: React.FC<NeoButtonProps> = ({ children, icon, onClick, classNam
   return (
     <div className={`bg-green-300 ${className}`}>
       <button
+        type="submit"
         onClick={onClick}
         className={`
           w-full

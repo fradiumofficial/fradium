@@ -1,4 +1,4 @@
-import type { Root as AnalysisReport } from "../model/AnalyzeSmartcontractModel";
+import type { Root as AnalysisReport } from "../model/AnalyzeSmartContractModel";
 
 /**
  * Mengirim permintaan analisa alamat ke background script.
