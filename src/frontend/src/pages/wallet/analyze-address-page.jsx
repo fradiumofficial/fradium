@@ -3,6 +3,26 @@ import CustomButton from "../../core/components/custom-button-a";
 import AnalysisProgressModal from "../../core/components/AnalysisProgressModal";
 import { backend } from "declarations/backend";
 import { isValidBitcoinAddress } from "../../core/lib/bitcoinUtils";
+import SidebarButton from "../../core/components/SidebarButton";
+import { Dialog, DialogContent } from "../../core/components/ui/dialog";
+
+const NETWORKS = [
+  {
+    key: "bitcoin",
+    name: "Bitcoin",
+    icon: "/assets/icons/bitcoin-grey.svg",
+  },
+  {
+    key: "ethereum",
+    name: "Ethereum",
+    icon: "/assets/icons/eth-grey.svg",
+  },
+  {
+    key: "fradium",
+    name: "Fradium",
+    icon: "/assets/icons/fum-grey.svg",
+  },
+];
 
 export default function AnalyseAddressPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);

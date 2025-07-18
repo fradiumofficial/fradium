@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/wallet-provider";
 import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/auth-provider";
+import { Dialog, DialogContent } from "../ui/dialog";
 
 export default function WalletLayout() {
   return (
@@ -25,6 +26,32 @@ function WalletLayoutContent() {
   const navigate = useNavigate();
   const { isLoading, userWallet, isCreatingWallet, network, setNetwork } =
     useWallet();
+  const [showManageNetworks, setShowManageNetworks] = React.useState(false);
+  const [activeNetworks, setActiveNetworks] = React.useState({
+    bitcoin: true,
+    ethereum: true,
+    fradium: true,
+  });
+  const NETWORKS = [
+    {
+      key: "bitcoin",
+      name: "Bitcoin",
+      icon: "/assets/icons/bitcoin-grey.svg",
+    },
+    {
+      key: "ethereum",
+      name: "Ethereum",
+      icon: "/assets/icons/eth-grey.svg",
+    },
+    {
+      key: "fradium",
+      name: "Fradium",
+      icon: "/assets/icons/fum-grey.svg",
+    },
+  ];
+  const handleToggleNetwork = (key) => {
+    setActiveNetworks((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   // Menu configuration with logout function
   const menu = [
@@ -79,6 +106,42 @@ function WalletLayoutContent() {
 
   return (
     <div className="flex min-h-screen bg-[#0F1219]">
+      {/* Modal Manage Networks */}
+      <Dialog open={showManageNetworks} onOpenChange={setShowManageNetworks}>
+        <DialogContent className="bg-[#23242A] border-none max-w-xl p-0 rounded-xl">
+          <div className="px-8 pt-8 pb-4">
+            <div className="text-white text-2xl font-bold mb-8">Active networks</div>
+            <div className="divide-y divide-white/10">
+              {NETWORKS.map((net) => (
+                <div key={net.key} className="flex items-center justify-between py-4">
+                  <div className="flex items-center gap-4">
+                    <img src={net.icon} alt={net.name} className="w-7 h-7" />
+                    <span className="text-white text-lg font-medium">{net.name}</span>
+                  </div>
+                  {/* Custom Switch */}
+                  <button
+                    className={`w-11 h-6 rounded-full flex items-center transition-colors duration-200 ${activeNetworks[net.key] ? "bg-[#9BE4A0]" : "bg-[#23272F]"}`}
+                    onClick={() => handleToggleNetwork(net.key)}
+                  >
+                    <span
+                      className={`inline-block w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${activeNetworks[net.key] ? "translate-x-5" : "translate-x-0"}`}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="px-8 pb-8">
+            <SidebarButton
+              onClick={() => setShowManageNetworks(false)}
+              className="w-full"
+              buttonClassName="justify-center"
+            >
+              Save
+            </SidebarButton>
+          </div>
+        </DialogContent>
+      </Dialog>
       <aside className="h-screen w-300 bg-[#0F1219] flex flex-col justify-between py-8 px-6 border-r border-[#23272F]">
         {/* Logo dan Brand */}
         <div>
@@ -303,7 +366,7 @@ function WalletLayoutContent() {
                     <div className="h-px bg-[#5A5F67] mx-4"></div>
 
                     {/* Manage Networks */}
-                    <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#9BEB83] hover:bg-[#4A4F57] transition-colors">
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#9BEB83] hover:bg-[#4A4F57] transition-colors" onClick={() => setShowManageNetworks(true)}>
                       <img src="/assets/icons/construction.svg" alt="Manage Networks" />
                       <span className="font-medium">Manage Networks</span>
                     </button>
