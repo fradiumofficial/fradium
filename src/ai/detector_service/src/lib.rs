@@ -5,10 +5,9 @@ use ic_cdk::api::management_canister::http_request::{
 use ic_cdk_macros::{init, query, update, pre_upgrade, post_upgrade};
 use num_traits::ToPrimitive;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BTreeMap};
 use tract_onnx::prelude::*;
 use getrandom::{register_custom_getrandom, Error};
-use std::collections::BTreeMap;
 
 thread_local! {
     static RANDOM_BYTES: std::cell::RefCell<Vec<u8>> = std::cell::RefCell::new(Vec::new());
@@ -43,146 +42,51 @@ fn custom_getrandom(dest: &mut [u8]) -> Result<(), Error> {
 
 register_custom_getrandom!(custom_getrandom);
 
+// ✅ FIX 1: Corrected the relative path to the model file.
+// The path should be relative to the crate root (the directory containing Cargo.toml), not the src/lib.rs file.
 const MODEL_BYTES: &[u8] = include_bytes!("../../models/ransomware_model_mlp.onnx");
+
 
 // PASTE THE CONTENT of your 'scaler_params.json' file here.
 const SCALER_PARAMS_JSON: &str = r#"
 {
   "mean": [
-    23.866917022130608,
-    20.51713030049459,
-    13.056986482165575,
-    433987.8127062201,
-    441605.4641134491,
-    7617.651407229014,
-    33.57411338109136,
-    246357.38694205767,
-    322002.8539230293,
-    2.4967685096366443,
-    312.698154640546,
-    1.0048266167090838,
-    38.10509427099042,
-    1.6786967664793395,
-    1.1881958665335985,
-    163.85450787753476,
-    0.47761468968796783,
-    31.659370051608338,
-    1.0626535811634406,
-    0.7377056091659107,
-    148.84364069685168,
-    0.31213415941379896,
-    24.81793387729793,
-    0.847331210219555,
-    0.5700385369677051,
-    0.03846521576452082,
-    0.007925614565216083,
-    0.013648772727890106,
-    0.010056621808632153,
-    0.009884921087530517,
-    2.717585814163103,
-    0.0001609080218186035,
-    0.7097966554188141,
-    0.028367805266165693,
-    0.0006814742303560228,
-    7617.843214890708,
-    814.8335918525624,
-    3302.641699151649,
-    1500.5642753577592,
-    1331.5515405705112,
-    4372.212962018083,
-    412.0355872128226,
-    1546.431036594077,
-    575.2099877262602,
-    510.6350218720874,
-    6768.029420168582,
-    1028.3402011007477,
-    3143.808420243416,
-    1629.5789505507926,
-    1503.8944085012008,
-    5.435067453109374,
-    115.66633671449273,
-    1.0765931247491343,
-    3.9376390391248446,
-    1.134810719912597,
-    1.0884101747726052,
-    7.504992133604399,
-    65125756.44383864,
-    4.372327530817705,
-    -0.19146707169803553,
-    1357.31912292806,
-    16.15149900280813,
-    0.023995259948031453,
-    1.678583815311658,
-    103857393.34728226,
-    0.08755515380629432
+    23.866917022130608, 20.51713030049459, 13.056986482165575, 433987.8127062201,
+    441605.4641134491, 7617.651407229014, 33.57411338109136, 246357.38694205767,
+    322002.8539230293, 2.4967685096366443, 312.698154640546, 1.0048266167090838,
+    38.10509427099042, 1.6786967664793395, 1.1881958665335985, 163.85450787753476,
+    0.47761468968796783, 31.659370051608338, 1.0626535811634406, 0.7377056091659107,
+    148.84364069685168, 0.31213415941379896, 24.81793387729793, 0.847331210219555,
+    0.5700385369677051, 0.03846521576452082, 0.007925614565216083, 0.013648772727890106,
+    0.010056621808632153, 0.009884921087530517, 2.717585814163103, 0.0001609080218186035,
+    0.7097966554188141, 0.028367805266165693, 0.0006814742303560228, 7617.843214890708,
+    814.8335918525624, 3302.641699151649, 1500.5642753577592, 1331.5515405705112,
+    4372.212962018083, 412.0355872128226, 1546.431036594077, 575.2099877262602,
+    510.6350218720874, 6768.029420168582, 1028.3402011007477, 3143.808420243416,
+    1629.5789505507926, 1503.8944085012008, 5.435067453109374, 115.66633671449273,
+    1.0765931247491343, 3.9376390391248446, 1.134810719912597, 1.0884101747726052,
+    7.504992133604399, 65125756.44383864, 4.372327530817705, -0.19146707169803553,
+    1357.31912292806, 16.15149900280813, 0.023995259948031453, 1.678583815311658,
+    103857393.34728226, 0.08755515380629432
   ],
   "scale": [
-    15.58922265204132,
-    120.95612512222478,
-    71.12101839917952,
-    32383.610531278337,
-    32010.859709310833,
-    21086.02580065099,
-    169.04934214037047,
-    217970.65798999922,
-    190085.65055866787,
-    5.901797083583269,
-    2041.063866405601,
-    19.340392048829298,
-    373.16003786741715,
-    21.990812779775627,
-    20.551126313508103,
-    1095.7616558437514,
-    128.2821855141343,
-    353.98937845610436,
-    128.48294092142265,
-    128.3313222823885,
-    973.734371534469,
-    14.346053394960391,
-    284.9961260178103,
-    15.760245414472633,
-    15.971822802157046,
-    0.21507815444592981,
-    0.021959458307430575,
-    0.0270444167839668,
-    0.022870903706365475,
-    0.02292854948416408,
-    1430.4113568040618,
-    0.0013467117141041413,
-    375.45485212069116,
-    14.899893487721414,
-    0.2292436054644116,
-    21086.621190928643,
-    4212.033871412445,
-    8599.46497870955,
-    5106.357037872643,
-    5033.141024160028,
-    17742.809839744496,
-    3598.2019335032996,
-    6498.6777011709755,
-    3893.5666441298326,
-    3832.499498174684,
-    19789.925203534207,
-    4587.773047030696,
-    8515.295803493897,
-    5510.870167544202,
-    5483.407276382322,
-    67.6686830297047,
-    791.2716754125461,
-    0.4692094793687217,
-    16.43903704863582,
-    0.5271557900091806,
-    0.48818670810814985,
-    35.13153049202667,
-    78386055.83863987,
-    28.985155161130727,
-    0.8234487518647802,
-    3749.143841122248,
-    1384.6054616998626,
-    0.08073756379273574,
-    21.99731777703975,
-    1213821479.3158133,
-    3.7841207060077893
+    15.58922265204132, 120.95612512222478, 71.12101839917952, 32383.610531278337,
+    32010.859709310833, 21086.02580065099, 169.04934214037047, 217970.65798999922,
+    190085.65055866787, 5.901797083583269, 2041.063866405601, 19.340392048829298,
+    373.16003786741715, 21.990812779775627, 20.551126313508103, 1095.7616558437514,
+    128.2821855141343, 353.98937845610436, 128.48294092142265, 128.3313222823885,
+    973.734371534469, 14.346053394960391, 284.9961260178103, 15.760245414472633,
+    15.971822802157046, 0.21507815444592981, 0.021959458307430575, 0.0270444167839668,
+    0.022870903706365475, 0.02292854948416408, 1430.4113568040618, 0.0013467117141041413,
+    375.45485212069116, 14.899893487721414, 0.2292436054644116, 21086.621190928643,
+    4212.033871412445, 8599.46497870955, 5106.357037872643, 5033.141024160028,
+    17742.809839744496, 3598.2019335032996, 6498.6777011709755, 3893.5666441298326,
+    3832.499498174684, 19789.925203534207, 4587.773047030696, 8515.295803493897,
+    5510.870167544202, 5483.407276382322, 67.6686830297047, 791.2716754125461,
+    0.4692094793687217, 16.43903704863582, 0.5271557900091806, 0.48818670810814985,
+    35.13153049202667, 78386055.83863987, 28.985155161130727, 0.8234487518647802,
+    3749.143841122248, 1384.6054616998626, 0.08073756379273574, 21.99731777703975,
+    1213821479.3158133, 3.7841207060077893
   ]
 }
 "#;
@@ -191,79 +95,28 @@ const SCALER_PARAMS_JSON: &str = r#"
 const MODEL_METADATA_JSON: &str = r#"
 {
     "feature_names": [
-        "Time step",
-        "num_txs_as_sender",
-        "num_txs_as receiver",
-        "first_block_appeared_in",
-        "last_block_appeared_in",
-        "lifetime_in_blocks",
-        "total_txs",
-        "first_sent_block",
-        "first_received_block",
-        "num_timesteps_appeared_in",
-        "btc_transacted_total",
-        "btc_transacted_min",
-        "btc_transacted_max",
-        "btc_transacted_mean",
-        "btc_transacted_median",
-        "btc_sent_total",
-        "btc_sent_min",
-        "btc_sent_max",
-        "btc_sent_mean",
-        "btc_sent_median",
-        "btc_received_total",
-        "btc_received_min",
-        "btc_received_max",
-        "btc_received_mean",
-        "btc_received_median",
-        "fees_total",
-        "fees_min",
-        "fees_max",
-        "fees_mean",
-        "fees_median",
-        "fees_as_share_total",
-        "fees_as_share_min",
-        "fees_as_share_max",
-        "fees_as_share_mean",
-        "fees_as_share_median",
-        "blocks_btwn_txs_total",
-        "blocks_btwn_txs_min",
-        "blocks_btwn_txs_max",
-        "blocks_btwn_txs_mean",
-        "blocks_btwn_txs_median",
-        "blocks_btwn_input_txs_total",
-        "blocks_btwn_input_txs_min",
-        "blocks_btwn_input_txs_max",
-        "blocks_btwn_input_txs_mean",
-        "blocks_btwn_input_txs_median",
-        "blocks_btwn_output_txs_total",
-        "blocks_btwn_output_txs_min",
-        "blocks_btwn_output_txs_max",
-        "blocks_btwn_output_txs_mean",
-        "blocks_btwn_output_txs_median",
-        "num_addr_transacted_multiple",
-        "transacted_w_address_total",
-        "transacted_w_address_min",
-        "transacted_w_address_max",
-        "transacted_w_address_mean",
-        "transacted_w_address_median",
-        "partner_transaction_ratio",
-        "activity_density",
-        "transaction_size_variance",
-        "flow_imbalance",
-        "temporal_spread",
-        "fee_percentile",
-        "interaction_intensity",
-        "value_per_transaction",
-        "burst_activity",
-        "mixing_intensity"
+        "Time step", "num_txs_as_sender", "num_txs_as receiver", "first_block_appeared_in",
+        "last_block_appeared_in", "lifetime_in_blocks", "total_txs", "first_sent_block",
+        "first_received_block", "num_timesteps_appeared_in", "btc_transacted_total",
+        "btc_transacted_min", "btc_transacted_max", "btc_transacted_mean", "btc_transacted_median",
+        "btc_sent_total", "btc_sent_min", "btc_sent_max", "btc_sent_mean", "btc_sent_median",
+        "btc_received_total", "btc_received_min", "btc_received_max", "btc_received_mean",
+        "btc_received_median", "fees_total", "fees_min", "fees_max", "fees_mean", "fees_median",
+        "fees_as_share_total", "fees_as_share_min", "fees_as_share_max", "fees_as_share_mean",
+        "fees_as_share_median", "blocks_btwn_txs_total", "blocks_btwn_txs_min", "blocks_btwn_txs_max",
+        "blocks_btwn_txs_mean", "blocks_btwn_txs_median", "blocks_btwn_input_txs_total",
+        "blocks_btwn_input_txs_min", "blocks_btwn_input_txs_max", "blocks_btwn_input_txs_mean",
+        "blocks_btwn_input_txs_median", "blocks_btwn_output_txs_total", "blocks_btwn_output_txs_min",
+        "blocks_btwn_output_txs_max", "blocks_btwn_output_txs_mean", "blocks_btwn_output_txs_median",
+        "num_addr_transacted_multiple", "transacted_w_address_total", "transacted_w_address_min",
+        "transacted_w_address_max", "transacted_w_address_mean", "transacted_w_address_median",
+        "partner_transaction_ratio", "activity_density", "transaction_size_variance",
+        "flow_imbalance", "temporal_spread", "fee_percentile", "interaction_intensity",
+        "value_per_transaction", "burst_activity", "mixing_intensity"
     ],
     "num_features": 66,
     "deployment_threshold": 0.6010423898696899,
-    "class_names": [
-        "licit",
-        "illicit"
-    ],
+    "class_names": [ "licit", "illicit" ],
     "model_version": "5.0_MLP_Bulletproof",
     "model_type": "MLPClassifier",
     "auc_score": 0.9904840431084402,
@@ -280,6 +133,56 @@ pub struct RansomwareResult {
     pub threshold_used: f64,
     pub transactions_analyzed: u32,
     pub confidence: f64,
+    pub data_source: String,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct MempoolTransaction {
+    pub txid: String,
+    pub version: u32,
+    pub locktime: u32,
+    pub size: u32,
+    pub weight: u32,
+    pub fee: u64,
+    pub vin: Vec<MempoolVin>,
+    pub vout: Vec<MempoolVout>,
+    pub status: Option<MempoolStatus>,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct MempoolVin {
+    pub txid: Option<String>,
+    pub vout: Option<u32>,
+    pub prevout: Option<MempoolPrevout>,
+    pub scriptsig: Option<String>,
+    pub witness: Option<Vec<String>>,
+    pub sequence: Option<u32>,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct MempoolVout {
+    pub scriptpubkey: Option<String>,
+    pub scriptpubkey_asm: Option<String>,
+    pub scriptpubkey_type: Option<String>,
+    pub scriptpubkey_address: Option<String>,
+    pub value: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct MempoolPrevout {
+    pub scriptpubkey: Option<String>,
+    pub scriptpubkey_asm: Option<String>,
+    pub scriptpubkey_type: Option<String>,
+    pub scriptpubkey_address: Option<String>,
+    pub value: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct MempoolStatus {
+    pub confirmed: bool,
+    pub block_height: Option<u64>,
+    pub block_hash: Option<String>,
+    pub block_time: Option<u64>,
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
@@ -334,18 +237,14 @@ fn init() {
             scaler_scale: scaler_data.scale,
         });
     });
-    // tes aja
     ic_cdk::println!("[init] ✅ Metadata loaded successfully.");
 
     // Load model from embedded bytes
     ic_cdk::println!("[init] Loading embedded ONNX model...");
     let model_vec = MODEL_BYTES.to_vec();
 
-    // We pass a clone to the loading function so we can still own the original vector
     match load_model_from_bytes(model_vec.clone()) {
         Ok(msg) => {
-            // ✅ THE CRITICAL FIX: Save the raw model bytes to the thread_local state
-            // so that the pre_upgrade hook can access and save them.
             RAW_MODEL_BYTES.with(|b| *b.borrow_mut() = model_vec);
             ic_cdk::println!("[init] ✅ Embedded model loaded and raw bytes stored: {}", msg);
         }
@@ -374,8 +273,6 @@ fn post_upgrade() {
             
             match load_model_from_bytes(model_bytes.clone()) {
                 Ok(_) => {
-                    // Now that the model is loaded, also save the bytes back to the thread_local state
-                    // for the *next* pre_upgrade cycle.
                     METADATA.with(|m| *m.borrow_mut() = metadata_opt);
                     RAW_MODEL_BYTES.with(|b| *b.borrow_mut() = model_bytes);
                     ic_cdk::println!("[post_upgrade] ✅ State restored successfully ({} model bytes).", model_bytes_len);
@@ -396,13 +293,11 @@ pub async fn upload_model_chunk(chunk: ModelChunk) -> Result<String, String> {
     MODEL_CHUNKS.with(|chunks_ref| {
         let mut chunks = chunks_ref.borrow_mut();
         
-        // Validate chunk ID
         if chunk.chunk_id >= chunk.total_chunks {
             return Err(format!("Invalid chunk_id: {} >= total_chunks: {}", 
-                              chunk.chunk_id, chunk.total_chunks));
+                                chunk.chunk_id, chunk.total_chunks));
         }
         
-        // Set expected total chunks on first chunk, or validate consistency
         EXPECTED_TOTAL_CHUNKS.with(|total_ref| {
             let mut total = total_ref.borrow_mut();
             match *total {
@@ -422,39 +317,33 @@ pub async fn upload_model_chunk(chunk: ModelChunk) -> Result<String, String> {
             Ok(())
         })?;
         
-        // Check for duplicate chunks
         if chunks.contains_key(&chunk.chunk_id) {
             return Err(format!("Chunk {} already received", chunk.chunk_id));
         }
         
-        // 🔥 ADD HEX DECODING HERE - BEFORE STORING THE CHUNK 🔥
-        let original_size = chunk.data.len(); // Store original size before moving
+        let original_size = chunk.data.len();
         let binary_data = if chunk.data.len() > 0 && chunk.data.iter().all(|&b| 
             (b >= b'0' && b <= b'9') || (b >= b'a' && b <= b'f') || (b >= b'A' && b <= b'F')
         ) {
-            // It's a hex string - decode it
             ic_cdk::println!("Detected hex string, decoding...");
             let hex_string = String::from_utf8(chunk.data)
                 .map_err(|e| format!("Invalid hex string: {}", e))?;
             hex::decode(hex_string)
                 .map_err(|e| format!("Hex decode failed: {}", e))?
         } else {
-            // It's already binary
             ic_cdk::println!("Data appears to be binary already");
             chunk.data
         };
         
         let chunk_size = binary_data.len();
         ic_cdk::println!("Storing chunk {}/{} ({} bytes, original: {} bytes)", 
-                        chunk.chunk_id + 1, chunk.total_chunks, chunk_size, original_size);
+                         chunk.chunk_id + 1, chunk.total_chunks, chunk_size, original_size);
         
-        // Store the DECODED binary data (not the original chunk.data)
         chunks.insert(chunk.chunk_id, binary_data);
         
         let current_count = chunks.len() as u32;
         
         if current_count == chunk.total_chunks {
-            // All chunks received, reconstruct the model
             ic_cdk::println!("All {} chunks received, reconstructing model...", current_count);
             
             let mut model_bytes = Vec::new();
@@ -471,10 +360,8 @@ pub async fn upload_model_chunk(chunk: ModelChunk) -> Result<String, String> {
             
             ic_cdk::println!("Reconstructed model: {} bytes total", total_size);
             
-            // Load the complete model
             match load_complete_model(model_bytes) {
                 Ok(msg) => {
-                    // Clear chunks after successful loading
                     chunks.clear();
                     EXPECTED_TOTAL_CHUNKS.with(|total_ref| {
                         *total_ref.borrow_mut() = None;
@@ -483,7 +370,6 @@ pub async fn upload_model_chunk(chunk: ModelChunk) -> Result<String, String> {
                     Ok(format!("All chunks received and model loaded successfully: {}", msg))
                 }
                 Err(e) => {
-                    // Clear chunks on error
                     chunks.clear();
                     EXPECTED_TOTAL_CHUNKS.with(|total_ref| {
                         *total_ref.borrow_mut() = None;
@@ -502,17 +388,13 @@ pub async fn upload_model_chunk(chunk: ModelChunk) -> Result<String, String> {
 fn load_complete_model(model_bytes: Vec<u8>) -> Result<String, String> {
     ic_cdk::println!("Loading ONNX model from {} bytes...", model_bytes.len());
     
-    // 🔍 DEBUG: Check the first 32 bytes to see if it looks like valid ONNX
     if model_bytes.len() >= 32 {
         let first_32: Vec<u8> = model_bytes.iter().take(32).cloned().collect();
         ic_cdk::println!("First 32 bytes: {:?}", first_32);
         
-        // Convert to string to see if it's readable
         let first_32_string = String::from_utf8_lossy(&first_32);
         ic_cdk::println!("First 32 bytes as string: {:?}", first_32_string);
         
-        // Check for ONNX magic bytes (should start with protobuf-like data)
-        // ONNX files typically start with 0x08 (field 1, varint) or similar protobuf markers
         if first_32[0] == 0x08 {
             ic_cdk::println!("✅ Looks like valid protobuf start (0x08)");
         } else {
@@ -520,13 +402,11 @@ fn load_complete_model(model_bytes: Vec<u8>) -> Result<String, String> {
         }
     }
     
-    // 🔍 DEBUG: Also check the last 32 bytes
     if model_bytes.len() >= 32 {
         let last_32: Vec<u8> = model_bytes.iter().rev().take(32).rev().cloned().collect();
         ic_cdk::println!("Last 32 bytes: {:?}", last_32);
     }
     
-    // Try to load the model with tract-onnx
     ic_cdk::println!("Attempting to parse ONNX model with tract-onnx...");
     
     let model = tract_onnx::onnx()
@@ -546,7 +426,6 @@ fn load_complete_model(model_bytes: Vec<u8>) -> Result<String, String> {
             format!("Failed to make model runnable: {}", e)
         })?;
 
-    // Validate model input shape
     let input_facts = model.model().input_outlets().unwrap();
     if let Some(input_fact) = input_facts.get(0) {
         let input_info = model.model().outlet_fact(*input_fact).unwrap();
@@ -569,7 +448,6 @@ pub fn get_upload_status() -> String {
             let total = total_ref.borrow();
             match *total {
                 Some(expected) => {
-                    // ✅ FIX: Added underscore to silence unused variable warning.
                     let _received_chunks: Vec<u32> = chunks.keys().cloned().collect();
                     let missing_chunks: Vec<u32> = (0..expected)
                         .filter(|i| !chunks.contains_key(i))
@@ -579,7 +457,7 @@ pub fn get_upload_status() -> String {
                         format!("✅ All chunks received: {}/{}", chunks.len(), expected)
                     } else {
                         format!("📦 Chunks received: {}/{} | Missing: {:?}", 
-                               chunks.len(), expected, missing_chunks)
+                                chunks.len(), expected, missing_chunks)
                     }
                 }
                 None => "No upload in progress".to_string()
@@ -616,7 +494,7 @@ pub fn get_memory_usage() -> String {
     });
     
     format!("Chunks in memory: {} bytes | Model loaded: {}", 
-           chunks_memory, model_loaded)
+            chunks_memory, model_loaded)
 }
 
 fn load_model_from_bytes(model_bytes: Vec<u8>) -> Result<String, String> {
@@ -634,106 +512,364 @@ fn load_model_from_bytes(model_bytes: Vec<u8>) -> Result<String, String> {
 
 // --- CORE LOGIC ---
 #[update]
-pub async fn predict_from_features(address: String, features: Vec<f32>) -> Result<RansomwareResult, String> {
-    ic_cdk::println!("Received feature vector with {} elements for address: {}", features.len(), &address);
-
-    // Langsung panggil fungsi prediksi inti.
-    // Kita set `transactions_analyzed` ke 0 karena canister tidak tahu jumlahnya,
-    // atau Anda bisa menambahkannya sebagai parameter jika perlu.
-    predict_ransomware(features, &address, 0)
-}
-
-#[update]
 pub async fn analyze_address(address: String) -> Result<RansomwareResult, String> {
-    let transactions = fetch_transactions(&address).await?;
-    let feature_vector = extract_features(&transactions, &address)?;
-    predict_ransomware(feature_vector, &address, transactions.len() as u32)
+    let transactions = fetch_transactions_mempool(&address).await?;
+    let converted_transactions = convert_mempool_to_blockchain_format(&transactions, &address)?;
+    let feature_vector = extract_features(&converted_transactions, &address)?;
+    let mut result = predict_ransomware(feature_vector, &address, transactions.len() as u32)?;
+    // Now that we have the result, we can set the data source.
+    result.data_source = "mempool.space".to_string();
+    Ok(result)
 }
 
-async fn fetch_transactions(address: &str) -> Result<Vec<Value>, String> {
+async fn fetch_transactions_mempool(address: &str) -> Result<Vec<MempoolTransaction>, String> {
     let mut all_transactions = Vec::new();
-    let mut offset = 0;
-    
-    // ✅ FIX 1: Use a safer, smaller page size and a total transaction limit.
-    const LIMIT: u32 = 50; // A much safer page size
-    const MAX_TRANSACTIONS: u32 = 500; // Safety break: Fetch a max of 500 transactions.
+    let mut last_seen_txid: Option<String> = None;
+    let mut page = 1;
+    const PAGE_SIZE: usize = 25;
+    const MAX_PAGES: usize = 50;
 
-    ic_cdk::println!("Fetching up to {} transactions for address {}", MAX_TRANSACTIONS, address);
+    ic_cdk::println!("Fetching transactions from mempool.space for address: {}", address);
 
     loop {
-        let url = format!(
-            "https://blockchain.info/rawaddr/{}?limit={}&offset={}",
-            address, LIMIT, offset
-        );
-        ic_cdk::println!("Fetching page (offset {}): {}", offset, url);
+        let url = if let Some(ref txid) = last_seen_txid {
+            format!("https://mempool.space/api/address/{}/txs?after_txid={}", address, txid)
+        } else {
+            format!("https://mempool.space/api/address/{}/txs", address)
+        };
+
+        ic_cdk::println!("Fetching page {}: {}", page, url);
 
         let request = CanisterHttpRequestArgument {
             url,
             method: HttpMethod::GET,
             body: None,
-            max_response_bytes: Some(2_000_000), // The IC's hard limit
+            max_response_bytes: Some(2_000_000),
             transform: None,
             headers: vec![],
         };
-        
+
         let cycles = 40_000_000_000u128;
 
         match http_request(request, cycles).await {
             Ok((response,)) => {
                 let status_code: u64 = response.status.0.to_u64().unwrap_or(0);
                 
-                // ✅ FIX 3: Handle API errors for invalid addresses
-                if status_code >= 400 {
-                    // blockchain.info returns non-JSON text for errors like "Invalid Bitcoin Address"
+                if status_code == 404 {
+                    if let Some(ref txid) = last_seen_txid {
+                        let alt_url = format!("https://mempool.space/api/address/{}/txs/chain/{}", address, txid);
+                        ic_cdk::println!("Trying alternative pagination: {}", alt_url);
+                        
+                        let alt_request = CanisterHttpRequestArgument {
+                            url: alt_url,
+                            method: HttpMethod::GET,
+                            body: None,
+                            max_response_bytes: Some(2_000_000),
+                            transform: None,
+                            headers: vec![],
+                        };
+
+                        match http_request(alt_request, cycles).await {
+                            Ok((alt_response,)) => {
+                                let alt_status: u64 = alt_response.status.0.to_u64().unwrap_or(0);
+                                if alt_status == 404 {
+                                    ic_cdk::println!("Reached end of pagination");
+                                    break;
+                                }
+                                let json: Value = serde_json::from_slice(&alt_response.body)
+                                    .map_err(|e| format!("Failed to parse alternative API response: {}", e))?;
+                                
+                                let txs_batch = parse_mempool_transactions(&json)?;
+                                if txs_batch.is_empty() {
+                                    break;
+                                }
+                                
+                                let new_txids: HashSet<String> = txs_batch.iter().map(|tx: &MempoolTransaction| tx.txid.clone()).collect();
+                                let existing_txids: HashSet<String> = all_transactions.iter().map(|tx: &MempoolTransaction| tx.txid.clone()).collect();
+                                
+                                if new_txids.is_subset(&existing_txids) {
+                                    ic_cdk::println!("All transactions in batch are duplicates");
+                                    break;
+                                }
+                                
+                                let new_transactions: Vec<MempoolTransaction> = txs_batch
+                                    .into_iter()
+                                    .filter(|tx| !existing_txids.contains(&tx.txid))
+                                    .collect();
+                                
+                                ic_cdk::println!("Page {}: Found {} new transactions", page, new_transactions.len());
+                                
+                                if !new_transactions.is_empty() {
+                                    last_seen_txid = Some(new_transactions.last().unwrap().txid.clone());
+                                    all_transactions.extend(new_transactions);
+                                }
+                            }
+                            Err((code, msg)) => {
+                                ic_cdk::println!("Alternative pagination failed: {:?} - {}", code, msg);
+                                break;
+                            }
+                        }
+                    } else {
+                        ic_cdk::println!("404 error on first request - invalid address or no transactions");
+                        break;
+                    }
+                } else if status_code >= 400 {
                     let error_message = String::from_utf8_lossy(&response.body);
-                    return Err(format!(
-                        "API Error ({}): {}",
-                        status_code, error_message
-                    ));
-                }
+                    return Err(format!("Mempool API Error ({}): {}", status_code, error_message));
+                } else {
+                    let json: Value = serde_json::from_slice(&response.body)
+                        .map_err(|e| format!("Failed to parse mempool API response: {}", e))?;
+                    
+                    let txs_batch = parse_mempool_transactions(&json)?;
+                    if txs_batch.is_empty() {
+                        ic_cdk::println!("No more transactions found");
+                        break;
+                    }
+                    
+                    let new_txids: HashSet<String> = txs_batch.iter().map(|tx: &MempoolTransaction| tx.txid.clone()).collect();
+                    let existing_txids: HashSet<String> = all_transactions.iter().map(|tx: &MempoolTransaction| tx.txid.clone()).collect();
+                    
+                    if new_txids.is_subset(&existing_txids) {
+                        ic_cdk::println!("All transactions in batch are duplicates");
+                        break;
+                    }
 
-                // Try to parse as JSON, if it fails, it might be an unhandled error from the API
-                let json: Value = serde_json::from_slice(&response.body)
-                    .map_err(|e| format!("Failed to parse API JSON response: {}. Body: {}", e, String::from_utf8_lossy(&response.body)))?;
-                
-                let transactions = json["txs"].as_array().unwrap_or(&vec![]).clone();
-                let num_fetched = transactions.len();
-                all_transactions.extend(transactions);
-
-                // If we fetched fewer than the limit, it means we've reached the end of the history
-                if num_fetched < LIMIT as usize {
-                    break;
-                }
-                
-                offset += LIMIT;
-                // If we have hit our total transaction limit, stop fetching.
-                if offset >= MAX_TRANSACTIONS {
-                    ic_cdk::println!("Reached max transaction limit of {}. Stopping pagination.", MAX_TRANSACTIONS);
-                    break;
+                    // ✅ FIX: Check the length *before* consuming txs_batch
+                    let batch_len = txs_batch.len();
+                    
+                    let new_transactions: Vec<MempoolTransaction> = txs_batch
+                        .into_iter() // txs_batch is moved here
+                        .filter(|tx| !existing_txids.contains(&tx.txid))
+                        .collect();
+                    
+                    ic_cdk::println!("Page {}: Found {} new transactions", page, new_transactions.len());
+                    
+                    if !new_transactions.is_empty() {
+                        last_seen_txid = Some(new_transactions.last().unwrap().txid.clone());
+                        all_transactions.extend(new_transactions);
+                    }
+                    
+                    // Now, use the saved length for the check
+                    if batch_len < PAGE_SIZE {
+                        ic_cdk::println!("Received partial page, might be at end");
+                    }
                 }
             }
             Err((code, msg)) => {
                 if msg.contains("Http body exceeds size limit") {
-                    // This is a special case for "mega-whale" addresses
-                    let error_msg = format!(
-                        "Address history is too large. Processed {} transactions before hitting 2MB API limit.",
-                        all_transactions.len()
-                    );
-                    ic_cdk::println!("{}", error_msg);
-                    // We can choose to either return an error OR proceed with the data we have.
-                    // Let's proceed with the data we managed to get.
-                    break; 
+                    ic_cdk::println!("Address history too large. Processed {} transactions", all_transactions.len());
+                    break;
                 }
                 return Err(format!("Outbound call failed: {:?} - {}", code, msg));
             }
         }
+        
+        page += 1;
+        if page > MAX_PAGES {
+            ic_cdk::println!("Safety limit reached at page {}", page);
+            break;
+        }
     }
-    
-    ic_cdk::println!("Total transactions to be analyzed: {}", all_transactions.len());
+
+    ic_cdk::println!("Total transactions fetched: {}", all_transactions.len());
     Ok(all_transactions)
 }
 
+fn parse_mempool_transactions(json: &Value) -> Result<Vec<MempoolTransaction>, String> {
+    let transactions_array = json.as_array()
+        .ok_or("Expected array of transactions")?;
+    
+    let mut transactions = Vec::new();
+    
+    for tx_value in transactions_array {
+        let tx = parse_single_mempool_transaction(tx_value)?;
+        transactions.push(tx);
+    }
+    
+    Ok(transactions)
+}
+
+fn parse_single_mempool_transaction(tx_value: &Value) -> Result<MempoolTransaction, String> {
+    let txid = tx_value["txid"].as_str()
+        .ok_or("Missing txid")?
+        .to_string();
+    
+    let version = tx_value["version"].as_u64().unwrap_or(1) as u32;
+    let locktime = tx_value["locktime"].as_u64().unwrap_or(0) as u32;
+    let size = tx_value["size"].as_u64().unwrap_or(0) as u32;
+    let weight = tx_value["weight"].as_u64().unwrap_or(0) as u32;
+    let fee = tx_value["fee"].as_u64().unwrap_or(0);
+    
+    let mut vin = Vec::new();
+    if let Some(inputs_array) = tx_value["vin"].as_array() {
+        for input_value in inputs_array {
+            let input = parse_mempool_vin(input_value)?;
+            vin.push(input);
+        }
+    }
+    
+    let mut vout = Vec::new();
+    if let Some(outputs_array) = tx_value["vout"].as_array() {
+        for output_value in outputs_array {
+            let output = parse_mempool_vout(output_value)?;
+            vout.push(output);
+        }
+    }
+    
+    let status = if let Some(status_value) = tx_value.get("status") {
+        Some(parse_mempool_status(status_value)?)
+    } else {
+        None
+    };
+    
+    Ok(MempoolTransaction {
+        txid, version, locktime, size, weight, fee, vin, vout, status,
+    })
+}
+
+fn parse_mempool_vin(input_value: &Value) -> Result<MempoolVin, String> {
+    let txid = input_value["txid"].as_str().map(|s| s.to_string());
+    let vout = input_value["vout"].as_u64().map(|v| v as u32);
+    let scriptsig = input_value["scriptsig"].as_str().map(|s| s.to_string());
+    let sequence = input_value["sequence"].as_u64().map(|s| s as u32);
+    
+    let witness = if let Some(witness_array) = input_value["witness"].as_array() {
+        Some(witness_array.iter()
+            .filter_map(|w| w.as_str().map(|s| s.to_string()))
+            .collect())
+    } else {
+        None
+    };
+    
+    let prevout = if let Some(prevout_value) = input_value.get("prevout") {
+        Some(parse_mempool_prevout(prevout_value)?)
+    } else {
+        None
+    };
+    
+    Ok(MempoolVin { txid, vout, prevout, scriptsig, witness, sequence })
+}
+
+fn parse_mempool_vout(output_value: &Value) -> Result<MempoolVout, String> {
+    let scriptpubkey = output_value["scriptpubkey"].as_str().map(|s| s.to_string());
+    let scriptpubkey_asm = output_value["scriptpubkey_asm"].as_str().map(|s| s.to_string());
+    let scriptpubkey_type = output_value["scriptpubkey_type"].as_str().map(|s| s.to_string());
+    let scriptpubkey_address = output_value["scriptpubkey_address"].as_str().map(|s| s.to_string());
+    let value = output_value["value"].as_u64().unwrap_or(0);
+    
+    Ok(MempoolVout {
+        scriptpubkey, scriptpubkey_asm, scriptpubkey_type, scriptpubkey_address, value,
+    })
+}
+
+fn parse_mempool_prevout(prevout_value: &Value) -> Result<MempoolPrevout, String> {
+    let scriptpubkey = prevout_value["scriptpubkey"].as_str().map(|s| s.to_string());
+    let scriptpubkey_asm = prevout_value["scriptpubkey_asm"].as_str().map(|s| s.to_string());
+    let scriptpubkey_type = prevout_value["scriptpubkey_type"].as_str().map(|s| s.to_string());
+    let scriptpubkey_address = prevout_value["scriptpubkey_address"].as_str().map(|s| s.to_string());
+    let value = prevout_value["value"].as_u64().unwrap_or(0);
+    
+    Ok(MempoolPrevout {
+        scriptpubkey, scriptpubkey_asm, scriptpubkey_type, scriptpubkey_address, value,
+    })
+}
+
+fn parse_mempool_status(status_value: &Value) -> Result<MempoolStatus, String> {
+    let confirmed = status_value["confirmed"].as_bool().unwrap_or(false);
+    let block_height = status_value["block_height"].as_u64();
+    let block_hash = status_value["block_hash"].as_str().map(|s| s.to_string());
+    let block_time = status_value["block_time"].as_u64();
+    
+    Ok(MempoolStatus { confirmed, block_height, block_hash, block_time })
+}
+
+// ✅ FIX 4: Silenced unused variable warning by prefixing with an underscore.
+fn convert_mempool_to_blockchain_format(mempool_txs: &[MempoolTransaction], _target_address: &str) -> Result<Vec<Value>, String> {
+    let mut blockchain_txs = Vec::new();
+    
+    for mempool_tx in mempool_txs {
+        let mut blockchain_tx = serde_json::json!({
+            "hash": mempool_tx.txid,
+            "ver": mempool_tx.version,
+            "vin_sz": mempool_tx.vin.len(),
+            "vout_sz": mempool_tx.vout.len(),
+            "size": mempool_tx.size,
+            "weight": mempool_tx.weight,
+            "fee": mempool_tx.fee,
+            "lock_time": mempool_tx.locktime,
+            "double_spend": false,
+            "inputs": [],
+            "out": []
+        });
+        
+        if let Some(ref status) = mempool_tx.status {
+            if status.confirmed {
+                blockchain_tx["time"] = serde_json::Value::Number(
+                    status.block_time.unwrap_or(0).into()
+                );
+                blockchain_tx["block_height"] = serde_json::Value::Number(
+                    status.block_height.unwrap_or(0).into()
+                );
+                blockchain_tx["block_index"] = serde_json::Value::Number(
+                    status.block_height.unwrap_or(0).into()
+                );
+            } else {
+                blockchain_tx["time"] = serde_json::Value::Number(0.into());
+                blockchain_tx["block_height"] = serde_json::Value::Number(0.into());
+                blockchain_tx["block_index"] = serde_json::Value::Number(0.into());
+            }
+        }
+        
+        let mut inputs = Vec::new();
+        for vin in &mempool_tx.vin {
+            if let Some(ref prevout) = vin.prevout {
+                let input = serde_json::json!({
+                    "sequence": vin.sequence.unwrap_or(0),
+                    "witness": vin.witness.as_ref().unwrap_or(&vec![]),
+                    "script": vin.scriptsig.as_ref().unwrap_or(&String::new()),
+                    "prev_out": {
+                        "type": 0,
+                        "spent": true,
+                        "value": prevout.value,
+                        "script": prevout.scriptpubkey.as_ref().unwrap_or(&String::new()),
+                        "addr": prevout.scriptpubkey_address.as_ref().unwrap_or(&String::new())
+                    }
+                });
+                inputs.push(input);
+            }
+        }
+        blockchain_tx["inputs"] = serde_json::Value::Array(inputs);
+        
+        let mut outputs = Vec::new();
+        for (i, vout) in mempool_tx.vout.iter().enumerate() {
+            let output = serde_json::json!({
+                "type": 0,
+                "spent": false,
+                "value": vout.value,
+                "n": i,
+                "script": vout.scriptpubkey.as_ref().unwrap_or(&String::new()),
+                "addr": vout.scriptpubkey_address.as_ref().unwrap_or(&String::new())
+            });
+            outputs.push(output);
+        }
+        blockchain_tx["out"] = serde_json::Value::Array(outputs);
+        
+        blockchain_txs.push(blockchain_tx);
+    }
+    
+    Ok(blockchain_txs)
+}
+
+fn filter_confirmed_transactions(transactions: &[Value]) -> Vec<Value> {
+    transactions.iter()
+        .filter(|tx| tx["block_height"].as_u64().unwrap_or(0) > 0)
+        .cloned()
+        .collect()
+}
+
 fn extract_features(transactions: &[Value], target_address: &str) -> Result<Vec<f32>, String> {
+    let confirmed_transactions = filter_confirmed_transactions(transactions);
+    
     let mut features = HashMap::new();
     
     let mut block_heights_u64 = Vec::new();
@@ -748,7 +884,7 @@ fn extract_features(transactions: &[Value], target_address: &str) -> Result<Vec<
     
     const SATOSHI_TO_BTC: f64 = 100_000_000.0;
 
-    for tx in transactions {
+    for tx in &confirmed_transactions {
         let tx_block = tx["block_height"].as_u64().unwrap_or(0);
         let tx_fee_satoshi = tx["fee"].as_u64().unwrap_or(0) as f64;
         
@@ -789,7 +925,7 @@ fn extract_features(transactions: &[Value], target_address: &str) -> Result<Vec<
         }
 
         if total_received_satoshi > 0.0 {
-             let received_btc = total_received_satoshi / SATOSHI_TO_BTC;
+            let received_btc = total_received_satoshi / SATOSHI_TO_BTC;
             received_values_btc.push(received_btc);
             all_transaction_values_btc.push(received_btc);
             if tx_block > 0 {
@@ -802,7 +938,7 @@ fn extract_features(transactions: &[Value], target_address: &str) -> Result<Vec<
     
     populate_base_features(
         &mut features,
-        transactions.len(),
+        confirmed_transactions.len(),
         &sent_values_btc,
         &received_values_btc,
         &all_transaction_values_btc,
@@ -853,7 +989,7 @@ fn populate_base_features(
     if !sent_blocks_u64.is_empty() {
         features.insert("first_sent_block".to_string(), *sent_blocks_u64.iter().min().unwrap() as f64);
     }
-     if !received_blocks_u64.is_empty() {
+   if !received_blocks_u64.is_empty() {
         features.insert("first_received_block".to_string(), *received_blocks_u64.iter().min().unwrap() as f64);
     }
 
@@ -939,7 +1075,7 @@ fn predict_ransomware(
         // Apply scaling
         for (i, feature) in features.iter_mut().enumerate() {
             if let (Some(mean), Some(scale)) = (metadata.scaler_mean.get(i), metadata.scaler_scale.get(i)) {
-                if *scale > 1e-9 { // Avoid division by zero
+                if *scale > 1e-9 {
                     *feature = ((*feature as f64 - mean) / scale) as f32;
                 }
             }
@@ -956,7 +1092,6 @@ fn predict_ransomware(
             let result = model.run(tvec!(input_tensor.into()))
                 .map_err(|e| format!("Inference failed: {}", e))?;
             
-            // ✅ FIX: The 'probabilities' tensor is the SECOND output, at index 1.
             if result.len() < 2 {
                 return Err(format!("Model returned {} outputs, but expected 2 (label, probabilities).", result.len()));
             }
@@ -964,12 +1099,10 @@ fn predict_ransomware(
             let probabilities_view = result[1].to_array_view::<f32>()
                  .map_err(|e| format!("Failed to extract probabilities from output[1]: {}", e))?;
             
-            // The output shape is [1, 2]. We want the probability of the 'illicit' class (index 1).
             let ransomware_probability = probabilities_view[[0, 1]] as f64;
             
             let is_ransomware = ransomware_probability >= metadata.threshold;
             
-            // Improved confidence logic to prevent division by zero
             let confidence = if is_ransomware {
                 (ransomware_probability - metadata.threshold) / (1.0 - metadata.threshold).max(1e-9)
             } else {
@@ -978,6 +1111,8 @@ fn predict_ransomware(
             
             let confidence_level = if confidence > 0.66 { "HIGH" } else if confidence > 0.33 { "MEDIUM" } else { "LOW" };
             
+            // ✅ FIX 3: Added the missing `data_source` field to the initializer.
+            // We use an empty string as a placeholder, which the calling function will overwrite.
             Ok(RansomwareResult {
                 address: address.to_string(),
                 ransomware_probability,
@@ -985,7 +1120,8 @@ fn predict_ransomware(
                 confidence_level: confidence_level.to_string(),
                 threshold_used: metadata.threshold,
                 transactions_analyzed: transaction_count,
-                confidence
+                confidence,
+                data_source: String::new(), // Placeholder value
             })
         })
     })
@@ -1043,7 +1179,6 @@ fn insert_stats(features: &mut HashMap<String, f64>, prefix: &str, values: &[f64
 }
 
 fn get_feature_names() -> Vec<String> {
-    // This exact order is critical. It must match the training script's output.
     vec![
         "Time step", "num_txs_as_sender", "num_txs_as_receiver", "first_block_appeared_in", 
         "last_block_appeared_in", "lifetime_in_blocks", "total_txs", "first_sent_block", 
