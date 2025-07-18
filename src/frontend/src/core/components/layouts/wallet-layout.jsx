@@ -20,6 +20,7 @@ function normalize(path) {
 function WalletLayoutContent() {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { isLoading, userWallet, isCreatingWallet, network, setNetwork } =
@@ -44,15 +45,6 @@ function WalletLayoutContent() {
       path: "/wallet/transaction-history",
     },
     { label: "Scan History", icon: "history", path: "/wallet/scan-history" },
-    { label: "Setting", icon: "setting-wallet", path: "/wallet/setting" },
-    {
-      label: "Logout",
-      icon: "logout",
-      onClick: () => {
-        navigate("/");
-        logout();
-      },
-    },
   ];
 
   // Close dropdown when clicking outside
@@ -61,13 +53,16 @@ function WalletLayoutContent() {
       if (isDropdownOpen && !event.target.closest(".network-dropdown")) {
         setIsDropdownOpen(false);
       }
+      if (isProfileDropdownOpen && !event.target.closest(".profile-dropdown")) {
+        setIsProfileDropdownOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isProfileDropdownOpen]);
 
   const handleNetworkChange = (selectedNetwork) => {
     setNetwork(selectedNetwork);
@@ -113,7 +108,7 @@ function WalletLayoutContent() {
                 <button
                   key={item.label}
                   onClick={item.onClick}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"
+                  className={`flex items-center gap-3 px-4 py-3 font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"
                     }`}
                 >
                   <img src={iconSrc} alt={item.label} className="w-5 h-5" />
@@ -123,7 +118,7 @@ function WalletLayoutContent() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"
+                  className={`flex items-center gap-3 px-4 py-3 font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"
                     }`}
                 >
                   <img src={iconSrc} alt={item.label} className="w-5 h-5" />
@@ -135,14 +130,14 @@ function WalletLayoutContent() {
         </div>
         {/* Bottom icons */}
         <div className="flex gap-3">
-          <button className="w-10 h-10 flex items-center justify-center rounded bg-[#181C22] hover:bg-[#23282f]">
+          <button className="w-10 h-10 flex items-center justify-center-[#181C22] hover:bg-[#23282f]">
             <img
               src="/assets/GithubLogo.svg"
               alt="Github"
               className="w-6 h-6"
             />
           </button>
-          <button className="w-10 h-10 flex items-center justify-center rounded bg-[#181C22] hover:bg-[#23282f]">
+          <button className="w-10 h-10 flex items-center justify-center-[#181C22] hover:bg-[#23282f]">
             <img src="/assets/XLogo.svg" alt="X" className="w-6 h-6" />
           </button>
         </div>
@@ -150,34 +145,35 @@ function WalletLayoutContent() {
       <main className="flex-1 p-8 overflow-auto">
         <Outlet />
       </main>
-      <aside className="relative w-300 min-h-screen bg-[#0F1219] flex flex-col items-end pt-8 pr-6 pb-4 pl-2 overflow-hidden">
-        {/* Pattern background */}
+      <aside className="relative w-100 min-h-screen bg-[#0F1219] flex flex-col pt-6 pr-6 pb-6 pl-4 overflow-hidden">
+        {/* Pattern background - diperbaiki positioning */}
         <img
-          src="/assets/pattern-sidebar.svg"
+          src="/assets/pattern-sidebar.png"
           alt="Pattern"
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[320px] h-auto opacity-30 z-0 pointer-events-none select-none"
+          className="absolute bottom-0 w-60 right-0 z-0 pointer-events-none select-none object-cover object-bottom-right "
         />
+
         {/* Top action buttons */}
-        <div className="flex flex-col items-end gap-4 w-full z-10">
+        <div className="flex flex-col gap-4 w-full z-10 mb-auto">
           <div className="flex gap-3 w-full justify-end">
             {/* Network Dropdown */}
             <div className="relative network-dropdown">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 bg-[#23272F] px-5 py-2 rounded-md text-white font-light text-base min-w-[140px] shadow hover:bg-[#23282f] transition"
+                className="flex items-center gap-3 bg-[#23272F] px-4 py-2.5 text-white font-medium text-sm w-[190px] hover:bg-[#2A2F36] transition-all"
               >
                 <img
                   src="/assets/icons/construction.svg"
                   alt="All Networks"
-                  className="w-5 h-5"
+                  className="w-6 h-6"
                 />
-                <span className="text-white capitalize">{network}</span>
+                <span className="text-white pr-2 capitalize text-sm">{network}</span>
                 <svg
-                  width="16"
-                  height="16"
+                  width="14"
+                  height="14"
                   fill="none"
                   viewBox="0 0 24 24"
-                  className={`ml-2 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
+                  className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
                     }`}
                 >
                   <path
@@ -192,64 +188,266 @@ function WalletLayoutContent() {
 
               {/* Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full bg-[#23272F] rounded-md shadow-lg border border-[#3A3F47] z-50">
-                  <div className="py-1">
+                <div className="absolute top-full mt-2 w-64 bg-[#3A3F47] shadow-lg border border-[#4A4F57] z-50 overflow-hidden" style={{ left: '-10px' }}>
+                  <div className="py-2">
+                    {/* All Networks */}
                     <button
-                      onClick={() => handleNetworkChange("All Network")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "All Network"
-                          ? "bg-[#3A3F47] text-[#9BEB83]"
-                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                        }`}
+                      onClick={() => handleNetworkChange("All Networks")}
+                      className="w-full text-sm transition-colors group"
                     >
-                      All Network (default)
+                      <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === "All Networks" ? "bg-[#4A4F57]" : ""}`}>
+                        <div className="flex items-center gap-3">
+                          {network === "All Networks" && (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
+                              <path
+                                d="M20 6L9 17l-5-5"
+                                stroke="#9BEB83"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
+                          {network !== "All Networks" && <div className="w-4 h-4"></div>}
+                          <span className="text-white font-medium">All Networks</span>
+                        </div>
+                        <span className="text-[#9CA3AF] text-sm font-medium">$0.00</span>
+                      </div>
                     </button>
+
+                    {/* Divider */}
+                    <div className="h-px bg-[#5A5F67] mx-4"></div>
+
+                    {/* Bitcoin */}
                     <button
                       onClick={() => handleNetworkChange("Bitcoin")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "Bitcoin"
-                          ? "bg-[#3A3F47] text-[#9BEB83]"
-                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                        }`}
+                      className="w-full text-sm transition-colors group"
                     >
-                      Bitcoin
+                      <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === "Bitcoin" ? "bg-[#4A4F57]" : ""}`}>
+                        <div className="flex items-center gap-3">
+                          {network === "Bitcoin" && (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
+                              <path
+                                d="M20 6L9 17l-5-5"
+                                stroke="#9BEB83"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
+                          {network !== "Bitcoin" && <div className="w-4 h-4"></div>}
+                          <span className="text-white">Bitcoin</span>
+                        </div>
+                        <span className="text-[#9CA3AF] text-sm font-medium">$0.00</span>
+                      </div>
                     </button>
+
+                    {/* Divider */}
+                    <div className="h-px bg-[#5A5F67] mx-4"></div>
+
+                    {/* Ethereum */}
                     <button
                       onClick={() => handleNetworkChange("Ethereum")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "Ethereum"
-                          ? "bg-[#3A3F47] text-[#9BEB83]"
-                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                        }`}
+                      className="w-full text-sm transition-colors group"
                     >
-                      Ethereum
+                      <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === "Ethereum" ? "bg-[#4A4F57]" : ""}`}>
+                        <div className="flex items-center gap-3">
+                          {network === "Ethereum" && (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
+                              <path
+                                d="M20 6L9 17l-5-5"
+                                stroke="#9BEB83"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
+                          {network !== "Ethereum" && <div className="w-4 h-4"></div>}
+                          <span className="text-white">Ethereum</span>
+                        </div>
+                        <span className="text-[#9CA3AF] text-sm font-medium">$0.00</span>
+                      </div>
                     </button>
+
+                    {/* Divider */}
+                    <div className="h-px bg-[#5A5F67] mx-4"></div>
+
+                    {/* Fradium */}
                     <button
-                      onClick={() => handleNetworkChange("Solana")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "Solana"
-                          ? "bg-[#3A3F47] text-[#9BEB83]"
-                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                        }`}
+                      onClick={() => handleNetworkChange("Fradium")}
+                      className="w-full text-sm transition-colors group"
                     >
-                      Solana
+                      <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === "Fradium" ? "bg-[#4A4F57]" : ""}`}>
+                        <div className="flex items-center gap-3">
+                          {network === "Fradium" && (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
+                              <path
+                                d="M20 6L9 17l-5-5"
+                                stroke="#9BEB83"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
+                          {network !== "Fradium" && <div className="w-4 h-4"></div>}
+                          <span className="text-white">Fradium</span>
+                        </div>
+                        <span className="text-[#9CA3AF] text-sm font-medium">$0.00</span>
+                      </div>
                     </button>
-                    <button
-                      onClick={() => handleNetworkChange("ICP")}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${network === "ICP"
-                          ? "bg-[#3A3F47] text-[#9BEB83]"
-                          : "text-white hover:bg-[#3A3F47] hover:text-[#9BEB83]"
-                        }`}
-                    >
-                      ICP
+
+                    {/* Divider */}
+                    <div className="h-px bg-[#5A5F67] mx-4"></div>
+
+                    {/* Manage Networks */}
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#9BEB83] hover:bg-[#4A4F57] transition-colors">
+                      <img src="/assets/icons/construction.svg" alt="Manage Networks" />
+                      <span className="font-medium">Manage Networks</span>
                     </button>
                   </div>
                 </div>
               )}
             </div>
-            <button className="flex items-center justify-center bg-[#23272F] w-12 h-12 rounded-md hover:bg-[#23282f] transition">
-              <img
-                src="/assets/icons/person.svg"
-                alt="User"
-                className="w-6 h-6"
-              />
-            </button>
+
+            {/* User Button */}
+            <div className="relative profile-dropdown">
+              <button
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="flex items-center justify-center bg-[#23272F] w-11 h-11 hover:bg-[#2A2F36] transition-all"
+              >
+                <img
+                  src="/assets/icons/person.svg"
+                  alt="User"
+                  className="w-6 h-6"
+                />
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {isProfileDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-[#3A3F47] shadow-lg border border-[#4A4F57] z-50 overflow-hidden" style={{ left: '-210px' }}>
+                  <div className="py-2">
+                    {/* Hide Balance */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
+                          <path d="M1 1l22 22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-white">Hide balance</span>
+                      </div>
+                    </button>
+
+                    {/* Your Addresses */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
+                        <span className="text-white">Your addresses</span>
+                      </div>
+                    </button>
+
+                    {/* Contact */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <img src="/assets/icons/account_box.svg" alt="Contact" />
+                        <span className="text-white">Contact</span>
+                      </div>
+                    </button>
+
+                    {/* Refer Your Friends */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <img src="/assets/icons/share-green.svg" alt="Refer your friends" />
+                        <span className="text-white">Refer your friends</span>
+                      </div>
+                    </button>
+                    <div className="h-px bg-white/5 mx-4"></div>
+
+                    {/* Why Fradium */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
+                          <line x1="12" y1="8" x2="12" y2="12" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                        <span className="text-white">Why Fradium</span>
+                      </div>
+                    </button>
+
+                    {/* Documentation */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <polyline points="14,2 14,8 20,8" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <line x1="16" y1="13" x2="8" y2="13" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <line x1="16" y1="17" x2="8" y2="17" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <polyline points="10,9 9,9 8,9" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-white">Documentation</span>
+                      </div>
+                    </button>
+
+                    {/* Support */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-white">Support</span>
+                      </div>
+                    </button>
+
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <img src="/assets/icons/setting-green.svg" alt="Settings" />
+                        <span className="text-white">Settings</span>
+                      </div>
+                    </button>
+
+                    <div className="h-px bg-white/5 mx-4"></div>
+                    {/* Source Code */}
+                    <button className="w-full text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-white">Source Code</span>
+                      </div>
+                    </button>
+
+                    {/* X Account */}
+                    <button className="w-full mb-2 text-sm transition-colors group">
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-white">X Account</span>
+                      </div>
+                    </button>
+
+                    {/* Logout Button using SidebarButton */}
+                    <div className="mx-4 mt-2">
+                      <SidebarButton
+                        icon="/assets/icons/logout-dark.svg"
+                        onClick={() => {
+                          navigate("/");
+                          logout();
+                        }}
+                      >
+                        Logout
+                      </SidebarButton>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </aside>

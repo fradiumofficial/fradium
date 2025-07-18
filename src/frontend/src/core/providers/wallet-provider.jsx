@@ -19,7 +19,7 @@ export const WalletProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [userWallet, setUserWallet] = useState(null);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
-  const [network, setNetwork] = useState("All Network");
+  const [network, setNetwork] = useState("All Networks");
 
   console.log("User Address", userWallet?.addresses[0]?.address);
 
@@ -84,10 +84,10 @@ export const WalletProvider = ({ children }) => {
           tokenType === "bitcoin"
             ? { Bitcoin: null }
             : tokenType === "ethereum"
-            ? { Ethereum: null }
-            : tokenType === "solana"
-            ? { Solana: null }
-            : null,
+              ? { Ethereum: null }
+              : tokenType === "solana"
+                ? { Solana: null }
+                : null,
         address: address,
       };
 
