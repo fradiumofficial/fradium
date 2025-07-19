@@ -46,11 +46,11 @@ ai/
 │   └── test_sample.json             # Sample input used for testing
 ├── detector_service/
 │   └── src/
-│       ├── btc/                     # Bitcoin-specific feature extraction and prediction
+│       ├── btc/                     # Bitcoin-specific 
 │       │   ├── config.rs
 │       │   ├── mod.rs
 │       │   └── models.rs
-│       ├── eth/                     # Ethereum-specific feature pipeline (WIP or alternative)
+│       ├── eth/                     # Ethereum-specific with ERC20 Support
 │       │   ├── config.rs
 │       │   ├── data_extractor.rs
 │       │   ├── feature_calculator.rs
