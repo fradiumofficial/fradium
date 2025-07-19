@@ -1,4 +1,5 @@
 use crate::shared_models::RansomwareResult;
+use crate::STATE;
 use ic_cdk::api::management_canister::http_request::{
     http_request, CanisterHttpRequestArgument, HttpMethod,
 };
@@ -9,39 +10,43 @@ use std::collections::{HashMap, HashSet};
 use tract_onnx::prelude::*;
 
 mod config;
-mod models;
+pub mod models;
 
 use self::config::*;
 use self::models::*;
 
+// --- BTC Module State (for the non-serializable ONNX model) ---
 thread_local! {
     static MODEL: RefCell<Option<SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>>> = RefCell::new(None);
-    static METADATA: RefCell<Option<self::models::ModelMetadata>> = RefCell::new(None);
-    static RAW_MODEL_BYTES: RefCell<Vec<u8>> = RefCell::new(Vec::new());
 }
 
-pub fn init() {
+pub fn init() -> self::models::ModelMetadata {
     ic_cdk::println!("[init_btc] Initializing Bitcoin analyzer state...");
     let scaler_data: ScalerParams = serde_json::from_str(SCALER_PARAMS_JSON)
         .expect("FATAL: Could not parse BTC SCALER_PARAMS_JSON");
     let model_meta: ModelMeta = serde_json::from_str(MODEL_METADATA_JSON)
         .expect("FATAL: Could not parse BTC MODEL_METADATA_JSON");
 
-    METADATA.with(|m| {
-        *m.borrow_mut() = Some(self::models::ModelMetadata {
-            threshold: model_meta.deployment_threshold,
-            feature_names: model_meta.feature_names,
-            scaler_mean: scaler_data.mean,
-            scaler_scale: scaler_data.scale,
-        });
-    });
+    let metadata = self::models::ModelMetadata {
+        threshold: model_meta.deployment_threshold,
+        feature_names: model_meta.feature_names,
+        scaler_mean: scaler_data.mean,
+        scaler_scale: scaler_data.scale,
+    };
 
+    load_model_from_config();
+    ic_cdk::println!("[init_btc] ✅ BTC state initialized.");
+    
+    metadata // Return the metadata to be stored in the global state
+}
+
+pub fn load_model_from_config() {
     let model_vec = MODEL_BYTES.to_vec();
     if let Err(e) = load_model_from_bytes(model_vec) {
-        ic_cdk::trap(&format!("[init_btc] FATAL: Could not load ONNX model: {}", e));
+        ic_cdk::trap(&format!("[btc] FATAL: Could not load ONNX model: {}", e));
     }
-    ic_cdk::println!("[init_btc] ✅ BTC state initialized.");
 }
+
 
 fn load_model_from_bytes(model_bytes: Vec<u8>) -> Result<String, String> {
     let model = tract_onnx::onnx()
@@ -75,6 +80,16 @@ async fn fetch_transactions_mempool(address: &str) -> Result<Vec<MempoolTransact
     ic_cdk::println!("Fetching transactions from mempool.space for address: {}", address);
 
     loop {
+
+        if all_transactions.len() >= BTC_MAX_TRANSACTIONS {
+            ic_cdk::println!(
+                "⚠️  Transaction limit reached for BTC address. Processing first {} transactions.",
+                BTC_MAX_TRANSACTIONS
+            );
+            all_transactions.truncate(BTC_MAX_TRANSACTIONS);
+            break;
+        }
+
         let url = if let Some(ref txid) = last_seen_txid {
             format!("https://mempool.space/api/address/{}/txs?after_txid={}", address, txid)
         } else {
@@ -326,7 +341,6 @@ fn parse_mempool_status(status_value: &Value) -> Result<MempoolStatus, String> {
     Ok(MempoolStatus { confirmed, block_height, block_hash, block_time })
 }
 
-// ✅ FIX 4: Silenced unused variable warning by prefixing with an underscore.
 fn convert_mempool_to_blockchain_format(mempool_txs: &[MempoolTransaction], _target_address: &str) -> Result<Vec<Value>, String> {
     let mut blockchain_txs = Vec::new();
     
@@ -611,15 +625,14 @@ fn predict_ransomware(
     address: &str,
     transaction_count: u32,
 ) -> Result<RansomwareResult, String> {
-    METADATA.with(|metadata_ref| {
-        let metadata = metadata_ref.borrow();
-        let metadata = metadata.as_ref().ok_or("BTC Model metadata not loaded")?;
+    // Read metadata from the global state
+    STATE.with(|s| {
+        let state = s.borrow();
+        let metadata = &state.btc_metadata;
 
         for (i, feature) in features.iter_mut().enumerate() {
             if let (Some(mean), Some(scale)) = (metadata.scaler_mean.get(i), metadata.scaler_scale.get(i)) {
-                if *scale > 1e-9 {
-                    *feature = ((*feature as f64 - mean) / scale) as f32;
-                }
+                if *scale > 1e-9 { *feature = ((*feature as f64 - mean) / scale) as f32; }
             }
         }
         
@@ -628,18 +641,13 @@ fn predict_ransomware(
             let model = model_cell.as_ref().ok_or("BTC Model not loaded")?;
             
             let input_tensor: Tensor = tract_ndarray::Array2::from_shape_vec((1, features.len()), features)
-                .map_err(|e| format!("Failed to create input array: {}", e))?
-                .into();
+                .map_err(|e| format!("Failed to create input array: {}", e))?.into();
 
-            let result = model.run(tvec!(input_tensor.into()))
-                .map_err(|e| format!("Inference failed: {}", e))?;
+            let result = model.run(tvec!(input_tensor.into())).map_err(|e| format!("Inference failed: {}", e))?;
             
-            if result.len() < 2 {
-                return Err(format!("Model returned {} outputs, but expected 2", result.len()));
-            }
+            if result.len() < 2 { return Err(format!("Model returned {} outputs, but expected 2", result.len())); }
 
-            let probabilities_view = result[1].to_array_view::<f32>()
-                 .map_err(|e| format!("Failed to extract probabilities: {}", e))?;
+            let probabilities_view = result[1].to_array_view::<f32>().map_err(|e| format!("Failed to extract probabilities: {}", e))?;
             
             let ransomware_probability = probabilities_view[[0, 1]] as f64;
             let is_ransomware = ransomware_probability >= metadata.threshold;

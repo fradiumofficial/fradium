@@ -58,7 +58,16 @@ pub struct ModelMetadata {
     pub scaler_mean: Vec<f64>,
     pub scaler_scale: Vec<f64>,
 }
-
+impl Default for ModelMetadata {
+    fn default() -> Self {
+        Self {
+            threshold: 0.0,
+            feature_names: Vec::new(),
+            scaler_mean: Vec::new(),
+            scaler_scale: Vec::new(),
+        }
+    }
+}
 #[derive(Deserialize, Clone)]
 pub struct ScalerParams {
     pub mean: Vec<f64>,

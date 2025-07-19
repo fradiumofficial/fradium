@@ -80,7 +80,7 @@ pub struct DefiLlamaCoin {
     pub price: f64,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(CandidType, Deserialize, Debug, Clone, PartialEq)]
 pub struct TokenInfo {
     pub symbol: String,
     pub decimals: u32,
@@ -117,4 +117,14 @@ pub struct ModelMetadata {
     pub feature_names: Vec<String>,
     pub scaler_mean: Vec<f64>,
     pub scaler_scale: Vec<f64>,
+}
+impl Default for ModelMetadata {
+    fn default() -> Self {
+        Self {
+            threshold: 0.0,
+            feature_names: Vec::new(),
+            scaler_mean: Vec::new(),
+            scaler_scale: Vec::new(),
+        }
+    }
 }
