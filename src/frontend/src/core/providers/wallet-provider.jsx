@@ -19,9 +19,14 @@ export const WalletProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [userWallet, setUserWallet] = useState(null);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
-  const [network, setNetwork] = useState("All Network");
-
-  console.log("User Address", userWallet?.addresses[0]?.address);
+  const [network, setNetwork] = useState("All Networks");
+  const [hideBalance, setHideBalance] = useState(false);
+  const [networkValues, setNetworkValues] = useState({
+    "All Networks": 0,
+    Bitcoin: 0,
+    Ethereum: 0,
+    Fradium: 0,
+  });
 
   const fetchUserWallet = async () => {
     setIsLoading(true);
@@ -80,14 +85,7 @@ export const WalletProvider = ({ children }) => {
     try {
       const newAddress = {
         network: network === "testnet" ? { Testnet: null } : { Mainnet: null },
-        token_type:
-          tokenType === "bitcoin"
-            ? { Bitcoin: null }
-            : tokenType === "ethereum"
-            ? { Ethereum: null }
-            : tokenType === "solana"
-            ? { Solana: null }
-            : null,
+        token_type: tokenType === "bitcoin" ? { Bitcoin: null } : tokenType === "ethereum" ? { Ethereum: null } : tokenType === "solana" ? { Solana: null } : null,
         address: address,
       };
 
@@ -112,6 +110,18 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
+  // Function to update network values
+  const updateNetworkValues = (values) => {
+    setNetworkValues((prev) => ({ ...prev, ...values }));
+  };
+
+  // Function to get formatted network value
+  const getNetworkValue = (networkName) => {
+    const value = networkValues[networkName] || 0;
+    if (hideBalance) return "••••";
+    return `$${value.toFixed(2)}`;
+  };
+
   const walletContextValue = {
     isLoading,
     userWallet,
@@ -121,11 +131,12 @@ export const WalletProvider = ({ children }) => {
     addAddressToWallet,
     network,
     setNetwork,
+    hideBalance,
+    setHideBalance,
+    networkValues,
+    updateNetworkValues,
+    getNetworkValue,
   };
 
-  return (
-    <WalletContext.Provider value={walletContextValue}>
-      {children}
-    </WalletContext.Provider>
-  );
+  return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;
 };

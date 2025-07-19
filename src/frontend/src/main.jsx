@@ -27,6 +27,7 @@ import AnalyseContractPage from "./pages/analyse-contract.jsx";
 import TransactionHistoryPage from "./pages/wallet/transaction-history.jsx";
 import ScanHistoryPage from "./pages/wallet/scan-history-page.jsx";
 import SettingPage from "./pages/setting.jsx";
+import WalletSettingPage from "./pages/wallet/wallet-setting.jsx";
 import { bitcoin } from "declarations/bitcoin";
 
 NProgress.configure({
@@ -110,7 +111,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="analyse-contract" element={<AnalyseContractPage />} />
             <Route path="transaction-history" element={<TransactionHistoryPage />} />
             <Route path="scan-history" element={<ScanHistoryPage />} />
-            <Route path="setting" element={<SettingPage />} />
+            <Route path="setting" element={<WalletSettingPage />} />
           </Route>
         </Routes>
       </AuthProvider>

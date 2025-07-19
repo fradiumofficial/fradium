@@ -14,5 +14,8 @@
   "type": "module",
   "workspaces": [
     "src/frontend"
-  ]
+  ],
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.14"
+  }
 }

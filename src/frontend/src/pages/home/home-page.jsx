@@ -120,11 +120,11 @@ const HomePage = () => {
             boxSizing: "border-box",
           }}>
           <img
-            src="/assets/images/wave-steper2.png"
+            src="/assets/graph-stepper.png"
             alt="How it works"
             style={{
               width: "100%",
-              height: "100%",
+              height: "128%",
               display: "block",
               objectFit: "contain",
             }}
@@ -136,7 +136,7 @@ const HomePage = () => {
             <div
               className="absolute text-center"
               style={{
-                top: "145px",
+                top: "165px",
                 left: "18.5%",
                 transform: "translateX(-50%)",
                 width: "260px",
@@ -148,7 +148,7 @@ const HomePage = () => {
             <div
               className="absolute text-center"
               style={{
-                top: "145px",
+                top: "155px",
                 left: "50%",
                 transform: "translateX(-50%)",
                 width: "260px",
@@ -160,7 +160,7 @@ const HomePage = () => {
             <div
               className="absolute text-center"
               style={{
-                top: "145px",
+                top: "155px",
                 left: "81.5%",
                 transform: "translateX(-50%)",
                 width: "260px",
@@ -173,39 +173,7 @@ const HomePage = () => {
       </section>
 
       {/* Fradium Extension Section */}
-      <section className={styles.fradiumExtSectionWrapper}>
-        <div className={styles.fradiumExtHeaderRow}>
-          <div>
-            <span className={styles.fradiumExtSectionLabel}>FRADIUM EXTENSION</span>
-            <h2 className={styles.fradiumExtSectionTitle}>Security that follows you, anywhere you Browse</h2>
-          </div>
-          <Button size="sm" style={{ fontSize: 16, padding: "13px 24px" }}>
-            Download Extension
-          </Button>
-        </div>
-        {/* Divider atas */}
-        <hr className={styles.fradiumExtDivider} />
-        <CollapsibleSection title="About Fradium Extension" open={openAbout} onToggle={() => setOpenAbout((v) => !v)}>
-          <div className={styles.fradiumExtAboutContent}>
-            <div className={styles.fradiumExtAboutText}>Fradium Extension is a browser tool designed to help you assess the safety of blockchain interactions as you navigate Web3 platforms. After downloading and installing the extension, you can analyse wallet addresses and smart contracts directly from your browser. The extension runs checks in the background and displays risk information on the spot, so you can review potential threats without leaving the page or switching to another tool.</div>
-            <div className={styles.fradiumExtAboutImage}>
-              <img src="/assets/images/fradium-extension.png" alt="Fradium Extension" draggable="false" />
-            </div>
-          </div>
-        </CollapsibleSection>
-        {/* Divider tengah */}
-        <hr className={styles.fradiumExtDivider} />
-        <CollapsibleSection title="How It Works" open={openHow} onToggle={() => setOpenHow((v) => !v)}>
-          <div className={styles.fradiumExtAboutContent}>
-            <div className={styles.fradiumExtAboutText}>To use the Fradium Extension, simply download and install it on your browser. Once installed, you have two ways to scan wallet addresses or smart contracts. You can highlight the address or contract on any page, right-click, and select 'Scan with Fradium'. Alternatively, you can open the extension, enter the address or contract manually, and click the analyse button to check its risk level. Both options give you clear results directly in your browser, so you can verify before interacting.</div>
-            <div className={styles.fradiumExtAboutImage}>
-              <img src="/assets/images/fradium-extension.png" alt="Fradium Extension" draggable="false" />
-            </div>
-          </div>
-        </CollapsibleSection>
-        {/* Divider bawah hanya jika How It Works tertutup */}
-        {!openHow && <hr className={styles.fradiumExtDivider} />}
-      </section>
+
 
       {/* KEY FEATURE SECTION */}
       <section className={styles.keyFeatureSection}>

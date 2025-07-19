@@ -54,16 +54,16 @@
 
 .heroBadge {
     display: inline-block;
-    padding: 8px 24px;
-    background: rgba(155, 235, 131, 0.10);
-    border: 1px solid rgba(155, 235, 131, 0.20);
-    border-radius: 999px;
+    /* padding: 8px 24px; */
+    /* background: rgba(155, 235, 131, 0.10); */
+    /* border: 1px solid rgba(155, 235, 131, 0.20); */
+    /* border-radius: 999px; */
     color: #9BEB83;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 32px;
+    /* letter-spacing: 0.1em; */
+    /* text-transform: uppercase; */
+    margin-bottom: 22px;
 }
 
 .heroTitle {

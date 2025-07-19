@@ -4,10 +4,10 @@ import Button from './Button';
 
 const navigationItems = [
     { label: 'Home', href: '/' },
-    { label: 'About', href: '/about' },
-    { label: 'Whitepaper', href: '/whitepaper' },
     { label: 'Docs', href: '/docs' },
     { label: 'View Reports', href: '/reports' },
+    { label: 'Products', href: '/products' },
+    { label: 'Assistant', href: '/assistant' },
 ];
 
 const NavbarLogined = () => {

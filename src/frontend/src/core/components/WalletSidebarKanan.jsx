@@ -4,7 +4,7 @@ export default function WalletSidebarKanan() {
     return (
         <aside className="relative w-300 min-h-screen bg-[#0F1219] flex flex-col items-end pt-8 pr-6 pb-4 pl-2 overflow-hidden">
             {/* Pattern background */}
-            <img src="/assets/pattern-sidebar.png" alt="Pattern" className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[420px] h-auto opacity-100 z-0 pointer-events-none select-none" />
+            <img src="/assets/pattern-sidebar.png" alt="Pattern" className="absolute bottom-4 left-1/2 -translate-x-1/2 h-auto z-0 pointer-events-none select-none" />
             {/* Top action buttons */}
             <div className="flex flex-col items-end gap-4 w-full z-10">
                 <div className="flex gap-3 w-full justify-end">
