@@ -7,6 +7,7 @@ import { ROUTES } from "./constants/routes"
 import AnalyzeAdressResult from "./modules/analyze_address/pages/AnalyzeAddressResult"
 import AnalyzeSmartContractResult from "./modules/analyze_smartcontract/pages/AnalyzeSmartContractResult"
 import DetailHistory from "./modules/history/pages/DetailHistory"
+import History from "./modules/history/pages/History"
 
 
 function App() {
@@ -18,8 +19,8 @@ function App() {
         <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
         <Route path={ROUTES.ANALYZE_SMART_CONTRACT} element={<AnalyzeSmartContract />} />
         <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={<AnalyzeAdressResult />} />
-        <Route path={ROUTES.ANALYZE_SMART_CONTRACT_RESULT} element={<AnalyzeSmartContractResult />} />
-        {/* <Route path={ROUTES.HISTORY} element={<History />} /> */}
+        {/* <Route path={ROUTES.ANALYZE_SMART_CONTRACT_RESULT} element={<AnalyzeSmartContractResult />} /> */}
+        <Route path={ROUTES.HISTORY} element={<History />} />
         <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
       </Routes>
     </ThemeProvider>
