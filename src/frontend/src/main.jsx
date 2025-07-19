@@ -29,6 +29,7 @@ import ScanHistoryPage from "./pages/wallet/scan-history-page.jsx";
 import SettingPage from "./pages/setting.jsx";
 import WalletSettingPage from "./pages/wallet/wallet-setting.jsx";
 import { bitcoin } from "declarations/bitcoin";
+import ProductsExtension from "./pages/products/products-extension.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -97,6 +98,7 @@ createRoot(document.getElementById("root")).render(
               }
             />
             <Route path="/faucet" element={<FaucetPage />} />
+            <Route path="/products" element={<ProductsExtension />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route
