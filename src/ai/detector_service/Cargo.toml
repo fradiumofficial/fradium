@@ -17,3 +17,4 @@ tract-onnx = { version = "0.21.13", default-features = false }
 getrandom = { version = "0.2", features = ["custom"] }
 hex = "0.4.3"
 num-traits = "0.2.19"
+chrono = "0.4.41"

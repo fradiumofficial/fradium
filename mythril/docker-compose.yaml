@@ -4,12 +4,6 @@ services:
   fradium-analyzer:
     build: .
     ports:
-      - "9000:9000"
-    volumes:
-      - .:/app:cached
-      - node_modules:/app/node_modules
+      - "5000:5000"
     env_file:
       - .env
-
-volumes:
-  node_modules:

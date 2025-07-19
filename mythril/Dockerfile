@@ -1,30 +1,32 @@
 FROM python:3.12-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl gnupg gcc g++ make git && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean
-
-# Install solc-select
-RUN pip install solc-select && \
-    solc-select install 0.8.20 && \
-    solc-select use 0.8.20
+# Install system dependencies for mythril & z3-solver
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    curl \
+    git \
+    libz3-dev \
+    libssl-dev \
+    libffi-dev \
+    libgmp-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy Python requirements
+# Copy requirements only for cache
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy only npm deps first for caching
-COPY package*.json ./
-RUN npm install
+# Upgrade pip & install Python deps (no cache to reduce size)
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the app
 COPY . .
 
-# Jalankan Flask app
+# Flask port
+EXPOSE 5000
+
+# Run Flask
 CMD ["python", "app.py"]

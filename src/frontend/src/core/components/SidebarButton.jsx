@@ -5,6 +5,7 @@ const NeoButton = ({
   icon,
   onClick,
   className = "",
+  buttonClassName = "",
   active,
   ...props
 }) => {
@@ -22,6 +23,7 @@ const NeoButton = ({
           hover:-translate-y-0 hover:translate-x-0
           active:translate-y-0 active:translate-x-0
           transition-transform duration-150 ease-in-out
+          ${buttonClassName}
         `}
         {...props}
       >

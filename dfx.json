@@ -10,7 +10,8 @@
       "dependencies": ["backend"],
       "source": ["src/frontend/dist"],
       "type": "assets",
-      "workspace": "frontend"
+      "workspace": "frontend",
+      "dependencies": ["backend", "ransomware_detector", "bitcoin", "token", "chatbot"]
     },
     "internet_identity": {
       "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",

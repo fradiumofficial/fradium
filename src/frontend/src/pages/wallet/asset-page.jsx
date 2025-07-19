@@ -58,7 +58,7 @@ const tokenConfig = {
 };
 
 export default function AssetsPage() {
-  const { userWallet, network } = useWallet();
+  const { userWallet, network, hideBalance, updateNetworkValues } = useWallet();
   const [tokenBalances, setTokenBalances] = useState({});
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [balanceErrors, setBalanceErrors] = useState({});
@@ -79,6 +79,10 @@ export default function AssetsPage() {
   const [analyzeAddressData, setAnalyzeAddressData] = useState(null);
   const [aiAnalysisData, setAiAnalysisData] = useState(null);
   const [analysisSource, setAnalysisSource] = useState(""); // "community" | "ai"
+
+  // Portfolio calculation states
+  const [totalPortfolioValue, setTotalPortfolioValue] = useState(0);
+  const [isCalculatingPortfolio, setIsCalculatingPortfolio] = useState(false);
 
   // Send Modal States
   const [destinationAddress, setDestinationAddress] = useState("");
@@ -128,11 +132,12 @@ export default function AssetsPage() {
 
   // Function to check if address matches current network
   const isAddressForCurrentNetwork = (addressObj) => {
-    if (network === "All Network") {
+    if (network === "All Networks") {
       return true; // Show all tokens when "All Network" is selected
     }
-    const addressNetwork = addressObj.network;
-    return addressNetwork === network;
+
+    const addressNetwork = Object.keys(addressObj.network)[0];
+    return addressNetwork.toLowerCase() === network.toLowerCase();
   };
 
   // Function to fetch Bitcoin balance for a single address
@@ -626,13 +631,102 @@ export default function AssetsPage() {
 
   const tokens = getTokensForCurrentNetwork();
 
+  // Function to calculate total portfolio value and network values
+  const calculateTotalPortfolioValue = async () => {
+    if (!userWallet?.addresses) {
+      setTotalPortfolioValue(0);
+      updateNetworkValues({
+        "All Networks": 0,
+        Bitcoin: 0,
+        Ethereum: 0,
+        Fradium: 0,
+      });
+      return;
+    }
+
+    setIsCalculatingPortfolio(true);
+    let totalValue = 0;
+    const networkTotals = {
+      Bitcoin: 0,
+      Ethereum: 0,
+      Fradium: 0,
+    };
+
+    try {
+      // Calculate values for all networks, not just current one
+      const allNetworks = ["Bitcoin", "Ethereum", "Fradium"];
+
+      for (const networkName of allNetworks) {
+        // Get addresses for this specific network
+        const networkAddresses = userWallet.addresses.filter((addressObj) => {
+          const addressNetwork = Object.keys(addressObj.network)[0];
+          return addressNetwork.toLowerCase() === networkName.toLowerCase();
+        });
+
+        if (networkAddresses.length > 0) {
+          // Group addresses by token type for this network
+          const tokenGroups = {};
+          networkAddresses.forEach((addressObj) => {
+            const tokenType = getTokenType(addressObj);
+            if (!tokenGroups[tokenType]) {
+              tokenGroups[tokenType] = [];
+            }
+            tokenGroups[tokenType].push(addressObj.address);
+          });
+
+          // Calculate value for each token type in this network
+          for (const [tokenType, addresses] of Object.entries(tokenGroups)) {
+            const balances = tokenBalances[tokenType] || {};
+            if (Object.keys(balances).length > 0) {
+              const result = await calculateTokenAmountAndValue(tokenType, addresses, balances);
+              const numericValue = parseFloat(result.value.replace("$", "").replace(",", "")) || 0;
+              networkTotals[networkName] += numericValue;
+            }
+          }
+        }
+      }
+
+      // Calculate total across all networks
+      totalValue = Object.values(networkTotals).reduce((sum, value) => sum + value, 0);
+
+      setTotalPortfolioValue(totalValue);
+      updateNetworkValues({
+        "All Networks": totalValue,
+        ...networkTotals,
+      });
+    } catch (error) {
+      console.error("Error calculating portfolio values:", error);
+      setTotalPortfolioValue(0);
+      updateNetworkValues({
+        "All Networks": 0,
+        Bitcoin: 0,
+        Ethereum: 0,
+        Fradium: 0,
+      });
+    } finally {
+      setIsCalculatingPortfolio(false);
+    }
+  };
+
+  // Calculate total portfolio value when balances change
+  React.useEffect(() => {
+    calculateTotalPortfolioValue();
+  }, [tokenBalances, userWallet?.addresses]);
+
+  // Format portfolio value for display
+  const formatPortfolioValue = (value) => {
+    if (hideBalance) return "••••••";
+    if (isCalculatingPortfolio) return "Loading...";
+    return `$${value.toFixed(2)}`;
+  };
+
   return (
     <>
       <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
         {/* Card Wallet - Sesuai Referensi */}
         <div className="relative w-full bg-white bg-opacity-5 pb-4 overflow-hidden border border-[#393E4B]">
           {/* Pattern Background */}
-          <img src="/assets/images/pattern-topside.png" alt="Pattern" className="absolute top-0 right-0 w-full w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top" />
+          <img src="/assets/images/pattern-topside.png" alt="Pattern" className="absolute top-0 right-0 w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top" />
 
           {/* Character Illustration - Positioned at top center */}
           <div className="relative z-10 flex justify-center mb-2">
@@ -642,8 +736,8 @@ export default function AssetsPage() {
           {/* Content */}
           <div className="relative z-20 text-center">
             <div className="text-white text-sm font-normal mb-1">Total Portfolio Value</div>
-            <div className="text-white text-3xl font-semibold mb-1">$0.00</div>
-            <div className="text-[#9BE4A0] text-base font-medium mb-6">Top up your wallet to start using it!</div>
+            <div className="text-white text-3xl font-semibold mb-1">{formatPortfolioValue(totalPortfolioValue)}</div>
+            <div className="text-[#9BE4A0] text-base font-medium mb-6">{totalPortfolioValue === 0 ? "Top up your wallet to start using it!" : "Your portfolio is growing!"}</div>
 
             {/* Action Buttons */}
             <div className="flex gap-4 w-full max-w-lg mx-auto">
@@ -698,7 +792,7 @@ export default function AssetsPage() {
           </div>
           <div className="flex flex-col divide-y divide-[#23272F]">
             {tokens.length > 0 ? (
-              tokens.map((token, idx) => <TokenCard key={idx} token={token} calculateTokenAmountAndValue={calculateTokenAmountAndValue} onSendClick={handleSendClick} />)
+              tokens.map((token, idx) => <TokenCard key={idx} token={token} calculateTokenAmountAndValue={calculateTokenAmountAndValue} onSendClick={handleSendClick} hideBalance={hideBalance} />)
             ) : (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
@@ -755,7 +849,7 @@ export default function AssetsPage() {
 
                     return (
                       <option key={index} value={token.tokenType}>
-                        {token.name} ({token.isLoading ? "Loading..." : formatTokenAmount(currentAmount, token.tokenType)})
+                        {token.name} ({token.isLoading ? "Loading..." : hideBalance ? "••••" : formatTokenAmount(currentAmount, token.tokenType)})
                       </option>
                     );
                   })}
@@ -789,7 +883,7 @@ export default function AssetsPage() {
                       ? "Loading..."
                       : (() => {
                           const currentAmount = selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0 ? Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0) : 0;
-                          return formatTokenAmount(currentAmount, selectedTokenForSend?.tokenType);
+                          return hideBalance ? "••••" : formatTokenAmount(currentAmount, selectedTokenForSend?.tokenType);
                         })()}{" "}
                     {selectedTokenForSend?.name?.toUpperCase() || ""}
                   </div>
@@ -1011,12 +1105,11 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, aiAnalysisData, anal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="relative bg-[#23272F] w-full max-w-sm rounded-lg shadow-lg">
+      <div className="relative bg-[#1A1D23] w-full max-w-xl rounded-md shadow-lg border border-[#2A2D35] overflow-hidden">
         <button className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold z-20" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <div className="p-6 max-h-[80vh] overflow-y-auto">
-          <div className="text-white text-xl font-semibold mb-6">Send {"Bitcoin"}</div>
+        <div className="p-8 max-h-[80vh] overflow-y-auto">
           <div className="w-full flex flex-col gap-6 relative z-10">
             {/* Status */}
             <div className="rounded-lg overflow-hidden mb-2 bg-white/5 w-full">
@@ -1133,28 +1226,187 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, aiAnalysisData, anal
                     <div className="text-[#B0B6BE] text-xs mb-1">Category</div>
                     <div className="text-white text-sm font-medium capitalize w-full">{analyzeData.report[0].category}</div>
                   </div>
-                  <div className="w-full">
-                    <a href={`/reports/${analyzeData.report[0].report_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors w-full">
-                      <span>View Full Report</span>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </a>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col rounded-md">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-4 h-4" />
+                      Vote Results
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col rounded-md">
+                    <span className="text-[#9BE4A0] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
+                      Risk Score
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col rounded-md">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
+                      Report Created
+                    </span>
                   </div>
                 </div>
+
+                {/* Security Checks */}
+                <div className="px-6 py-5 mb-2 border-l-2 border-[#9BE4A0] relative overflow-hidden bg-[#FFFFFF0D] bg-opacity-5 rounded-md">
+                  <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#22C55E]/15 via-[#22C55E]/15 to-transparent pointer-events-none" />
+                  <div className="relative z-10">
+                    <div className="text-[#FFFFFF] font-bold mb-2">{config.securityTitle}</div>
+                    <ul className="flex flex-col gap-1">
+                      {config.checkItems.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-[#22C55E] text-sm">
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="#9BE4A0" />
+                            <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className="text-[#FFFFFF]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Report Details - Only show if there's a report */}
+                {analyzeData?.report && analyzeData.report.length > 0 && (
+                  <div className="px-6 py-5 mb-2 bg-[#FFFFFF0D] bg-opacity-5 relative overflow-hidden rounded-md">
+                    <div className="relative z-10">
+                      <div className="text-[#FFFFFF] font-bold mb-3">Report Details</div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-[#B0B6BE] text-sm mb-1">Category</div>
+                          <div className="text-white text-base font-medium capitalize">{analyzeData.report[0].category}</div>
+                        </div>
+                        <div>
+                          <a href={`/reports/${analyzeData.report[0].report_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors">
+                            <span>View Full Report</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Button Confirm Send */}
+                <button className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition" onClick={onConfirmSend} disabled={isSendLoading}>
+                  {isSendLoading ? "Sending..." : "Confirm Send"}
+                </button>
               </div>
             )}
-            {/* Button Confirm Send */}
-            <div className="flex gap-3 mt-4 w-full">
-              <CustomButton className="w-full justify-center" disabled={isSendLoading} onClick={onConfirmSend}>
+
+            {/* Safe result button */}
+            {isSafe && !(analysisSource === "community" && analyzeData?.report && analyzeData.report.length > 0) && (
+              <button className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition" onClick={onConfirmSend} disabled={isSendLoading}>
                 {isSendLoading ? "Sending..." : "Confirm Send"}
-              </CustomButton>
-              {!isSafe && analyzeData?.report && analyzeData.report.length > 0 && (
-                <NeoButton className="w-full text-white justify-center" onClick={onClose}>
-                  Cancel
-                </NeoButton>
-              )}
-            </div>
+              </button>
+            )}
+            {/* Danger mode tetap pakai styling lama */}
+            {!isSafe && (
+              <>
+                <span className="text-[#FFFFFF] font-semibold text-xl">Analyze Address</span>
+                <div className="overflow-hidden mb-2 bg-[#FFFFFF] bg-opacity-5">
+                  {/* Bagian atas dengan gradient */}
+                  <div className="relative w-full">
+                    <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent z-0" />
+                    <div className="relative flex items-center gap-4 px-6 pt-4 pb-2 z-10">
+                      <img src={config.icon} alt="Danger" className="w-12 h-12 object-contain" />
+                      <div>
+                        <div className="text-[#FFFFFF] font-semibold text-sm leading-tight">{config.title}</div>
+                        <div className="text-[#B0B6BE] text-xs">Detected By Community</div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Bagian bawah deskripsi */}
+                  <div className="px-6 pb-4">
+                    <div className="text-[#B0B6BE] text-sm font-normal">{config.description}</div>
+                  </div>
+                </div>
+
+                {/* Address Details */}
+                <p className="text-[#FFFFFF] font-semibold text-lg">Address Details</p>
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-white text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? analyzeData.report[0].voted_by.length : "0"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/wallet-grey.svg" alt="Wallet" className="w-4 h-4" />
+                      Total Voters
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? `${analyzeData.report[0].votes_yes} Yes / ${analyzeData.report[0].votes_no} No` : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/total-volume.svg" alt="Votes" className="w-4 h-4" />
+                      Vote Results
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-red-400 text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? calculateRiskScore(analyzeData.report[0].votes_yes, analyzeData.report[0].votes_no) : "0/100"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/risk-score.svg" alt="Risk Score" className="w-4 h-4" />
+                      Risk Score
+                    </span>
+                  </div>
+                  <div className="bg-[#FFFFFF0D] bg-opacity-5 px-4 py-3 flex flex-col">
+                    <span className="text-[#FFFFFF] text-base font-medium">{analyzeData?.report && analyzeData.report.length > 0 ? getTimeAgo(analyzeData.report[0].created_at) : "N/A"}</span>
+                    <span className="text-[#B0B6BE] text-xs flex items-center gap-1 mt-1">
+                      <img src="/assets/icons/last-activity.svg" alt="Last Activity" className="w-4 h-4" />
+                      Report Created
+                    </span>
+                  </div>
+                </div>
+
+                {/* Security Checks */}
+                <div className="px-6 py-5 mb-2 border-l-2 border-[#FF6B6B] relative overflow-hidden bg-[#FFFFFF0D] bg-opacity-5">
+                  <div className="absolute left-0 top-0 h-full w-2/5 bg-gradient-to-r from-[#FF6B6B]/15 via-[#FF6B6B]/15 to-transparent pointer-events-none" />
+                  <div className="relative z-10">
+                    <div className="text-[#FFFFFF] font-bold mb-2">{config.securityTitle}</div>
+                    <ul className="flex flex-col gap-1">
+                      {config.checkItems.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="#FF6B6B" />
+                            <path d="M8 12l2 2 4-4" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className="text-[#FFFFFF]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Report Details - Only show if there's a report */}
+                {analyzeData?.report && analyzeData.report.length > 0 && (
+                  <div className="px-6 py-5 mb-2 bg-[#FFFFFF0D] bg-opacity-5 relative overflow-hidden">
+                    <div className="relative z-10">
+                      <div className="text-[#FFFFFF] font-bold mb-3">Report Details</div>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-[#B0B6BE] text-sm mb-1">Category</div>
+                          <div className="text-white text-base font-medium capitalize">{analyzeData.report[0].category}</div>
+                        </div>
+                        <div>
+                          <a href={`/reports/${analyzeData.report[0].report_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#9BEB83] text-sm font-medium hover:text-white transition-colors">
+                            <span>View Full Report</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Button Confirm Send */}
+                <button className="w-full mt-2 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] transition" onClick={onClose} disabled={isSendLoading}>
+                  {isSendLoading ? "Sending..." : "Cancel"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1163,7 +1415,7 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, aiAnalysisData, anal
 }
 
 // Separate component for token card to handle async calculations
-function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
+function TokenCard({ token, calculateTokenAmountAndValue, onSendClick, hideBalance }) {
   const [amount, setAmount] = useState(0);
   const [value, setValue] = useState("$0.00");
   const [isCalculating, setIsCalculating] = useState(false);
@@ -1221,8 +1473,8 @@ function TokenCard({ token, calculateTokenAmountAndValue, onSendClick }) {
           </div>
         ) : (
           <>
-            <span className="text-white font-semibold text-base">{formatTokenAmount(amount, token.tokenType)}</span>
-            <span className="text-[#B0B6BE] text-sm">{value}</span>
+            <span className="text-white font-semibold text-base">{hideBalance ? "••••" : formatTokenAmount(amount, token.tokenType)}</span>
+            <span className="text-[#B0B6BE] text-sm">{hideBalance ? "••••" : value}</span>
           </>
         )}
       </div>
