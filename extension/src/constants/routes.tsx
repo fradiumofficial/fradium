@@ -6,4 +6,6 @@ export const ROUTES = {
   ANALYZE_SMART_CONTRACT_RESULT: '/analyze-smart-contract-result',
   HISTORY: '/history',
   DETAIL_HISTORY: '/history/:id',
+  ANALYZE_PROGRESS: '/analyze-progress',
+  FAILED: '/failed',
 }

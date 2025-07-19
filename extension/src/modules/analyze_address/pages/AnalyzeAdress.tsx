@@ -18,11 +18,36 @@ function AnalyzeAddress() {
     setError(null);
 
     try {
+      // Immediately navigate to progress page
+      navigate(ROUTES.ANALYZE_PROGRESS, { 
+        state: { 
+          address,
+          isAnalyzing: true 
+        } 
+      });
+
+      // Start the analysis in background
       const apiResult = await analyzeAddress(address);
       console.log("API Result:", apiResult);
-      navigate(ROUTES.ANALYZE_ADDRESS_RESULT, { state: { result: apiResult, address } });
+      
+      // Navigate to result page after analysis is complete
+      navigate(ROUTES.ANALYZE_ADDRESS_RESULT, { 
+        state: { 
+          result: apiResult, 
+          address 
+        },
+        replace: true // Replace progress page in history
+      });
     } catch (err) {
       setError((err as Error).message);
+      // Navigate back to address form on error
+      navigate(ROUTES.FAILED, {
+        state: { 
+          error: (err as Error).message,
+          address 
+        },
+        replace: true
+      });
     } finally {
       setLoading(false);
     }
@@ -30,14 +55,13 @@ function AnalyzeAddress() {
 
   return (
    <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
-    { /* Header Sections */}
+    {/* Header Sections */}
     <ProfileHeader />
 
-    { /* Analyze Address Section */}
+    {/* Analyze Address Section */}
     <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>
 
-        {/* 4. Bind the input to the state */}
         <form onSubmit={handleSubmit}>
           <input 
             type="address" 
@@ -49,15 +73,15 @@ function AnalyzeAddress() {
             onChange={(e) => setAddress(e.target.value)}
             disabled={loading}
           />
-          {/* 5. Update the button to call the new handler and reflect loading state */}
+          
           <NeoButton
             icon={AnalyzeAddressIcon}
             disabled={loading || !address}
+            type="submit"
           >
-            {loading ? "Analyzing..." : "Analyze Address"}
+            {loading ? "Starting Analysis..." : "Analyze Address"}
           </NeoButton>
           
-          {/* 6. Optionally, display any error messages */}
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </form>
       </div>

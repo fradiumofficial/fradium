@@ -5,10 +5,10 @@ import AnalyzeSmartContract from "./modules/analyze_smartcontract/pages/AnalyzeS
 import { Route, Routes } from "react-router-dom"
 import { ROUTES } from "./constants/routes"
 import AnalyzeAdressResult from "./modules/analyze_address/pages/AnalyzeAddressResult"
-import AnalyzeSmartContractResult from "./modules/analyze_smartcontract/pages/AnalyzeSmartContractResult"
 import DetailHistory from "./modules/history/pages/DetailHistory"
 import History from "./modules/history/pages/History"
-
+import AnalysisProgress from "./modules/SEO/AnalyzeProgress"
+import Failed from "./modules/SEO/Failed"
 
 function App() {
 
@@ -22,6 +22,9 @@ function App() {
         {/* <Route path={ROUTES.ANALYZE_SMART_CONTRACT_RESULT} element={<AnalyzeSmartContractResult />} /> */}
         <Route path={ROUTES.HISTORY} element={<History />} />
         <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
+        <Route path={ROUTES.ANALYZE_PROGRESS} element={<AnalysisProgress />} />
+        <Route path={ROUTES.FAILED} element={<Failed />} />
+        <Route path="*" element={<Home />} />
       </Routes>
     </ThemeProvider>
   )

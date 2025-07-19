@@ -95,7 +95,7 @@ function Home() {
       { /* History Section */}
       <div className="flex flex-row justify-between m-4">
         <h1 className="text-[16px] font-semibold">History</h1>
-        <button className="text-[#99E39E] hover:text-white transition-transform duration-300 ease-in-out" onClick={() => navigate(ROUTES.HISTORY)}>View All</button>
+        <button className="text-[#99E39E] hover:text-white transition-transform duration-300 ease-in-out" onClick={() => navigate(ROUTES.ANALYZE_PROGRESS)}>View All</button>
       </div>
 
       <div className="flex flex-col items-center m-4">
