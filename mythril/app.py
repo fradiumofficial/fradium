@@ -2,8 +2,11 @@ import json
 import subprocess
 import os
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+
 INFURA_ID = os.getenv("INFURA_ID")
 
 @app.route('/analyze', methods=['POST'])
@@ -12,10 +15,21 @@ def analyze_contract():
     address = data.get("address")
 
     if not address:
-        return jsonify({"error": "Contract address is required"}), 400
+        return jsonify({
+            "success": False,
+            "message": "Contract address is required",
+            "issues": None
+        }), 400
 
     try:
-        command = ["myth", "analyze", "-a", address, "-o", "json", "-t", "3", "--execution-timeout", "20"]
+        command = [
+            "myth", "analyze",
+            "-a", address,
+            "-o", "json",
+            "-t", "3",
+            "--execution-timeout", "20"
+        ]
+
         env = os.environ.copy()
         env["INFURA_ID"] = INFURA_ID
 
@@ -27,7 +41,7 @@ def analyze_contract():
             env=env
         )
 
-        # Filter hanya JSON di output stdout
+        # Ambil hanya baris JSON dari stdout
         lines = result.stdout.splitlines()
         json_str = ""
         for line in lines:
@@ -36,15 +50,39 @@ def analyze_contract():
                 break
 
         if not json_str:
-            return jsonify({"error": "No valid JSON output from Mythril", "raw_output": result.stdout}), 500
+            return jsonify({
+                "success": False,
+                "message": "No valid JSON output from Mythril",
+                "issues": None
+            }), 500
 
         parsed_result = json.loads(json_str)
-        return jsonify(parsed_result)
+
+        # 🔍 Ringkas issue jika ada
+        issues = []
+        for issue in parsed_result.get("issues", []):
+            issues.append({
+                "swc-id": issue.get("swc-id"),
+                "title": issue.get("title"),
+                "description": issue.get("description"),
+                "severity": issue.get("severity"),
+                "function": issue.get("function"),
+                "contract": issue.get("contract"),
+                "swc-url": f"https://swcregistry.io/docs/SWC-{issue.get('swc-id')}"
+            })
+
+        return jsonify({
+            "success": True,
+            "message": "No issues found" if len(issues) == 0 else "Analysis complete",
+            "issues": issues
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
+        return jsonify({
+            "success": False,
+            "message": str(e),
+            "issues": None
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)

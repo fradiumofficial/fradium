@@ -23,11 +23,10 @@ import { token } from "declarations/token";
 import AuthGuard from "./core/components/auth/auth-guard.jsx";
 import AssetsPage from "./pages/wallet/asset-page.jsx";
 import AnalyseAddressPage from "./pages/wallet/analyze-address-page.jsx";
-import AnalyseContractPage from "./pages/analyse-contract.jsx";
+import AnalyseContractPage from "./pages/wallet/analyze-contract-page.jsx";
 import TransactionHistoryPage from "./pages/wallet/transaction-history.jsx";
 import ScanHistoryPage from "./pages/wallet/scan-history-page.jsx";
-import SettingPage from "./pages/setting.jsx";
-import WalletSettingPage from "./pages/wallet/wallet-setting.jsx";
+import SettingPage from "./pages/wallet/setting-page.jsx";
 import { bitcoin } from "declarations/bitcoin";
 
 NProgress.configure({
@@ -107,11 +106,11 @@ createRoot(document.getElementById("root")).render(
               </AuthGuard>
             }>
             <Route index element={<AssetsPage />} />
-            <Route path="analyse-address" element={<AnalyseAddressPage />} />
-            <Route path="analyse-contract" element={<AnalyseContractPage />} />
+            <Route path="analyze-address" element={<AnalyseAddressPage />} />
+            <Route path="analyze-contract" element={<AnalyseContractPage />} />
             <Route path="transaction-history" element={<TransactionHistoryPage />} />
             <Route path="scan-history" element={<ScanHistoryPage />} />
-            <Route path="setting" element={<WalletSettingPage />} />
+            <Route path="setting" element={<SettingPage />} />
           </Route>
         </Routes>
       </AuthProvider>
