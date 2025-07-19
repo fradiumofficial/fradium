@@ -2,3 +2,4 @@ Flask
 requests
 mythril==0.24.8
 python-dotenv
+flask-cors

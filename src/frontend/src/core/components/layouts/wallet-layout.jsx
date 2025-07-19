@@ -66,6 +66,15 @@ function WalletLayoutContent() {
     const key = getActiveNetworksKey();
     try {
       localStorage.setItem(key, JSON.stringify(networks));
+
+      // Trigger storage event for cross-component sync
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: key,
+          newValue: JSON.stringify(networks),
+          storageArea: localStorage,
+        })
+      );
     } catch (error) {
       console.error("Error saving to localStorage:", error);
     }
@@ -98,10 +107,8 @@ function WalletLayoutContent() {
   // Function to save hide balance setting to localStorage
   const saveHideBalance = (hideBalanceValue) => {
     const key = getHideBalanceKey();
-    console.log("Saving hide balance to localStorage:", { key, hideBalanceValue });
     try {
       localStorage.setItem(key, JSON.stringify(hideBalanceValue));
-      console.log("Successfully saved hide balance to localStorage");
     } catch (error) {
       console.error("Error saving hide balance to localStorage:", error);
     }
@@ -110,15 +117,12 @@ function WalletLayoutContent() {
   // Function to load hide balance setting from localStorage
   const loadHideBalance = () => {
     const key = getHideBalanceKey();
-    console.log("Loading hide balance from localStorage with key:", key);
 
     try {
       const saved = localStorage.getItem(key);
-      console.log("Raw hide balance data from localStorage:", saved);
 
       if (saved !== null) {
         const parsed = JSON.parse(saved);
-        console.log("Parsed hide balance:", parsed);
         return parsed;
       }
     } catch (error) {
@@ -126,7 +130,6 @@ function WalletLayoutContent() {
     }
 
     // Return default (false - show balance)
-    console.log("Using default hide balance: false");
     return false;
   };
 
@@ -151,7 +154,6 @@ function WalletLayoutContent() {
   };
 
   const handleToggleHideBalance = () => {
-    console.log("Toggling hide balance, current state:", contextHideBalance);
     const newHideBalance = !contextHideBalance;
     setContextHideBalance(newHideBalance);
     saveHideBalance(newHideBalance);
@@ -161,14 +163,14 @@ function WalletLayoutContent() {
   const menu = [
     { label: "Transactions", icon: "wallet", path: "/wallet" },
     {
-      label: "Analyse Address",
+      label: "Analyze Address",
       icon: "analyze-address",
-      path: "/wallet/analyse-address",
+      path: "/wallet/analyze-address",
     },
     {
-      label: "Analyse Contract",
+      label: "Analyze Contract",
       icon: "analyze-contract",
-      path: "/wallet/analyse-contract",
+      path: "/wallet/analyze-contract",
     },
     {
       label: "Transaction History",
@@ -211,7 +213,6 @@ function WalletLayoutContent() {
     const loadSavedHideBalance = () => {
       try {
         const savedHideBalance = loadHideBalance();
-        console.log("Loading saved hide balance:", savedHideBalance);
         setContextHideBalance(savedHideBalance);
         setHasLoadedHideBalance(true); // Mark as loaded from storage
       } catch (error) {
@@ -232,6 +233,23 @@ function WalletLayoutContent() {
       }
     }
   }, [user?.identity?.getPrincipal()?.toString(), hasLoadedHideBalance]);
+
+  // Listen for localStorage changes from other components (like setting page)
+  React.useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key && e.key.startsWith("activeNetworks_") && e.newValue) {
+        try {
+          const newNetworks = JSON.parse(e.newValue);
+          setActiveNetworks(newNetworks);
+        } catch (error) {
+          console.error("Error parsing storage event:", error);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   // Remove auto-save to prevent conflicts with manual save
 
