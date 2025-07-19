@@ -24,15 +24,8 @@ function WalletLayoutContent() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const { isLoading, userWallet, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue } = useWallet();
+  const { isLoading, userWallet, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
-  const [activeNetworks, setActiveNetworks] = React.useState({
-    bitcoin: true,
-    ethereum: true,
-    fradium: true,
-  });
-  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
-  const [hasLoadedFromStorage, setHasLoadedFromStorage] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
   const NETWORKS = [
     {
@@ -51,57 +44,10 @@ function WalletLayoutContent() {
       icon: "/assets/icons/fum-grey.svg",
     },
   ];
-  // Function to get localStorage key for user's active networks
-  const getActiveNetworksKey = () => {
-    return user?.identity?.getPrincipal()?.toString() ? `activeNetworks_${user.identity.getPrincipal().toString()}` : "activeNetworks_default";
-  };
 
   // Function to get localStorage key for user's hide balance setting
   const getHideBalanceKey = () => {
     return user?.identity?.getPrincipal()?.toString() ? `hideBalance_${user.identity.getPrincipal().toString()}` : "hideBalance_default";
-  };
-
-  // Function to save active networks to localStorage
-  const saveActiveNetworks = (networks) => {
-    const key = getActiveNetworksKey();
-    try {
-      localStorage.setItem(key, JSON.stringify(networks));
-
-      // Trigger storage event for cross-component sync
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: key,
-          newValue: JSON.stringify(networks),
-          storageArea: localStorage,
-        })
-      );
-    } catch (error) {
-      console.error("Error saving to localStorage:", error);
-    }
-  };
-
-  // Function to load active networks from localStorage
-  const loadActiveNetworks = () => {
-    const key = getActiveNetworksKey();
-
-    try {
-      const saved = localStorage.getItem(key);
-
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed;
-      }
-    } catch (error) {
-      console.error("Error loading/parsing saved active networks:", error);
-    }
-
-    // Return default networks
-    const defaultNetworks = {
-      bitcoin: true,
-      ethereum: true,
-      fradium: true,
-    };
-    return defaultNetworks;
   };
 
   // Function to save hide balance setting to localStorage
@@ -133,21 +79,52 @@ function WalletLayoutContent() {
     return false;
   };
 
+  // Helper function to get network filter status
+  const getNetworkFilterStatus = (networkKey) => {
+    const networkMapping = {
+      bitcoin: "Bitcoin",
+      ethereum: "Ethereum",
+      fradium: "Fradium",
+    };
+
+    const filterKey = networkMapping[networkKey];
+    return networkFilters[filterKey] || false;
+  };
+
   const handleToggleNetwork = (key) => {
-    setActiveNetworks((prev) => {
-      const newNetworks = { ...prev, [key]: !prev[key] };
-      return newNetworks;
-    });
+    // Map network keys to match networkFilters format
+    const networkMapping = {
+      bitcoin: "Bitcoin",
+      ethereum: "Ethereum",
+      fradium: "Fradium", // Fradium should map to itself, not Solana
+    };
+
+    const networkName = networkMapping[key] || key;
+    const newFilters = {
+      ...networkFilters,
+      [networkName]: !networkFilters[networkName],
+    };
+    updateNetworkFilters(newFilters);
   };
 
   const handleSaveNetworks = () => {
-    // Explicitly save the current active networks
-    saveActiveNetworks(activeNetworks);
+    // No need to explicitly save since updateNetworkFilters already saves to localStorage
 
     // Check if current selected network is disabled, if so switch to "All Networks"
+    const networkMapping = {
+      bitcoin: "Bitcoin",
+      ethereum: "Ethereum",
+      fradium: "Fradium",
+    };
+
     const currentNetworkKey = network.toLowerCase();
-    if (currentNetworkKey !== "all networks" && !activeNetworks[currentNetworkKey]) {
-      setNetwork("All Networks");
+    if (currentNetworkKey !== "all networks") {
+      // Find the corresponding filter key
+      const filterKey = Object.entries(networkMapping).find(([key, value]) => value.toLowerCase() === currentNetworkKey)?.[1];
+
+      if (filterKey && !networkFilters[filterKey]) {
+        setNetwork("All Networks");
+      }
     }
 
     setShowManageNetworks(false);
@@ -156,7 +133,7 @@ function WalletLayoutContent() {
   const handleToggleHideBalance = () => {
     const newHideBalance = !contextHideBalance;
     setContextHideBalance(newHideBalance);
-    saveHideBalance(newHideBalance);
+    saveHideBalance(newHideBalance); // Save the new hide balance
   };
 
   // Menu configuration with logout function
@@ -180,40 +157,11 @@ function WalletLayoutContent() {
     { label: "Scan History", icon: "history", path: "/wallet/scan-history" },
   ];
 
-  // Load active networks from localStorage on component mount and user change
-  React.useEffect(() => {
-    const loadSavedNetworks = () => {
-      try {
-        const savedNetworks = loadActiveNetworks();
-        setActiveNetworks(savedNetworks);
-        setIsInitialLoad(false); // Mark initial load as complete
-        setHasLoadedFromStorage(true); // Mark as loaded from storage
-      } catch (error) {
-        console.error("Error loading active networks:", error);
-        setIsInitialLoad(false);
-        setHasLoadedFromStorage(true);
-      }
-    };
-
-    // Only load if we haven't loaded from storage yet
-    if (!hasLoadedFromStorage) {
-      // Load immediately if user is available
-      if (user?.identity?.getPrincipal()) {
-        loadSavedNetworks();
-      }
-      // Also try to load from default storage if no user yet
-      else {
-        loadSavedNetworks();
-      }
-    }
-  }, [user?.identity?.getPrincipal()?.toString(), hasLoadedFromStorage]);
-
   // Load hide balance setting from localStorage on component mount and user change
   React.useEffect(() => {
     const loadSavedHideBalance = () => {
       try {
-        const savedHideBalance = loadHideBalance();
-        setContextHideBalance(savedHideBalance);
+        setContextHideBalance(loadHideBalance()); // Load and set hide balance
         setHasLoadedHideBalance(true); // Mark as loaded from storage
       } catch (error) {
         console.error("Error loading hide balance:", error);
@@ -239,8 +187,9 @@ function WalletLayoutContent() {
     const handleStorageChange = (e) => {
       if (e.key && e.key.startsWith("activeNetworks_") && e.newValue) {
         try {
-          const newNetworks = JSON.parse(e.newValue);
-          setActiveNetworks(newNetworks);
+          // The WalletProvider handles updating networkFilters from storage events
+          // const newNetworks = JSON.parse(e.newValue);
+          // setActiveNetworks(newNetworks); // This line is no longer needed
         } catch (error) {
           console.error("Error parsing storage event:", error);
         }
@@ -279,15 +228,15 @@ function WalletLayoutContent() {
   const getAvailableNetworks = () => {
     const availableNetworks = [];
 
-    if (activeNetworks.bitcoin) {
+    if (networkFilters.Bitcoin) {
       availableNetworks.push({ key: "bitcoin", name: "Bitcoin", value: getNetworkValue("Bitcoin") });
     }
 
-    if (activeNetworks.ethereum) {
+    if (networkFilters.Ethereum) {
       availableNetworks.push({ key: "ethereum", name: "Ethereum", value: getNetworkValue("Ethereum") });
     }
 
-    if (activeNetworks.fradium) {
+    if (networkFilters.Fradium) {
       availableNetworks.push({ key: "fradium", name: "Fradium", value: getNetworkValue("Fradium") });
     }
 
@@ -310,7 +259,8 @@ function WalletLayoutContent() {
         onOpenChange={(open) => {
           if (!open) {
             // Save networks when modal is closed
-            saveActiveNetworks(activeNetworks);
+            // The WalletProvider handles saving active networks to localStorage
+            // saveActiveNetworks(activeNetworks); // This line is no longer needed
           }
           setShowManageNetworks(open);
         }}>
@@ -325,8 +275,8 @@ function WalletLayoutContent() {
                     <span className="text-white text-lg font-medium">{net.name}</span>
                   </div>
                   {/* Custom Switch */}
-                  <button className={`w-11 h-6 rounded-full flex items-center transition-colors duration-200 ${activeNetworks[net.key] ? "bg-[#9BE4A0]" : "bg-[#23272F]"}`} onClick={() => handleToggleNetwork(net.key)}>
-                    <span className={`inline-block w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${activeNetworks[net.key] ? "translate-x-5" : "translate-x-0"}`} />
+                  <button className={`w-11 h-6 rounded-full flex items-center transition-colors duration-200 ${getNetworkFilterStatus(net.key) ? "bg-[#9BE4A0]" : "bg-[#23272F]"}`} onClick={() => handleToggleNetwork(net.key)}>
+                    <span className={`inline-block w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${getNetworkFilterStatus(net.key) ? "translate-x-5" : "translate-x-0"}`} />
                   </button>
                 </div>
               ))}

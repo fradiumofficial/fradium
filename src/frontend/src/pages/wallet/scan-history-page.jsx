@@ -88,6 +88,7 @@ export default function ScanHistoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [itemsToShow, setItemsToShow] = useState(8);
   const [filters, setFilters] = useState({
     safety: "all", // all, safe, unsafe
     source: "all", // all, Community, AI
@@ -133,6 +134,8 @@ export default function ScanHistoryPage() {
     });
 
     setFilteredHistory(filtered);
+    // Reset items to show when filters change
+    setItemsToShow(8);
   }, [scanHistory, filters, searchQuery]);
 
   const fetchScanHistory = async () => {
@@ -201,6 +204,10 @@ export default function ScanHistoryPage() {
     });
     setSearchQuery("");
     setShowSearchInput(false);
+  };
+
+  const loadMore = () => {
+    setItemsToShow((prev) => prev + 8);
   };
 
   const activeFiltersCount = Object.values(filters).filter((value) => value !== "all").length + (searchQuery.trim() ? 1 : 0);
@@ -393,38 +400,52 @@ export default function ScanHistoryPage() {
 
         {/* Scan Activities */}
         {!loading && !error && filteredHistory.length > 0 && (
-          <div className="flex flex-col">
-            {filteredHistory.map((activity, index) => (
-              <div key={activity.id}>
-                <div className="flex items-start justify-between py-4">
-                  {/* Left Side - Icon and Details */}
-                  <div className="flex items-start gap-4 flex-1">
-                    <img src={activity.icon} alt={activity.coin} className="w-12 h-12 mt-1" />
-                    <div className="flex flex-col flex-1">
-                      <span className="text-white text-base font-medium leading-tight mb-2">{activity.title}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#B0B6BE] text-sm font-medium font-mono">{activity.fullAddress}</span>
-                        <button onClick={() => copyToClipboard(activity.fullAddress)} className="text-[#B0B6BE] hover:text-[#9BE4A0] transition-colors" title="Copy address">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-                          </svg>
-                        </button>
+          <>
+            <div className="flex flex-col">
+              {filteredHistory.slice(0, itemsToShow).map((activity, index) => (
+                <div key={activity.id}>
+                  <div className="flex items-start justify-between py-4">
+                    {/* Left Side - Icon and Details */}
+                    <div className="flex items-start gap-4 flex-1">
+                      <img src={activity.icon} alt={activity.coin} className="w-12 h-12 mt-1" />
+                      <div className="flex flex-col flex-1">
+                        <span className="text-white text-base font-medium leading-tight mb-2">{activity.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#B0B6BE] text-sm font-medium font-mono">{activity.fullAddress}</span>
+                          <button onClick={() => copyToClipboard(activity.fullAddress)} className="text-[#B0B6BE] hover:text-[#9BE4A0] transition-colors" title="Copy address">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Right Side - Status and Date */}
-                  <div className="flex flex-col items-end gap-1">
-                    <div className={`px-2 py-0.5 rounded-lg text-xs font-medium ${activity.isSafe ? "text-[#9BE4A0] bg-[#9BE4A0] bg-opacity-20" : "text-red-400 bg-red-400 bg-opacity-20"}`}>{activity.isSafe ? "Safe" : "Unsafe"}</div>
-                    <span className="text-[#B0B6BE] text-sm font-medium">{activity.date}</span>
+                    {/* Right Side - Status and Date */}
+                    <div className="flex flex-col items-end gap-1">
+                      <div className={`px-2 py-0.5 rounded-lg text-xs font-medium ${activity.isSafe ? "text-[#9BE4A0] bg-[#9BE4A0] bg-opacity-20" : "text-red-400 bg-red-400 bg-opacity-20"}`}>{activity.isSafe ? "Safe" : "Unsafe"}</div>
+                      <span className="text-[#B0B6BE] text-sm font-medium">{activity.date}</span>
+                    </div>
                   </div>
+                  {/* Divider */}
+                  {index < filteredHistory.slice(0, itemsToShow).length - 1 && <div className="border-b border-[#23272F]"></div>}
                 </div>
-                {/* Divider */}
-                {index < filteredHistory.length - 1 && <div className="border-b border-[#23272F]"></div>}
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {itemsToShow < filteredHistory.length && (
+              <div className="flex justify-center mt-6">
+                <button onClick={loadMore} className="px-4 py-2 text-[#B0B6BE] font-medium text-sm rounded-lg hover:text-white transition flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14m-7-7l7 7 7-7" />
+                  </svg>
+                  Load More
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 

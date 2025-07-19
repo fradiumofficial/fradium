@@ -54,16 +54,25 @@ const tokenConfig = {
     symbol: "Solana",
     desc: "Solana • Internet Computer",
   },
+  Fradium: {
+    icon: "/assets/fum.svg",
+    name: "FUM",
+    symbol: "Fradium",
+    desc: "Fradium • Internet Computer",
+  },
   // Add more token types as needed
 };
 
 export default function AssetsPage() {
-  const { userWallet, network, hideBalance, updateNetworkValues } = useWallet();
+  const { userWallet, network, hideBalance, updateNetworkValues, networkFilters, updateNetworkFilters } = useWallet();
   const [tokenBalances, setTokenBalances] = useState({});
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [balanceErrors, setBalanceErrors] = useState({});
   const [showSendModal, setShowSendModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
+
+  // Show network filter state
+  const [showNetworkFilter, setShowNetworkFilter] = useState(false);
 
   // Receive Modal States
   const [openReceive, setOpenReceive] = useState(false);
@@ -323,6 +332,14 @@ export default function AssetsPage() {
     setShowSendModal(true);
   };
 
+  const toggleNetworkFilter = (networkName) => {
+    const newFilters = {
+      ...networkFilters,
+      [networkName]: !networkFilters[networkName],
+    };
+    updateNetworkFilters(newFilters);
+  };
+
   const handleReceiveClick = (token) => {
     setSelectedToken(token);
     setOpenReceive(true);
@@ -555,7 +572,10 @@ export default function AssetsPage() {
       if (!userWallet?.addresses) return;
 
       const networkAddresses = userWallet.addresses.filter(isAddressForCurrentNetwork);
-      const bitcoinAddresses = networkAddresses.filter((addr) => getTokenType(addr) === "Bitcoin").map((addr) => addr.address);
+      const bitcoinAddresses = networkAddresses
+        .filter((addr) => getTokenType(addr) === "Bitcoin")
+        .filter((addr) => networkFilters.Bitcoin) // Only fetch if Bitcoin is enabled
+        .map((addr) => addr.address);
 
       if (bitcoinAddresses.length === 0) {
         setTokenBalances({});
@@ -588,7 +608,7 @@ export default function AssetsPage() {
     };
 
     fetchBalances();
-  }, [userWallet?.addresses, network]);
+  }, [userWallet?.addresses, network, networkFilters]);
 
   // Filter addresses by current network and group by token type
   const getTokensForCurrentNetwork = () => {
@@ -601,6 +621,11 @@ export default function AssetsPage() {
 
     networkAddresses.forEach((addressObj) => {
       const tokenType = getTokenType(addressObj);
+
+      // Apply network filter - skip if this token type is disabled
+      if (!networkFilters[tokenType]) {
+        return;
+      }
 
       if (!tokenGroups[tokenType]) {
         tokenGroups[tokenType] = {
@@ -660,6 +685,11 @@ export default function AssetsPage() {
       const allNetworks = ["Bitcoin", "Ethereum", "Fradium"];
 
       for (const networkName of allNetworks) {
+        // Skip if this network is filtered out
+        if (!networkFilters[networkName]) {
+          continue;
+        }
+
         // Get addresses for this specific network
         const networkAddresses = userWallet.addresses.filter((addressObj) => {
           const addressNetwork = Object.keys(addressObj.network)[0];
@@ -714,7 +744,7 @@ export default function AssetsPage() {
   // Calculate total portfolio value when balances change
   React.useEffect(() => {
     calculateTotalPortfolioValue();
-  }, [tokenBalances, userWallet?.addresses]);
+  }, [tokenBalances, userWallet?.addresses, networkFilters]);
 
   // Format portfolio value for display
   const formatPortfolioValue = (value) => {
@@ -790,9 +820,30 @@ export default function AssetsPage() {
             <h2 className="text-lg font-semibold text-white">Tokens ({network})</h2>
             <div className="flex gap-4">
               <img src="/assets/icons/search.svg" alt="Search" className="w-5 h-5 cursor-pointer" />
-              <img src="/assets/icons/page_info.svg" alt="Setting" className="w-5 h-5 cursor-pointer" />
+              <img src="/assets/icons/page_info.svg" alt="Filter" className="w-5 h-5 cursor-pointer" onClick={() => setShowNetworkFilter(!showNetworkFilter)} />
             </div>
           </div>
+
+          {/* Network Filter Toggle */}
+          {showNetworkFilter && (
+            <div className="mb-4 bg-[#1A1D23] border border-[#2A2D35] rounded-lg p-4">
+              <div className="text-white text-sm font-medium mb-3">Network Filters</div>
+              <div className="flex flex-col gap-2">
+                {Object.entries(networkFilters).map(([networkName, isEnabled]) => (
+                  <div key={networkName} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <img src={tokenConfig[networkName]?.icon || "/assets/unknown.svg"} alt={networkName} className="w-5 h-5" />
+                      <span className="text-[#B0B6BE] text-sm">{networkName}</span>
+                    </div>
+                    <button onClick={() => toggleNetworkFilter(networkName)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isEnabled ? "bg-[#9BE4A0]" : "bg-[#393E4B]"}`}>
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isEnabled ? "translate-x-5" : "translate-x-1"}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col divide-y divide-[#23272F]">
             {tokens.length > 0 ? (
               tokens.map((token, idx) => <TokenCard key={idx} token={token} calculateTokenAmountAndValue={calculateTokenAmountAndValue} onSendClick={handleSendClick} hideBalance={hideBalance} />)

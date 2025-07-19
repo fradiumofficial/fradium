@@ -27,6 +27,96 @@ export const WalletProvider = ({ children }) => {
     Ethereum: 0,
     Fradium: 0,
   });
+  const [networkFilters, setNetworkFilters] = useState({
+    Bitcoin: true,
+    Ethereum: true,
+    Solana: true,
+    Fradium: true,
+  });
+
+  const { user } = useAuth();
+
+  // Function to get localStorage key for user's network filters
+  const getNetworkFiltersKey = () => {
+    return user?.identity?.getPrincipal()?.toString() ? `networkFilters_${user.identity.getPrincipal().toString()}` : "networkFilters_default";
+  };
+
+  // Function to save network filters to localStorage
+  const saveNetworkFilters = (filters) => {
+    const key = getNetworkFiltersKey();
+    try {
+      localStorage.setItem(key, JSON.stringify(filters));
+
+      // Trigger storage event for cross-component sync
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: key,
+          newValue: JSON.stringify(filters),
+          storageArea: localStorage,
+        })
+      );
+    } catch (error) {
+      console.error("Error saving network filters to localStorage:", error);
+    }
+  };
+
+  // Function to load network filters from localStorage
+  const loadNetworkFilters = () => {
+    const key = getNetworkFiltersKey();
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error("Error loading network filters from localStorage:", error);
+    }
+
+    // Return default filters
+    return {
+      Bitcoin: true,
+      Ethereum: true,
+      Solana: true,
+      Fradium: true,
+    };
+  };
+
+  // Function to update network filters
+  const updateNetworkFilters = (filters) => {
+    setNetworkFilters(filters);
+    saveNetworkFilters(filters);
+  };
+
+  // Load network filters from localStorage on mount and user change
+  useEffect(() => {
+    const loadSavedFilters = () => {
+      try {
+        const savedFilters = loadNetworkFilters();
+        setNetworkFilters(savedFilters);
+      } catch (error) {
+        console.error("Error loading network filters:", error);
+      }
+    };
+
+    loadSavedFilters();
+  }, [user?.identity?.getPrincipal()?.toString()]);
+
+  // Listen for localStorage changes from other components
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key && e.key.startsWith("networkFilters_") && e.newValue) {
+        try {
+          const newFilters = JSON.parse(e.newValue);
+          setNetworkFilters(newFilters);
+        } catch (error) {
+          console.error("Error parsing storage event:", error);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const fetchUserWallet = async () => {
     setIsLoading(true);
@@ -136,6 +226,8 @@ export const WalletProvider = ({ children }) => {
     networkValues,
     updateNetworkValues,
     getNetworkValue,
+    networkFilters,
+    updateNetworkFilters,
   };
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;
