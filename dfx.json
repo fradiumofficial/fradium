@@ -49,6 +49,7 @@
       "type": "rust",
       "package": "ransomware_detector",
       "candid": "src/ai/detector_service/src/ransomware_detector.did",
+      "optimize": "cycles",
       "build": ["./bin/build.sh"]
     }
   },

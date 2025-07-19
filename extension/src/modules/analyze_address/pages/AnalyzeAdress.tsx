@@ -31,12 +31,8 @@ function AnalyzeAddress() {
   return (
    <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
     { /* Header Sections */}
-    <ProfileHeader
-        mainAvatarSrc='https://github.com/shadcn.png'
-        mainAvatarFallback='N'
-        address='0x1A2b3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9g0H'
-      />
-    
+    <ProfileHeader />
+
     { /* Analyze Address Section */}
     <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>

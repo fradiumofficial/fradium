@@ -71,11 +71,7 @@ function AnalyzeAdressResult() {
     <div className="w-[400px] h-full space-y-4 bg-[#25262B] text-white shadow-md">
 
       {/* Header Sections */}
-      <ProfileHeader
-          mainAvatarSrc='https://github.com/shadcn.png'
-          mainAvatarFallback='N'
-          address={result.address}
-        />
+      <ProfileHeader />
 
       {/* Analyze Address Section */}
       <div className="m-4">
