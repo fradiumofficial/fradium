@@ -13,9 +13,10 @@ import { formatAddress } from "../lib/canisterUtils";
 
 const navigationItems = [
   { label: "Home", href: "/" },
-  { label: "About", href: "/about" },
   { label: "Docs", href: "/docs" },
   { label: "View Reports", href: "/reports" },
+  { label: "Products", href: "/products" },
+  { label: "Assistant", href: "/assistant" },
 ];
 
 const Navbar = () => {
@@ -36,7 +37,7 @@ const Navbar = () => {
         });
         console.log(response);
         setBalance(response);
-      } catch (error) {}
+      } catch (error) { }
     }
 
     fetchBalance();
