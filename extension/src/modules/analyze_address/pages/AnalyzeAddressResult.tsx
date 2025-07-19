@@ -3,12 +3,12 @@ import ProfileHeader from "@/components/ui/header";
 import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
 import { useLocation } from "react-router-dom";
-import type { AnalyzeResult } from "../model/AnalyzeAddressModel";
+import type { ICPAnalysisResult } from "../model/AnalyzeAddressModel";
 import { useState, useEffect } from "react";
 
 function AnalyzeAdressResult() {
   const location = useLocation();
-  const result = location.state?.result as AnalyzeResult;
+  const result = location.state?.result as ICPAnalysisResult;
   
   // Inisialisasi state dengan nilai yang benar langsung
   const [isAddressSafe, setIsAddressSafe] = useState<boolean>(() => {
@@ -80,7 +80,7 @@ function AnalyzeAdressResult() {
       {/* Analyze Address Section */}
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>
-        <SafetyCard confidence={result.confidence} title={"Address"} isSafe={isAddressSafe} />
+        <SafetyCard confidence={result.ransomware_probability} title={"Address"} isSafe={isAddressSafe} />
         <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Address Details</h1>
         <div className="grid grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, index) => (

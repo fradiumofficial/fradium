@@ -3,14 +3,14 @@ const NETWORK = 'local'; // Change this to 'ic' for mainnet
 
 const CANISTER_IDS = {
   local: {
-    ransomware_detector: 'umunu-kh777-77774-qaaca-cai',
+    ransomware_detector: 'ufxgi-4p777-77774-qaadq-cai',
     backend: 'uxrrr-q7777-77774-qaaaq-cai',
-    internet_identity: 'uzt4z-lp777-77774-qaabq-cai',
+    internet_identity: 'ulvla-h7777-77774-qaacq-cai',
   },
   ic: {
     ransomware_detector: '', // Add mainnet canister IDs here when deploying
     backend: '',
-    internet_identity: 'uzt4z-lp777-77774-qaabq-cai', // Official II canister
+    internet_identity: 'ulvla-h7777-77774-qaacq-cai', // Official II canister
   }
 };
 

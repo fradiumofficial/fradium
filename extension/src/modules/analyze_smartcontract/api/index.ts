@@ -9,7 +9,7 @@ export const analyzeAddressSmartContract = (address: string): Promise<AnalysisRe
   return new Promise((resolve, reject) => {
 		chrome.runtime.sendMessage(
 			{ 
-				type: 'ANALYZE_ADDRESS',
+				type: 'ANALYZE_ADDRESS_SMART_CONTRACT',
 				address: address,
 			},
 			(response) => {

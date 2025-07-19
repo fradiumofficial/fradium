@@ -11,10 +11,14 @@
     "storage"
   ],
   "host_permissions": [
-    "https://fradium.motionlaboratory.com/*"
+    "https://fradium.motionlaboratory.com/*",
+    "http://127.0.0.1:4943/*",
+    "https://*.ic0.app/*",
+    "https://*.icp0.io/*",
+    "https://mempool.space/*"
   ],
   "background": {
-    "service_worker": "./assets/background.js",
+    "service_worker": "assets/background.js",
     "type": "module"
   }
 }

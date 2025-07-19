@@ -1,6 +1,7 @@
 import { CANISTER_HOST, getCanisterId } from "@/lib/config";
 import { Actor, HttpAgent, type ActorSubclass } from "@dfinity/agent";
-import { idlFactory, type _SERVICE } from "../../../src/declarations/ransomware_detector/ransomware_detector.did";
+import { idlFactory } from "../../../src/declarations/ransomware_detector";
+import type { _SERVICE } from "../../../src/declarations/ransomware_detector/ransomware_detector.did";
 
 let actor: ActorSubclass<_SERVICE>;
 
@@ -18,15 +19,15 @@ export const createAgent =  async (): Promise<HttpAgent> => {
 
 export const getActor = async (): Promise<ActorSubclass<_SERVICE>> => {
   if (actor) {
-	return actor;
+	  return actor;
   }
 
   const agent = await createAgent();
   const canisterId = getCanisterId('ransomware_detector');
 
   actor = Actor.createActor(idlFactory, {
-	agent,
-	canisterId,
+	  agent,
+	  canisterId,
   });
 
   return actor;

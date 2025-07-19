@@ -21,12 +21,11 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
   // --- Aksi Sinkron: Membuka Popup ---
   if (request.action === "openExtension") {
     chrome.action.openPopup();
-    // Tidak perlu 'return true' karena ini operasi sinkron
     return;
-  }
-
-  // --- Aksi Asinkron: Analisa Alamat via REST API (Fradium) ---
+  } 
+  
   if (request.type === "ANALYZE_ADDRESS_SMART_CONTRACT") {
+    // --- Aksi Asinkron: Analisa Alamat via REST API (Fradium) ---
     const address = request.address;
     const analyze = async () => {
       try {
@@ -51,32 +50,43 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
       }
     };
     analyze();
-    // Wajib 'return true' untuk menjaga port tetap terbuka
     return true;
-  }
-
-  // --- Aksi Asinkron: Analisa Alamat via Canister ICP ---
-  // Ini adalah blok baru yang kita tambahkan
-  if (request.type === 'ANALYZE_ADDRESS') {
+  } 
+  
+  if (request.type === "ANALYZE_ADDRESS") {
     const addressToAnalyze = request.address;
+    
+    // Tambahkan timeout yang lebih panjang
+    const TIMEOUT_MS = 120000; // 2 menit
+    
     const callCanister = async () => {
       try {
+        console.log(`Starting analysis for address: ${addressToAnalyze}`);
+        
         // 1. Dapatkan actor dari service
         const actor = await getActor();
         
-        // 2. Panggil fungsi di canister (pastikan 'analyze_address' adalah nama fungsi yang benar)
-        const result = await actor.analyze_address(addressToAnalyze);
+        // 2. Buat promise dengan timeout
+        const analysisPromise = actor.analyze_address(addressToAnalyze);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Analysis timeout after 2 minutes')), TIMEOUT_MS);
+        });
         
-        // 3. Kirim kembali response sukses
+        // 3. Race antara analysis dan timeout
+        const result = await Promise.race([analysisPromise, timeoutPromise]);
+        
+        console.log('Analysis completed:', result);
+        
+        // 4. Kirim kembali response sukses
         sendResponse({ success: true, data: result });
       } catch (error) {
-        // 4. Kirim kembali response error
         console.error("Error calling ICP canister:", error);
-        sendResponse({ success: false, error: (error as Error).message });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        sendResponse({ success: false, error: errorMessage });
       }
     };
+    
     callCanister();
-    // Wajib 'return true' untuk menjaga port tetap terbuka
-    return true;
+    return true; // Indicate that the response will be sent asynchronously
   }
 });
