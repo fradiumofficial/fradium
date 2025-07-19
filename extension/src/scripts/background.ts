@@ -1,4 +1,4 @@
-import { getActor } from "../canister/canister_service";
+import { analyzeAddress } from "../canister/ransomware_service";
 
 // Listener untuk saat ekstensi pertama kali di-install atau di-update
 chrome.runtime.onInstalled.addListener(() => {
@@ -59,25 +59,19 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
     // Tambahkan timeout yang lebih panjang
     const TIMEOUT_MS = 120000; // 2 menit
     
-    const callCanister = async () => {
+        const callCanister = async () => {
       try {
         console.log(`Starting analysis for address: ${addressToAnalyze}`);
         
-        // 1. Dapatkan actor dari service
-        const actor = await getActor();
-        
-        // 2. Buat promise dengan timeout
-        const analysisPromise = actor.analyze_address(addressToAnalyze);
+        // 1. Analisa alamat menggunakan ransomware detector
+        const analysisPromise = analyzeAddress(addressToAnalyze);
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Analysis timeout after 2 minutes')), TIMEOUT_MS);
         });
         
-        // 3. Race antara analysis dan timeout
         const result = await Promise.race([analysisPromise, timeoutPromise]);
-        
         console.log('Analysis completed:', result);
         
-        // 4. Kirim kembali response sukses
         sendResponse({ success: true, data: result });
       } catch (error) {
         console.error("Error calling ICP canister:", error);
@@ -87,6 +81,6 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
     };
     
     callCanister();
-    return true; // Indicate that the response will be sent asynchronously
+    return true;
   }
 });

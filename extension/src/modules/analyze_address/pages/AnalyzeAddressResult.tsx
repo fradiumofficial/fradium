@@ -2,12 +2,14 @@ import { SafetyCard } from "@/components/ui/custom-card";
 import ProfileHeader from "@/components/ui/header";
 import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { ICPAnalysisResult } from "../model/AnalyzeAddressModel";
 import { useState, useEffect } from "react";
+import { ROUTES } from "@/constants/routes";
 
 function AnalyzeAdressResult() {
   const location = useLocation();
+  const navigate = useNavigate();
   const result = location.state?.result as ICPAnalysisResult;
   const address = location.state?.address as string;
   
@@ -182,7 +184,7 @@ function AnalyzeAdressResult() {
 
       {/* Action Button */}
       <div className="p-4">
-        <NeoButton icon={Wallet} onClick={() => window.history.back()}>
+        <NeoButton icon={Wallet} onClick={() => navigate(ROUTES.HOME)}>
           Complete
         </NeoButton>  
       </div>
