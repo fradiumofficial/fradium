@@ -7,7 +7,7 @@ pub const MORALIS_API_KEY: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25j
 
 // --- Constants ---
 pub const WEI_TO_ETH: f64 = 1_000_000_000_000_000_000.0;
-pub const MAX_TRANSACTIONS_PER_ADDRESS: usize = 50000;
+pub const MAX_TRANSACTIONS_PER_ADDRESS: usize = 100;
 pub const ETHERSCAN_MAX_RECORDS: usize = 10000;
 
 // Base URLs for APIs
