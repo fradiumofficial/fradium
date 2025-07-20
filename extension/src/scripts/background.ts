@@ -1,4 +1,5 @@
 import { analyzeAddress } from "../canister/ransomware_service";
+import { analyzeAddressCommunity } from "../canister/backend_service";
 
 // Listener untuk saat ekstensi pertama kali di-install atau di-update
 chrome.runtime.onInstalled.addListener(() => {
@@ -59,7 +60,7 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
     // Tambahkan timeout yang lebih panjang
     const TIMEOUT_MS = 120000; // 2 menit
     
-        const callCanister = async () => {
+    const callCanister = async () => {
       try {
         console.log(`Starting analysis for address: ${addressToAnalyze}`);
         
@@ -81,6 +82,29 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
     };
     
     callCanister();
+    return true;
+  }
+
+  if (request.type === "ANALYZE_ADDRESS_COMMUNITY") {
+    const addressToAnalyze = request.address;
+
+    const callCanisterBackend = async () => {
+      try {
+        console.log(`Starting community analysis for address: ${addressToAnalyze}`);
+        
+        // 1. Analisa alamat menggunakan ransomware detector
+        const result = await analyzeAddressCommunity(addressToAnalyze);
+        console.log('Community analysis completed:', result);
+        
+        sendResponse({ success: true, data: result });
+      } catch (error) {
+        console.error("Error calling ICP canister for community analysis:", error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        sendResponse({ success: false, error: errorMessage });
+      }
+    };
+
+    callCanisterBackend();
     return true;
   }
 });

@@ -1,4 +1,4 @@
-import type { ICPAnalysisResult } from "../model/AnalyzeAddressModel";
+import type { CommunityAnalysisResponse, ICPAnalysisCommunityResult, ICPAnalysisResult } from "../model/AnalyzeAddressModel";
 
 export const analyzeAddress = (address: string): Promise<ICPAnalysisResult> => {
   return new Promise((resolve, reject) => {
@@ -38,4 +38,36 @@ export const analyzeAddress = (address: string): Promise<ICPAnalysisResult> => {
       }
     );
   });
+};
+
+export const analyzeAddressCommunity = async (address: string): Promise<ICPAnalysisCommunityResult> => {
+  try {
+    console.log('Calling community canister for address:', address);
+    
+    const response = await chrome.runtime.sendMessage({
+      type: "ANALYZE_ADDRESS_COMMUNITY",
+      address: address,
+    });
+
+    console.log('Community canister response:', response);
+
+    if (!response.success) {
+      throw new Error(response.error || 'Community analysis failed');
+    }
+
+    // Handle the Result variant from Candid
+    const result = response.data as CommunityAnalysisResponse;
+    
+    if (result.Ok) {
+      return result.Ok;
+    } else if (result.Err) {
+      throw new Error(`Community analysis error: ${result.Err}`);
+    } else {
+      // Direct result format
+      return response.data as ICPAnalysisCommunityResult;
+    }
+  } catch (error) {
+    console.error('Community analysis error:', error);
+    throw new Error(`Community analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };

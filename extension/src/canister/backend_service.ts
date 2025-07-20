@@ -27,7 +27,7 @@ export const clearBackendActor = (): void => {
 };
 
 // Helper functions for common backend operations
-export const getUserProfile = async (address: string) => {
+export const analyzeAddressCommunity = async (address: string) => {
   const actor = await getBackendActor();
   return await actor.analyze_address(address);
 };

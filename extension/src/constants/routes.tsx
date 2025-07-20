@@ -8,4 +8,5 @@ export const ROUTES = {
   DETAIL_HISTORY: '/history/:id',
   ANALYZE_PROGRESS: '/analyze-progress',
   FAILED: '/failed',
+  ANALYZE_ADDRESS_COMMUNITY_RESULT: '/analyze-address-community-result',
 }
