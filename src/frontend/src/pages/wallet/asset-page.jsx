@@ -437,71 +437,91 @@ export default function AssetsPage() {
 
       if ("Ok" in communityReport) {
         if (communityReport.Ok.is_safe) {
-          console.log("communityReport.Ok.is_safe", communityReport.Ok.is_safe);
-          // If safe by community, also check AI analysis
-          const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
-          console.log("ransomwareReport", jsonStringify(ransomwareReport));
+          // If safe by community, use community result
+          setIsAnalyzeAddressSafe(true);
+          setAnalyzeAddressData(communityReport.Ok);
+          setAnalysisSource("community");
 
-          if ("Ok" in ransomwareReport) {
-            if (ransomwareReport.Ok.is_ransomware) {
-              // AI detected as unsafe
-              setIsAnalyzeAddressSafe(false);
-              setAiAnalysisData(ransomwareReport.Ok);
-              setAnalysisSource("ai");
-
-              // Create analyze history for AI analysis (unsafe)
-              try {
-                await backend.create_analyze_history({
-                  address: destinationAddress,
-                  is_safe: false,
-                  analyzed_type: { AIAnalysis: null },
-                  metadata: jsonStringify(ransomwareReport.Ok),
-                  token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-                });
-                console.log("AI analysis history (unsafe) saved successfully");
-              } catch (historyError) {
-                console.error("Failed to save AI analysis history:", historyError);
-              }
-            } else {
-              // AI detected as safe, but use community result
-              setIsAnalyzeAddressSafe(true);
-              setAnalyzeAddressData(communityReport.Ok);
-              setAnalysisSource("community");
-
-              // Create analyze history for Community analysis (safe)
-              try {
-                await backend.create_analyze_history({
-                  address: destinationAddress,
-                  is_safe: true,
-                  analyzed_type: { CommunityVote: null },
-                  metadata: jsonStringify(communityReport.Ok),
-                  token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-                });
-                console.log("Community analysis history (safe) saved successfully");
-              } catch (historyError) {
-                console.error("Failed to save community analysis history:", historyError);
-              }
-            }
-          } else {
-            // Fall back to community result (safe)
-            setIsAnalyzeAddressSafe(true);
-            setAnalyzeAddressData(communityReport.Ok);
-            setAnalysisSource("community");
-
-            // Create analyze history for Community analysis (safe)
-            try {
-              await backend.create_analyze_history({
-                address: destinationAddress,
-                is_safe: true,
-                analyzed_type: { CommunityVote: null },
-                metadata: jsonStringify(communityReport.Ok),
-                token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-              });
-              console.log("Community analysis history (safe) saved successfully");
-            } catch (historyError) {
-              console.error("Failed to save community analysis history:", historyError);
-            }
+          // Create analyze history for Community analysis (safe)
+          try {
+            await backend.create_analyze_history({
+              address: destinationAddress,
+              is_safe: true,
+              analyzed_type: { CommunityVote: null },
+              metadata: jsonStringify(communityReport.Ok),
+              token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+            });
+            console.log("Community analysis history (safe) saved successfully");
+          } catch (historyError) {
+            console.error("Failed to save community analysis history:", historyError);
           }
+
+          // COMMENTED OUT: AI Analysis
+          // console.log("communityReport.Ok.is_safe", communityReport.Ok.is_safe);
+          // // If safe by community, also check AI analysis
+          // const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
+          // console.log("ransomwareReport", jsonStringify(ransomwareReport));
+
+          // if ("Ok" in ransomwareReport) {
+          //   if (ransomwareReport.Ok.is_ransomware) {
+          //     // AI detected as unsafe
+          //     setIsAnalyzeAddressSafe(false);
+          //     setAiAnalysisData(ransomwareReport.Ok);
+          //     setAnalysisSource("ai");
+
+          //     // Create analyze history for AI analysis (unsafe)
+          //     try {
+          //       await backend.create_analyze_history({
+          //         address: destinationAddress,
+          //         is_safe: false,
+          //         analyzed_type: { AIAnalysis: null },
+          //         metadata: jsonStringify(ransomwareReport.Ok),
+          //         token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+          //       });
+          //       console.log("AI analysis history (unsafe) saved successfully");
+          //     } catch (historyError) {
+          //       console.error("Failed to save AI analysis history:", historyError);
+          //     }
+          //   } else {
+          //     // AI detected as safe, but use community result
+          //     setIsAnalyzeAddressSafe(true);
+          //     setAnalyzeAddressData(communityReport.Ok);
+          //     setAnalysisSource("community");
+
+          //     // Create analyze history for Community analysis (safe)
+          //     try {
+          //       await backend.create_analyze_history({
+          //         address: destinationAddress,
+          //         is_safe: true,
+          //         analyzed_type: { CommunityVote: null },
+          //         metadata: jsonStringify(communityReport.Ok),
+          //         token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+          //       });
+          //       console.log("Community analysis history (safe) saved successfully");
+          //     } catch (historyError) {
+          //       console.error("Failed to save community analysis history:", historyError);
+          //     }
+          //   }
+          // } else {
+          //   // Fall back to community result (safe)
+          //   setIsAnalyzeAddressSafe(true);
+          //   setAnalyzeAddressData(communityReport.Ok);
+          //   setAnalysisSource("community");
+
+          //   // Create analyze history for Community analysis (safe)
+          //   try {
+          //     await backend.create_analyze_history({
+          //       address: destinationAddress,
+          //       is_safe: true,
+          //       analyzed_type: { CommunityVote: null },
+          //       metadata: jsonStringify(communityReport.Ok),
+          //       token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+          //     });
+          //     console.log("Community analysis history (safe) saved successfully");
+          //   } catch (historyError) {
+          //     console.error("Failed to save community analysis history:", historyError);
+          //   }
+          // }
         } else {
           // If not safe by community, use community result
           setIsAnalyzeAddressSafe(false);
@@ -523,43 +543,50 @@ export default function AssetsPage() {
           }
         }
       } else {
-        // If no community report, try AI analysis
-        const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
-        console.log("ransomwareReport", jsonStringify(ransomwareReport));
+        // If no community report, show message and return to send modal
+        alert("Address not found in community database. No reports available for this address.");
+        setIsAnalyzeAddressLoading(false);
+        setShowSendModal(true);
+        return;
 
-        if ("Ok" in ransomwareReport) {
-          const isSafe = !ransomwareReport.Ok.is_ransomware;
-          setIsAnalyzeAddressSafe(isSafe);
-          setAiAnalysisData(ransomwareReport.Ok);
-          setAnalysisSource("ai");
+        // COMMENTED OUT: AI Analysis fallback
+        // // If no community report, try AI analysis
+        // const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
+        // console.log("ransomwareReport", jsonStringify(ransomwareReport));
 
-          // Create analyze history for AI analysis
-          try {
-            await backend.create_analyze_history({
-              address: destinationAddress,
-              is_safe: isSafe,
-              analyzed_type: { AIAnalysis: null },
-              metadata: jsonStringify(ransomwareReport.Ok),
-              token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-            });
-            console.log(`AI analysis history (${isSafe ? "safe" : "unsafe"}) saved successfully`);
-          } catch (historyError) {
-            console.error("Failed to save AI analysis history:", historyError);
-          }
-        } else {
-          // If AI also fails, default to safe but no analysis source
-          setIsAnalyzeAddressSafe(true);
-          setAnalyzeAddressData(null);
-          setAnalysisSource("");
-          console.log("No analysis available, defaulting to safe");
-        }
+        // if ("Ok" in ransomwareReport) {
+        //   const isSafe = !ransomwareReport.Ok.is_ransomware;
+        //   setIsAnalyzeAddressSafe(isSafe);
+        //   setAiAnalysisData(ransomwareReport.Ok);
+        //   setAnalysisSource("ai");
+
+        //   // Create analyze history for AI analysis
+        //   try {
+        //     await backend.create_analyze_history({
+        //       address: destinationAddress,
+        //       is_safe: isSafe,
+        //       analyzed_type: { AIAnalysis: null },
+        //       metadata: jsonStringify(ransomwareReport.Ok),
+        //       token_type: getTokenTypeVariant(detectChain(destinationAddress)),
+        //     });
+        //     console.log(`AI analysis history (${isSafe ? "safe" : "unsafe"}) saved successfully`);
+        //   } catch (historyError) {
+        //     console.error("Failed to save AI analysis history:", historyError);
+        //   }
+        // } else {
+        //   // If AI also fails, default to safe but no analysis source
+        //   setIsAnalyzeAddressSafe(true);
+        //   setAnalyzeAddressData(null);
+        //   setAnalysisSource("");
+        //   console.log("No analysis available, defaulting to safe");
+        // }
       }
     } catch (error) {
       console.error("Error analyzing address:", error);
-      // Default to safe if analysis fails
-      setIsAnalyzeAddressSafe(true);
-      setAnalyzeAddressData(null);
-      setAnalysisSource("");
+      alert("Error analyzing address. Please try again.");
+      setIsAnalyzeAddressLoading(false);
+      setShowSendModal(true);
+      return;
     } finally {
       setIsAnalyzeAddressLoading(false);
       setShowAnalyeAddressModal(true);
