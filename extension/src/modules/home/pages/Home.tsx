@@ -1,19 +1,42 @@
-import { useState } from "react";
-import cryptoCards from "../interfaces/carousel";
-import topBarImage from "../assets/Illus.svg"
-import NeoButton from "../components/ui/custom-button";
-import AnalyzeAddress from "../assets/analyze_address.svg";
-import AnalyzeContract from "../assets/analyze_contract.svg";
-import Bitcoin from "../assets/bitcoin.svg";
-import ProfileHeader from "../components/ui/header";
-import { Separator } from "../components/ui/separator";
+import { useState, useEffect } from "react";
+import cryptoCards from "../model/CarouselDummyModel";
+import topBarImage from "../../../assets/Illus.svg"
+import NeoButton from "../../../components/ui/custom-button";
+import AnalyzeAddress from "../../../assets/analyze_address.svg";
+import AnalyzeContract from "../../../assets/analyze_contract.svg";
+import Bitcoin from "../../../assets/bitcoin.svg";
+import ProfileHeader from "../../../components/ui/header";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
+import HistoryCard from "@/components/ui/history-card";
+import { getAnalysisHistory, type HistoryItem } from "@/lib/localStorage";
 
 function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load recent history (maksimal 2 item terbaru)
+    const loadRecentHistory = () => {
+      const history = getAnalysisHistory();
+      setRecentHistory(history.items.slice(0, 2)); // Ambil 2 item terbaru
+    };
+
+    loadRecentHistory();
+
+    // Set up interval untuk refresh history setiap 5 detik (opsional)
+    const interval = setInterval(loadRecentHistory, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const getCategoryText = (item: HistoryItem) => {
+    const typeText = item.analysisType === 'icp' ? 'AI Analysis' : 'Community';
+    const statusText = item.isSafe ? 'Safe' : 'Risky';
+    return `${statusText} - ${typeText}`;
+  };
 
   const prevSlide = () => {
     const isFirstSlide = currentIndex === 0;
@@ -34,14 +57,7 @@ function Home() {
      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
 
       { /* Header Sections */}
-      <ProfileHeader
-          mainAvatarSrc='https://github.com/shadcn.png'
-          mainAvatarFallback='N'
-          title="Indra's Wallet"
-          address='0x1A2b3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9g0H'
-          secondaryAvatarSrc='https://github.com/shadcn.png'
-          secondaryAvatarFallback='CN'
-        />
+      <ProfileHeader />
 
       { /* Carousel Section */}
       <div className="bg-[#1F2128] m-4 flex items-center justify-center">
@@ -101,23 +117,27 @@ function Home() {
       { /* History Section */}
       <div className="flex flex-row justify-between m-4">
         <h1 className="text-[16px] font-semibold">History</h1>
-        <button className="text-[#99E39E] text-[14px] group-hover:text-green">View All</button>
+        <button className="text-[#99E39E] hover:text-white transition-transform duration-300 ease-in-out" onClick={() => navigate(ROUTES.HISTORY)}>View All</button>
       </div>
 
       <div className="flex flex-col items-center m-4">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <div key={index} className="w-full mb-4">
-            <div className="flex flex-row justify-between items-center w-full pb-5">
-              <img src={Bitcoin} alt="Ethereum" className="pe-4"/>
-              <div className="flex flex-col text-left grow-7">
-                <p className="text-white">0x1234567890abcdef</p>
-                <p className="text-white/50">Transaction - AI</p>
-              </div>
-              <p className="grow-3 text-end">24/04/35</p>
-            </div>
-            <Separator />
+        {recentHistory.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-white/50 text-sm">No analysis history yet</p>
+            <p className="text-white/30 text-xs mt-1">Analyze an address to see it here</p>
           </div>
-        ))}
+        ) : (
+          recentHistory.map((item) => (
+            <HistoryCard
+              key={item.id}
+              onClick={() => navigate(ROUTES.DETAIL_HISTORY.replace(':id', item.id))}
+              icon={Bitcoin}
+              address={item.address}
+              category={getCategoryText(item)}
+              date={item.date}
+            />
+          ))
+        )}
       </div>
 
     </div>

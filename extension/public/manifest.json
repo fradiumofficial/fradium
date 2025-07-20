@@ -7,15 +7,18 @@
     "default_popup": "index.html"
   },
   "permissions": [
-    "tabs"
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://fradium.motionlaboratory.com/*",
+    "http://127.0.0.1:4943/*",
+    "https://*.ic0.app/*",
+    "https://*.icp0.io/*",
+    "https://mempool.space/*"
   ],
   "background": {
-    "service_worker": "src/background/background.ts"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["src/background/content.ts"]
-    }
-  ]
+    "service_worker": "assets/background.js",
+    "type": "module"
+  }
 }

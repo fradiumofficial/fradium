@@ -1,0 +1,49 @@
+name: Build and Push to ACR
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to dockerhub
+        uses: docker/build-push-action@v5
+        with:
+          context: ./mythril
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/smart-contract-analyze:${{ github.ref_name }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ARGOCD_SERVER: argocd.motionlaboratory.com
+      ARGOCD_APP_NAME: fradium
+    needs: [build]
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v2
+      - name: Update image with latest tags
+        uses: clowdhaus/argo-cd-action/@main
+        with:
+          command: app set ${{ env.ARGOCD_APP_NAME }} --project fradium-project --helm-set image.tag=${{ github.ref_name }}
+          options: --auth-token=${{ secrets.ARGOCD_TOKEN_AWS }} --server=${{ env.ARGOCD_SERVER }}
+      - name: Argo CD Action Sync
+        uses: clowdhaus/argo-cd-action/@main
+        with:
+          command: app sync ${{ env.ARGOCD_APP_NAME }} --project fradium-project
+          options: --auth-token=${{ secrets.ARGOCD_TOKEN_AWS }} --server=${{ env.ARGOCD_SERVER }}
+      - name: Argo CD Action Wait Healthy
+        uses: clowdhaus/argo-cd-action/@main
+        with:
+          command: app wait ${{ env.ARGOCD_APP_NAME }} --grpc-web --health
+          options: --auth-token=${{ secrets.ARGOCD_TOKEN_AWS }} --server=${{ env.ARGOCD_SERVER }}
