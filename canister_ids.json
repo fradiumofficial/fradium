@@ -1,18 +1,21 @@
 {
   "backend": {
-    "ic": "sy75w-kyaaa-aaaae-qfdsq-cai"
+    "ic": "oqcob-6iaaa-aaaar-qbr7q-cai"
   },
   "bitcoin": {
     "ic": "sr4wk-4qaaa-aaaae-qfdta-cai"
   },
-  "frontend": {
-    "ic": "t4sse-tyaaa-aaaae-qfduq-cai"
-  },
   "chatbot": {
     "ic": "x5piw-ciaaa-aaaam-aejxa-cai"
   },
+  "frontend": {
+    "ic": "t4sse-tyaaa-aaaae-qfduq-cai"
+  },
   "llm": {
     "ic": "vasg6-raaaa-aaaam-aejyq-cai"
+  },
+  "ransomware_detector": {
+    "ic": "zkoni-faaaa-aaaar-qbsaa-cai"
   },
   "token": {
     "ic": "v3x23-lyaaa-aaaam-aej2a-cai"

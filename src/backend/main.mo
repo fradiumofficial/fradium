@@ -673,7 +673,7 @@ actor Fradium {
         let newVoter : Voter = {
           voter = caller;
           vote = params.vote_type;
-          vote_weight = (params.stake_amount * calculate_activity_score(caller)) / 1000;
+          vote_weight = (1 * calculate_activity_score(caller)) / 1000;
         };
 
         let updatedVotedBy = Array.append(report.voted_by, [newVoter]);

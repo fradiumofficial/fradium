@@ -7,7 +7,6 @@
       "dependencies": ["token", "internet_identity"]
     },
     "frontend": {
-      "dependencies": ["backend"],
       "source": ["src/frontend/dist"],
       "type": "assets",
       "workspace": "frontend",
@@ -43,7 +42,7 @@
     "bitcoin": {
       "main": "src/bitcoin/Main.mo",
       "type": "motoko",
-      "init_arg": "(variant { regtest })"
+      "init_arg": "(variant { testnet })"
     },
     "ransomware_detector": {
       "type": "rust",

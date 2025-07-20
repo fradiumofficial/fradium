@@ -107,7 +107,7 @@ async fn fetch_transactions_mempool(address: &str) -> Result<Vec<MempoolTransact
             headers: vec![],
         };
 
-        let cycles = 40_000_000_000u128;
+        let cycles = 55_000_000_000u128;
 
         match http_request(request, cycles).await {
             Ok((response,)) => {
