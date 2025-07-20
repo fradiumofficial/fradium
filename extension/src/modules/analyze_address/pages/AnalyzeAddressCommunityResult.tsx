@@ -25,7 +25,7 @@ export default function AnalyzeAddressCommunityResult() {
   });
   
   const [isSaved, setIsSaved] = useState<boolean>(false);
-  const [safetyReport, setSafetyReport] = useState<any>(null);
+  const [_, setSafetyReport] = useState<any>(null);
 
   // Gunakan useEffect untuk update state jika result berubah
   useEffect(() => {

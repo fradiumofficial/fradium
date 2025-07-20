@@ -44,7 +44,7 @@ function AnalyzeAddress() {
             disabled={isSubmitDisabled}
             type="submit"
           >
-            {loading ? "Menganalisis..." : "Analisis Alamat"}
+            {loading ? "Analysis..." : "Analyze Address"}
           </NeoButton>
           
           {error && (
@@ -55,7 +55,7 @@ function AnalyzeAddress() {
 
           {address && !isValidAddress(address) && (
             <p className="text-yellow-400 text-xs mt-1">
-              Mohon masukkan alamat yang valid.
+              Please input valid address.
             </p>
           )}
         </form>

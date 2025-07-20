@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { analyzeAddress, analyzeAddressCommunity } from "../../api/AnalyzeAddressApi";
 import { ROUTES } from "@/constants/routes";
+import { saveAnalysisToHistory } from "@/lib/localStorage";
+import type { ICPAnalysisResult, ICPAnalysisCommunityResult } from "../../model/AnalyzeAddressModel";
 
 // Tipe data untuk hasil analisis agar lebih jelas
-type CommunityResult = { is_safe: boolean; [key: string]: any };
-type IcpResult = { [key: string]: any };
+type CommunityResult = ICPAnalysisCommunityResult;
+type IcpResult = ICPAnalysisResult;
 
 /**
  * Hook untuk mengelola logika analisis alamat.
@@ -37,6 +39,10 @@ export const useAddressAnalysis = () => {
       // 3. Cek hasil komunitas: Jika tidak aman, berhenti dan tampilkan hasil
       if (communityResult?.is_safe === false) {
         console.log('Address flagged by community, showing result and stopping.');
+        
+        // Simpan hasil community analysis ke history
+        saveAnalysisToHistory(address, communityResult, 'community');
+        
         navigate(ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT, {
           state: { result: communityResult, address },
           replace: true
@@ -49,7 +55,10 @@ export const useAddressAnalysis = () => {
       const icpResult: IcpResult = await analyzeAddress(address);
       console.log("ICP Analysis Result:", icpResult);
 
-      // 5. Navigasi ke halaman hasil ICP
+      // 5. Simpan hasil ICP analysis ke history
+      saveAnalysisToHistory(address, icpResult, 'icp');
+
+      // 6. Navigasi ke halaman hasil ICP
       navigate(ROUTES.ANALYZE_ADDRESS_RESULT, {
         state: { result: icpResult, address },
         replace: true

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import cryptoCards from "../model/CarouselDummyModel";
 import topBarImage from "../../../assets/Illus.svg"
 import NeoButton from "../../../components/ui/custom-button";
@@ -10,11 +10,33 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import HistoryCard from "@/components/ui/history-card";
+import { getAnalysisHistory, type HistoryItem } from "@/lib/localStorage";
 
 function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [date] = useState(new Date());
+  const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load recent history (maksimal 2 item terbaru)
+    const loadRecentHistory = () => {
+      const history = getAnalysisHistory();
+      setRecentHistory(history.items.slice(0, 2)); // Ambil 2 item terbaru
+    };
+
+    loadRecentHistory();
+
+    // Set up interval untuk refresh history setiap 5 detik (opsional)
+    const interval = setInterval(loadRecentHistory, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const getCategoryText = (item: HistoryItem) => {
+    const typeText = item.analysisType === 'icp' ? 'AI Analysis' : 'Community';
+    const statusText = item.isSafe ? 'Safe' : 'Risky';
+    return `${statusText} - ${typeText}`;
+  };
 
   const prevSlide = () => {
     const isFirstSlide = currentIndex === 0;
@@ -95,20 +117,27 @@ function Home() {
       { /* History Section */}
       <div className="flex flex-row justify-between m-4">
         <h1 className="text-[16px] font-semibold">History</h1>
-        <button className="text-[#99E39E] hover:text-white transition-transform duration-300 ease-in-out" onClick={() => navigate(ROUTES.ANALYZE_PROGRESS)}>View All</button>
+        <button className="text-[#99E39E] hover:text-white transition-transform duration-300 ease-in-out" onClick={() => navigate(ROUTES.HISTORY)}>View All</button>
       </div>
 
       <div className="flex flex-col items-center m-4">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <HistoryCard
-            onClick={() => navigate(ROUTES.DETAIL_HISTORY.replace(':id', index.toString()))}
-            key={index}
-            icon={Bitcoin}
-            address={`13AM4VW2dhxYgXeQepoHkHSQuy6NgaEb94`}
-            category="Ransomeware - AI"
-            date={`${date.toLocaleDateString()}`}
-          />
-        ))}
+        {recentHistory.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-white/50 text-sm">No analysis history yet</p>
+            <p className="text-white/30 text-xs mt-1">Analyze an address to see it here</p>
+          </div>
+        ) : (
+          recentHistory.map((item) => (
+            <HistoryCard
+              key={item.id}
+              onClick={() => navigate(ROUTES.DETAIL_HISTORY.replace(':id', item.id))}
+              icon={Bitcoin}
+              address={item.address}
+              category={getCategoryText(item)}
+              date={item.date}
+            />
+          ))
+        )}
       </div>
 
     </div>
