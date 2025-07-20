@@ -64,18 +64,28 @@ export const parseCommunityAnalysisResponse = (
 };
 
 export const calculateRiskScore = (report: CommunityReport): number => {
-  const totalVotes = report.votes_yes + report.votes_no;
+  // Safely handle undefined/null values
+  const votesYes = report.votes_yes || 0;
+  const votesNo = report.votes_no || 0;
+  const totalVotes = votesYes + votesNo;
+  
   if (totalVotes === 0) return 0;
-  return (report.votes_yes / totalVotes) * 100;
+  
+  const score = (votesYes / totalVotes) * 100;
+  return isNaN(score) ? 0 : score;
 };
 
 export const getSafetyReport = (result: ICPAnalysisCommunityResult): SafetyReport => {
+  const report = result.report;
+  const totalVotes = report ? (report.votes_yes || 0) + (report.votes_no || 0) : 0;
+  const riskScore = report ? calculateRiskScore(report) : 0;
+  
   return {
-    hasSafetyReport: !!result.report,
-    reportDetails: result.report || undefined,
-    isSafeAddress: result.is_safe,
-    totalVotes: result.report ? result.report.votes_yes + result.report.votes_no : 0,
-    riskScore: result.report ? calculateRiskScore(result.report) : 0
+    hasSafetyReport: !!report,
+    reportDetails: report || undefined,
+    isSafeAddress: result.is_safe === true,
+    totalVotes: totalVotes,
+    riskScore: isNaN(riskScore) ? 0 : riskScore
   };
 };
 

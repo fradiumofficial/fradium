@@ -15,6 +15,11 @@
     "http://127.0.0.1:4943/*",
     "https://*.ic0.app/*",
     "https://*.icp0.io/*",
+    "https://ic0.app/*",
+    "https://icp-api.io/*",
+    "https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/*",
+    "https://oqcob-6iaaa-aaaar-qbr7q-cai.icp0.io/*",
+    "https://zkoni-faaaa-aaaar-qbsaa-cai.icp0.io/*",
     "https://mempool.space/*"
   ],
   "background": {

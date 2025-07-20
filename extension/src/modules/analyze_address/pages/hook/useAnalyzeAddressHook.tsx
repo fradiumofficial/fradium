@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { analyzeAddress, analyzeAddressCommunity } from "../../api/AnalyzeAddressApi";
+import { analyzeAddressCommunity } from "../../api/AnalyzeAddressApi";
 import { ROUTES } from "@/constants/routes";
 import { saveAnalysisToHistory } from "@/lib/localStorage";
-import type { ICPAnalysisResult, ICPAnalysisCommunityResult } from "../../model/AnalyzeAddressModel";
+import type { ICPAnalysisCommunityResult } from "../../model/AnalyzeAddressModel";
 
 // Tipe data untuk hasil analisis agar lebih jelas
 type CommunityResult = ICPAnalysisCommunityResult;
-type IcpResult = ICPAnalysisResult;
+// type IcpResult = ICPAnalysisResult;
 
 /**
  * Hook untuk mengelola logika analisis alamat.
@@ -37,32 +37,32 @@ export const useAddressAnalysis = () => {
         });
 
       // 3. Cek hasil komunitas: Jika tidak aman, berhenti dan tampilkan hasil
-      if (communityResult?.is_safe === false) {
-        console.log('Address flagged by community, showing result and stopping.');
-        
-        // Simpan hasil community analysis ke history
-        saveAnalysisToHistory(address, communityResult, 'community');
-        
-        navigate(ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT, {
-          state: { result: communityResult, address },
-          replace: true
-        });
-        return; // Hentikan eksekusi lebih lanjut
-      }
-
-      // 4. Analisis ICP (jika komunitas aman atau gagal)
-      console.log('Step 2: Starting ICP analysis...');
-      const icpResult: IcpResult = await analyzeAddress(address);
-      console.log("ICP Analysis Result:", icpResult);
-
-      // 5. Simpan hasil ICP analysis ke history
-      saveAnalysisToHistory(address, icpResult, 'icp');
-
-      // 6. Navigasi ke halaman hasil ICP
-      navigate(ROUTES.ANALYZE_ADDRESS_RESULT, {
-        state: { result: icpResult, address },
+      // if (communityResult?.is_safe === false) {
+      console.log('Address flagged by community, showing result and stopping.');
+      
+      // Simpan hasil community analysis ke history
+      saveAnalysisToHistory(address, communityResult!, 'community');
+      
+      navigate(ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT, {
+        state: { result: communityResult, address },
         replace: true
       });
+      //   return; // Hentikan eksekusi lebih lanjut
+      // }
+
+      // 4. Analisis ICP (jika komunitas aman atau gagal)
+      // console.log('Step 2: Starting ICP analysis...');
+    //   const icpResult: IcpResult = await analyzeAddress(address);
+    //   console.log("ICP Analysis Result:", icpResult);
+
+      // 5. Simpan hasil ICP analysis ke history
+    //   saveAnalysisToHistory(address, icpResult, 'icp');
+
+      // 6. Navigasi ke halaman hasil ICP
+    //   navigate(ROUTES.ANALYZE_ADDRESS_RESULT, {
+    //     state: { result: icpResult, address },
+    //     replace: true
+    //   });
 
     } catch (err) {
       // Tangani error fatal (misalnya dari analisis ICP)

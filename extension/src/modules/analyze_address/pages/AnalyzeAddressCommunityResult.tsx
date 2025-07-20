@@ -133,12 +133,24 @@ export default function AnalyzeAddressCommunityResult() {
   const totalVotes = report ? report.votes_yes + report.votes_no : 0;
   const confidencePercentage = confidenceLevel === "HIGH" ? 95 : confidenceLevel === "MEDIUM" ? 75 : 50;
 
-  const handleComplete = () => {
-    navigate(ROUTES.HOME);
+  // Helper function to safely format numbers
+  const safeFormat = (value: number | undefined | null, defaultValue: number = 0): string => {
+    if (value === undefined || value === null || isNaN(value)) {
+      return defaultValue.toString();
+    }
+    return value.toString();
   };
 
-  const handleViewHistory = () => {
-    navigate(ROUTES.HISTORY);
+  // Helper function to safely format percentage
+  const safeFormatPercentage = (value: number | undefined | null, defaultValue: number = 0): string => {
+    if (value === undefined || value === null || isNaN(value)) {
+      return `${defaultValue}%`;
+    }
+    return `${value.toFixed(1)}%`;
+  };
+
+  const handleComplete = () => {
+    navigate(ROUTES.HOME);
   };
 
   return (
@@ -149,12 +161,7 @@ export default function AnalyzeAddressCommunityResult() {
       {/* Analyze Address Section */}
       <div className="m-4">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-[20px] font-semibold">Community Analysis</h1>
-          {isSaved && (
-            <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded">
-              ✓ Saved
-            </span>
-          )}
+          <h1 className="text-[20px] font-semibold">Analyze Address</h1>
         </div>
         
         {/* Display analyzed address */}
@@ -178,7 +185,7 @@ export default function AnalyzeAddressCommunityResult() {
                   ? 'bg-red-500/20 text-red-400'
                   : 'bg-yellow-500/20 text-yellow-400'
               }`}>
-                {report.category.toUpperCase()}
+                {report.category}
               </span>
             </div>
             <p className="text-sm text-white/70 mb-2">{report.description}</p>
@@ -206,7 +213,7 @@ export default function AnalyzeAddressCommunityResult() {
           </div>
           
           <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-            <p className="font-medium text-[18px] pb-2">{riskScore.toFixed(1)}%</p>
+            <p className="font-medium text-[18px] pb-2">{safeFormatPercentage(riskScore)}</p>
             <div className="flex flex-row">
               <img src={Wallet} alt="Risk" className="w-5 h-5"/>
               <p className="font-normal text-[14px] text-white/60 ps-1">Risk Score</p>
@@ -222,7 +229,7 @@ export default function AnalyzeAddressCommunityResult() {
           </div>
           
           <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-            <p className="font-medium text-[18px] pb-2">{totalVotes}</p>
+            <p className="font-medium text-[18px] pb-2">{safeFormat(totalVotes)}</p>
             <div className="flex flex-row">
               <img src={Wallet} alt="Votes" className="w-5 h-5"/>
               <p className="font-normal text-[14px] text-white/60 ps-1">Total Votes</p>
@@ -235,13 +242,13 @@ export default function AnalyzeAddressCommunityResult() {
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="bg-red-500/10 border border-red-500/20 p-3 rounded">
               <div className="text-center">
-                <p className="text-red-400 font-semibold text-lg">{report.votes_yes}</p>
+                <p className="text-red-400 font-semibold text-lg">{safeFormat(report.votes_yes)}</p>
                 <p className="text-xs text-white/60">Suspicious Votes</p>
               </div>
             </div>
             <div className="bg-green-500/10 border border-green-500/20 p-3 rounded">
               <div className="text-center">
-                <p className="text-green-400 font-semibold text-lg">{report.votes_no}</p>
+                <p className="text-green-400 font-semibold text-lg">{safeFormat(report.votes_no)}</p>
                 <p className="text-xs text-white/60">Safe Votes</p>
               </div>
             </div>
@@ -273,13 +280,6 @@ export default function AnalyzeAddressCommunityResult() {
         <NeoButton icon={Wallet} onClick={handleComplete}>
           Complete
         </NeoButton>
-        
-        <button 
-          onClick={handleViewHistory}
-          className="w-full px-4 py-2 text-sm text-[#99E39E] hover:text-white bg-transparent border border-[#99E39E]/30 hover:border-[#99E39E] rounded transition-colors"
-        >
-          View Analysis History
-        </button>
       </div>
     </div>
   );

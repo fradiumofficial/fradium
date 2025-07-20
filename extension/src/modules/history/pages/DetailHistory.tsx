@@ -17,10 +17,23 @@ function DetailHistory() {
 
   useEffect(() => {
     if (id) {
+      console.log('DetailHistory: Loading history item with ID:', id);
       const item = getHistoryItemById(id);
+      console.log('DetailHistory: History item loaded:', item);
+      
+      if (item) {
+        console.log('DetailHistory: Item details:', {
+          analysisType: item.analysisType,
+          result: item.result,
+          riskScore: item.riskScore,
+          isSafe: item.isSafe
+        });
+      }
+      
       setHistoryItem(item);
       setLoading(false);
     } else {
+      console.log('DetailHistory: No ID provided');
       setLoading(false);
     }
   }, [id]);
@@ -51,20 +64,44 @@ function DetailHistory() {
     );
   }
 
+  // Validate required properties
+  if (!historyItem.result || !historyItem.analysisType) {
+    console.error('DetailHistory: Invalid history item structure:', historyItem);
+    return (
+      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
+        <ProfileHeader />
+        <div className="m-4 text-center">
+          <h1 className="font-semibold text-[20px] text-white mb-4">Invalid Data</h1>
+          <p className="text-white/50 mb-4">The history item data is corrupted or invalid.</p>
+          <NeoButton 
+            icon={Wallet} 
+            onClick={() => navigate(ROUTES.HISTORY)}
+          >
+            Back to History
+          </NeoButton>
+        </div>
+      </div>
+    );
+  }
+
   // Convert confidence percentage untuk SafetyCard
   const getConfidencePercentage = () => {
     if (historyItem.analysisType === 'icp') {
       const icpResult = historyItem.result as ICPAnalysisResult;
-      return Math.round((icpResult.confidence_level === "HIGH" ? 95 : icpResult.confidence_level === "MEDIUM" ? 75 : 50));
+      const confidenceLevel = icpResult.confidence_level || "LOW";
+      return Math.round(confidenceLevel === "HIGH" ? 95 : confidenceLevel === "MEDIUM" ? 75 : 50);
     } else if (historyItem.analysisType === 'smartcontract') {
       // Untuk smart contract, confidence berdasarkan kebalikan dari risk score
-      return Math.round(100 - historyItem.riskScore);
+      const riskScore = historyItem.riskScore || 0;
+      return Math.round(100 - riskScore);
     } else {
       // Untuk community, gunakan vote ratio sebagai confidence
       const communityResult = historyItem.result as ICPAnalysisCommunityResult;
       if (communityResult.report) {
-        const totalVotes = communityResult.report.votes_yes + communityResult.report.votes_no;
-        return totalVotes > 0 ? Math.round((Math.max(communityResult.report.votes_yes, communityResult.report.votes_no) / totalVotes) * 100) : 50;
+        const votesYes = communityResult.report.votes_yes || 0;
+        const votesNo = communityResult.report.votes_no || 0;
+        const totalVotes = votesYes + votesNo;
+        return totalVotes > 0 ? Math.round((Math.max(votesYes, votesNo) / totalVotes) * 100) : 50;
       }
       return 50;
     }
@@ -74,38 +111,92 @@ function DetailHistory() {
     if (historyItem.analysisType === 'icp') {
       const icpResult = historyItem.result as ICPAnalysisResult;
       return [
-        { label: "Ransomware Probability", value: `${(icpResult.ransomware_probability * 100).toFixed(2)}%`, color: icpResult.ransomware_probability > 0.5 ? "#E49B9C" : "#4A834C" },
-        { label: "Confidence Level", value: icpResult.confidence_level, color: "white" },
-        { label: "Transactions Analyzed", value: icpResult.transactions_analyzed.toString(), color: "white" },
-        { label: "Threshold Used", value: icpResult.threshold_used.toString().substring(0, 6), color: "white" },
+        { 
+          label: "Ransomware Probability", 
+          value: `${((icpResult.ransomware_probability || 0) * 100).toFixed(2)}%`, 
+          color: (icpResult.ransomware_probability || 0) > 0.5 ? "#E49B9C" : "#4A834C" 
+        },
+        { 
+          label: "Confidence Level", 
+          value: icpResult.confidence_level || "UNKNOWN", 
+          color: "white" 
+        },
+        { 
+          label: "Transactions Analyzed", 
+          value: (icpResult.transactions_analyzed || 0).toString(), 
+          color: "white" 
+        },
+        { 
+          label: "Threshold Used", 
+          value: (icpResult.threshold_used || 0).toString().substring(0, 6), 
+          color: "white" 
+        },
       ];
     } else if (historyItem.analysisType === 'smartcontract') {
       const smartContractResult = historyItem.result as SmartContractAnalysisResult;
+      // Safely handle issues array
+      const issues = smartContractResult.issues || [];
       const summary = {
-        total_issues: smartContractResult.issues.length,
-        high: smartContractResult.issues.filter(issue => issue.severity.toLowerCase() === 'high').length,
-        medium: smartContractResult.issues.filter(issue => issue.severity.toLowerCase() === 'medium').length,
-        low: smartContractResult.issues.filter(issue => issue.severity.toLowerCase() === 'low').length,
+        total_issues: issues.length,
+        high: issues.filter(issue => issue.severity?.toLowerCase() === 'high').length,
+        medium: issues.filter(issue => issue.severity?.toLowerCase() === 'medium').length,
+        low: issues.filter(issue => issue.severity?.toLowerCase() === 'low').length,
       };
 
       return [
-        { label: "Total Issues", value: summary.total_issues.toString(), color: summary.total_issues > 0 ? "#E49B9C" : "#4A834C" },
-        { label: "High Severity", value: summary.high.toString(), color: summary.high > 0 ? "#E49B9C" : "#4A834C" },
-        { label: "Medium Severity", value: summary.medium.toString(), color: summary.medium > 0 ? "#FFA500" : "#4A834C" },
-        { label: "Low Severity", value: summary.low.toString(), color: summary.low > 0 ? "#FFFF00" : "#4A834C" },
-        { label: "Risk Score", value: `${historyItem.riskScore.toFixed(1)}%`, color: historyItem.riskScore > 50 ? "#E49B9C" : "#4A834C" },
+        { 
+          label: "Total Issues", 
+          value: summary.total_issues.toString(), 
+          color: summary.total_issues > 0 ? "#E49B9C" : "#4A834C" 
+        },
+        { 
+          label: "High Severity", 
+          value: summary.high.toString(), 
+          color: summary.high > 0 ? "#E49B9C" : "#4A834C" 
+        },
+        { 
+          label: "Medium Severity", 
+          value: summary.medium.toString(), 
+          color: summary.medium > 0 ? "#FFA500" : "#4A834C" 
+        },
+        { 
+          label: "Low Severity", 
+          value: summary.low.toString(), 
+          color: summary.low > 0 ? "#FFFF00" : "#4A834C" 
+        },
+        { 
+          label: "Risk Score", 
+          value: `${(historyItem.riskScore || 0).toFixed(1)}%`, 
+          color: (historyItem.riskScore || 0) > 50 ? "#E49B9C" : "#4A834C" 
+        },
       ];
     } else {
       const communityResult = historyItem.result as ICPAnalysisCommunityResult;
       const details = [
-        { label: "Community Status", value: communityResult.is_safe ? "Safe" : "Risky", color: communityResult.is_safe ? "#4A834C" : "#E49B9C" },
+        { 
+          label: "Community Status", 
+          value: communityResult.is_safe ? "Safe" : "Risky", 
+          color: communityResult.is_safe ? "#4A834C" : "#E49B9C" 
+        },
       ];
       
       if (communityResult.report) {
         details.push(
-          { label: "Report Category", value: communityResult.report.category, color: "white" },
-          { label: "Votes Yes", value: communityResult.report.votes_yes.toString(), color: "#4A834C" },
-          { label: "Votes No", value: communityResult.report.votes_no.toString(), color: "#E49B9C" },
+          { 
+            label: "Report Category", 
+            value: communityResult.report.category || "Unknown", 
+            color: "white" 
+          },
+          { 
+            label: "Votes Yes", 
+            value: (communityResult.report.votes_yes || 0).toString(), 
+            color: "#4A834C" 
+          },
+          { 
+            label: "Votes No", 
+            value: (communityResult.report.votes_no || 0).toString(), 
+            color: "#E49B9C" 
+          },
         );
       }
       
@@ -114,7 +205,22 @@ function DetailHistory() {
   };
 
   const analysisDetails = getAnalysisDetails();
-  const reportedBy = historyItem.analysisType === 'icp' && 'smartcontract' ? "Fradium AI" : "Fradium Community Report";
+  
+  // Safe determination of reporter based on analysis type
+  const getReportedBy = () => {
+    switch (historyItem.analysisType) {
+      case 'icp':
+        return "Fradium AI";
+      case 'smartcontract':
+        return "Fradium Smart Contract Analysis";
+      case 'community':
+        return "Fradium Community Report";
+      default:
+        return "Fradium Analysis";
+    }
+  };
+  
+  const reportedBy = getReportedBy();
 
   return (
     <div className="w-[400px] h-full space-y-4 bg-[#25262B] text-white shadow-md">
@@ -172,7 +278,9 @@ function DetailHistory() {
             <h1 className="font-semibold text-[16px] pb-[4px]">Security Issues</h1>
             {(() => {
               const smartContractResult = historyItem.result as SmartContractAnalysisResult;
-              if (smartContractResult.issues.length === 0) {
+              const issues = smartContractResult.issues || [];
+              
+              if (issues.length === 0) {
                 return (
                   <p className="text-green-300 text-[14px]">✅ No security issues detected</p>
                 );
@@ -180,24 +288,24 @@ function DetailHistory() {
               
               return (
                 <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {smartContractResult.issues.slice(0, 3).map((issue, index) => (
+                  {issues.slice(0, 3).map((issue, index) => (
                     <div key={index} className="bg-white/5 p-3 rounded">
                       <div className="flex items-center mb-1">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          issue.severity.toLowerCase() === 'high' ? 'bg-red-500/20 text-red-300' :
-                          issue.severity.toLowerCase() === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          (issue.severity || "").toLowerCase() === 'high' ? 'bg-red-500/20 text-red-300' :
+                          (issue.severity || "").toLowerCase() === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-blue-500/20 text-blue-300'
                         }`}>
-                          {issue.severity}
+                          {issue.severity || "Unknown"}
                         </span>
                       </div>
-                      <h3 className="font-medium text-sm mb-1">{issue.title}</h3>
-                      <p className="text-xs text-white/60">Function: {issue.function}</p>
+                      <h3 className="font-medium text-sm mb-1">{issue.title || "Unknown Issue"}</h3>
+                      <p className="text-xs text-white/60">Function: {issue.function || "N/A"}</p>
                     </div>
                   ))}
-                  {smartContractResult.issues.length > 3 && (
+                  {issues.length > 3 && (
                     <p className="text-xs text-white/50 text-center">
-                      +{smartContractResult.issues.length - 3} more issues
+                      +{issues.length - 3} more issues
                     </p>
                   )}
                 </div>

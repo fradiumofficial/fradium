@@ -11,15 +11,25 @@ export const getBackendActor = async (): Promise<ActorSubclass<_SERVICE>> => {
     return actor;
   }
 
-  const agent = await createAgent();
-  const canisterId = getCanisterId('backend');
+  try {
+    console.log('Creating agent for backend...');
+    const agent = await createAgent();
+    const canisterId = getCanisterId('backend');
+    
+    console.log('Backend canister ID:', canisterId);
+    console.log('Agent created successfully');
 
-  actor = Actor.createActor(idlFactory, {
-    agent,
-    canisterId,
-  });
+    actor = Actor.createActor(idlFactory, {
+      agent,
+      canisterId,
+    });
 
-  return actor;
+    console.log('Backend actor created successfully');
+    return actor;
+  } catch (error) {
+    console.error('Error creating backend actor:', error);
+    throw new Error(`Failed to create backend actor: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
 
 export const clearBackendActor = (): void => {
@@ -28,6 +38,15 @@ export const clearBackendActor = (): void => {
 
 // Helper functions for common backend operations
 export const analyzeAddressCommunity = async (address: string) => {
-  const actor = await getBackendActor();
-  return await actor.analyze_address(address);
+  try {
+    console.log('Creating backend actor...');
+    const actor = await getBackendActor();
+    console.log('Backend actor created, calling analyze_address...');
+    const result = await actor.analyze_address(address);
+    console.log('Analysis result:', result);
+    return result;
+  } catch (error) {
+    console.error('Error in analyzeAddressCommunity:', error);
+    throw new Error(`Failed to analyze address: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
