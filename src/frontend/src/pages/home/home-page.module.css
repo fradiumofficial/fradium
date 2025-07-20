@@ -666,7 +666,7 @@
 .keyFeatureSection {
     width: 100vw;
     max-width: 1500px;
-    margin: 164px auto 0 auto;
+    margin: 164px auto 164px auto;
     padding: 0 0 96px 0;
     position: relative;
 }

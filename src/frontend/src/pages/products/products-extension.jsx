@@ -22,17 +22,17 @@ const ProductsExtension = () => {
                 {/* Left: About Fradium Extension */}
                 <div className="flex flex-col items-start max-w-[540px]">
                     <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-2">KEY FEATURE</span>
-                    <h2 className="text-[36px] font-bold mb-6">About Fradium Extension</h2>
+                    <h2 className="text-[40px] font-medium mb-6">About Fradium Extension</h2>
                     <p className="text-[#B0B6BE] text-justify text-base font-normal leading-[1.6] mb-0 text-left">
                         Fradium Extension is a browser tool designed to help you assess the safety of blockchain interactions as you navigate Web3 platforms. After downloading and installing the extension, you can analyse wallet addresses and smart contracts directly from your browser. The extension runs checks in the background and displays risk information on the spot, so you can review potential threats without leaving the page or switching to another tool.
                     </p>
                     <img src="/assets/images/products-extension-works.png" alt="How It Works" className="max-w-[500px] w-full rounded-2xl mt-12" />
                 </div>
                 {/* Right: How It Works */}
-                <div className="flex flex-col items-start max-w-[540px] ml-auto">
+                <div className="flex flex-col mb-32 items-start max-w-[540px] ml-auto">
                     <img src="/assets/images/products-extension.png" alt="Fradium Extension UI" className="max-w-[500px] w-full rounded-2xl mb-12 float-right" />
                     <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-2">KEY FEATURE</span>
-                    <h2 className="text-[36px] font-bold mb-6">How It Works</h2>
+                    <h2 className="text-[40px] font-medium mb-6">How It Works</h2>
                     <p className="text-[#B0B6BE] text-justify text-base font-normal leading-[1.6] mb-0 text-left">
                         To use the Fradium Extension, simply download and install it on your browser. Once installed, you have two ways to scan wallet addresses or smart contracts. You can highlight the address or contract on any page, right-click, and select 'Scan with Fradium'. Alternatively, you can open the extension, enter the address or contract manually, and click the analyse button to check its risk level. Both options give you clear results directly in your browser, so you can verify before interacting.
                     </p>
