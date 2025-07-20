@@ -20,13 +20,28 @@ function History() {
     loadHistory();
   }, []);
 
-  const getIconForAnalysisType = (_analysisType: 'icp' | 'community') => {
-    // Untuk sementara gunakan Bitcoin icon, bisa ditambahkan icon lain
-    return Bitcoin;
+  const getIconForAnalysisType = (analysisType: 'icp' | 'community' | 'smartcontract') => {
+    // Untuk smart contract bisa menggunakan icon yang berbeda
+    // Untuk sementara gunakan Bitcoin icon untuk semua
+    switch (analysisType) {
+      case 'icp':
+      case 'community':
+      case 'smartcontract':
+      default:
+        return Bitcoin;
+    }
   };
 
   const getCategoryText = (item: HistoryItem) => {
-    const typeText = item.analysisType === 'icp' ? 'AI Analysis' : 'Community';
+    let typeText = '';
+    if (item.analysisType === 'icp') {
+      typeText = 'AI Analysis';
+    } else if (item.analysisType === 'community') {
+      typeText = 'Community';
+    } else if (item.analysisType === 'smartcontract') {
+      typeText = 'Smart Contract';
+    }
+    
     const statusText = item.isSafe ? 'Safe' : 'Risky';
     return `${statusText} - ${typeText}`;
   };

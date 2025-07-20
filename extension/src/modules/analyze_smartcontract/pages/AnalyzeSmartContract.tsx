@@ -1,39 +1,45 @@
 import NeoButton from "@/components/ui/custom-button";
 import ProfileHeader from "@/components/ui/header";
 import AnalyzeSmartContractIcon from "../../../assets/analyze_contract.svg";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-import { useState } from "react";
-import type { Root as AnalysisReport } from "../model/AnalyzeSmartContractModel";
-import { analyzeAddressSmartContract } from "../api";
-
+import { useState, useEffect } from "react";
 
 function AnalyzeSmartContract() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [address, setAddress] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<AnalysisReport | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  // Check if there's an error from progress page
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.error) {
+      setError(state.error);
+      setAddress(state.address || '');
+    }
+  }, [location.state]);
+
+  const handleSubmit = async (event?: React.FormEvent) => {
+    if (event) event.preventDefault();
+    
     if (!address.trim()) {
-      setError("Please enter a valid address.");
+      setError("Please enter a valid smart contract address.");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setResult(null);
+    // Navigate ke progress page terlebih dahulu
+    navigate(ROUTES.ANALYZE_SMART_CONTRACT_PROGRESS, { 
+      state: { 
+        address: address.trim(),
+        isAnalyzing: true
+      } 
+    });
+  }
 
-    try {
-      const result = await analyzeAddressSmartContract(address);
-      setResult(result);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
+  const handleAddressChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setAddress(event.target.value);
+    if (error) setError(null); // Clear error when user starts typing
   }
 
   return (
@@ -41,16 +47,35 @@ function AnalyzeSmartContract() {
     { /* Header Sections */}
     <ProfileHeader />
 
-    { /* Analyze Address Section */}
+    { /* Analyze Smart Contract Section */}
     <div className="m-4">
       <h1 className="text-[20px] font-semibold">Analyze Smart Contract</h1>
-      <textarea
-        name="smartcontract" 
-        id="smartcontract" 
-        placeholder="Input address here..."
-        className="border-1 border-white/5 p-3 w-full mt-[20px] mb-[8px] text-white text-[14px] font-normal bg-white/10"
-      />
-      <NeoButton icon={AnalyzeSmartContractIcon} onClick={() => navigate(ROUTES.ANALYZE_SMART_CONTRACT_RESULT)} >Analyze Smart Contract</NeoButton>
+      
+      <form onSubmit={handleSubmit}>
+        <textarea
+          name="smartcontract" 
+          id="smartcontract" 
+          placeholder="Input smart contract address here..."
+          value={address}
+          onChange={handleAddressChange}
+          className="border-1 border-white/5 p-3 w-full mt-[20px] mb-[8px] text-white text-[14px] font-normal bg-white/10 resize-none"
+          rows={3}
+        />
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+        
+        <NeoButton 
+          icon={AnalyzeSmartContractIcon} 
+          onClick={handleSubmit}
+          disabled={!address.trim()}
+        >
+          Analyze Smart Contract
+        </NeoButton>
+      </form>
     </div>
   </div>
   )

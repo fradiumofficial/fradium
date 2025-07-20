@@ -1,15 +1,16 @@
 import type { ICPAnalysisResult, ICPAnalysisCommunityResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
+import type { Root as SmartContractAnalysisResult } from "@/modules/analyze_smartcontract/model/AnalyzeSmartContractModel";
 
 // Interface untuk History Item
 export interface HistoryItem {
   id: string;
   address: string;
-  result: ICPAnalysisResult | ICPAnalysisCommunityResult;
+  result: ICPAnalysisResult | ICPAnalysisCommunityResult | SmartContractAnalysisResult;
   timestamp: number;
   date: string;
   isSafe: boolean;
   riskScore: number;
-  analysisType: 'icp' | 'community'; // Untuk membedakan jenis analisis
+  analysisType: 'icp' | 'community' | 'smartcontract'; // Tambah jenis analisis smart contract
 }
 
 export interface HistoryStorage {
@@ -22,8 +23,8 @@ const MAX_HISTORY_ITEMS = 100;
 // Fungsi untuk menyimpan analysis result ke history
 export function saveAnalysisToHistory(
   address: string, 
-  result: ICPAnalysisResult | ICPAnalysisCommunityResult,
-  analysisType: 'icp' | 'community' = 'icp'
+  result: ICPAnalysisResult | ICPAnalysisCommunityResult | SmartContractAnalysisResult,
+  analysisType: 'icp' | 'community' | 'smartcontract' = 'icp'
 ): HistoryItem {
   const timestamp = Date.now();
   const date = new Date(timestamp).toLocaleDateString();
@@ -43,6 +44,28 @@ export function saveAnalysisToHistory(
     } else {
       riskScore = isSafe ? 0 : 50; // Default risk score
     }
+  } else if (analysisType === 'smartcontract') {
+    const smartContractResult = result as SmartContractAnalysisResult;
+    // Hitung high severity issues untuk menentukan keamanan
+    const highSeverityCount = smartContractResult.issues.filter(issue => 
+      issue.severity.toLowerCase() === 'high'
+    ).length;
+    
+    // Smart contract dianggap aman jika tidak ada high severity issues
+    isSafe = highSeverityCount === 0;
+    
+    // Risk score berdasarkan jumlah dan severity issues
+    const totalIssues = smartContractResult.issues.length;
+    const mediumSeverityCount = smartContractResult.issues.filter(issue => 
+      issue.severity.toLowerCase() === 'medium'
+    ).length;
+    
+    // Formula: high issues = 100% risk, medium = 50% risk, low = 25% risk
+    riskScore = Math.min(100, 
+      (highSeverityCount * 100) + 
+      (mediumSeverityCount * 50) + 
+      ((totalIssues - highSeverityCount - mediumSeverityCount) * 25)
+    );
   } else {
     const icpResult = result as ICPAnalysisResult;
     isSafe = icpResult.is_ransomware === false;
@@ -266,4 +289,22 @@ export function getFromLocalStorage(key: string): [] | null {
     console.error('Error retrieving from localStorage:', error);
     return null;
   }
+}
+
+// Fungsi helper khusus untuk smart contract analysis
+export function getSmartContractHistory(): HistoryItem[] {
+  const allHistory = getAnalysisHistory();
+  return allHistory.items.filter(item => item.analysisType === 'smartcontract');
+}
+
+export function getLatestSmartContractAnalysis(address: string): HistoryItem | null {
+  const smartContractHistory = getSmartContractHistory();
+  const addressHistory = smartContractHistory.filter(item => 
+    item.address.toLowerCase() === address.toLowerCase()
+  );
+  
+  if (addressHistory.length === 0) return null;
+  
+  // Return the most recent analysis
+  return addressHistory.sort((a, b) => b.timestamp - a.timestamp)[0];
 }

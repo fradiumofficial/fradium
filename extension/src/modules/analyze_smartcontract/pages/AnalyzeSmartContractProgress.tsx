@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-import Search from "../../../../src/frontend/public/assets/images/analisis-progres.png";
+import { analyzeAddressSmartContract } from "../api/AnalyzeAddressSmartcontractApi";
+import { saveAnalysisToHistory } from "@/lib/localStorage";
+import Search from "../../../../../src/frontend/public/assets/images/analisis-progres.png";
 
-export default function AnalysisProgress() {
+export default function AnalyzeSmartContractProgress() {
   const location = useLocation();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -14,23 +16,50 @@ export default function AnalysisProgress() {
   const isAnalyzing = location.state?.isAnalyzing;
 
   const analysisSteps = [
-    "Checking Community Reports...", 
-    "Analyzing Address with AI...", 
-    "Processing Transaction Patterns...", 
-    "Checking Security Database...", 
-    "Finalizing Risk Assessment..."
+    "Connecting to Smart Contract Scanner...", 
+    "Analyzing Contract Bytecode...", 
+    "Checking for Known Vulnerabilities...", 
+    "Scanning Security Patterns...", 
+    "Generating Security Report..."
   ];
 
   useEffect(() => {
-    // If not coming from analysis flow, redirect to home
+    // If not coming from analysis flow, redirect to smart contract page
     if (!isAnalyzing || !address) {
-      navigate(ROUTES.HOME);
+      navigate(ROUTES.ANALYZE_SMART_CONTRACT);
       return;
     }
 
+    // Start analysis process
+    const performAnalysis = async () => {
+      try {
+        const result = await analyzeAddressSmartContract(address);
+        
+        // Simpan ke localStorage
+        const historyItem = saveAnalysisToHistory(address, result, 'smartcontract');
+        console.log('Smart contract analysis saved to history:', historyItem);
+        
+        // Navigate ke halaman result dengan data
+        navigate(ROUTES.ANALYZE_SMART_CONTRACT_RESULT, { 
+          state: { 
+            result, 
+            address,
+            historyId: historyItem.id 
+          } 
+        });
+      } catch (err) {
+        console.error('Error analyzing smart contract:', err);
+        navigate(ROUTES.ANALYZE_SMART_CONTRACT, {
+          state: { 
+            error: (err as Error).message || 'Failed to analyze smart contract',
+            address 
+          }
+        });
+      }
+    };
+
     const stepInterval = setInterval(() => {
       setCurrentStep((prev) => {
-        // Keep cycling through steps while analysis is running
         if (prev >= analysisSteps.length - 1) {
           return 0; 
         }
@@ -38,17 +67,19 @@ export default function AnalysisProgress() {
       });
     }, 2000);
 
+    // Start the actual analysis
+    performAnalysis();
+
     // Set a maximum timeout to prevent infinite loading
     const maxTimeout = setTimeout(() => {
       clearInterval(stepInterval);
-      // If still on this page after 5 minutes, go back to address form
-      navigate(ROUTES.ANALYZE_ADDRESS, {
+      navigate(ROUTES.ANALYZE_SMART_CONTRACT, {
         state: { 
           error: "Analysis timed out. Please try again.",
           address 
         }
       });
-    }, 300000); // 5 minutes
+    }, 120000); // 2 minutes timeout
 
     return () => {
       clearInterval(stepInterval);
@@ -110,16 +141,16 @@ export default function AnalysisProgress() {
         {address && (
           <div className="text-[#B0B6BE] text-xs mb-4 text-center tracking-wide px-4">
             <div className="bg-white/5 p-2 rounded font-mono text-[10px] break-all">
-              Analyzing: {address}
+              Analyzing Smart Contract: {address}
             </div>
           </div>
         )}
 
         <div className="text-[#B0B6BE] text-xs mb-2 text-center tracking-wide uppercase z-10">
-          TYPICALLY TAKES 2 MINS, HANG ON
+          TYPICALLY TAKES 1-2 MINS, HANG ON
         </div>
         <div className="text-[#99E39E] text-lg font-bold mb-4 text-center z-10">
-          ADDRESS ANALYSIS IS IN PROGRESS...
+          SMART CONTRACT ANALYSIS IN PROGRESS...
         </div>
         <div className="text-[#B0B6BE] text-sm text-center space-y-1 z-10">
           {analysisSteps.map((step, index) => (
@@ -153,7 +184,7 @@ export default function AnalysisProgress() {
         {/* Cancel button */}
         <div className="mt-8 z-10">
           <button
-            onClick={() => navigate(ROUTES.ANALYZE_ADDRESS)}
+            onClick={() => navigate(ROUTES.ANALYZE_SMART_CONTRACT)}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded transition-colors text-sm"
           >
             Cancel Analysis
