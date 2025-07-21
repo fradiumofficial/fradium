@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Fraudify Chrome Extension",
+  "name": "Fradium - Crypto Security Extension",
   "version": "1.0.0",
-  "description": "A Chrome extension to detect and prevent fraud in online transactions.",
+  "description": "Advanced fraud detection and prevention for crypto transactions. Analyze addresses and smart contracts to protect against scams, ransomware, and malicious activities.",
+  "author": "Fradium Official",
+  "homepage_url": "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
   "action": {
     "default_popup": "index.html"
   },
@@ -23,6 +25,7 @@
     "https://*.icp0.io/*",
     "https://ic0.app/*",
     "https://icp-api.io/*",
+    "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io/*",
     "https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/*",
     "https://oqcob-6iaaa-aaaar-qbr7q-cai.icp0.io/*",
     "https://zkoni-faaaa-aaaar-qbsaa-cai.icp0.io/*",

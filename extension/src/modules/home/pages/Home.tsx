@@ -36,6 +36,11 @@ function Home() {
     return `${statusText} - ${typeText}`;
   };
 
+  const handleTryWalletClick = () => {
+    // Open Fradium Wallet page in new tab
+    window.open('https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io/products-wallet', '_blank');
+  };
+
 
   return (
      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
@@ -53,6 +58,7 @@ function Home() {
             <div className="flex flex-col">
               <div className="bg-[#823EFD] w-[120px] mb-2">
                 <button 
+                onClick={handleTryWalletClick}
                 className="
                 w-full flex items-center 
                 justify-center gap-2
