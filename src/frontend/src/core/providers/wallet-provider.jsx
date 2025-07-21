@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { backend } from "declarations/backend";
 import { bitcoin } from "declarations/bitcoin";
+import { solana } from "declarations/solana";
 import { useAuth } from "./auth-provider";
 
 // Create context for wallet data
@@ -16,6 +17,7 @@ export const useWallet = () => {
 };
 
 export const WalletProvider = ({ children }) => {
+  const { identity, user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [userWallet, setUserWallet] = useState(null);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
@@ -25,6 +27,7 @@ export const WalletProvider = ({ children }) => {
     "All Networks": 0,
     Bitcoin: 0,
     Ethereum: 0,
+    Solana: 0,
     Fradium: 0,
   });
   const [networkFilters, setNetworkFilters] = useState({
@@ -34,34 +37,40 @@ export const WalletProvider = ({ children }) => {
     Fradium: true,
   });
 
-  const { user } = useAuth();
+  // Memoize user principal string to prevent unnecessary re-renders
+  const userPrincipalString = useMemo(() => {
+    return user?.identity?.getPrincipal()?.toString();
+  }, [user?.identity]);
 
   // Function to get localStorage key for user's network filters
-  const getNetworkFiltersKey = () => {
-    return user?.identity?.getPrincipal()?.toString() ? `networkFilters_${user.identity.getPrincipal().toString()}` : "networkFilters_default";
-  };
+  const getNetworkFiltersKey = useCallback(() => {
+    return userPrincipalString ? `networkFilters_${userPrincipalString}` : "networkFilters_default";
+  }, [userPrincipalString]);
 
   // Function to save network filters to localStorage
-  const saveNetworkFilters = (filters) => {
-    const key = getNetworkFiltersKey();
-    try {
-      localStorage.setItem(key, JSON.stringify(filters));
+  const saveNetworkFilters = useCallback(
+    (filters) => {
+      const key = getNetworkFiltersKey();
+      try {
+        localStorage.setItem(key, JSON.stringify(filters));
 
-      // Trigger storage event for cross-component sync
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: key,
-          newValue: JSON.stringify(filters),
-          storageArea: localStorage,
-        })
-      );
-    } catch (error) {
-      console.error("Error saving network filters to localStorage:", error);
-    }
-  };
+        // Trigger storage event for cross-component sync
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: key,
+            newValue: JSON.stringify(filters),
+            storageArea: localStorage,
+          })
+        );
+      } catch (error) {
+        console.error("Error saving network filters to localStorage:", error);
+      }
+    },
+    [getNetworkFiltersKey]
+  );
 
   // Function to load network filters from localStorage
-  const loadNetworkFilters = () => {
+  const loadNetworkFilters = useCallback(() => {
     const key = getNetworkFiltersKey();
     try {
       const saved = localStorage.getItem(key);
@@ -79,13 +88,16 @@ export const WalletProvider = ({ children }) => {
       Solana: true,
       Fradium: true,
     };
-  };
+  }, [getNetworkFiltersKey]);
 
   // Function to update network filters
-  const updateNetworkFilters = (filters) => {
-    setNetworkFilters(filters);
-    saveNetworkFilters(filters);
-  };
+  const updateNetworkFilters = useCallback(
+    (filters) => {
+      setNetworkFilters(filters);
+      saveNetworkFilters(filters);
+    },
+    [saveNetworkFilters]
+  );
 
   // Load network filters from localStorage on mount and user change
   useEffect(() => {
@@ -99,7 +111,7 @@ export const WalletProvider = ({ children }) => {
     };
 
     loadSavedFilters();
-  }, [user?.identity?.getPrincipal()?.toString()]);
+  }, [loadNetworkFilters]);
 
   // Listen for localStorage changes from other components
   useEffect(() => {
@@ -118,27 +130,16 @@ export const WalletProvider = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const fetchUserWallet = async () => {
-    setIsLoading(true);
-    const response = await backend.get_wallet();
-
-    if (response.Ok) {
-      setUserWallet(response.Ok);
-      setIsLoading(false);
-    } else {
-      createWallet();
-    }
-  };
-
-  useEffect(() => {
-    fetchUserWallet();
-  }, []);
-
-  async function createWallet() {
+  const createWallet = useCallback(async () => {
     setIsCreatingWallet(true);
     try {
       // Get bitcoin address
       const bitcoinResponse = await bitcoin.get_p2pkh_address();
+
+      // Get solana address
+      const solanaResponse = await solana.solana_account([identity?.getPrincipal()]);
+
+      console.log("solanaResponse", solanaResponse);
 
       // Create wallet with new structure
       const response = await backend.create_wallet({
@@ -148,13 +149,17 @@ export const WalletProvider = ({ children }) => {
             token_type: { Bitcoin: null },
             address: bitcoinResponse,
           },
+          {
+            network: { Solana: null },
+            token_type: { Solana: null },
+            address: solanaResponse,
+          },
         ],
       });
 
       setIsCreatingWallet(false);
       if (response.Ok) {
         setUserWallet(response.value);
-        await fetchUserWallet();
         setIsLoading(false);
       } else {
         console.error("Failed to create wallet:", response);
@@ -163,72 +168,97 @@ export const WalletProvider = ({ children }) => {
       console.error("Error creating wallet:", error);
       setIsCreatingWallet(false);
     }
-  }
+  }, [identity]);
+
+  const fetchUserWallet = useCallback(async () => {
+    setIsLoading(true);
+    const response = await backend.get_wallet();
+
+    if (response.Ok) {
+      setUserWallet(response.Ok);
+      setIsLoading(false);
+    } else {
+      createWallet();
+    }
+  }, [createWallet]);
+
+  useEffect(() => {
+    fetchUserWallet();
+  }, [fetchUserWallet]);
 
   // Helper function to add new address to existing wallet
-  const addAddressToWallet = async (network, tokenType, address) => {
-    if (!userWallet) {
-      console.error("No wallet found");
-      return false;
-    }
-
-    try {
-      const newAddress = {
-        network: network === "testnet" ? { Testnet: null } : { Mainnet: null },
-        token_type: tokenType === "bitcoin" ? { Bitcoin: null } : tokenType === "ethereum" ? { Ethereum: null } : tokenType === "solana" ? { Solana: null } : null,
-        address: address,
-      };
-
-      const updatedAddresses = [...userWallet.addresses, newAddress];
-
-      // Update wallet with new address
-      const response = await backend.create_wallet({
-        addresses: updatedAddresses,
-      });
-
-      if (response.Ok) {
-        setUserWallet(response.value);
-        await fetchUserWallet();
-        return true;
-      } else {
-        console.error("Failed to add address:", response.Err);
+  const addAddressToWallet = useCallback(
+    async (network, tokenType, address) => {
+      if (!userWallet) {
+        console.error("No wallet found");
         return false;
       }
-    } catch (error) {
-      console.error("Error adding address:", error);
-      return false;
-    }
-  };
+
+      try {
+        const newAddress = {
+          network: network === "testnet" ? { Testnet: null } : { Mainnet: null },
+          token_type: tokenType === "bitcoin" ? { Bitcoin: null } : tokenType === "ethereum" ? { Ethereum: null } : tokenType === "solana" ? { Solana: null } : null,
+          address: address,
+        };
+
+        const updatedAddresses = [...userWallet.addresses, newAddress];
+
+        // Update wallet with new address
+        const response = await backend.create_wallet({
+          addresses: updatedAddresses,
+        });
+
+        if (response.Ok) {
+          setUserWallet(response.value);
+          await fetchUserWallet();
+          return true;
+        } else {
+          console.error("Failed to add address:", response.Err);
+          return false;
+        }
+      } catch (error) {
+        console.error("Error adding address:", error);
+        return false;
+      }
+    },
+    [userWallet, fetchUserWallet]
+  );
 
   // Function to update network values
-  const updateNetworkValues = (values) => {
+  const updateNetworkValues = useCallback((values) => {
     setNetworkValues((prev) => ({ ...prev, ...values }));
-  };
+  }, []);
 
   // Function to get formatted network value
-  const getNetworkValue = (networkName) => {
-    const value = networkValues[networkName] || 0;
-    if (hideBalance) return "••••";
-    return `$${value.toFixed(2)}`;
-  };
+  const getNetworkValue = useCallback(
+    (networkName) => {
+      const value = networkValues[networkName] || 0;
+      if (hideBalance) return "••••";
+      return `$${value.toFixed(2)}`;
+    },
+    [networkValues, hideBalance]
+  );
 
-  const walletContextValue = {
-    isLoading,
-    userWallet,
-    setUserWallet,
-    isCreatingWallet,
-    setIsCreatingWallet,
-    addAddressToWallet,
-    network,
-    setNetwork,
-    hideBalance,
-    setHideBalance,
-    networkValues,
-    updateNetworkValues,
-    getNetworkValue,
-    networkFilters,
-    updateNetworkFilters,
-  };
+  const walletContextValue = useMemo(
+    () => ({
+      isLoading,
+      userWallet,
+      setUserWallet,
+      isCreatingWallet,
+      setIsCreatingWallet,
+      addAddressToWallet,
+      network,
+      setNetwork,
+      hideBalance,
+      setHideBalance,
+      networkValues,
+      updateNetworkValues,
+      getNetworkValue,
+      networkFilters,
+      updateNetworkFilters,
+    }),
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters]
+  );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;
 };

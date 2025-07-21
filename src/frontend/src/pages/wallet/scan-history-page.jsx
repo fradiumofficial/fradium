@@ -74,10 +74,12 @@ const formatScanTitle = (isSafe, analysisSource) => {
 };
 
 const formatAddress = (address) => {
+  if (!address) return "";
   if (address.length <= 15) {
     return address;
   }
-  return `${address.slice(0, 12)}...`;
+  // Format: 6 karakter awal ... 6 karakter akhir
+  return `${address.slice(0, 6)}...${address.slice(-6)}`;
 };
 
 export default function ScanHistoryPage() {
@@ -411,7 +413,7 @@ export default function ScanHistoryPage() {
                       <div className="flex flex-col flex-1">
                         <span className="text-white text-base font-medium leading-tight mb-2">{activity.title}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[#B0B6BE] text-sm font-medium font-mono">{activity.fullAddress}</span>
+                          <span className="text-[#B0B6BE] text-sm font-medium font-mono">{activity.address}</span>
                           <button onClick={() => copyToClipboard(activity.fullAddress)} className="text-[#B0B6BE] hover:text-[#9BE4A0] transition-colors" title="Copy address">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>

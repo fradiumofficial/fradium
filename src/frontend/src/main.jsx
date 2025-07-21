@@ -28,6 +28,10 @@ import TransactionHistoryPage from "./pages/wallet/transaction-history.jsx";
 import ScanHistoryPage from "./pages/wallet/scan-history-page.jsx";
 import SettingPage from "./pages/wallet/setting-page.jsx";
 import { bitcoin } from "declarations/bitcoin";
+import { solana } from "declarations/solana";
+import ProductsExtension from "./pages/products/products-extension.jsx";
+import ProductsWallet from "./pages/products/products-wallet.jsx";
+import Assistant from "./pages/assistant/assistant.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -79,7 +83,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider canisters={{ backend, token, bitcoin }}>
+      <AuthProvider canisters={{ backend, token, bitcoin, solana }}>
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
@@ -96,6 +100,9 @@ createRoot(document.getElementById("root")).render(
               }
             />
             <Route path="/faucet" element={<FaucetPage />} />
+            <Route path="/products" element={<ProductsExtension />} />
+            <Route path="/products-wallet" element={<ProductsWallet />} />
+            <Route path="/assistant" element={<Assistant />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route

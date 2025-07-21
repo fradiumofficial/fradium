@@ -4,7 +4,7 @@ import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal"
 import { backend } from "declarations/backend";
 import { ransomware_detector } from "declarations/ransomware_detector";
 import { jsonStringify } from "../../core/lib/canisterUtils";
-import { isValidBitcoinAddress } from "../../core/lib/bitcoinUtils";
+import { BitcoinService } from "../../core/services/tokens/implementations/BitcoinService";
 import SidebarButton from "../../core/components/SidebarButton";
 import { Dialog, DialogContent } from "../../core/components/ui/dialog";
 

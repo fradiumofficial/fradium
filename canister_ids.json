@@ -1,4 +1,7 @@
 {
+  "sol_rpc": {
+    "local": "lxzze-o7777-77777-aaaaa-cai"
+  },
   "backend": {
     "ic": "oqcob-6iaaa-aaaar-qbr7q-cai"
   },
@@ -19,5 +22,8 @@
   },
   "token": {
     "ic": "v3x23-lyaaa-aaaam-aej2a-cai"
+  },
+  "solana": {
+    "ic": "vjrnc-hiaaa-aaaam-aejza-cai"
   }
 }

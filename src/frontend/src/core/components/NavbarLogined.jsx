@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router';
 import Button from './Button';
 
@@ -6,12 +6,15 @@ const navigationItems = [
     { label: 'Home', href: '/' },
     { label: 'Docs', href: '/docs' },
     { label: 'View Reports', href: '/reports' },
-    { label: 'Products', href: '/products' },
+    // Products will be handled as dropdown
+    // { label: 'Products', href: '/products' },
     { label: 'Assistant', href: '/assistant' },
 ];
 
 const NavbarLogined = () => {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [productsDropdown, setProductsDropdown] = useState(false);
+    const productsDropdownTimeout = useRef();
     return (
         <header className="fixed top-0 left-0 w-full bg-[#0C0D14] flex items-center justify-center min-h-[72px] z-[1000]">
             <div className="w-full max-w-[1440px] flex items-center justify-between px-12 min-h-[72px]">
@@ -23,7 +26,7 @@ const NavbarLogined = () => {
                     </span>
                 </div>
                 {/* Menu Desktop */}
-                <nav className="hidden md:flex flex-1 justify-center items-center gap-12">
+                <nav className="hidden md:flex flex-1 justify-center items-center gap-12 relative">
                     {navigationItems.map((item) => (
                         <Link
                             key={item.label}
@@ -33,6 +36,53 @@ const NavbarLogined = () => {
                             {item.label}
                         </Link>
                     ))}
+                    {/* Products Dropdown */}
+                    <div
+                        className="relative"
+                        onMouseEnter={() => {
+                            clearTimeout(productsDropdownTimeout.current);
+                            setProductsDropdown(true);
+                        }}
+                        onMouseLeave={() => {
+                            productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
+                        }}
+                    >
+                        <button
+                            className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] flex items-center gap-1"
+                            onClick={() => setProductsDropdown((v) => !v)}
+                            type="button"
+                        >
+                            Products
+                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        {productsDropdown && (
+                            <div
+                                className="absolute top-full left-0 mt-2 w-40 bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] z-50 flex flex-col py-2 animate-fadeIn"
+                                onMouseEnter={() => {
+                                    clearTimeout(productsDropdownTimeout.current);
+                                    setProductsDropdown(true);
+                                }}
+                                onMouseLeave={() => {
+                                    productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
+                                }}
+                            >
+                                <Link
+                                    to="/products"
+                                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors"
+                                    onClick={() => setProductsDropdown(false)}
+                                >
+                                    Extension
+                                </Link>
+                                <Link
+                                    to="/products-wallet"
+                                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors"
+                                    onClick={() => setProductsDropdown(false)}
+                                >
+                                    Wallet
+                                </Link>
+                            </div>
+                        )}
+                    </div>
                 </nav>
                 {/* User Profile Desktop */}
                 <div className="hidden md:flex items-center gap-4">
@@ -81,6 +131,19 @@ const NavbarLogined = () => {
                                 {item.label}
                             </Link>
                         ))}
+                        {/* Products Dropdown Mobile */}
+                        <div className="w-full">
+                            <div className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
+                                Products
+                                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+                            {productsDropdown && (
+                                <div className="flex flex-col bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] mt-1">
+                                    <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors" onClick={() => { setProductsDropdown(false); setMenuOpen(false); }}>Extension</Link>
+                                    <Link to="/products-wallet" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors" onClick={() => { setProductsDropdown(false); setMenuOpen(false); }}>Wallet</Link>
+                                </div>
+                            )}
+                        </div>
                         {/* Wallet Card - Web3 Style */}
                         <div className="mt-2 p-4 rounded-xl bg-gradient-to-br from-[#181c22cc] to-[#23272fcc] border border-[#A259FF] shadow-[0_0_16px_2px_#A259FF80] flex items-center gap-4 animate-fadeIn">
                             {/* Pixel-art/generative avatar dummy */}

@@ -121,8 +121,8 @@ export default function ReportPage() {
       const shortAddress =
         report.address.length > 10
           ? `${report.address.substring(0, 6)}...${report.address.substring(
-              report.address.length - 4
-            )}`
+            report.address.length - 4
+          )}`
           : report.address;
 
       return {
@@ -291,9 +291,8 @@ export default function ReportPage() {
     }
     return (
       <ArrowUpDown
-        className={`w-3 h-3 ml-2 ${
-          sortOrder === "asc" ? "rotate-180" : ""
-        } transition-transform`}
+        className={`w-3 h-3 ml-2 ${sortOrder === "asc" ? "rotate-180" : ""
+          } transition-transform`}
       />
     );
   };
@@ -317,7 +316,7 @@ export default function ReportPage() {
   return (
     <div className="min-h-screen bg-black text-white ">
       {/* Main Content */}
-      <main className="pt-18 pb-16 md:container">
+      <main className="pt-18 mb-32 pb-16 md:container">
         {/* Page Header - Full Screen */}
         <div className="relative overflow-hidden mb-6 sm:mb-8 px-3 md:px-6">
           {/* Content - Container */}
@@ -352,34 +351,34 @@ export default function ReportPage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {isLoading
                 ? // Loading skeleton
-                  Array.from({ length: 4 }).map((_, index) => (
-                    <div key={index}>
-                      <Card>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="h-4 bg-gray-600 rounded w-20 animate-pulse"></div>
-                          <div className="h-5 w-5 bg-gray-600 rounded animate-pulse"></div>
-                        </div>
-                        <div className="h-8 bg-gray-600 rounded w-16 animate-pulse mb-2"></div>
-                        <div className="h-4 bg-gray-600 rounded w-24 animate-pulse"></div>
-                      </Card>
-                    </div>
-                  ))
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index}>
+                    <Card>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="h-4 bg-gray-600 rounded w-20 animate-pulse"></div>
+                        <div className="h-5 w-5 bg-gray-600 rounded animate-pulse"></div>
+                      </div>
+                      <div className="h-8 bg-gray-600 rounded w-16 animate-pulse mb-2"></div>
+                      <div className="h-4 bg-gray-600 rounded w-24 animate-pulse"></div>
+                    </Card>
+                  </div>
+                ))
                 : statsCards.map((card, index) => (
-                    <div key={index}>
-                      <Card>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-400 text-sm">
-                            {card.title}
-                          </span>
-                          {card.icon}
-                        </div>
-                        <div className="text-2xl font-bold">{card.value}</div>
-                        <div className={`text-sm ${card.color}`}>
-                          {card.subtitle}
-                        </div>
-                      </Card>
-                    </div>
-                  ))}
+                  <div key={index}>
+                    <Card>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-gray-400 text-sm">
+                          {card.title}
+                        </span>
+                        {card.icon}
+                      </div>
+                      <div className="text-2xl font-bold">{card.value}</div>
+                      <div className={`text-sm ${card.color}`}>
+                        {card.subtitle}
+                      </div>
+                    </Card>
+                  </div>
+                ))}
             </div>
 
             {/* Filters and Search */}
@@ -574,11 +573,10 @@ export default function ReportPage() {
                             <Button
                               key={pageNum}
                               onClick={() => handlePageChange(pageNum)}
-                              className={`w-8 h-8 p-0 text-sm ${
-                                currentPage === pageNum
+                              className={`w-8 h-8 p-0 text-sm ${currentPage === pageNum
                                   ? "bg-white text-black"
                                   : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white"
-                              }`}
+                                }`}
                             >
                               {pageNum}
                             </Button>

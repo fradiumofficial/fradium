@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import Button from "./Button";
 import { Button as ButtonShad } from "@/core/components/ui/button";
@@ -13,9 +13,8 @@ import { formatAddress } from "../lib/canisterUtils";
 
 const navigationItems = [
   { label: "Home", href: "/" },
-  { label: "Docs", href: "/docs" },
+  { label: "Docs", href: "https://fradium.gitbook.io/docs", external: true },
   { label: "View Reports", href: "/reports" },
-  { label: "Products", href: "/products" },
   { label: "Assistant", href: "/assistant" },
 ];
 
@@ -25,6 +24,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [productsDropdown, setProductsDropdown] = useState(false);
+  const productsDropdownTimeout = useRef();
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -35,9 +36,8 @@ const Navbar = () => {
           owner: identity.getPrincipal(),
           subaccount: [],
         });
-        console.log(response);
         setBalance(response);
-      } catch (error) { }
+      } catch (error) {}
     }
 
     fetchBalance();
@@ -69,12 +69,50 @@ const Navbar = () => {
           </span>
         </div>
         {/* Menu Desktop */}
-        <nav className="hidden lg:flex flex-1 justify-center items-center gap-6 xl:gap-12">
-          {navigationItems.map((item) => (
-            <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83]">
-              {item.label}
-            </Link>
-          ))}
+        <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-16 relative">
+          {navigationItems.map((item) =>
+            item.external ? (
+              <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] text-center">
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] text-center">
+                {item.label}
+              </Link>
+            )
+          )}
+          {/* Products Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => {
+              clearTimeout(productsDropdownTimeout.current);
+              setProductsDropdown(true);
+            }}
+            onMouseLeave={() => {
+              productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
+            }}>
+            <button className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] flex items-center gap-1" onClick={() => setProductsDropdown((v) => !v)} type="button">
+              Products <ChevronDown className="w-4 h-4" />
+            </button>
+            {productsDropdown && (
+              <div
+                className="absolute top-full left-0 mt-2 w-40 bg-black/70 backdrop-blur-lg border border-white/10 rounded-lg z-50 flex flex-col py-2 animate-fadeIn"
+                onMouseEnter={() => {
+                  clearTimeout(productsDropdownTimeout.current);
+                  setProductsDropdown(true);
+                }}
+                onMouseLeave={() => {
+                  productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
+                }}>
+                <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Extension
+                </Link>
+                <Link to="/products-wallet" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Wallet
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
         {/* Sign In Button Desktop */}
         <ButtonShad
@@ -154,11 +192,45 @@ const Navbar = () => {
           {/* Glassmorphism Card */}
           <div className="relative w-full max-w-sm mx-auto rounded-2xl bg-gradient-to-br from-[#23272f80] to-[#181c2280] border border-[rgba(155,235,131,0.25)] shadow-[0_4px_32px_0_rgba(155,235,131,0.15)] p-6 flex flex-col gap-6 animate-fadeIn">
             {/* Menu items */}
-            {navigationItems.map((item) => (
-              <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
-                {item.label}
-              </Link>
-            ))}
+            {navigationItems.map((item) =>
+              item.external ? (
+                <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                  {item.label}
+                </Link>
+              )
+            )}
+            {/* Products Dropdown Mobile */}
+            <div className="w-full">
+              <div className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
+                Products <ChevronDown className="w-4 h-4" />
+              </div>
+              {productsDropdown && (
+                <div className="flex flex-col bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] mt-1">
+                  <Link
+                    to="/products"
+                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
+                    onClick={() => {
+                      setProductsDropdown(false);
+                      setMenuOpen(false);
+                    }}>
+                    Extension
+                  </Link>
+                  <Link
+                    to="/products-wallet"
+                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
+                    onClick={() => {
+                      setProductsDropdown(false);
+                      setMenuOpen(false);
+                    }}>
+                    Wallet
+                  </Link>
+                </div>
+              )}
+            </div>
             {/* Sign In Button Mobile - Neon Style */}
             <Button size="sm" className="w-11/12 max-w-xs mt-2 font-bold text-base bg-[#9BEB83] shadow-[0_0_12px_2px_#A259FF80] border border-[#A259FF] hover:shadow-[0_0_16px_4px_#9BEB83] transition-all duration-200">
               Sign In &nbsp;→

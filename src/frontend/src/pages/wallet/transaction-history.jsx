@@ -1,26 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../core/providers/auth-provider";
 import { backend } from "declarations/backend";
-import { satoshisToBTC, fetchBTCPrice } from "../../core/lib/bitcoinUtils";
 
-// Function to format token amount by removing trailing zeros (reused from asset-page.jsx)
+// Clean Architecture Imports
+import { TokenServiceFactory } from "../../core/services/tokens/TokenServiceFactory";
+import { TOKENS_CONFIG } from "../../core/config/tokens.config";
+
+// Synchronous token amount formatting for immediate use
 const formatTokenAmount = (amount, tokenType) => {
-  if (tokenType === "Bitcoin") {
-    // Convert satoshis to BTC first
-    const btcAmount = satoshisToBTC(amount);
+  if (amount === 0) return "0";
 
-    if (btcAmount === 0) {
-      return "0";
-    }
+  // Use config-based formatting
+  const config = TOKENS_CONFIG[tokenType];
+  if (config) {
+    const displayAmount = amount / config.unitConversion.factor;
+    return displayAmount.toString().replace(/\.?0+$/, "");
+  }
 
-    return btcAmount.toString().replace(/\.?0+$/, "");
-  } else {
-    if (amount === 0) {
-      return "0";
-    }
+  // Fallback formatting
+  return amount.toString().replace(/\.?0+$/, "");
+};
 
-    // For other tokens, just remove trailing zeros
-    return amount.toString().replace(/\.?0+$/, "");
+// Async service-based formatting for when we need service functionality
+const formatTokenAmountWithService = async (amount, tokenType) => {
+  try {
+    const service = await TokenServiceFactory.getService(tokenType);
+    return service.formatAmount(amount);
+  } catch (error) {
+    console.error(`Error formatting ${tokenType} amount:`, error);
+    return formatTokenAmount(amount, tokenType); // Fallback to sync version
   }
 };
 
@@ -37,31 +45,15 @@ const formatTransactionDate = (timestamp) => {
   return `${month}/${day}/${year} ${hours}:${minutes}`;
 };
 
-// Mapping functions for backend data
+// Mapping functions using token config
 const mapChainToIcon = (chain) => {
-  switch (chain) {
-    case "Bitcoin":
-      return "/assets/bitcoin.svg";
-    case "Ethereum":
-      return "/assets/eth.svg";
-    case "Solana":
-      return "/assets/icons/wallet-grey.svg"; // Using wallet icon as placeholder
-    default:
-      return "/assets/fum.svg";
-  }
+  const config = TOKENS_CONFIG[chain];
+  return config ? config.icon : "/assets/unknown.svg";
 };
 
 const mapChainToCoin = (chain) => {
-  switch (chain) {
-    case "Bitcoin":
-      return "Bitcoin";
-    case "Ethereum":
-      return "Ethereum";
-    case "Solana":
-      return "Solana";
-    default:
-      return "Unknown";
-  }
+  const config = TOKENS_CONFIG[chain];
+  return config ? config.displayName : "Unknown";
 };
 
 const mapStatusToUI = (status) => {
@@ -106,26 +98,24 @@ const formatTransactionTitle = (direction, details, chain) => {
 };
 
 const convertAmountToDollar = async (amount, chain) => {
-  switch (chain) {
-    case "Bitcoin":
-      try {
-        const btcPrice = await fetchBTCPrice();
-        const btcAmount = satoshisToBTC(amount);
-        return btcAmount * btcPrice;
-      } catch (error) {
-        console.error("Error fetching BTC price:", error);
-        // Fallback to dummy price
-        const btcAmount = satoshisToBTC(amount);
-        return btcAmount * 45000;
-      }
-    case "Ethereum":
-      // Dummy conversion: 1 ETH = $3000, assuming amount is in wei
-      return (amount / Math.pow(10, 18)) * 3000;
-    case "Solana":
-      // Dummy conversion: 1 SOL = $100, assuming amount is in lamports
-      return (amount / Math.pow(10, 9)) * 100;
-    default:
-      return amount * 0.001; // Default dummy rate
+  try {
+    const service = await TokenServiceFactory.getService(chain);
+    const price = await service.getPrice();
+    const displayAmount = service.fromBaseUnit(amount);
+    return displayAmount * price;
+  } catch (error) {
+    console.error(`Error converting ${chain} amount to USD:`, error);
+    // Fallback calculations
+    switch (chain) {
+      case "Bitcoin":
+        return (amount / 100000000) * 45000; // BTC fallback
+      case "Ethereum":
+        return (amount / Math.pow(10, 18)) * 3000; // ETH fallback
+      case "Solana":
+        return (amount / Math.pow(10, 9)) * 100; // SOL fallback
+      default:
+        return amount * 0.001; // Default fallback
+    }
   }
 };
 
@@ -436,10 +426,7 @@ export default function TransactionHistoryPage() {
 
                   {/* Right Side - Amount and Date */}
                   <div className="flex flex-col items-end gap-1">
-                    <span className={`text-base font-medium ${transaction.amount > 0 ? "text-[#9BE4A0]" : "text-[#E49B9C]"}`}>
-                      {transaction.amount > 0 ? "+" : "-"}
-                      {formatTokenAmount(Math.abs(transaction.rawAmount), transaction.tokenType)} {mapChainToCoin(transaction.tokenType)}
-                    </span>
+                    <TransactionAmount amount={transaction.amount} rawAmount={transaction.rawAmount} tokenType={transaction.tokenType} />
                     <span className="text-[#B0B6BE] text-sm">{formatTransactionDate(transaction.rawData.timestamp)}</span>
                   </div>
                 </div>
@@ -508,5 +495,36 @@ export default function TransactionHistoryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Component to handle token amount formatting
+function TransactionAmount({ amount, rawAmount, tokenType }) {
+  // Start with synchronous formatting
+  const initialFormatted = formatTokenAmount(Math.abs(rawAmount), tokenType);
+  const [formattedAmount, setFormattedAmount] = useState(initialFormatted);
+
+  useEffect(() => {
+    // Optionally enhance with service-based formatting
+    const enhanceFormatting = async () => {
+      try {
+        const serviceFormatted = await formatTokenAmountWithService(Math.abs(rawAmount), tokenType);
+        if (serviceFormatted !== initialFormatted) {
+          setFormattedAmount(serviceFormatted);
+        }
+      } catch (error) {
+        console.error("Error enhancing amount formatting:", error);
+        // Keep the initial formatted amount
+      }
+    };
+
+    enhanceFormatting();
+  }, [rawAmount, tokenType, initialFormatted]);
+
+  return (
+    <span className={`text-base font-medium ${amount > 0 ? "text-[#9BE4A0]" : "text-[#E49B9C]"}`}>
+      {amount > 0 ? "+" : "-"}
+      {formattedAmount} {mapChainToCoin(tokenType)}
+    </span>
   );
 }
