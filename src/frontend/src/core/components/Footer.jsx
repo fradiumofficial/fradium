@@ -5,7 +5,7 @@ import Button from "./Button";
 const Footer = () => {
   return (
     <footer className={`relative w-full flex h-auto  flex-col items-center`}>
-      <img src="/assets/images/illus-footer2.png" alt="Footer Illustration" className="absolute" draggable="false" style={{ top: '-145px', left: 0, right: 0, margin: '0 auto' }} />
+      <img src="/assets/images/illus-footer2.png" alt="Footer Illustration" className="absolute" draggable="false" style={{ top: '-110px', left: 0, right: 0, margin: '0 auto' }} />
       <div className={styles.footerContent} style={{ position: "relative", zIndex: 2, marginTop: "260px" }}>
         <div className={styles.leftCol}>
           <div className={styles.logoRow}>

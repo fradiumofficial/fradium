@@ -31,6 +31,7 @@ import WalletSettingPage from "./pages/wallet/wallet-setting.jsx";
 import { bitcoin } from "declarations/bitcoin";
 import ProductsExtension from "./pages/products/products-extension.jsx";
 import ProductsWallet from "./pages/products/products-wallet.jsx";
+import Assistant from "./pages/assistant/assistant.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -101,6 +102,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="/faucet" element={<FaucetPage />} />
             <Route path="/products" element={<ProductsExtension />} />
             <Route path="/products-wallet" element={<ProductsWallet />} />
+            <Route path="/assistant" element={<Assistant />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route
