@@ -1,19 +1,17 @@
 import { useState, useEffect } from "react";
-import cryptoCards from "../model/CarouselDummyModel";
 import topBarImage from "../../../assets/Illus.svg"
 import NeoButton from "../../../components/ui/custom-button";
 import AnalyzeAddress from "../../../assets/analyze_address.svg";
 import AnalyzeContract from "../../../assets/analyze_contract.svg";
 import Bitcoin from "../../../assets/bitcoin.svg";
 import ProfileHeader from "../../../components/ui/header";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import HistoryCard from "@/components/ui/history-card";
 import { getAnalysisHistory, type HistoryItem } from "@/lib/localStorage";
 
 function Home() {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
   const navigate = useNavigate();
 
@@ -38,21 +36,7 @@ function Home() {
     return `${statusText} - ${typeText}`;
   };
 
-  const prevSlide = () => {
-    const isFirstSlide = currentIndex === 0;
-    const newIndex = isFirstSlide ? cryptoCards.length - 1 : currentIndex - 1;
-    setCurrentIndex(newIndex);
-  }
 
-  const nextSlide = () => {
-    const isLastSlide = currentIndex === cryptoCards.length - 1;
-    const newIndex = isLastSlide ? 0 : currentIndex + 1;
-    setCurrentIndex(newIndex);
-  }
-
-  const currentCard = cryptoCards[currentIndex];
-  const priceChangeColor = currentCard.change >= 0 ? 'text-green-500' : 'text-red-500';
-  const priceChangeIcon = currentCard.change >= 0 ? '+' : '';
   return (
      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
 
@@ -61,41 +45,37 @@ function Home() {
 
       { /* Carousel Section */}
       <div className="bg-[#1F2128] m-4 flex items-center justify-center">
-        <div className="w-full h-[194px]">
-          <div className="bg-[#1e1e1e] overflow-hidden transition-all duration-500">
-            <div className="h-48 w-full overflow-hidden">
-
-              <img 
-                src={topBarImage}
-                alt={currentCard.name}
-                className="w-full object-cover transition-transform duration-500 transform"
-                />
-
-              <div className="p-6 relative -mt-10">
-                <div className="flex justify-center">
-                  <div className="w-16 pt-4 flex items-center justify-center">
-                    <currentCard.icon className="w-8 h-8 border-4 rounded-full bg-[#627EEA33]"/>
+        <div className="flex flex-row w-full h-[194px] bg-radial-[at_100%_0%] from-[#96EA63]/10 via-[#0C101C] to-[#0C101C] to-90%">
+          <div className="flex">
+            <img src={topBarImage} alt="" className="w-auto h-[194px]" />
+          </div>
+          <div className="flex-2 flex items-center justify-left px-4">
+            <div className="flex flex-col">
+              <div className="bg-[#823EFD] w-[120px] mb-2">
+                <button 
+                className="
+                w-full flex items-center 
+                justify-center gap-2
+                px-3 py-3
+                font-bold text-white
+                bg-[#99E39E]
+                border-2 border-gray-800
+                transform -translate-y-1 translate-x-1
+                hover:-translate-y-0 hover:translate-x-0
+                active:translate-y-0 active:translate-x-0
+                transition-transform duration-150 ease-in-out
+                ">
+                  <div className="flex flex-row text-[#000510]">
+                    Try Wallet
                   </div>
-                </div>
-
-                <div className="flex flex-row items-center justify-between mt-4">
-                  <button onClick={prevSlide} className="p-3 rounded-full bg-[#333333] text-gray-400 hover:bg-[#444444] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1e1e1e] focus:ring-blue-500">
-                    <ChevronLeftIcon className="w-5 h-5"/>
-                  </button>
-
-                  <div className="text-center">
-                    <p className="text-[32px] font-bold text-white">
-                      ${currentCard.price.toLocaleString('en-US', {minimumFractionDigits: 2})}
-                    </p>
-                    <p className={`text-[16px] font-medium ${priceChangeColor}`}>
-                      {priceChangeIcon}{currentCard.change.toFixed(2)}%
-                    </p>
+                  <div className="flex h-[16px] w-[16px] text-[#000510] text-center mb-2">
+                    <ArrowRight />
                   </div>
-
-                  <button onClick={nextSlide} className="p-3 rounded-full bg-[#333333] text-gray-400 hover:bg-[#444444] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1e1e1e] focus:ring-blue-500">
-                    <ChevronRightIcon className="w-5 h-5"/>
-                  </button>
-                </div>
+                </button>
+              </div>
+              <div className="flex flex-col mt-4">
+                <h1 className="text-white text-[16px]">Level up your Protection!</h1>
+                <h1 className="text-white/70 text-[12px]">Get full protection with Fradium Wallet!</h1>
               </div>
             </div>
           </div>
