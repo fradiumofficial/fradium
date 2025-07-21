@@ -13,7 +13,7 @@ import { formatAddress } from "../lib/canisterUtils";
 
 const navigationItems = [
   { label: "Home", href: "/" },
-  { label: "Docs", href: "/docs" },
+  { label: "Docs", href: "https://fradium.gitbook.io/docs", external: true },
   { label: "View Reports", href: "/reports" },
   { label: "Assistant", href: "/assistant" },
 ];
@@ -69,12 +69,18 @@ const Navbar = () => {
           </span>
         </div>
         {/* Menu Desktop */}
-        <nav className="hidden lg:flex flex-1 justify-center items-center gap-6 xl:gap-12 relative">
-          {navigationItems.map((item) => (
-            <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83]">
-              {item.label}
-            </Link>
-          ))}
+        <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-16 relative">
+          {navigationItems.map((item) =>
+            item.external ? (
+              <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] text-center">
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] text-center">
+                {item.label}
+              </Link>
+            )
+          )}
           {/* Products Dropdown */}
           <div
             className="relative"
@@ -186,11 +192,17 @@ const Navbar = () => {
           {/* Glassmorphism Card */}
           <div className="relative w-full max-w-sm mx-auto rounded-2xl bg-gradient-to-br from-[#23272f80] to-[#181c2280] border border-[rgba(155,235,131,0.25)] shadow-[0_4px_32px_0_rgba(155,235,131,0.15)] p-6 flex flex-col gap-6 animate-fadeIn">
             {/* Menu items */}
-            {navigationItems.map((item) => (
-              <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
-                {item.label}
-              </Link>
-            ))}
+            {navigationItems.map((item) =>
+              item.external ? (
+                <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                  {item.label}
+                </Link>
+              )
+            )}
             {/* Products Dropdown Mobile */}
             <div className="w-full">
               <div className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
