@@ -43,8 +43,6 @@ export default function AnalyseContractPage() {
       return;
     }
 
-    console.log(import.meta.env.VITE_MYTHRIL_API_URL);
-
     setIsAnalyzing(true);
 
     try {
@@ -111,7 +109,7 @@ export default function AnalyseContractPage() {
             {/* Ethereum Only Notice */}
             <div className="w-full max-w-sm mx-auto mb-6 relative z-10">
               <div className="flex items-center justify-center gap-2 bg-[#1A1D23] border border-[#2A2D35] rounded-sm px-4 py-2">
-                <img src="/assets/eth.svg" alt="Ethereum" className="w-5 h-5" />
+                <img src="/assets/svg/tokens/eth.svg" alt="Ethereum" className="w-5 h-5" />
                 <span className="text-[#9BE4A0] text-sm font-medium">Ethereum Network Only</span>
               </div>
             </div>
