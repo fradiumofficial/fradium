@@ -1,782 +1,81 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../../core/providers/auth-provider";
-import { useWallet } from "../../core/providers/wallet-provider";
-import TransactionButton from "../../core/components/TransactionButton";
-import NeoButton from "@/core/components/SidebarButton";
-import { bitcoin } from "declarations/bitcoin";
-import { satoshisToBTC, fetchBTCPrice, btcToSatoshis } from "@/core/lib/bitcoinUtils";
+// React & Hooks
+import React from "react";
+
+// External Libraries
 import { toast } from "react-toastify";
+
+// Providers & Context
+import { useWallet } from "@/core/providers/wallet-provider";
+
+// Custom Hooks
+import { useAssetPage } from "@/core/hooks/useAssetPage";
+
+// UI Components
+import TransactionButton from "@/core/components/TransactionButton";
+import NeoButton from "@/core/components/SidebarButton";
 import CustomButton from "@/core/components/custom-button-a";
+
+// Modal Components
 import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal";
-import QRCode from "qrcode";
-import { backend } from "declarations/backend";
-import { ransomware_detector } from "declarations/ransomware_detector";
-import { jsonStringify } from "../../core/lib/canisterUtils";
 
-// Function to format token amount by removing trailing zeros
-const formatTokenAmount = (amount, tokenType) => {
-  if (tokenType === "Bitcoin") {
-    // Convert satoshis to BTC first
-    const btcAmount = satoshisToBTC(amount);
-
-    if (btcAmount === 0) {
-      return "0";
-    }
-
-    return btcAmount.toString().replace(/\.?0+$/, "");
-  } else {
-    if (amount === 0) {
-      return "0";
-    }
-
-    // For other tokens, just remove trailing zeros
-    return amount.toString().replace(/\.?0+$/, "");
-  }
-};
-
-// Token configuration mapping
-const tokenConfig = {
-  Bitcoin: {
-    icon: "/assets/bitcoin.svg",
-    name: "BTC",
-    symbol: "Bitcoin",
-    desc: "Bitcoin • Internet Computer",
-  },
-  Ethereum: {
-    icon: "/assets/eth.svg",
-    name: "ETH",
-    symbol: "Ethereum",
-    desc: "Ethereum • Internet Computer",
-  },
-  Solana: {
-    icon: "/assets/solana.svg", // Assuming you have solana.svg
-    name: "SOL",
-    symbol: "Solana",
-    desc: "Solana • Internet Computer",
-  },
-  Fradium: {
-    icon: "/assets/fum.svg",
-    name: "FUM",
-    symbol: "Fradium",
-    desc: "Fradium • Internet Computer",
-  },
-  // Add more token types as needed
-};
+// Configuration
+import { TOKENS_CONFIG } from "@/core/config/tokens.config";
 
 export default function AssetsPage() {
   const { userWallet, network, hideBalance, updateNetworkValues, networkFilters, updateNetworkFilters } = useWallet();
-  const [tokenBalances, setTokenBalances] = useState({});
-  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
-  const [balanceErrors, setBalanceErrors] = useState({});
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [selectedToken, setSelectedToken] = useState(null);
 
-  // Show network filter state
-  const [showNetworkFilter, setShowNetworkFilter] = useState(false);
-
-  // Receive Modal States
-  const [openReceive, setOpenReceive] = useState(false);
-  const [qrDetail, setQrDetail] = useState({ open: false, coin: null });
-
-  // QR Code state
-  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
-
-  // Analyze Address Modal States
-  const [showAnalyeAddressModal, setShowAnalyeAddressModal] = useState(false);
-  const [isAnalyzeAddressSafe, setIsAnalyzeAddressSafe] = useState(false);
-  const [isAnalyzeAddressLoading, setIsAnalyzeAddressLoading] = useState(false);
-  const [analyzeAddressData, setAnalyzeAddressData] = useState(null);
-  const [aiAnalysisData, setAiAnalysisData] = useState(null);
-  const [analysisSource, setAnalysisSource] = useState(""); // "community" | "ai"
-
-  // Portfolio calculation states
-  const [totalPortfolioValue, setTotalPortfolioValue] = useState(0);
-  const [isCalculatingPortfolio, setIsCalculatingPortfolio] = useState(false);
-
-  // Send Modal States
-  const [destinationAddress, setDestinationAddress] = useState("");
-  const [sendAmount, setSendAmount] = useState("");
-  const [isSendLoading, setIsSendLoading] = useState(false);
-  const [sendErrors, setSendErrors] = useState({});
-  const [selectedTokenForSend, setSelectedTokenForSend] = useState(null);
-
-  // Function to get token type from address object
-  const getTokenType = (addressObj) => {
-    if (addressObj.token_type?.Bitcoin == null) return "Bitcoin";
-    if (addressObj.token_type?.Ethereum == null) return "Ethereum";
-    if (addressObj.token_type?.Solana == null) return "Solana";
-    return "Unknown";
-  };
-
-  // Auto-detect blockchain network from address (from create-report-page.jsx)
-  const detectChain = (address) => {
-    if (!address) return "Unknown";
-
-    // Simple chain detection based on address format
-    if (address.startsWith("0x") && address.length === 42) {
-      return "Ethereum";
-    } else if (address.startsWith("bc1") || address.startsWith("1") || address.startsWith("3")) {
-      return "Bitcoin";
-    } else if (address.length === 44) {
-      return "Solana";
-    } else if (address.startsWith("cosmos")) {
-      return "Cosmos";
-    }
-    return "Unknown";
-  };
-
-  // Convert chain name to token type variant
-  const getTokenTypeVariant = (chainName) => {
-    switch (chainName) {
-      case "Bitcoin":
-        return { Bitcoin: null };
-      case "Ethereum":
-        return { Ethereum: null };
-      case "Solana":
-        return { Solana: null };
-      default:
-        return { Unknown: null };
-    }
-  };
-
-  // Function to check if address matches current network
-  const isAddressForCurrentNetwork = (addressObj) => {
-    if (network === "All Networks") {
-      return true; // Show all tokens when "All Network" is selected
-    }
-
-    const addressNetwork = Object.keys(addressObj.network)[0];
-    return addressNetwork.toLowerCase() === network.toLowerCase();
-  };
-
-  // Function to fetch Bitcoin balance for a single address
-  const fetchBitcoinBalance = async (address) => {
-    try {
-      const balance = await bitcoin.get_balance(address);
-      return Number(balance);
-    } catch (error) {
-      console.error(`Error fetching Bitcoin balance for ${address}:`, error);
-      throw error;
-    }
-  };
-
-  // Function to fetch balances for all Bitcoin addresses
-  const fetchBitcoinBalances = async (addresses) => {
-    const balances = {};
-    const errors = {};
-
-    for (const address of addresses) {
-      try {
-        const balance = await fetchBitcoinBalance(address);
-        balances[address] = balance;
-      } catch (error) {
-        errors[address] = error.message || "Failed to fetch balance";
-        balances[address] = 0;
-      }
-    }
-
-    return { balances, errors };
-  };
-
-  // Function to calculate token amount and value based on token type
-  const calculateTokenAmountAndValue = async (tokenType, addresses, balances) => {
-    switch (tokenType) {
-      case "Bitcoin":
-        if (!balances || Object.keys(balances).length === 0) {
-          return { amount: 0, value: "$0.00" };
-        }
-
-        // Calculate total satoshis
-        const totalSatoshis = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
-
-        // Get current BTC price
-        const btcPrice = await fetchBTCPrice();
-
-        // Calculate BTC amount and USD value
-        const btcAmount = satoshisToBTC(totalSatoshis);
-        const usdValue = btcAmount * btcPrice;
-
-        return {
-          amount: totalSatoshis, // Keep as satoshis for formatting
-          value: `$${usdValue.toFixed(2)}`,
-        };
-
-      case "Ethereum":
-        // TODO: Implement Ethereum balance fetching
-        // For now, return placeholder values
-        return {
-          amount: 0,
-          value: "$0.00",
-        };
-
-      case "Solana":
-        // TODO: Implement Solana balance fetching
-        // For now, return placeholder values
-        return {
-          amount: 0,
-          value: "$0.00",
-        };
-
-      default:
-        return {
-          amount: 0,
-          value: "$0.00",
-        };
-    }
-  };
-
-  // Send Modal Functions
-  const handleConfirmSend = async () => {
-    try {
-      setIsSendLoading(true);
-      console.log("sendAmount", sendAmount);
-
-      // Get sender Bitcoin address
-      const bitcoinAddress = userWallet?.addresses?.find((addr) => addr.network === "Bitcoin" && addr.token_type?.Bitcoin !== undefined)?.address;
-
-      const sendResponse = await bitcoin.send_from_p2pkh_address({
-        destination_address: destinationAddress,
-        amount_in_satoshi: btcToSatoshis(parseFloat(sendAmount)),
-      });
-
-      console.log("sendResponse", sendResponse);
-
-      // Create transaction history entry with pending status
-      try {
-        const transactionHistoryParams = {
-          chain: { Bitcoin: null },
-          direction: { Send: null },
-          amount: btcToSatoshis(parseFloat(sendAmount)),
-          timestamp: BigInt(Date.now() * 1000000), // Convert to nanoseconds
-          details: {
-            Bitcoin: {
-              txid: sendResponse,
-              from_address: bitcoinAddress ? [bitcoinAddress] : [],
-              to_address: destinationAddress,
-              fee_satoshi: [],
-              block_height: [],
-            },
-          },
-          note: [`Sent ${sendAmount} Bitcoin to ${destinationAddress.slice(0, 12)}...`],
-        };
-
-        const historyResult = await backend.create_transaction_history(transactionHistoryParams);
-        console.log("Transaction history created:", historyResult);
-      } catch (historyError) {
-        console.error("Failed to create transaction history:", historyError);
-        // Don't fail the whole transaction if history creation fails
-      }
-
-      setIsSendLoading(false);
-      setShowAnalyeAddressModal(false);
-      setSelectedToken(null);
-      setSelectedTokenForSend(null);
-      setDestinationAddress("");
-      setSendAmount("");
-      setSendErrors({});
-      toast.success("Transaction sent successfully");
-    } catch (error) {
-      console.log("error", error);
-      if (error.message.includes("Insufficient balance")) {
-        toast.error("Insufficient balance");
-      } else if (error.message.includes("Failed to decode address")) {
-        toast.error("Invalid destination address");
-      } else {
-        toast.error("Error sending transaction");
-      }
-    } finally {
-      setIsSendLoading(false);
-    }
-  };
-
-  const handleMaxAmount = () => {
-    if (selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0 && selectedTokenForSend?.tokenType === "Bitcoin") {
-      const currentAmount = Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0);
-      const btcAmount = satoshisToBTC(currentAmount);
-      setSendAmount(btcAmount.toString());
-    }
-  };
-
-  const handleCloseSendModal = () => {
-    setShowSendModal(false);
-    setSelectedToken(null);
-    setSelectedTokenForSend(null);
-    setDestinationAddress("");
-    setSendAmount("");
-    setSendErrors({});
-  };
-
-  const handleSendClick = (token) => {
-    // Pass token data including current amount to send modal
-    const tokenWithAmount = {
-      ...token,
-      currentAmount: token.currentAmount || 0,
-    };
-    setSelectedToken(tokenWithAmount);
-    setSelectedTokenForSend(tokenWithAmount);
-    setShowSendModal(true);
-
-    // Set initial amount based on token's current balance
-    if (token.currentAmount && token.tokenType === "Bitcoin") {
-      const btcAmount = satoshisToBTC(token.currentAmount);
-      setSendAmount(btcAmount.toString());
-    }
-  };
-
-  const handleGeneralSendClick = () => {
-    setSelectedToken(null);
-    setSelectedTokenForSend(null);
-    setDestinationAddress("");
-    setSendAmount("");
-    setSendErrors({});
-    setShowSendModal(true);
-  };
-
-  const toggleNetworkFilter = (networkName) => {
-    const newFilters = {
-      ...networkFilters,
-      [networkName]: !networkFilters[networkName],
-    };
-    updateNetworkFilters(newFilters);
-  };
-
-  const handleReceiveClick = (token) => {
-    setSelectedToken(token);
-    setOpenReceive(true);
-  };
-
-  // Create receive addresses array for modal
-  const receiveAddresses =
-    userWallet?.addresses?.map((addressObj) => ({
-      label: getTokenType(addressObj),
-      address: addressObj.address,
-    })) || [];
-
-  // Generate QR Code when QR detail is opened
-  useEffect(() => {
-    if (qrDetail.open && qrDetail.coin) {
-      const address = receiveAddresses.find((a) => a.label === qrDetail.coin)?.address;
-      if (address) {
-        QRCode.toDataURL(address, {
-          width: 320,
-          margin: 1,
-          scale: 8,
-          color: {
-            dark: "#000000",
-            light: "#FFFFFF",
-          },
-          errorCorrectionLevel: "H",
-        })
-          .then((url) => {
-            setQrCodeDataUrl(url);
-          })
-          .catch((err) => {
-            console.error("Error generating QR code:", err);
-          });
-      }
-    }
-  }, [qrDetail.open, qrDetail.coin, receiveAddresses]);
-
-  // Validation functions
-  const validateAddress = (address) => {
-    if (!address.trim()) {
-      return "Recipient address is required";
-    }
-    return null;
-  };
-
-  const validateAmount = (amount, tokenType, balances) => {
-    if (!amount.trim()) {
-      return "Amount is required";
-    }
-    if (isNaN(amount) || parseFloat(amount) <= 0) {
-      return "Please enter a valid amount";
-    }
-    if (tokenType === "Bitcoin" && balances && Object.keys(balances).length > 0) {
-      const currentAmount = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
-      const requestedSatoshis = btcToSatoshis(parseFloat(amount));
-      if (requestedSatoshis > currentAmount) {
-        return `Insufficient balance. Available: ${formatTokenAmount(currentAmount, tokenType)} ${tokenType}`;
-      }
-    }
-    return null;
-  };
-
-  const handleAnalyzeAddress = async () => {
-    const addressError = validateAddress(destinationAddress);
-    const amountError = validateAmount(sendAmount, selectedTokenForSend?.tokenType, selectedTokenForSend?.balances);
-
-    // Prevent lanjut jika amount melebihi saldo
-    if (selectedTokenForSend?.tokenType === "Bitcoin" && selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0) {
-      const currentAmount = Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0);
-      if (btcToSatoshis(parseFloat(sendAmount)) > currentAmount) {
-        setSendErrors((prev) => ({
-          ...prev,
-          amount: `Insufficient balance. Available: ${formatTokenAmount(currentAmount, selectedTokenForSend.tokenType)} ${selectedTokenForSend.name}`,
-        }));
-        return;
-      }
-    }
-
-    if (addressError || amountError) {
-      setSendErrors({
-        address: addressError,
-        amount: amountError,
-      });
-      return;
-    }
-
-    // If validation passes, show result modal
-    setShowSendModal(false);
-    setIsAnalyzeAddressLoading(true);
-
-    try {
-      // Analyze address by community report
-      const communityReport = await backend.analyze_address(destinationAddress);
-      console.log("communityReport", communityReport);
-
-      if ("Ok" in communityReport) {
-        if (communityReport.Ok.is_safe) {
-          // If safe by community, use community result
-          setIsAnalyzeAddressSafe(true);
-          setAnalyzeAddressData(communityReport.Ok);
-          setAnalysisSource("community");
-
-          // Create analyze history for Community analysis (safe)
-          try {
-            await backend.create_analyze_history({
-              address: destinationAddress,
-              is_safe: true,
-              analyzed_type: { CommunityVote: null },
-              metadata: jsonStringify(communityReport.Ok),
-              token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-            });
-            console.log("Community analysis history (safe) saved successfully");
-          } catch (historyError) {
-            console.error("Failed to save community analysis history:", historyError);
-          }
-
-          // COMMENTED OUT: AI Analysis
-          // console.log("communityReport.Ok.is_safe", communityReport.Ok.is_safe);
-          // // If safe by community, also check AI analysis
-          // const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
-          // console.log("ransomwareReport", jsonStringify(ransomwareReport));
-
-          // if ("Ok" in ransomwareReport) {
-          //   if (ransomwareReport.Ok.is_ransomware) {
-          //     // AI detected as unsafe
-          //     setIsAnalyzeAddressSafe(false);
-          //     setAiAnalysisData(ransomwareReport.Ok);
-          //     setAnalysisSource("ai");
-
-          //     // Create analyze history for AI analysis (unsafe)
-          //     try {
-          //       await backend.create_analyze_history({
-          //         address: destinationAddress,
-          //         is_safe: false,
-          //         analyzed_type: { AIAnalysis: null },
-          //         metadata: jsonStringify(ransomwareReport.Ok),
-          //         token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-          //       });
-          //       console.log("AI analysis history (unsafe) saved successfully");
-          //     } catch (historyError) {
-          //       console.error("Failed to save AI analysis history:", historyError);
-          //     }
-          //   } else {
-          //     // AI detected as safe, but use community result
-          //     setIsAnalyzeAddressSafe(true);
-          //     setAnalyzeAddressData(communityReport.Ok);
-          //     setAnalysisSource("community");
-
-          //     // Create analyze history for Community analysis (safe)
-          //     try {
-          //       await backend.create_analyze_history({
-          //         address: destinationAddress,
-          //         is_safe: true,
-          //         analyzed_type: { CommunityVote: null },
-          //         metadata: jsonStringify(communityReport.Ok),
-          //         token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-          //       });
-          //       console.log("Community analysis history (safe) saved successfully");
-          //     } catch (historyError) {
-          //       console.error("Failed to save community analysis history:", historyError);
-          //     }
-          //   }
-          // } else {
-          //   // Fall back to community result (safe)
-          //   setIsAnalyzeAddressSafe(true);
-          //   setAnalyzeAddressData(communityReport.Ok);
-          //   setAnalysisSource("community");
-
-          //   // Create analyze history for Community analysis (safe)
-          //   try {
-          //     await backend.create_analyze_history({
-          //       address: destinationAddress,
-          //       is_safe: true,
-          //       analyzed_type: { CommunityVote: null },
-          //       metadata: jsonStringify(communityReport.Ok),
-          //       token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-          //     });
-          //     console.log("Community analysis history (safe) saved successfully");
-          //   } catch (historyError) {
-          //     console.error("Failed to save community analysis history:", historyError);
-          //   }
-          // }
-        } else {
-          // If not safe by community, use community result
-          setIsAnalyzeAddressSafe(false);
-          setAnalyzeAddressData(communityReport.Ok);
-          setAnalysisSource("community");
-
-          // Create analyze history for Community analysis (unsafe)
-          try {
-            await backend.create_analyze_history({
-              address: destinationAddress,
-              is_safe: false,
-              analyzed_type: { CommunityVote: null },
-              metadata: jsonStringify(communityReport.Ok),
-              token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-            });
-            console.log("Community analysis history (unsafe) saved successfully");
-          } catch (historyError) {
-            console.error("Failed to save community analysis history:", historyError);
-          }
-        }
-      } else {
-        // If no community report, show message and return to send modal
-        alert("Address not found in community database. No reports available for this address.");
-        setIsAnalyzeAddressLoading(false);
-        setShowSendModal(true);
-        return;
-
-        // COMMENTED OUT: AI Analysis fallback
-        // // If no community report, try AI analysis
-        // const ransomwareReport = await ransomware_detector.analyze_address(destinationAddress);
-        // console.log("ransomwareReport", jsonStringify(ransomwareReport));
-
-        // if ("Ok" in ransomwareReport) {
-        //   const isSafe = !ransomwareReport.Ok.is_ransomware;
-        //   setIsAnalyzeAddressSafe(isSafe);
-        //   setAiAnalysisData(ransomwareReport.Ok);
-        //   setAnalysisSource("ai");
-
-        //   // Create analyze history for AI analysis
-        //   try {
-        //     await backend.create_analyze_history({
-        //       address: destinationAddress,
-        //       is_safe: isSafe,
-        //       analyzed_type: { AIAnalysis: null },
-        //       metadata: jsonStringify(ransomwareReport.Ok),
-        //       token_type: getTokenTypeVariant(detectChain(destinationAddress)),
-        //     });
-        //     console.log(`AI analysis history (${isSafe ? "safe" : "unsafe"}) saved successfully`);
-        //   } catch (historyError) {
-        //     console.error("Failed to save AI analysis history:", historyError);
-        //   }
-        // } else {
-        //   // If AI also fails, default to safe but no analysis source
-        //   setIsAnalyzeAddressSafe(true);
-        //   setAnalyzeAddressData(null);
-        //   setAnalysisSource("");
-        //   console.log("No analysis available, defaulting to safe");
-        // }
-      }
-    } catch (error) {
-      console.error("Error analyzing address:", error);
-      alert("Error analyzing address. Please try again.");
-      setIsAnalyzeAddressLoading(false);
-      setShowSendModal(true);
-      return;
-    } finally {
-      setIsAnalyzeAddressLoading(false);
-      setShowAnalyeAddressModal(true);
-    }
-  };
-
-  // Fetch balances when network or addresses change
-  useEffect(() => {
-    const fetchBalances = async () => {
-      if (!userWallet?.addresses) return;
-
-      const networkAddresses = userWallet.addresses.filter(isAddressForCurrentNetwork);
-      const bitcoinAddresses = networkAddresses
-        .filter((addr) => getTokenType(addr) === "Bitcoin")
-        .filter((addr) => networkFilters.Bitcoin) // Only fetch if Bitcoin is enabled
-        .map((addr) => addr.address);
-
-      if (bitcoinAddresses.length === 0) {
-        setTokenBalances({});
-        setBalanceErrors({});
-        return;
-      }
-
-      setIsLoadingBalances(true);
-      setBalanceErrors({});
-
-      try {
-        const { balances, errors } = await fetchBitcoinBalances(bitcoinAddresses);
-
-        setTokenBalances((prev) => ({
-          ...prev,
-          Bitcoin: balances,
-        }));
-
-        if (Object.keys(errors).length > 0) {
-          setBalanceErrors((prev) => ({
-            ...prev,
-            Bitcoin: errors,
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching Bitcoin balances:", error);
-      } finally {
-        setIsLoadingBalances(false);
-      }
-    };
-
-    fetchBalances();
-  }, [userWallet?.addresses, network, networkFilters]);
-
-  // Filter addresses by current network and group by token type
-  const getTokensForCurrentNetwork = () => {
-    if (!userWallet?.addresses) return [];
-
-    const networkAddresses = userWallet.addresses.filter(isAddressForCurrentNetwork);
-
-    // Group addresses by token type
-    const tokenGroups = {};
-
-    networkAddresses.forEach((addressObj) => {
-      const tokenType = getTokenType(addressObj);
-
-      // Apply network filter - skip if this token type is disabled
-      if (!networkFilters[tokenType]) {
-        return;
-      }
-
-      if (!tokenGroups[tokenType]) {
-        tokenGroups[tokenType] = {
-          addresses: [],
-          config: tokenConfig[tokenType] || {
-            icon: "/assets/unknown.svg",
-            name: tokenType.toUpperCase(),
-            symbol: tokenType,
-            desc: `${tokenType} • Internet Computer`,
-          },
-        };
-      }
-
-      tokenGroups[tokenType].addresses.push(addressObj.address);
-    });
-
-    // Convert to array format for rendering
-    return Object.entries(tokenGroups).map(([tokenType, data]) => {
-      const balances = tokenBalances[tokenType] || {};
-
-      return {
-        ...data.config,
-        tokenType,
-        addresses: data.addresses,
-        balances: balances,
-        isLoading: isLoadingBalances && tokenType === "Bitcoin",
-        hasError: balanceErrors[tokenType] && Object.keys(balanceErrors[tokenType]).length > 0,
-      };
-    });
-  };
-
-  const tokens = getTokensForCurrentNetwork();
-
-  // Function to calculate total portfolio value and network values
-  const calculateTotalPortfolioValue = async () => {
-    if (!userWallet?.addresses) {
-      setTotalPortfolioValue(0);
-      updateNetworkValues({
-        "All Networks": 0,
-        Bitcoin: 0,
-        Ethereum: 0,
-        Fradium: 0,
-      });
-      return;
-    }
-
-    setIsCalculatingPortfolio(true);
-    let totalValue = 0;
-    const networkTotals = {
-      Bitcoin: 0,
-      Ethereum: 0,
-      Fradium: 0,
-    };
-
-    try {
-      // Calculate values for all networks, not just current one
-      const allNetworks = ["Bitcoin", "Ethereum", "Fradium"];
-
-      for (const networkName of allNetworks) {
-        // Skip if this network is filtered out
-        if (!networkFilters[networkName]) {
-          continue;
-        }
-
-        // Get addresses for this specific network
-        const networkAddresses = userWallet.addresses.filter((addressObj) => {
-          const addressNetwork = Object.keys(addressObj.network)[0];
-          return addressNetwork.toLowerCase() === networkName.toLowerCase();
-        });
-
-        if (networkAddresses.length > 0) {
-          // Group addresses by token type for this network
-          const tokenGroups = {};
-          networkAddresses.forEach((addressObj) => {
-            const tokenType = getTokenType(addressObj);
-            if (!tokenGroups[tokenType]) {
-              tokenGroups[tokenType] = [];
-            }
-            tokenGroups[tokenType].push(addressObj.address);
-          });
-
-          // Calculate value for each token type in this network
-          for (const [tokenType, addresses] of Object.entries(tokenGroups)) {
-            const balances = tokenBalances[tokenType] || {};
-            if (Object.keys(balances).length > 0) {
-              const result = await calculateTokenAmountAndValue(tokenType, addresses, balances);
-              const numericValue = parseFloat(result.value.replace("$", "").replace(",", "")) || 0;
-              networkTotals[networkName] += numericValue;
-            }
-          }
-        }
-      }
-
-      // Calculate total across all networks
-      totalValue = Object.values(networkTotals).reduce((sum, value) => sum + value, 0);
-
-      setTotalPortfolioValue(totalValue);
-      updateNetworkValues({
-        "All Networks": totalValue,
-        ...networkTotals,
-      });
-    } catch (error) {
-      console.error("Error calculating portfolio values:", error);
-      setTotalPortfolioValue(0);
-      updateNetworkValues({
-        "All Networks": 0,
-        Bitcoin: 0,
-        Ethereum: 0,
-        Fradium: 0,
-      });
-    } finally {
-      setIsCalculatingPortfolio(false);
-    }
-  };
-
-  // Calculate total portfolio value when balances change
-  React.useEffect(() => {
-    calculateTotalPortfolioValue();
-  }, [tokenBalances, userWallet?.addresses, networkFilters]);
+  const {
+    // States
+    showSendModal,
+    selectedToken,
+    showNetworkFilter,
+    openReceive,
+    qrDetail,
+    showAnalyzeAddressModal,
+    qrCodeDataUrl,
+    isAnalyzeAddressSafe,
+    isAnalyzeAddressLoading,
+    analyzeAddressData,
+    aiAnalysisData,
+    analysisSource,
+    destinationAddress,
+    sendAmount,
+    isSendLoading,
+    sendErrors,
+    selectedTokenForSend,
+    isLoadingBalances,
+
+    // Actions
+    handleSendClick,
+    handleGeneralSendClick,
+    handleCloseSendModal,
+    handleReceiveClick,
+    handleConfirmSend,
+    handleMaxAmount,
+    handleAnalyzeAddress,
+    handleTokenSelection,
+    handleAddressInput,
+    handleAmountInput,
+    toggleNetworkFilter,
+
+    // Modal setters
+    setShowNetworkFilter,
+    setOpenReceive,
+    setQrDetail,
+    setShowAnalyzeAddressModal,
+    setQrCodeDataUrl,
+
+    // Data
+    tokens,
+    receiveAddresses,
+    totalPortfolioValue,
+    formatTokenAmount,
+  } = useAssetPage(userWallet, network, networkFilters, updateNetworkFilters, updateNetworkValues);
 
   // Format portfolio value for display
   const formatPortfolioValue = (value) => {
     if (hideBalance) return "••••••";
-    if (isCalculatingPortfolio) return "Loading...";
+    if (isLoadingBalances) return "Loading...";
     return `$${value.toFixed(2)}`;
   };
 
@@ -859,7 +158,7 @@ export default function AssetsPage() {
                 {Object.entries(networkFilters).map(([networkName, isEnabled]) => (
                   <div key={networkName} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <img src={tokenConfig[networkName]?.icon || "/assets/unknown.svg"} alt={networkName} className="w-5 h-5" />
+                      <img src={TOKENS_CONFIG[networkName]?.icon || "/assets/unknown.svg"} alt={networkName} className="w-5 h-5" />
                       <span className="text-[#B0B6BE] text-sm">{networkName}</span>
                     </div>
                     <button onClick={() => toggleNetworkFilter(networkName)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isEnabled ? "bg-[#9BE4A0]" : "bg-[#393E4B]"}`}>
@@ -873,7 +172,7 @@ export default function AssetsPage() {
 
           <div className="flex flex-col divide-y divide-[#23272F]">
             {tokens.length > 0 ? (
-              tokens.map((token, idx) => <TokenCard key={idx} token={token} calculateTokenAmountAndValue={calculateTokenAmountAndValue} onSendClick={handleSendClick} hideBalance={hideBalance} />)
+              tokens.map((token, idx) => <TokenCard key={idx} token={token} onSendClick={handleSendClick} hideBalance={hideBalance} formatTokenAmount={formatTokenAmount} />)
             ) : (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
@@ -902,35 +201,12 @@ export default function AssetsPage() {
               {/* Token Selection Dropdown */}
               <div>
                 <div className="text-[#B0B6BE] text-sm mb-1">Select Token</div>
-                <select
-                  className="w-full bg-[#23272F] border border-[#393E4B] rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none"
-                  value={selectedTokenForSend ? selectedTokenForSend.tokenType : ""}
-                  onChange={(e) => {
-                    const selectedTokenType = e.target.value;
-                    const token = tokens.find((t) => t.tokenType === selectedTokenType);
-                    if (token) {
-                      const tokenWithAmount = {
-                        ...token,
-                        currentAmount: token.currentAmount || 0,
-                      };
-                      setSelectedTokenForSend(tokenWithAmount);
-                      setSelectedToken(tokenWithAmount);
-                    } else {
-                      setSelectedTokenForSend(null);
-                      setSelectedToken(null);
-                    }
-                    setDestinationAddress("");
-                    setSendAmount("");
-                    setSendErrors({});
-                  }}>
+                <select className="w-full bg-[#23272F] border border-[#393E4B] rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none" value={selectedTokenForSend ? selectedTokenForSend.tokenType : ""} onChange={(e) => handleTokenSelection(e.target.value)}>
                   <option value="">Select a token</option>
                   {tokens.map((token, index) => {
-                    // Calculate current amount for this token
-                    const currentAmount = token.balances && Object.keys(token.balances).length > 0 ? Object.values(token.balances).reduce((sum, balance) => sum + balance, 0) : 0;
-
                     return (
                       <option key={index} value={token.tokenType}>
-                        {token.name} ({token.isLoading ? "Loading..." : hideBalance ? "••••" : formatTokenAmount(currentAmount, token.tokenType)})
+                        {token.name} ({token.isLoading ? "Loading..." : hideBalance ? "••••" : formatTokenAmount(token.currentAmount, token.tokenType)})
                       </option>
                     );
                   })}
@@ -938,70 +214,18 @@ export default function AssetsPage() {
               </div>
               <div>
                 <div className="text-[#B0B6BE] text-sm mb-1">Recipient Address</div>
-                <input
-                  type="text"
-                  className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${sendErrors.address ? "border-red-500" : "border-[#393E4B]"} ${!selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""}`}
-                  placeholder="ex: m1p2... or 1..."
-                  value={destinationAddress}
-                  disabled={!selectedTokenForSend}
-                  onChange={(e) => {
-                    if (selectedTokenForSend) {
-                      setDestinationAddress(e.target.value);
-                      if (sendErrors.address) {
-                        setSendErrors((prev) => ({ ...prev, address: null }));
-                      }
-                    }
-                  }}
-                />
+                <input type="text" className={`w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none ${sendErrors.address ? "border-red-500" : "border-[#393E4B]"} ${!selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""}`} placeholder="Input your address" value={destinationAddress} disabled={!selectedTokenForSend} onChange={(e) => handleAddressInput(e.target.value)} />
                 {sendErrors.address && <div className="text-red-400 text-xs mt-1">{sendErrors.address}</div>}
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <div className="text-[#B0B6BE] text-sm">Amount {selectedTokenForSend?.name?.toUpperCase() || ""}</div>
                   <div className="text-[#B0B6BE] text-xs">
-                    Balance:{" "}
-                    {selectedTokenForSend?.isLoading
-                      ? "Loading..."
-                      : (() => {
-                          const currentAmount = selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0 ? Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0) : 0;
-                          return hideBalance ? "••••" : formatTokenAmount(currentAmount, selectedTokenForSend?.tokenType);
-                        })()}{" "}
-                    {selectedTokenForSend?.name?.toUpperCase() || ""}
+                    Balance: {selectedTokenForSend?.isLoading ? "Loading..." : hideBalance ? "••••" : formatTokenAmount(selectedTokenForSend?.currentAmount || 0, selectedTokenForSend?.tokenType)} {selectedTokenForSend?.name?.toUpperCase() || ""}
                   </div>
                 </div>
                 <div className="relative">
-                  <input
-                    type="number"
-                    className={`w-full bg-[#23272F] border rounded px-3 py-2 pr-16 text-[#B0B6BE] text-sm outline-none ${sendErrors.amount ? "border-red-500" : "border-[#393E4B]"} ${!selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""}`}
-                    placeholder="0.00"
-                    value={sendAmount}
-                    disabled={!selectedTokenForSend}
-                    onChange={(e) => {
-                      if (selectedTokenForSend) {
-                        const value = e.target.value;
-                        setSendAmount(value);
-
-                        // Clear amount error when user starts typing
-                        if (sendErrors.amount) {
-                          setSendErrors((prev) => ({ ...prev, amount: null }));
-                        }
-
-                        // Validate amount in real-time
-                        if (value && !isNaN(value) && parseFloat(value) > 0) {
-                          if (selectedTokenForSend?.tokenType === "Bitcoin" && selectedTokenForSend?.balances && Object.keys(selectedTokenForSend.balances).length > 0) {
-                            const currentAmount = Object.values(selectedTokenForSend.balances).reduce((sum, balance) => sum + balance, 0);
-                            const requestedSatoshis = btcToSatoshis(parseFloat(value));
-                            if (requestedSatoshis > currentAmount) {
-                              setSendErrors((prev) => ({
-                                ...prev,
-                                amount: `Insufficient balance. Available: ${formatTokenAmount(currentAmount, selectedTokenForSend.tokenType)} ${selectedTokenForSend.name}`,
-                              }));
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  />
+                  <input type="number" className={`w-full bg-[#23272F] border rounded px-3 py-2 pr-16 text-[#B0B6BE] text-sm outline-none ${sendErrors.amount ? "border-red-500" : "border-[#393E4B]"} ${!selectedTokenForSend ? "opacity-50 cursor-not-allowed" : ""}`} placeholder="0.00" value={sendAmount} disabled={!selectedTokenForSend} onChange={(e) => handleAmountInput(e.target.value)} />
                   <button type="button" className={`absolute right-2 top-1/2 transform -translate-y-1/2 text-xs font-medium transition-colors ${selectedTokenForSend ? "text-[#9BEB83] hover:text-white cursor-pointer" : "text-[#6B7280] cursor-not-allowed"}`} onClick={handleMaxAmount} disabled={!selectedTokenForSend}>
                     MAX
                   </button>
@@ -1020,18 +244,15 @@ export default function AssetsPage() {
       <AnalyzeProgressModal isOpen={isAnalyzeAddressLoading} />
 
       {/* Modal Analyze Result */}
-      {showAnalyeAddressModal && (
+      {showAnalyzeAddressModal && (
         <AnalysisResultModal
-          isOpen={showAnalyeAddressModal}
+          isOpen={showAnalyzeAddressModal}
           isSafe={isAnalyzeAddressSafe}
           analyzeData={analyzeAddressData}
           aiAnalysisData={aiAnalysisData}
           analysisSource={analysisSource}
           onClose={() => {
-            setShowAnalyeAddressModal(false);
-            setAnalyzeAddressData(null);
-            setAiAnalysisData(null);
-            setAnalysisSource("");
+            setShowAnalyzeAddressModal(false);
           }}
           onConfirmSend={handleConfirmSend}
           isSendLoading={isSendLoading}
@@ -1047,7 +268,6 @@ export default function AssetsPage() {
               onClick={() => {
                 setOpenReceive(false);
                 setQrDetail({ open: false, coin: null });
-                setQrCodeDataUrl("");
               }}
               aria-label="Close">
               ×
@@ -1362,43 +582,14 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, aiAnalysisData, anal
   );
 }
 
-// Separate component for token card to handle async calculations
-function TokenCard({ token, calculateTokenAmountAndValue, onSendClick, hideBalance }) {
-  const [amount, setAmount] = useState(0);
-  const [value, setValue] = useState("$0.00");
-  const [isCalculating, setIsCalculating] = useState(false);
-
-  useEffect(() => {
-    const calculateAmountAndValue = async () => {
-      if (!token.balances || Object.keys(token.balances).length === 0) {
-        setAmount(0);
-        setValue("$0.00");
-        return;
-      }
-
-      setIsCalculating(true);
-      try {
-        const result = await calculateTokenAmountAndValue(token.tokenType, token.addresses, token.balances);
-        setAmount(result.amount);
-        setValue(result.value);
-      } catch (error) {
-        console.error(`Error calculating ${token.tokenType} amount and value:`, error);
-        setAmount(0);
-        setValue("$0.00");
-      } finally {
-        setIsCalculating(false);
-      }
-    };
-
-    calculateAmountAndValue();
-  }, [token.balances, token.tokenType, token.addresses, calculateTokenAmountAndValue]);
-
+// Token card component using clean architecture data
+function TokenCard({ token, onSendClick, hideBalance, formatTokenAmount }) {
   const handleCardClick = () => {
     // Pass token data including current amount to send modal
     onSendClick({
       ...token,
-      currentAmount: amount,
-      currentValue: value,
+      currentAmount: token.currentAmount,
+      currentValue: token.currentValue,
     });
   };
 
@@ -1414,15 +605,15 @@ function TokenCard({ token, calculateTokenAmountAndValue, onSendClick, hideBalan
         {token.hasError && <div className="text-red-400 text-xs mt-1">Error fetching balance</div>}
       </div>
       <div className="flex flex-col items-end gap-2">
-        {token.isLoading || isCalculating ? (
+        {token.isLoading ? (
           <div className="flex items-center gap-2">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#9BEB83]"></div>
             <span className="text-[#B0B6BE] text-sm">Loading...</span>
           </div>
         ) : (
           <>
-            <span className="text-white font-semibold text-base">{hideBalance ? "••••" : formatTokenAmount(amount, token.tokenType)}</span>
-            <span className="text-[#B0B6BE] text-sm">{hideBalance ? "••••" : value}</span>
+            <span className="text-white font-semibold text-base">{hideBalance ? "••••" : formatTokenAmount(token.currentAmount, token.tokenType)}</span>
+            <span className="text-[#B0B6BE] text-sm">{hideBalance ? "••••" : token.currentValue}</span>
           </>
         )}
       </div>

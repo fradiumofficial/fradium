@@ -1,0 +1,39 @@
+[package]
+name = "sol_rpc_types"
+version = "1.0.0"
+description = "Candid types used by the SOL RPC canister"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+readme = "README.md"
+include = ["src", "Cargo.toml", "CHANGELOG.md", "LICENSE", "README.md"]
+
+[dependencies]
+base64 = { workspace = true }
+bincode = { workspace = true }
+candid = { workspace = true }
+canlog = { workspace = true }
+derive_more = { workspace = true }
+ic-cdk = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+solana-account-decoder-client-types = { workspace = true }
+solana-commitment-config = { workspace = true }
+solana-hash = { workspace = true }
+solana-instruction = { workspace = true }
+solana-pubkey = { workspace = true }
+solana-reward-info = { workspace = true }
+solana-signature = { workspace = true }
+solana-transaction = { workspace = true, features = ["bincode"] }
+solana-transaction-error = { workspace = true }
+solana-transaction-status-client-types = { workspace = true }
+strum = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+bs58 = { workspace = true }
+proptest = { workspace = true }

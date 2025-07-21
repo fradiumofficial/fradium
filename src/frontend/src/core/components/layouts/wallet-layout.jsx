@@ -5,6 +5,9 @@ import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/auth-provider";
 import { Dialog, DialogContent } from "../ui/dialog";
 
+// Clean Architecture Imports
+import { NETWORK_CONFIG, getSupportedNetworks } from "../../config/tokens.config";
+
 export default function WalletLayout() {
   return (
     <WalletProvider>
@@ -27,23 +30,15 @@ function WalletLayoutContent() {
   const { isLoading, userWallet, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
-  const NETWORKS = [
-    {
-      key: "bitcoin",
-      name: "Bitcoin",
-      icon: "/assets/icons/bitcoin-grey.svg",
-    },
-    {
-      key: "ethereum",
-      name: "Ethereum",
-      icon: "/assets/icons/eth-grey.svg",
-    },
-    {
-      key: "fradium",
-      name: "Fradium",
-      icon: "/assets/icons/fum-grey.svg",
-    },
-  ];
+  // Get networks from configuration
+  const NETWORKS = getSupportedNetworks().map((networkName) => {
+    const config = NETWORK_CONFIG[networkName];
+    return {
+      key: networkName.toLowerCase(),
+      name: config.name,
+      icon: config.icon,
+    };
+  });
 
   // Function to get localStorage key for user's hide balance setting
   const getHideBalanceKey = () => {
@@ -84,6 +79,7 @@ function WalletLayoutContent() {
     const networkMapping = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
+      solana: "Solana",
       fradium: "Fradium",
     };
 
@@ -96,7 +92,8 @@ function WalletLayoutContent() {
     const networkMapping = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
-      fradium: "Fradium", // Fradium should map to itself, not Solana
+      solana: "Solana",
+      fradium: "Fradium",
     };
 
     const networkName = networkMapping[key] || key;
@@ -114,6 +111,7 @@ function WalletLayoutContent() {
     const networkMapping = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
+      solana: "Solana",
       fradium: "Fradium",
     };
 
@@ -234,6 +232,10 @@ function WalletLayoutContent() {
 
     if (networkFilters.Ethereum) {
       availableNetworks.push({ key: "ethereum", name: "Ethereum", value: getNetworkValue("Ethereum") });
+    }
+
+    if (networkFilters.Solana) {
+      availableNetworks.push({ key: "solana", name: "Solana", value: getNetworkValue("Solana") });
     }
 
     if (networkFilters.Fradium) {

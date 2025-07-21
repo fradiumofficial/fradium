@@ -28,6 +28,7 @@ import TransactionHistoryPage from "./pages/wallet/transaction-history.jsx";
 import ScanHistoryPage from "./pages/wallet/scan-history-page.jsx";
 import SettingPage from "./pages/wallet/setting-page.jsx";
 import { bitcoin } from "declarations/bitcoin";
+import { solana } from "declarations/solana";
 
 NProgress.configure({
   minimum: 0.3,
@@ -79,7 +80,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider canisters={{ backend, token, bitcoin }}>
+      <AuthProvider canisters={{ backend, token, bitcoin, solana }}>
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />

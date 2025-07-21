@@ -1,0 +1,42 @@
+[package]
+name = "solana"
+version = "1.0.0"
+edition = "2021"
+
+[[bin]]
+name = "solana"
+path = "src/main.rs"
+
+[dependencies]
+bs58 = { workspace = true }
+candid = { workspace = true }
+# Transitive dependency
+# See https://forum.dfinity.org/t/module-imports-function-wbindgen-describe-from-wbindgen-placeholder-that-is-not-exported-by-the-runtime/11545/8
+getrandom = { version = "*", default-features = false, features = ["custom"] }
+ic-cdk = { workspace = true }
+ic-ed25519 = { workspace = true }
+num = { workspace = true }
+serde = { workspace = true }
+sol_rpc_client = { path = "rpc//libs/client", features = ["ed25519"] }
+sol_rpc_types = { path = "rpc//libs/types" }
+solana-hash = { workspace = true }
+solana-instruction = { workspace = true }
+solana-keypair = { workspace = true }
+solana-message = { workspace = true }
+solana-program = { workspace = true }
+solana-pubkey = { workspace = true }
+solana-signature = { workspace = true }
+solana-system-interface = { workspace = true }
+solana-transaction = { workspace = true }
+
+[dev-dependencies]
+candid = { workspace = true }
+candid_parser = { workspace = true }
+ic-management-canister-types = { workspace = true }
+ic-test-utilities-load-wasm = { workspace = true }
+pocket-ic = { workspace = true }
+solana-client = { workspace = true }
+solana-commitment-config = { workspace = true }
+solana-keypair = { workspace = true }
+solana-rpc-client-nonce-utils = { workspace = true }
+solana-signer = { workspace = true }
