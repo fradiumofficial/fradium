@@ -6,16 +6,30 @@
   "action": {
     "default_popup": "index.html"
   },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
   "permissions": [
-    "tabs"
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://fradium.motionlaboratory.com/*",
+    "http://127.0.0.1:4943/*",
+    "https://*.ic0.app/*",
+    "https://*.icp0.io/*",
+    "https://ic0.app/*",
+    "https://icp-api.io/*",
+    "https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/*",
+    "https://oqcob-6iaaa-aaaar-qbr7q-cai.icp0.io/*",
+    "https://zkoni-faaaa-aaaar-qbsaa-cai.icp0.io/*",
+    "https://mempool.space/*"
   ],
   "background": {
-    "service_worker": "src/background/background.ts"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["src/background/content.ts"]
-    }
-  ]
+    "service_worker": "assets/background.js",
+    "type": "module"
+  }
 }

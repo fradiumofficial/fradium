@@ -8,7 +8,7 @@ import { viteStaticCopy } from "vite-plugin-static-copy"
 export default defineConfig({
   plugins: [
     react(), 
-    tailwindcss(), 
+    tailwindcss(),
     viteStaticCopy({
       targets: [
         {
@@ -22,9 +22,8 @@ export default defineConfig({
     outDir: "build",
     rollupOptions: {
       input: {
-        main: './index.html',
-        background: './src/background/background.ts',
-        content: './src/background/content.ts',
+        main: 'index.html',
+        background: 'src/scripts/background.ts',
       },
       output: {
         entryFileNames: `assets/[name].js`,
