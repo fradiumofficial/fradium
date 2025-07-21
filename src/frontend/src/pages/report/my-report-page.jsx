@@ -300,7 +300,7 @@ export default function MyReportPage() {
     <>
       <div className="min-h-screen bg-black text-white">
         {/* Main Content */}
-        <main className="pt-24 pb-16 px-4 sm:px-6">
+        <main className="pt-24 mb-32 pb-16 px-4 sm:px-6">
           <div className="container mx-auto">
             {/* Page Header */}
             <div className="mb-8 sm:mb-12">

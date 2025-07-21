@@ -4,6 +4,9 @@ import ButtonBullet from "@/core/components/ButtonBullet";
 import styles from "./home-page.module.css";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/core/providers/auth-provider";
+import { useState } from "react";
+import { Dialog, DialogContent } from "@/core/components/ui/dialog";
+import SidebarButton from "@/core/components/SidebarButton";
 
 // Komponen collapsible reusable
 function CollapsibleSection({ title, children, open, onToggle }) {
@@ -22,6 +25,7 @@ function CollapsibleSection({ title, children, open, onToggle }) {
 const HomePage = () => {
   const { isAuthenticated, handleLogin } = useAuth();
   const navigate = useNavigate();
+  const [showConfirmWalletModal, setShowConfirmWalletModal] = useState(false);
 
   // State collapsible
   const [openAbout, setOpenAbout] = React.useState(true);
@@ -29,21 +33,21 @@ const HomePage = () => {
 
   // Fungsi untuk handle launch wallet
   const handleLaunchWallet = async () => {
+    setShowConfirmWalletModal(true);
+  };
+  // Fungsi untuk benar-benar create wallet (panggil ICP logic di sini)
+  const handleConfirmCreateWallet = async () => {
+    setShowConfirmWalletModal(false);
+    // Panggil logic ICP create wallet di sini
     if (isAuthenticated) {
-      // Jika sudah login, langsung redirect ke wallet
-      // window.open("/wallet", "_blank");
       navigate("/wallet");
     } else {
-      // Jika belum login, tampilkan popup login dengan custom handler
       try {
-        // Custom handler untuk redirect ke wallet setelah login berhasil
         const customLoginHandler = () => {
           navigate("/wallet");
         };
-
         await handleLogin(customLoginHandler);
       } catch (error) {
-        // Jika login gagal, tidak ada yang terjadi (stay di halaman)
         console.log("Login cancelled or failed");
       }
     }
@@ -73,7 +77,7 @@ const HomePage = () => {
               Here is Your Digital Asset Guardian to <br /> Analyse. Protect. Transact with Confidence.
             </p>
             {/* CTA Button */}
-            <Button onClick={handleLaunchWallet}>Launch Wallet &rarr;</Button>
+            <Button onClick={handleLaunchWallet}>Create Wallet &rarr;</Button>
             {/* Efek Glow di bawah button */}
             <div className={styles.aboutGlowBg}>
               <img src="/assets/images/glow.png" alt="Glow" className={styles.glowImg} />
@@ -236,6 +240,22 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+      {/* Confirm Create Wallet Modal */}
+      <Dialog open={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal}>
+        <DialogContent className="bg-[#23272f] rounded-xl max-w-[480px] p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-8 pt-8 pb-0">
+            <div className="text-lg font-normal text-white">Confirm create wallet</div>
+          </div>
+          <img src="/assets/images/card-confirm-wallet.png" alt="Confirm Wallet" className="w-full object-cover mb-0" />
+          <div className="px-8">
+            <div className="text-2xl font-bold text-white mt-8 mb-2">Create a New Wallet?</div>
+            <div className="text-[#B0B6BE] text-base mb-8">By continuing, Fradium will automatically generate a new wallet for you. This process is instant and non-reversible.</div>
+          </div>
+          <div className="px-8 pb-8">
+            <SidebarButton onClick={handleConfirmCreateWallet}>Confirm and Create</SidebarButton>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

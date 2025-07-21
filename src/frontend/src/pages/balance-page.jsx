@@ -7,7 +7,6 @@ import { useAuth } from "@/core/providers/auth-provider";
 import { token } from "declarations/token";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import Card from "../core/components/Card";
-import { jsonStringify } from "../core/lib/canisterUtils";
 
 export default function BalancePage() {
   const { isAuthenticated: isConnected, identity } = useAuth();

@@ -4,13 +4,12 @@ import Button from "./Button";
 
 const Footer = () => {
   return (
-    <footer className={`relative w-full flex flex-col items-center`}>
-      <img src="/assets/images/Illus-footer.png" alt="Footer Illustration" className="absolute" draggable="false" style={{}} />
+    <footer className={`relative w-full flex h-auto  flex-col items-center`}>
+      <img src="/assets/images/illus-footer2.png" alt="Footer Illustration" className="absolute" draggable="false" style={{ top: '-110px', left: 0, right: 0, margin: '0 auto' }} />
       <div className={styles.footerContent} style={{ position: "relative", zIndex: 2, marginTop: "260px" }}>
         <div className={styles.leftCol}>
           <div className={styles.logoRow}>
-            <img src="/logo.svg" alt="Crypgo Logo" className={styles.logo} />
-            <span className={styles.brand}>Crypgo</span>
+            <img src="/assets/logo-fradium.svg" alt="Logo Fradium" className={styles.logo} />
           </div>
           <p className={styles.desc}>Fradium equips you with powerful tools to analyse, protect, and transact securely across the blockchain.</p>
           <div className={styles.socialRow}>

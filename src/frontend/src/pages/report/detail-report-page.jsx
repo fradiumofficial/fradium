@@ -141,15 +141,15 @@ export default function DetailReportPage() {
     const shortAddress =
       backendData.address.length > 10
         ? `${backendData.address.substring(
-            0,
-            6
-          )}...${backendData.address.substring(backendData.address.length - 4)}`
+          0,
+          6
+        )}...${backendData.address.substring(backendData.address.length - 4)}`
         : backendData.address;
     const reporterShort =
       reporterString.length > 10
         ? `${reporterString.substring(0, 6)}...${reporterString.substring(
-            reporterString.length - 4
-          )}`
+          reporterString.length - 4
+        )}`
         : reporterString;
 
     // Check if current user has already voted
@@ -223,14 +223,12 @@ export default function DetailReportPage() {
 
       if (days > 0) {
         setTimeRemaining(
-          `${days} day${days > 1 ? "s" : ""}, ${hours} hour${
-            hours !== 1 ? "s" : ""
+          `${days} day${days > 1 ? "s" : ""}, ${hours} hour${hours !== 1 ? "s" : ""
           } remaining`
         );
       } else if (hours > 0) {
         setTimeRemaining(
-          `${hours} hour${hours !== 1 ? "s" : ""}, ${minutes} minute${
-            minutes !== 1 ? "s" : ""
+          `${hours} hour${hours !== 1 ? "s" : ""}, ${minutes} minute${minutes !== 1 ? "s" : ""
           } remaining`
         );
       } else {
@@ -309,7 +307,7 @@ export default function DetailReportPage() {
       !stakeAmount ||
       Number.parseFloat(stakeAmount) <= 0 ||
       Number.parseFloat(stakeAmount) >
-        (userBalance ? convertE8sToToken(userBalance) : 0)
+      (userBalance ? convertE8sToToken(userBalance) : 0)
     ) {
       toast.error("Invalid stake amount");
       return;
@@ -474,7 +472,7 @@ export default function DetailReportPage() {
       </div>
 
       {/* Main Content */}
-      <main className="pt-24 pb-16 px-4 sm:px-6 relative z-10">
+      <main className="pt-24 mb-32 pb-16 px-4 sm:px-6 relative z-10">
         <div className="container mx-auto">
           {/* Back Button */}
           <div className="mb-6 sm:mb-8">
@@ -603,11 +601,10 @@ export default function DetailReportPage() {
                       <button
                         key={index}
                         onClick={() => setCurrentImageIndex(index)}
-                        className={`flex-shrink-0 w-16 sm:w-20 h-16 sm:h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                          index === currentImageIndex
-                            ? "border-white"
-                            : "border-white/20 hover:border-white/40"
-                        }`}
+                        className={`flex-shrink-0 w-16 sm:w-20 h-16 sm:h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex
+                          ? "border-white"
+                          : "border-white/20 hover:border-white/40"
+                          }`}
                       >
                         <img
                           src={image || "/placeholder.svg"}
@@ -700,22 +697,20 @@ export default function DetailReportPage() {
                     <div className="space-y-3">
                       <Button
                         onClick={() => handleVoteClick("yes")}
-                        className={`w-full ${
-                          userVote === "yes"
-                            ? "bg-red-400 text-white"
-                            : "bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400"
-                        }`}
+                        className={`w-full ${userVote === "yes"
+                          ? "bg-red-400 text-white"
+                          : "bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400"
+                          }`}
                       >
                         <AlertTriangle className="w-4 h-4 mr-2" />
                         Vote Unsafe
                       </Button>
                       <Button
                         onClick={() => handleVoteClick("no")}
-                        className={`w-full ${
-                          userVote === "no"
-                            ? "bg-green-400 text-black"
-                            : "bg-green-400/10 border border-green-400/20 hover:bg-green-400/20 text-green-400"
-                        }`}
+                        className={`w-full ${userVote === "no"
+                          ? "bg-green-400 text-black"
+                          : "bg-green-400/10 border border-green-400/20 hover:bg-green-400/20 text-green-400"
+                          }`}
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Vote Safe
@@ -855,8 +850,8 @@ export default function DetailReportPage() {
                       {isBalanceLoading
                         ? "Loading..."
                         : userBalance
-                        ? `${convertE8sToToken(userBalance)} FUM`
-                        : "0 FUM"}
+                          ? `${convertE8sToToken(userBalance)} FUM`
+                          : "0 FUM"}
                     </span>
                   </div>
                 </div>
@@ -912,13 +907,12 @@ export default function DetailReportPage() {
                       !stakeAmount ||
                       Number.parseFloat(stakeAmount) <= 0 ||
                       Number.parseFloat(stakeAmount) >
-                        (userBalance ? convertE8sToToken(userBalance) : 0)
+                      (userBalance ? convertE8sToToken(userBalance) : 0)
                     }
-                    className={`flex-1 ${
-                      voteType === "yes"
-                        ? "bg-red-400 hover:bg-red-500 text-white"
-                        : "bg-green-400 hover:bg-green-500 text-black"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`flex-1 ${voteType === "yes"
+                      ? "bg-red-400 hover:bg-red-500 text-white"
+                      : "bg-green-400 hover:bg-green-500 text-black"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {isSubmitting ? "Submitting..." : "Confirm Vote"}
                   </Button>

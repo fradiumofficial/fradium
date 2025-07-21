@@ -521,7 +521,7 @@ export default function CreateReportPage() {
   return (
     <>
       <div className="min-h-screen bg-black text-white">
-        <main className="pt-24 pb-16 px-4 sm:px-6">
+        <main className="pt-24 mb-32 pb-16 px-4 sm:px-6">
           <div className="container mx-auto max-w-6xl">
             {/* Back Button */}
             <div className="mb-6 sm:mb-8">

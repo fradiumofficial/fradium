@@ -1,15 +1,47 @@
-import { Search } from "lucide-react";
+import React from "react";
+import SidebarButton from "@/core/components/SidebarButton";
 
 export default function NotFoundPage() {
   return (
-    <div className="flex min-h-[80vh] w-full flex-col items-center justify-center px-4 py-24 text-center">
-      <div className="relative mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-secondary">
-        <Search className="h-12 w-12 text-emerald-500" strokeWidth={1.5} />
-        <div className="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-xl font-bold text-emerald-50">404</div>
-      </div>
+    <div className="relative min-h-screen mb-48 w-full bg-[#000510] overflow-hidden">
+      {/* Glow background – lebih ke atas */}
+      <img
+        src="/assets/images/glow.png"
+        alt="Glow"
+        className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] opacity-80 blur-2xl pointer-events-none select-none"
+      />
 
-      <h1 className="mb-2 text-4xl font-bold tracking-tight">Page Not Found</h1>
-      <p className="mb-8 max-w-md text-muted-foreground">The resource you're looking for doesn't exist or has been moved. It might have been renamed, removed, or the URL may be incorrect.</p>
+      {/* 404 asset – lebih ke atas */}
+      <img
+        src="/assets/404.png"
+        alt="404"
+        className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 w-[320px] md:w-[420px] pointer-events-none select-none"
+      />
+
+      {/* Hero kiri */}
+      <img
+        src="/assets/images/hero_kiri.png"
+        alt="Hero Kiri"
+        className="absolute left-0 top-1/2 -translate-y-1/2 max-w-[33vw] w-full min-w-0 pointer-events-none select-none"
+      />
+
+      {/* Hero kanan */}
+      <img
+        src="/assets/images/hero_kanan.png"
+        alt="Hero Kanan"
+        className="absolute right-0 top-1/2 -translate-y-1/2 max-w-[33vw] w-full min-w-0 pointer-events-none select-none"
+      />
+
+      {/* Center Content Overlay – ikut naik supaya tetap di tengah 404 */}
+      <div className="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center justify-center">
+        <h1 className="text-[#99E39E] text-4xl md:text-5xl font-medium mb-2">
+          We’ve lost this page
+        </h1>
+        <p className="text-[#B0B6BE] text-center max-w-xl mb-12 text-lg md:text-xl">
+          Sorry, this page you are looking for doesn’t exist or has been removed
+        </p>
+        <SidebarButton>&larr; Back to Homepage</SidebarButton>
+      </div>
     </div>
   );
 }
