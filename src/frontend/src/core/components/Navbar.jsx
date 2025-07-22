@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router";
-import Button from "./Button";
 import { Button as ButtonShad } from "@/core/components/ui/button";
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { useAuth } from "@/core/providers/auth-provider";
@@ -10,6 +9,8 @@ import { cn } from "@/core/lib/utils";
 import { FileText, LogOut } from "lucide-react";
 import { token } from "declarations/token";
 import { formatAddress } from "../lib/canisterUtils";
+import SidebarButton from "./SidebarButton";
+import { LoadingState } from "./ui/loading-state";
 
 const navigationItems = [
   { label: "Home", href: "/" },
@@ -26,6 +27,7 @@ const Navbar = () => {
   const [balance, setBalance] = useState(0);
   const [productsDropdown, setProductsDropdown] = useState(false);
   const productsDropdownTimeout = useRef();
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -56,6 +58,17 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await handleLogin();
+    } catch (error) {
+      console.log("Login cancelled or failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -166,9 +179,16 @@ const Navbar = () => {
           </div>
         ) : (
           <div className="hidden lg:flex relative items-center flex-shrink-0 min-w-fit">
-            <Button size="sm" onClick={handleLogin}>
-              Sign In &nbsp;→
-            </Button>
+            <SidebarButton buttonClassName="py-2" className="translate-y-0" onClick={handleSignIn} disabled={isLoading}>
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <LoadingState type="spinner" size="sm" color="primary" />
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                "Sign In →"
+              )}
+            </SidebarButton>
           </div>
         )}
         {/* Hamburger Mobile */}
@@ -232,9 +252,16 @@ const Navbar = () => {
               )}
             </div>
             {/* Sign In Button Mobile - Neon Style */}
-            <Button size="sm" className="w-11/12 max-w-xs mt-2 font-bold text-base bg-[#9BEB83] shadow-[0_0_12px_2px_#A259FF80] border border-[#A259FF] hover:shadow-[0_0_16px_4px_#9BEB83] transition-all duration-200">
-              Sign In &nbsp;→
-            </Button>
+            <SidebarButton buttonClassName="py-1" onClick={handleSignIn} disabled={isLoading} className="w-11/12 max-w-xs mt-2">
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <LoadingState type="spinner" size="sm" color="primary" />
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                "Sign In →"
+              )}
+            </SidebarButton>
           </div>
         </div>
       )}

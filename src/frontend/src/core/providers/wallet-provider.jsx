@@ -23,6 +23,7 @@ export const WalletProvider = ({ children }) => {
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [network, setNetwork] = useState("All Networks");
   const [hideBalance, setHideBalance] = useState(false);
+  const [hasConfirmedWallet, setHasConfirmedWallet] = useState(false);
   const [networkValues, setNetworkValues] = useState({
     "All Networks": 0,
     Bitcoin: 0,
@@ -139,8 +140,6 @@ export const WalletProvider = ({ children }) => {
       // Get solana address
       const solanaResponse = await solana.solana_account([identity?.getPrincipal()]);
 
-      console.log("solanaResponse", solanaResponse);
-
       // Create wallet with new structure
       const response = await backend.create_wallet({
         addresses: [
@@ -157,34 +156,48 @@ export const WalletProvider = ({ children }) => {
         ],
       });
 
-      setIsCreatingWallet(false);
-      if (response.Ok) {
-        setUserWallet(response.value);
-        setIsLoading(false);
+      if ("Ok" in response) {
+        // Fetch wallet data immediately after creation
+        const walletData = await backend.get_wallet();
+        if ("Ok" in walletData) {
+          setUserWallet(walletData.Ok);
+          setHasConfirmedWallet(true); // Set state bahwa user sudah konfirmasi
+        }
       } else {
         console.error("Failed to create wallet:", response);
+        throw new Error("Failed to create wallet");
       }
     } catch (error) {
       console.error("Error creating wallet:", error);
+      throw error;
+    } finally {
       setIsCreatingWallet(false);
+      setIsLoading(false);
     }
   }, [identity]);
 
   const fetchUserWallet = useCallback(async () => {
     setIsLoading(true);
-    const response = await backend.get_wallet();
-
-    if (response.Ok) {
-      setUserWallet(response.Ok);
+    try {
+      const response = await backend.get_wallet();
+      if ("Ok" in response) {
+        setUserWallet(response.Ok);
+        setIsLoading(false);
+      } else {
+        // Only create wallet if explicitly requested
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Error fetching wallet:", error);
       setIsLoading(false);
-    } else {
-      createWallet();
     }
-  }, [createWallet]);
+  }, []);
 
   useEffect(() => {
-    fetchUserWallet();
-  }, [fetchUserWallet]);
+    if (identity) {
+      fetchUserWallet();
+    }
+  }, [fetchUserWallet, identity]);
 
   // Helper function to add new address to existing wallet
   const addAddressToWallet = useCallback(
@@ -208,9 +221,8 @@ export const WalletProvider = ({ children }) => {
           addresses: updatedAddresses,
         });
 
-        if (response.Ok) {
-          setUserWallet(response.value);
-          await fetchUserWallet();
+        if ("Ok" in response) {
+          await fetchUserWallet(); // Refresh wallet data after adding address
           return true;
         } else {
           console.error("Failed to add address:", response.Err);
@@ -246,6 +258,8 @@ export const WalletProvider = ({ children }) => {
       setUserWallet,
       isCreatingWallet,
       setIsCreatingWallet,
+      createWallet,
+      fetchUserWallet,
       addAddressToWallet,
       network,
       setNetwork,
@@ -256,8 +270,10 @@ export const WalletProvider = ({ children }) => {
       getNetworkValue,
       networkFilters,
       updateNetworkFilters,
+      hasConfirmedWallet,
+      setHasConfirmedWallet,
     }),
-    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters]
+    [isLoading, userWallet, isCreatingWallet, createWallet, fetchUserWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;

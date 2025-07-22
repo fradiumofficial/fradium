@@ -1,5 +1,5 @@
 // React & Hooks
-import React from "react";
+import React, { useEffect } from "react";
 
 // External Libraries
 import { toast } from "react-toastify";
@@ -17,12 +17,33 @@ import CustomButton from "@/core/components/custom-button-a";
 
 // Modal Components
 import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal";
+import WelcomingWalletModal from "@/core/components/modals/WelcomingWallet";
 
 // Configuration
 import { TOKENS_CONFIG } from "@/core/config/tokens.config";
+import { backend } from "declarations/backend";
 
 export default function AssetsPage() {
-  const { userWallet, network, hideBalance, updateNetworkValues, networkFilters, updateNetworkFilters } = useWallet();
+  const { userWallet, network, hideBalance, updateNetworkValues, networkFilters, updateNetworkFilters, createWallet, hasConfirmedWallet } = useWallet();
+  const [isCreatingWallet, setIsCreatingWallet] = React.useState(false);
+
+  useEffect(() => {
+    const initWallet = async () => {
+      try {
+        const walletResult = await backend.get_wallet();
+        if ("Err" in walletResult && hasConfirmedWallet) {
+          // Hanya buat wallet jika user sudah konfirmasi
+          setIsCreatingWallet(true);
+          await createWallet();
+          setIsCreatingWallet(false);
+        }
+      } catch (error) {
+        console.error("Error initializing wallet:", error);
+        setIsCreatingWallet(false);
+      }
+    };
+    initWallet();
+  }, [createWallet, hasConfirmedWallet]);
 
   const {
     // States
@@ -78,6 +99,10 @@ export default function AssetsPage() {
     if (isLoadingBalances) return "Loading...";
     return `$${value.toFixed(2)}`;
   };
+
+  if (isCreatingWallet) {
+    return <WelcomingWalletModal isOpen={true} />;
+  }
 
   return (
     <>
