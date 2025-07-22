@@ -4,11 +4,13 @@ import { WalletProvider, useWallet } from "@/core/providers/wallet-provider";
 import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/auth-provider";
 import { Dialog, DialogContent } from "../ui/dialog";
+import { LoadingState } from "@/core/components/ui/loading-state";
 
 // Clean Architecture Imports
 import { NETWORK_CONFIG, getSupportedNetworks } from "../../config/tokens.config";
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
+import { backend } from "declarations/backend";
 
 export default function WalletLayout() {
   return (
@@ -29,9 +31,11 @@ function WalletLayoutContent() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const { isLoading, userWallet, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters } = useWallet();
+  const { isLoading, userWallet, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters, createWallet } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
+  const [showConfirmWalletModal, setShowConfirmWalletModal] = React.useState(false);
+
   // Get networks from configuration
   const NETWORKS = getSupportedNetworks().map((networkName) => {
     const config = NETWORK_CONFIG[networkName];
@@ -41,6 +45,32 @@ function WalletLayoutContent() {
       icon: config.icon,
     };
   });
+
+  // Check if user has wallet
+  React.useEffect(() => {
+    const checkWallet = async () => {
+      try {
+        const walletResult = await backend.get_wallet();
+        if ("Err" in walletResult) {
+          setShowConfirmWalletModal(true);
+        }
+      } catch (error) {
+        console.error("Error checking wallet:", error);
+      }
+    };
+    checkWallet();
+  }, []);
+
+  // Function to handle wallet creation
+  const handleConfirmCreateWallet = async () => {
+    setShowConfirmWalletModal(false);
+    try {
+      await createWallet();
+    } catch (error) {
+      console.error("Error creating wallet:", error);
+      navigate("/");
+    }
+  };
 
   // Function to get localStorage key for user's hide balance setting
   const getHideBalanceKey = () => {
@@ -256,7 +286,14 @@ function WalletLayoutContent() {
   }
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#0F1219] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingState type="spinner" size="lg" color="primary" />
+          <div className="text-white text-lg">Loading your wallet...</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -470,7 +507,7 @@ function WalletLayoutContent() {
                       <div className="h-px bg-white/5 mx-4"></div>
 
                       {/* Why Fradium */}
-                      <button className="w-full text-sm transition-colors group" onClick={() => navigate("/?section=why-fradium")}>
+                      <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
                         <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                             <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
@@ -482,7 +519,7 @@ function WalletLayoutContent() {
                       </button>
 
                       {/* Documentation */}
-                      <button className="w-full text-sm transition-colors group">
+                      <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
                         <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -547,6 +584,32 @@ function WalletLayoutContent() {
           </div>
         </aside>
       </div>
+
+      {/* Confirm Create Wallet Modal */}
+      <Dialog open={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal}>
+        <DialogContent className="bg-[#23272f] rounded-xl max-w-[480px] p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-8 pt-8 pb-0">
+            <div className="text-lg font-normal text-white">Confirm create wallet</div>
+          </div>
+          <img src="/assets/images/card-confirm-wallet.png" alt="Confirm Wallet" className="w-full object-cover mb-0" />
+          <div className="px-8">
+            <div className="text-2xl font-bold text-white mt-8 mb-2">Create a New Wallet?</div>
+            <div className="text-[#B0B6BE] text-base mb-8">By continuing, Fradium will automatically generate a new wallet for you. This process is instant and non-reversible.</div>
+          </div>
+          <div className="px-8 pb-8">
+            <SidebarButton onClick={handleConfirmCreateWallet} disabled={isCreatingWallet}>
+              {isCreatingWallet ? (
+                <div className="flex items-center gap-2">
+                  <LoadingState type="spinner" size="sm" color="primary" />
+                  <span>Creating Wallet...</span>
+                </div>
+              ) : (
+                "Confirm and Create"
+              )}
+            </SidebarButton>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

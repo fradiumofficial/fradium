@@ -1,7 +1,72 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router";
+import { useAuth } from "@/core/providers/auth-provider";
+import { useWallet } from "@/core/providers/wallet-provider";
+import { backend } from "declarations/backend";
 import SidebarButton from "@/core/components/SidebarButton";
+import ConfirmCreateWalletModal from "@/core/components/modals/ConfirmCreateWalletModal";
 
 const ProductsWallet = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, handleLogin } = useAuth();
+  const { hasConfirmedWallet, setHasConfirmedWallet } = useWallet();
+  const [showConfirmWalletModal, setShowConfirmWalletModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fungsi untuk handle launch wallet
+  const handleLaunchWallet = async () => {
+    setIsLoading(true);
+    if (!isAuthenticated) {
+      try {
+        const customLoginHandler = async () => {
+          // Setelah login, cek wallet
+          const walletResult = await backend.get_wallet();
+          if ("Ok" in walletResult) {
+            // Wallet sudah ada, langsung redirect
+            navigate("/wallet");
+          } else if (!hasConfirmedWallet) {
+            // Wallet belum ada dan belum konfirmasi, tampilkan modal konfirmasi
+            setShowConfirmWalletModal(true);
+          } else {
+            // Sudah konfirmasi tapi belum ada wallet, langsung ke wallet page
+            navigate("/wallet");
+          }
+          setIsLoading(false);
+        };
+        await handleLogin(customLoginHandler);
+      } catch (error) {
+        console.log("Login cancelled or failed");
+        setIsLoading(false);
+      }
+    } else {
+      // User sudah login, cek wallet
+      try {
+        const walletResult = await backend.get_wallet();
+        if ("Ok" in walletResult) {
+          // Wallet sudah ada, langsung redirect
+          navigate("/wallet");
+        } else if (!hasConfirmedWallet) {
+          // Wallet belum ada dan belum konfirmasi, tampilkan modal konfirmasi
+          setShowConfirmWalletModal(true);
+        } else {
+          // Sudah konfirmasi tapi belum ada wallet, langsung ke wallet page
+          navigate("/wallet");
+        }
+      } catch (error) {
+        console.error("Error checking wallet:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  // Fungsi untuk handle konfirmasi create wallet
+  const handleConfirmCreateWallet = () => {
+    setShowConfirmWalletModal(false);
+    setHasConfirmedWallet(true);
+    navigate("/wallet"); // Redirect ke wallet page untuk proses pembuatan wallet
+  };
+
   return (
     <div className="relative min-h-screen mb-32 bg-[#000510] text-white font-inter w-full overflow-x-hidden">
       {/* Glow background */}
@@ -14,7 +79,9 @@ const ProductsWallet = () => {
         <h1 className="text-white text-center text-[40px] md:text-[48px] font-medium leading-tight mb-12 max-w-3xl">Your Command Center for Safer Transactions</h1>
         {/* Button */}
         <div className="mb-16">
-          <SidebarButton className=" text-[20px] font-medium">Create Wallet &nbsp;→</SidebarButton>
+          <SidebarButton onClick={handleLaunchWallet} disabled={isLoading} className="text-[20px] font-medium">
+            {isLoading ? "Checking Wallet..." : "Start Using Wallet →"}
+          </SidebarButton>
         </div>
         {/* Laptop Image with Glow Effect */}
         <div className="relative w-full flex justify-center mb-16">
@@ -71,6 +138,9 @@ const ProductsWallet = () => {
           <img src="/assets/images/wallet-feature.png" alt="Wallet Feature" className="w-full max-w-2xl md:max-w-[600px] rounded-2xl" />
         </div>
       </section>
+
+      {/* Confirm Create Wallet Modal */}
+      <ConfirmCreateWalletModal isOpen={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal} onConfirm={handleConfirmCreateWallet} isLoading={isLoading} />
     </div>
   );
 };
