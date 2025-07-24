@@ -2,35 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../core/providers/auth-provider";
 import { backend } from "declarations/backend";
 
-// Clean Architecture Imports
-import { TokenServiceFactory } from "../../core/services/tokens/TokenServiceFactory";
-import { TOKENS_CONFIG } from "../../core/config/tokens.config";
+// Utilities
+import { getAmountToken, getTokenImageURL, TokenType } from "../../core/lib/tokenUtils";
 
-// Synchronous token amount formatting for immediate use
-const formatTokenAmount = (amount, tokenType) => {
-  if (amount === 0) return "0";
-
-  // Use config-based formatting
-  const config = TOKENS_CONFIG[tokenType];
-  if (config) {
-    const displayAmount = amount / config.unitConversion.factor;
-    return displayAmount.toString().replace(/\.?0+$/, "");
-  }
-
-  // Fallback formatting
-  return amount.toString().replace(/\.?0+$/, "");
-};
-
-// Async service-based formatting for when we need service functionality
-const formatTokenAmountWithService = async (amount, tokenType) => {
-  try {
-    const service = await TokenServiceFactory.getService(tokenType);
-    return service.formatAmount(amount);
-  } catch (error) {
-    console.error(`Error formatting ${tokenType} amount:`, error);
-    return formatTokenAmount(amount, tokenType); // Fallback to sync version
-  }
-};
+// ================= UTILITY FUNCTIONS =================
 
 // Format timestamp to readable date
 const formatTransactionDate = (timestamp) => {
@@ -45,15 +20,25 @@ const formatTransactionDate = (timestamp) => {
   return `${month}/${day}/${year} ${hours}:${minutes}`;
 };
 
-// Mapping functions using token config
+// Mapping functions using tokenUtils
 const mapChainToIcon = (chain) => {
-  const config = TOKENS_CONFIG[chain];
-  return config ? config.icon : "/assets/unknown.svg";
+  return getTokenImageURL(chain);
 };
 
 const mapChainToCoin = (chain) => {
-  const config = TOKENS_CONFIG[chain];
-  return config ? config.displayName : "Unknown";
+  // Map chain names to display names
+  switch (chain) {
+    case TokenType.BITCOIN:
+      return "Bitcoin";
+    case TokenType.ETHEREUM:
+      return "Ethereum";
+    case TokenType.SOLANA:
+      return "Solana";
+    case TokenType.FUM:
+      return "Fradium";
+    default:
+      return "Unknown";
+  }
 };
 
 const mapStatusToUI = (status) => {
@@ -74,50 +59,34 @@ const formatTransactionTitle = (direction, details, chain) => {
 
   if (direction === "Send") {
     switch (chain) {
-      case "Bitcoin":
+      case TokenType.BITCOIN:
         return details.Bitcoin?.to_address ? `Transfer to ${details.Bitcoin.to_address.slice(0, 12)}..` : `Transfer to ${address}..`;
-      case "Ethereum":
+      case TokenType.ETHEREUM:
         return details.Ethereum?.to ? `Transfer to ${details.Ethereum.to.slice(0, 12)}..` : `Transfer to ${address}..`;
-      case "Solana":
+      case TokenType.SOLANA:
         return details.Solana?.recipient ? `Transfer to ${details.Solana.recipient.slice(0, 12)}..` : `Transfer to ${address}..`;
+      case TokenType.FUM:
+        return details.Fum?.to ? `Transfer to ${details.Fum.to.slice(0, 12)}..` : `Transfer to ${address}..`;
       default:
         return `Transfer to ${address}..`;
     }
   } else {
     switch (chain) {
-      case "Bitcoin":
+      case TokenType.BITCOIN:
         return details.Bitcoin?.from_address ? `Received Bitcoin` : `Received from ${address}..`;
-      case "Ethereum":
+      case TokenType.ETHEREUM:
         return details.Ethereum?.from ? `Received Ethereum` : `Received from ${address}..`;
-      case "Solana":
+      case TokenType.SOLANA:
         return details.Solana?.sender ? `Received Solana` : `Received from ${address}..`;
+      case TokenType.FUM:
+        return details.Fum?.from ? `Received Fradium` : `Received from ${address}..`;
       default:
         return `Received from ${address}..`;
     }
   }
 };
 
-const convertAmountToDollar = async (amount, chain) => {
-  try {
-    const service = await TokenServiceFactory.getService(chain);
-    const price = await service.getPrice();
-    const displayAmount = service.fromBaseUnit(amount);
-    return displayAmount * price;
-  } catch (error) {
-    console.error(`Error converting ${chain} amount to USD:`, error);
-    // Fallback calculations
-    switch (chain) {
-      case "Bitcoin":
-        return (amount / 100000000) * 45000; // BTC fallback
-      case "Ethereum":
-        return (amount / Math.pow(10, 18)) * 3000; // ETH fallback
-      case "Solana":
-        return (amount / Math.pow(10, 9)) * 100; // SOL fallback
-      default:
-        return amount * 0.001; // Default fallback
-    }
-  }
-};
+// ================= MAIN COMPONENT =================
 
 export default function TransactionHistoryPage() {
   const [transactions, setTransactions] = useState([]);
@@ -177,15 +146,12 @@ export default function TransactionHistoryPage() {
 
       const result = await backend.get_transaction_history();
 
-      console.log(result);
-
       if (result.Ok) {
         const formattedTransactions = await Promise.all(
           result.Ok.map(async (tx, index) => {
             const chain = Object.keys(tx.chain)[0]; // Extract chain name from variant
             const direction = Object.keys(tx.direction)[0]; // Extract direction from variant
             const rawAmount = Number(tx.amount);
-            const dollarAmount = await convertAmountToDollar(rawAmount, chain);
 
             return {
               id: index + 1,
@@ -195,7 +161,7 @@ export default function TransactionHistoryPage() {
               icon: mapChainToIcon(chain),
               rawAmount: rawAmount, // Keep raw amount for formatting
               tokenType: chain,
-              amount: direction === "Send" ? -dollarAmount : dollarAmount, // USD amount for display
+              amount: direction === "Send" ? -rawAmount : rawAmount, // Use raw amount for display
               status: mapStatusToUI(Object.keys(tx.status)[0]),
               rawData: tx, // Keep original data for debugging
             };
@@ -475,9 +441,10 @@ export default function TransactionHistoryPage() {
                 <label className="text-[#B0B6BE] text-sm mb-2 block">Blockchain</label>
                 <select value={filters.chain} onChange={(e) => handleFilterChange("chain", e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-[#9BE4A0]">
                   <option value="all">All Chains</option>
-                  <option value="Bitcoin">Bitcoin</option>
-                  <option value="Ethereum">Ethereum</option>
-                  <option value="Solana">Solana</option>
+                  <option value={TokenType.BITCOIN}>Bitcoin</option>
+                  <option value={TokenType.ETHEREUM}>Ethereum</option>
+                  <option value={TokenType.SOLANA}>Solana</option>
+                  <option value={TokenType.FUM}>Fradium</option>
                 </select>
               </div>
             </div>
@@ -500,26 +467,8 @@ export default function TransactionHistoryPage() {
 
 // Component to handle token amount formatting
 function TransactionAmount({ amount, rawAmount, tokenType }) {
-  // Start with synchronous formatting
-  const initialFormatted = formatTokenAmount(Math.abs(rawAmount), tokenType);
-  const [formattedAmount, setFormattedAmount] = useState(initialFormatted);
-
-  useEffect(() => {
-    // Optionally enhance with service-based formatting
-    const enhanceFormatting = async () => {
-      try {
-        const serviceFormatted = await formatTokenAmountWithService(Math.abs(rawAmount), tokenType);
-        if (serviceFormatted !== initialFormatted) {
-          setFormattedAmount(serviceFormatted);
-        }
-      } catch (error) {
-        console.error("Error enhancing amount formatting:", error);
-        // Keep the initial formatted amount
-      }
-    };
-
-    enhanceFormatting();
-  }, [rawAmount, tokenType, initialFormatted]);
+  // Use tokenUtils for formatting
+  const formattedAmount = getAmountToken(tokenType, Math.abs(rawAmount));
 
   return (
     <span className={`text-base font-medium ${amount > 0 ? "text-[#9BE4A0]" : "text-[#E49B9C]"}`}>

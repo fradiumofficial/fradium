@@ -6,13 +6,15 @@ use candid::{Nat, Principal};
 use ic_cdk::{init, post_upgrade, update};
 use num::ToPrimitive;
 use sol_rpc_client::nonce::nonce_from_account;
-use sol_rpc_types::{GetAccountInfoEncoding, GetAccountInfoParams, TokenAmount};
+use sol_rpc_types::{GetAccountInfoEncoding, GetAccountInfoParams, TokenAmount, EncodedConfirmedTransactionWithStatusMeta};
 use solana_hash::Hash;
 use solana_message::Message;
 use solana_pubkey::Pubkey;
 use solana_system_interface::instruction;
 use solana_transaction::Transaction;
 use std::str::FromStr;
+use candid::CandidType;
+use serde::Serialize;
 
 #[init]
 pub fn init(init_arg: InitArg) {
@@ -348,6 +350,52 @@ pub async fn send_spl_token(
         .to_string()
 }
 
+#[derive(CandidType, Serialize)]
+pub struct SolanaTransactionInfo {
+    pub signature: String,
+    pub slot: u64,
+    pub block_time: Option<u64>,
+    pub transaction: Option<EncodedConfirmedTransactionWithStatusMeta>,
+}
+
+#[update]
+pub async fn get_transactions_by_address(address: String, limit: Option<u32>) -> Vec<SolanaTransactionInfo> {
+    let client = client();
+    let pubkey = Pubkey::from_str(&address).unwrap();
+    let mut builder = client.get_signatures_for_address(pubkey);
+    if let Some(lim) = limit {
+        use sol_rpc_types::GetSignaturesForAddressLimit;
+        if let Ok(lim) = GetSignaturesForAddressLimit::try_from(lim) {
+            builder = builder.with_limit(lim);
+        }
+    }
+    let signatures_result = builder.send().await.expect_consistent();
+    let mut result = Vec::new();
+    if let Ok(sigs) = signatures_result {
+        for sig in sigs.iter() {
+            // get_transaction expects solana_signature::Signature, gunakan From
+            let tx_result = client.get_transaction(solana_signature::Signature::from(sig.signature.clone())).send().await.expect_consistent();
+            let tx = match tx_result {
+                Ok(Some(tx)) => {
+                    // Convert from solana_transaction_status_client_types::EncodedConfirmedTransactionWithStatusMeta to sol_rpc_types::EncodedConfirmedTransactionWithStatusMeta
+                    match EncodedConfirmedTransactionWithStatusMeta::try_from(tx) {
+                        Ok(v) => Some(v),
+                        Err(_) => None,
+                    }
+                },
+                _ => None,
+            };
+            result.push(SolanaTransactionInfo {
+                signature: sig.signature.to_string(),
+                slot: sig.slot,
+                block_time: sig.block_time.map(|v| v as u64),
+                transaction: tx,
+            });
+        }
+    }
+    result
+}
+
 async fn get_account_owner(account: &Pubkey) -> Pubkey {
     let owner = client()
         .get_account_info(*account)
@@ -381,3 +429,5 @@ fn check_candid_interface_compatibility() {
     )
     .unwrap();
 }
+
+ic_cdk::export_candid!();

@@ -1,29 +1,13 @@
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
-import {
-  Search,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Eye,
-  Filter,
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Car,
-} from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, Clock, Eye, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Car } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
 import Card from "../../core/components/Card";
 
 import { backend } from "declarations/backend";
 import { toast } from "react-toastify";
-import {
-  getExplorerUrl,
-  getExplorerName,
-  getExplorerIcon,
-} from "@/core/lib/chainExplorers";
-import PrimaryButton from "@/core/components/Button";
+import SidebarButton from "@/core/components/SidebarButton";
 
 export default function ReportPage() {
   const navigate = useNavigate();
@@ -67,9 +51,7 @@ export default function ReportPage() {
     // Vote is correct if:
     // - voteType = true (unsafe) and YES is majority (report marked as unsafe)
     // - voteType = false (safe) and NO is majority (report marked as safe)
-    const isVoteCorrect = isYesMajority
-      ? voteType === true
-      : voteType === false;
+    const isVoteCorrect = isYesMajority ? voteType === true : voteType === false;
 
     return isVoteCorrect;
   };
@@ -94,10 +76,8 @@ export default function ReportPage() {
       const votesYes = parseInt(report.votes_yes) || 0;
       const votesNo = parseInt(report.votes_no) || 0;
       const totalVotes = votesYes + votesNo;
-      const yesPercentage =
-        totalVotes > 0 ? Number(((votesYes / totalVotes) * 100).toFixed(2)) : 0;
-      const noPercentage =
-        totalVotes > 0 ? Number(((votesNo / totalVotes) * 100).toFixed(2)) : 0;
+      const yesPercentage = totalVotes > 0 ? Number(((votesYes / totalVotes) * 100).toFixed(2)) : 0;
+      const noPercentage = totalVotes > 0 ? Number(((votesNo / totalVotes) * 100).toFixed(2)) : 0;
 
       // Convert nanoseconds to milliseconds and then to Date
       const createdAt = new Date(parseInt(report.created_at) / 1000000);
@@ -112,18 +92,10 @@ export default function ReportPage() {
       }
 
       // Convert Principal objects to strings
-      const reporterString =
-        typeof report.reporter === "object" && report.reporter._arr
-          ? report.reporter.toString()
-          : String(report.reporter);
+      const reporterString = typeof report.reporter === "object" && report.reporter._arr ? report.reporter.toString() : String(report.reporter);
 
       // Create short address
-      const shortAddress =
-        report.address.length > 10
-          ? `${report.address.substring(0, 6)}...${report.address.substring(
-            report.address.length - 4
-          )}`
-          : report.address;
+      const shortAddress = report.address.length > 10 ? `${report.address.substring(0, 6)}...${report.address.substring(report.address.length - 4)}` : report.address;
 
       return {
         id: report.report_id,
@@ -134,8 +106,7 @@ export default function ReportPage() {
         yesPercentage: yesPercentage,
         noPercentage: noPercentage,
         dateReported: createdAt.toLocaleDateString(),
-        riskLevel:
-          report.category.charAt(0).toUpperCase() + report.category.slice(1),
+        riskLevel: report.category.charAt(0).toUpperCase() + report.category.slice(1),
         chain: report.chain,
         description: report.description,
         evidence: report.evidence || [],
@@ -154,14 +125,7 @@ export default function ReportPage() {
 
     const filtered = uiData.filter((report) => {
       const searchLower = searchTerm.toLowerCase();
-      return (
-        report.address.toLowerCase().includes(searchLower) ||
-        report.shortAddress.toLowerCase().includes(searchLower) ||
-        report.status.toLowerCase().includes(searchLower) ||
-        report.riskLevel.toLowerCase().includes(searchLower) ||
-        report.category.toLowerCase().includes(searchLower) ||
-        report.chain.toLowerCase().includes(searchLower)
-      );
+      return report.address.toLowerCase().includes(searchLower) || report.shortAddress.toLowerCase().includes(searchLower) || report.status.toLowerCase().includes(searchLower) || report.riskLevel.toLowerCase().includes(searchLower) || report.category.toLowerCase().includes(searchLower) || report.chain.toLowerCase().includes(searchLower);
     });
 
     // Sort data
@@ -221,9 +185,7 @@ export default function ReportPage() {
       },
       {
         title: "Community Votes",
-        value: uiData
-          .reduce((sum, report) => sum + report.totalVotes, 0)
-          .toLocaleString(),
+        value: uiData.reduce((sum, report) => sum + report.totalVotes, 0).toLocaleString(),
         subtitle: "Total cast",
         icon: <CheckCircle className="w-5 h-5 text-green-400" />,
         color: "text-green-400",
@@ -289,12 +251,7 @@ export default function ReportPage() {
     if (sortBy !== field) {
       return <ArrowUpDown className="w-3 h-3 ml-2 text-gray-400" />;
     }
-    return (
-      <ArrowUpDown
-        className={`w-3 h-3 ml-2 ${sortOrder === "asc" ? "rotate-180" : ""
-          } transition-transform`}
-      />
-    );
+    return <ArrowUpDown className={`w-3 h-3 ml-2 ${sortOrder === "asc" ? "rotate-180" : ""} transition-transform`} />;
   };
 
   useEffect(() => {
@@ -323,22 +280,13 @@ export default function ReportPage() {
           <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-16">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
               <div className="flex-1">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 mt-20">
-                  Community Vote Reports
-                </h1>
-                <p className="text-lg sm:text-xl text-gray-300 max-w-3xl">
-                  Review wallet addresses reported by the community for
-                  suspicious or fraudulent activity. Help protect the Web3
-                  ecosystem by participating in our decentralized security
-                  network.
-                </p>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 mt-20">Community Vote Reports</h1>
+                <p className="text-lg sm:text-xl text-gray-300 max-w-3xl">Review wallet addresses reported by the community for suspicious or fraudulent activity. Help protect the Web3 ecosystem by participating in our decentralized security network.</p>
               </div>
 
               {/* Create Report Button */}
               <div className="flex-shrink-0 md:mt-20">
-                <PrimaryButton onClick={() => navigate("/reports/create")}>
-                  Create Report
-                </PrimaryButton>
+                <SidebarButton onClick={() => navigate("/reports/create")}>Create Report</SidebarButton>
               </div>
             </div>
           </div>
@@ -351,34 +299,30 @@ export default function ReportPage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {isLoading
                 ? // Loading skeleton
-                Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index}>
-                    <Card>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="h-4 bg-gray-600 rounded w-20 animate-pulse"></div>
-                        <div className="h-5 w-5 bg-gray-600 rounded animate-pulse"></div>
-                      </div>
-                      <div className="h-8 bg-gray-600 rounded w-16 animate-pulse mb-2"></div>
-                      <div className="h-4 bg-gray-600 rounded w-24 animate-pulse"></div>
-                    </Card>
-                  </div>
-                ))
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index}>
+                      <Card>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="h-4 bg-gray-600 rounded w-20 animate-pulse"></div>
+                          <div className="h-5 w-5 bg-gray-600 rounded animate-pulse"></div>
+                        </div>
+                        <div className="h-8 bg-gray-600 rounded w-16 animate-pulse mb-2"></div>
+                        <div className="h-4 bg-gray-600 rounded w-24 animate-pulse"></div>
+                      </Card>
+                    </div>
+                  ))
                 : statsCards.map((card, index) => (
-                  <div key={index}>
-                    <Card>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-400 text-sm">
-                          {card.title}
-                        </span>
-                        {card.icon}
-                      </div>
-                      <div className="text-2xl font-bold">{card.value}</div>
-                      <div className={`text-sm ${card.color}`}>
-                        {card.subtitle}
-                      </div>
-                    </Card>
-                  </div>
-                ))}
+                    <div key={index}>
+                      <Card>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-gray-400 text-sm">{card.title}</span>
+                          {card.icon}
+                        </div>
+                        <div className="text-2xl font-bold">{card.value}</div>
+                        <div className={`text-sm ${card.color}`}>{card.subtitle}</div>
+                      </Card>
+                    </div>
+                  ))}
             </div>
 
             {/* Filters and Search */}
@@ -387,12 +331,7 @@ export default function ReportPage() {
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 flex-1">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search addresses, status, risk level..."
-                      value={searchTerm}
-                      onChange={handleSearch}
-                      className="pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10"
-                    />
+                    <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10" />
                   </div>
                   <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white sm:flex-shrink-0">
                     <Filter className="w-4 h-4 mr-2" />
@@ -410,10 +349,7 @@ export default function ReportPage() {
                       { field: "chain", label: "Chain" },
                     ].map((sortOption, index) => (
                       <div key={sortOption.field}>
-                        <Button
-                          onClick={() => handleSort(sortOption.field)}
-                          className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm flex-1 sm:flex-initial"
-                        >
+                        <Button onClick={() => handleSort(sortOption.field)} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm flex-1 sm:flex-initial">
                           {sortOption.label}
                           {getSortIcon(sortOption.field)}
                         </Button>
@@ -428,30 +364,19 @@ export default function ReportPage() {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-2 sm:space-y-0">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-semibold mb-2">
-                    Reported Addresses
-                  </h2>
-                  <p className="text-gray-400 text-sm">
-                    Community-reported wallet addresses under review for
-                    potential security threats
-                  </p>
+                  <h2 className="text-lg sm:text-xl font-semibold mb-2">Reported Addresses</h2>
+                  <p className="text-gray-400 text-sm">Community-reported wallet addresses under review for potential security threats</p>
                 </div>
                 <div className="text-sm text-gray-400">
-                  Showing {startIndex + 1}-
-                  {Math.min(endIndex, filteredAndSortedData.length)} of{" "}
-                  {filteredAndSortedData.length} results
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} results
                 </div>
               </div>
 
               {currentData.length === 0 ? (
                 <div className="text-center py-12">
                   <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    No reports found
-                  </h3>
-                  <p className="text-gray-400">
-                    Try adjusting your search terms or filters
-                  </p>
+                  <h3 className="text-lg font-semibold mb-2">No reports found</h3>
+                  <p className="text-gray-400">Try adjusting your search terms or filters</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-1 gap-4 sm:gap-6">
@@ -462,14 +387,8 @@ export default function ReportPage() {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-                              <span className="font-mono text-base sm:text-lg font-semibold truncate">
-                                {report.shortAddress}
-                              </span>
-                              <div
-                                className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                                  report.status
-                                )} self-start`}
-                              >
+                              <span className="font-mono text-base sm:text-lg font-semibold truncate">{report.shortAddress}</span>
+                              <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)} self-start`}>
                                 {getStatusIcon(report.status)}
                                 <span>{report.status}</span>
                               </div>
@@ -485,27 +404,16 @@ export default function ReportPage() {
                         {/* Vote Information */}
                         <div className="mb-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-300">
-                              {report.chain} Network
-                            </span>
-                            <span className="text-sm font-semibold">
-                              {report.totalVotes.toLocaleString()} votes
-                            </span>
+                            <span className="text-sm text-gray-300">{report.chain} Network</span>
+                            <span className="text-sm font-semibold">{report.totalVotes.toLocaleString()} votes</span>
                           </div>
                           <div className="mb-2">
                             <div className="flex justify-between text-xs mb-1">
-                              <span className="text-red-400">
-                                Unsafe: {report.yesPercentage}%
-                              </span>
-                              <span className="text-green-400">
-                                Safe: {report.noPercentage}%
-                              </span>
+                              <span className="text-red-400">Unsafe: {report.yesPercentage}%</span>
+                              <span className="text-green-400">Safe: {report.noPercentage}%</span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                              <div
-                                className="bg-red-400 h-2 rounded-full"
-                                style={{ width: `${report.yesPercentage}%` }}
-                              />
+                              <div className="bg-red-400 h-2 rounded-full" style={{ width: `${report.yesPercentage}%` }} />
                             </div>
                           </div>
                         </div>
@@ -513,19 +421,12 @@ export default function ReportPage() {
                         {/* Card Footer */}
                         <div className="flex items-center justify-between pt-4 border-t border-white/10">
                           <div className="flex items-center space-x-4 text-xs text-gray-400">
-                            <span>
-                              ID: #{report.id.toString().padStart(4, "0")}
-                            </span>
+                            <span>ID: #{report.id.toString().padStart(4, "0")}</span>
                             <span>Evidence: {report.evidence.length}</span>
                           </div>
-                          <Button
-                            className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm"
-                            onClick={() => navigate(`/reports/${report.id}`)}
-                          >
+                          <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm" onClick={() => navigate(`/reports/${report.id}`)}>
                             <Eye className="w-3 h-3 mr-2" />
-                            <span className="hidden sm:inline">
-                              View Details
-                            </span>
+                            <span className="hidden sm:inline">View Details</span>
                             <span className="sm:hidden">View</span>
                           </Button>
                         </div>
@@ -539,57 +440,37 @@ export default function ReportPage() {
               {filteredAndSortedData.length > 0 && (
                 <div className="mt-6 sm:mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                   <span className="text-gray-400 text-sm text-center sm:text-left">
-                    Showing {startIndex + 1}-
-                    {Math.min(endIndex, filteredAndSortedData.length)} of{" "}
-                    {filteredAndSortedData.length} reports
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} reports
                   </span>
                   <div className="flex items-center space-x-2">
-                    <Button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                       <ChevronLeft className="w-4 h-4 sm:mr-1" />
                       <span className="hidden sm:inline">Previous</span>
                     </Button>
 
                     {/* Page Numbers */}
                     <div className="flex items-center space-x-1">
-                      {Array.from(
-                        { length: Math.min(3, totalPages) },
-                        (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 2) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 1) {
-                            pageNum = totalPages - 2 + i;
-                          } else {
-                            pageNum = currentPage - 1 + i;
-                          }
-
-                          return (
-                            <Button
-                              key={pageNum}
-                              onClick={() => handlePageChange(pageNum)}
-                              className={`w-8 h-8 p-0 text-sm ${currentPage === pageNum
-                                  ? "bg-white text-black"
-                                  : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white"
-                                }`}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
+                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 2) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 1) {
+                          pageNum = totalPages - 2 + i;
+                        } else {
+                          pageNum = currentPage - 1 + i;
                         }
-                      )}
+
+                        return (
+                          <Button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`w-8 h-8 p-0 text-sm ${currentPage === pageNum ? "bg-white text-black" : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white"}`}>
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
                     </div>
 
-                    <Button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                       <span className="hidden sm:inline">Next</span>
                       <ChevronRight className="w-4 h-4 sm:ml-1" />
                     </Button>
@@ -600,31 +481,24 @@ export default function ReportPage() {
 
             {/* Info Section */}
             <div className="my-10">
-              <h3 className="text-lg font-semibold mb-4">
-                How Community Voting Works
-              </h3>
+              <h3 className="text-lg font-semibold mb-4">How Community Voting Works</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-300">
                 {[
                   {
                     title: "1. Report Submission",
-                    description:
-                      "Community members can report suspicious wallet addresses with evidence and reasoning.",
+                    description: "Community members can report suspicious wallet addresses with evidence and reasoning.",
                   },
                   {
                     title: "2. Community Review",
-                    description:
-                      "Verified users vote on whether the reported address poses a security threat to the ecosystem.",
+                    description: "Verified users vote on whether the reported address poses a security threat to the ecosystem.",
                   },
                   {
                     title: "3. Consensus Decision",
-                    description:
-                      'Addresses with 75%+ "Unsafe" votes are flagged and added to the community blocklist.',
+                    description: 'Addresses with 75%+ "Unsafe" votes are flagged and added to the community blocklist.',
                   },
                 ].map((step, index) => (
                   <div key={index}>
-                    <h4 className="font-medium text-white mb-2">
-                      {step.title}
-                    </h4>
+                    <h4 className="font-medium text-white mb-2">{step.title}</h4>
                     <p>{step.description}</p>
                   </div>
                 ))}

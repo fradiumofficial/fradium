@@ -2,6 +2,24 @@ import React, { useState, useEffect, useRef } from "react";
 import ButtonA from "@/core/components/SidebarButton";
 import { chatbot } from "declarations/chatbot";
 
+// Fungsi untuk mengubah teks dengan * menjadi bold
+const formatTextWithBold = (text) => {
+  if (typeof text !== "string") return text;
+
+  const parts = text.split(/(\*[^*]+\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("*") && part.endsWith("*")) {
+      // Hapus simbol * dan bungkus dengan tag strong
+      return (
+        <strong key={index} className="font-bold">
+          {part.slice(1, -1)}
+        </strong>
+      );
+    }
+    return part;
+  });
+};
+
 const ChatBubble = ({ type, message, time, isLink, isList }) => {
   if (type === "user") {
     return (
@@ -13,7 +31,7 @@ const ChatBubble = ({ type, message, time, isLink, isList }) => {
                 {message}
               </a>
             ) : (
-              message
+              formatTextWithBold(message)
             )}
           </div>
           <span className="text-xs text-[#B0B6BE] mt-1">{time}</span>
@@ -32,11 +50,11 @@ const ChatBubble = ({ type, message, time, isLink, isList }) => {
           {isList ? (
             <ol className="list-decimal ml-5">
               {message.map((item, idx) => (
-                <li key={idx}>{item}</li>
+                <li key={idx}>{formatTextWithBold(item)}</li>
               ))}
             </ol>
           ) : (
-            message
+            formatTextWithBold(message)
           )}
         </div>
         <span className="text-xs text-[#B0B6BE] mt-1">{time}</span>

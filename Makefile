@@ -30,3 +30,11 @@ bitcoin-mine:
 build-token:
 	chmod +x $(CURDIR)/scripts/build.fradium_token.sh
 	$(CURDIR)/scripts/build.fradium_token.sh
+
+build-ai:
+	cargo build --release --target wasm32-unknown-unknown --package ransomware_detector
+	candid-extractor target/wasm32-unknown-unknown/release/ransomware_detector.wasm > src/ai/detector_service/src/ransomware_detector.did
+
+build-solana:
+	cd src/solana && ./build.sh
+	candid-extractor target/wasm32-unknown-unknown/release/solana.wasm > src/solana/solana.did

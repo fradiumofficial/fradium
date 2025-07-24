@@ -84,6 +84,7 @@ actor Fradium {
     #Bitcoin;
     #Ethereum;
     #Solana;
+    #Fradium;
     #Unknown;
   };
 

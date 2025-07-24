@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { backend } from "declarations/backend";
 import { bitcoin } from "declarations/bitcoin";
 import { solana } from "declarations/solana";
@@ -112,7 +112,8 @@ export const WalletProvider = ({ children }) => {
     };
 
     loadSavedFilters();
-  }, [loadNetworkFilters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userPrincipalString]);
 
   // Listen for localStorage changes from other components
   useEffect(() => {
@@ -149,9 +150,19 @@ export const WalletProvider = ({ children }) => {
             address: bitcoinResponse,
           },
           {
+            network: { Ethereum: null },
+            token_type: { Ethereum: null },
+            address: "0x0000000000000000000000000000000000000000",
+          },
+          {
             network: { Solana: null },
             token_type: { Solana: null },
             address: solanaResponse,
+          },
+          {
+            network: { ICP: null },
+            token_type: { Fradium: null },
+            address: identity?.getPrincipal()?.toString(),
           },
         ],
       });
@@ -182,13 +193,12 @@ export const WalletProvider = ({ children }) => {
       const response = await backend.get_wallet();
       if ("Ok" in response) {
         setUserWallet(response.Ok);
-        setIsLoading(false);
       } else {
-        // Only create wallet if explicitly requested
-        setIsLoading(false);
+        createWallet();
       }
     } catch (error) {
-      console.error("Error fetching wallet:", error);
+      setUserWallet(null);
+    } finally {
       setIsLoading(false);
     }
   }, []);
@@ -196,8 +206,11 @@ export const WalletProvider = ({ children }) => {
   useEffect(() => {
     if (identity) {
       fetchUserWallet();
+    } else {
+      setIsLoading(false);
+      setUserWallet(null);
     }
-  }, [fetchUserWallet, identity]);
+  }, [identity]);
 
   // Helper function to add new address to existing wallet
   const addAddressToWallet = useCallback(
@@ -222,7 +235,7 @@ export const WalletProvider = ({ children }) => {
         });
 
         if ("Ok" in response) {
-          await fetchUserWallet(); // Refresh wallet data after adding address
+          // await fetchUserWallet(); // Refresh wallet data after adding address
           return true;
         } else {
           console.error("Failed to add address:", response.Err);
@@ -233,7 +246,7 @@ export const WalletProvider = ({ children }) => {
         return false;
       }
     },
-    [userWallet, fetchUserWallet]
+    [userWallet]
   );
 
   // Function to update network values

@@ -4,7 +4,7 @@
     "backend": {
       "main": "src/backend/main.mo",
       "type": "motoko",
-      "dependencies": ["token", "internet_identity"]
+      "dependencies": ["token", "internet_identity", "bitcoin"]
     },
     "frontend": {
       "source": ["src/frontend/dist"],
@@ -56,6 +56,12 @@
       "candid": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.did",
       "package": "sol_rpc_canister",
       "type": "custom",
+      "remote": {
+        "id": {
+          "ic": "tghme-zyaaa-aaaar-qarca-cai",
+          "playground": "tghme-zyaaa-aaaar-qarca-cai"
+        }
+      },
       "wasm": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.wasm.gz",
       "init_arg": "( record { manageApiKeys = null; overrideProvider = null; logFilter = opt variant { ShowAll }; numSubnetNodes = null; mode = opt variant { Demo }; } )"
     },

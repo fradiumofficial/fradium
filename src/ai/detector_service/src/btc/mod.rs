@@ -70,6 +70,14 @@ pub async fn analyze_btc_address(address: &str) -> Result<RansomwareResult, Stri
     predict_ransomware(feature_vector, address, transactions.len() as u32)
 }
 
+pub async fn analyze_btc_address_v2(
+    mut features: Vec<f32>,
+    address: &str,
+    transaction_count: u32
+) -> Result<RansomwareResult, String> {
+    predict_ransomware(features, address, transaction_count)
+}
+
 async fn fetch_transactions_mempool(address: &str) -> Result<Vec<MempoolTransaction>, String> {
     let mut all_transactions = Vec::new();
     let mut last_seen_txid: Option<String> = None;
@@ -748,5 +756,3 @@ fn get_feature_names() -> Vec<String> {
         "value_per_transaction", "burst_activity", "mixing_intensity",
     ].into_iter().map(String::from).collect()
 }
-
-ic_cdk::export_candid!();

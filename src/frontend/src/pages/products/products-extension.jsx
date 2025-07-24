@@ -13,7 +13,13 @@ const ProductsExtension = () => {
         </div>
         {/* Download Button absolute top-right */}
         <div className="absolute right-0 mt-8 pr-8 mr-8 z-10">
-          <SidebarButton className="w-[199px] h-[48px] text-[18px]">Download Extension</SidebarButton>
+          <SidebarButton
+            className="w-[199px] h-[48px] text-[18px]"
+            onClick={() => {
+              window.open("https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc", "_blank");
+            }}>
+            Download Extension
+          </SidebarButton>
         </div>
       </section>
 

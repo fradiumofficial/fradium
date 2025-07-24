@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../core/providers/auth-provider";
 import { backend } from "declarations/backend";
+import { getTokenImageURL, TokenType } from "../../core/lib/tokenUtils";
 
 // Format timestamp to readable date with time
 const formatScanDate = (timestamp) => {
@@ -15,30 +16,17 @@ const formatScanDate = (timestamp) => {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
-// Mapping functions for backend data
-const mapTokenTypeToIcon = (tokenType) => {
-  const tokenKey = Object.keys(tokenType)[0];
-  switch (tokenKey) {
-    case "Bitcoin":
-      return "/assets/bitcoin.svg";
-    case "Ethereum":
-      return "/assets/eth.svg";
-    case "Solana":
-      return "/assets/icons/wallet-grey.svg";
-    default:
-      return "/assets/fum.svg";
-  }
-};
-
 const mapTokenTypeToCoin = (tokenType) => {
   const tokenKey = Object.keys(tokenType)[0];
   switch (tokenKey) {
-    case "Bitcoin":
+    case TokenType.BITCOIN:
       return "Bitcoin";
-    case "Ethereum":
+    case TokenType.ETHEREUM:
       return "Ethereum";
-    case "Solana":
+    case TokenType.SOLANA:
       return "Solana";
+    case TokenType.FUM:
+      return "Fradium";
     default:
       return "Unknown";
   }
@@ -120,7 +108,10 @@ export default function ScanHistoryPage() {
       filtered = filtered.filter((scan) => scan.source === filters.source);
     }
     if (filters.token !== "all") {
-      filtered = filtered.filter((scan) => scan.coin === filters.token);
+      filtered = filtered.filter((scan) => {
+        const tokenKey = Object.keys(scan.rawData.token_type)[0];
+        return tokenKey === filters.token;
+      });
     }
 
     // Apply search
@@ -151,6 +142,7 @@ export default function ScanHistoryPage() {
       if (result.Ok) {
         const formattedHistory = result.Ok.map((scan, index) => {
           const source = mapAnalysisTypeToSource(scan.analyzed_type);
+          const tokenKey = Object.keys(scan.token_type)[0];
           const coin = mapTokenTypeToCoin(scan.token_type);
 
           return {
@@ -160,7 +152,7 @@ export default function ScanHistoryPage() {
             title: formatScanTitle(scan.is_safe, source),
             type: formatAnalysisType(scan.is_safe, source),
             coin: coin,
-            icon: mapTokenTypeToIcon(scan.token_type),
+            icon: getTokenImageURL(tokenKey), // Use tokenKey for proper mapping
             isSafe: scan.is_safe,
             source: source,
             date: formatScanDate(scan.created_at),
@@ -487,9 +479,10 @@ export default function ScanHistoryPage() {
                 <label className="text-[#B0B6BE] text-sm mb-2 block">Token Type</label>
                 <select value={filters.token} onChange={(e) => handleFilterChange("token", e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-[#9BE4A0]">
                   <option value="all">All Tokens</option>
-                  <option value="Bitcoin">Bitcoin</option>
-                  <option value="Ethereum">Ethereum</option>
-                  <option value="Solana">Solana</option>
+                  <option value={TokenType.BITCOIN}>Bitcoin</option>
+                  <option value={TokenType.ETHEREUM}>Ethereum</option>
+                  <option value={TokenType.SOLANA}>Solana</option>
+                  <option value={TokenType.FUM}>Fradium</option>
                 </select>
               </div>
             </div>

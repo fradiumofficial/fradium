@@ -1,14 +1,19 @@
 // React & Hooks
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 
 // External Libraries
 import { toast } from "react-toastify";
+import QRCode from "qrcode";
 
 // Providers & Context
 import { useWallet } from "@/core/providers/wallet-provider";
+import { useAuth } from "@/core/providers/auth-provider";
 
-// Custom Hooks
-import { useAssetPage } from "@/core/hooks/useAssetPage";
+// Canister Declarations
+import { backend } from "declarations/backend";
+import { bitcoin } from "declarations/bitcoin";
+import { solana } from "declarations/solana";
+import { ransomware_detector } from "declarations/ransomware_detector";
 
 // UI Components
 import TransactionButton from "@/core/components/TransactionButton";
@@ -19,88 +24,828 @@ import CustomButton from "@/core/components/custom-button-a";
 import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal";
 import WelcomingWalletModal from "@/core/components/modals/WelcomingWallet";
 
-// Configuration
-import { TOKENS_CONFIG } from "@/core/config/tokens.config";
-import { backend } from "declarations/backend";
+import { jsonStringify } from "@/core/lib/canisterUtils";
+import { detectTokenType, TokenType, getPriceUSD, TOKENS_CONFIG, getAmountToken, amountToBaseUnit } from "@/core/lib/tokenUtils";
+import { extractFeatures } from "@/core/services/ai/bitcoinAnalyzeService";
+
+function isAmountExceedBalance(tokenType, sendAmount, currentAmount) {
+  const amount = parseFloat(sendAmount);
+  const balance = parseFloat(currentAmount);
+  if (isNaN(amount) || isNaN(balance)) return false;
+  if (amount <= 0) return true;
+  switch (tokenType) {
+    case TokenType.BITCOIN:
+      return amountToBaseUnit(TokenType.BITCOIN, amount) > amountToBaseUnit(TokenType.BITCOIN, balance);
+    case TokenType.SOLANA:
+      return amountToBaseUnit(TokenType.SOLANA, amount) > amountToBaseUnit(TokenType.SOLANA, balance);
+    case TokenType.ETHEREUM:
+    case TokenType.FUM:
+      return amount * 1e18 > balance * 1e18;
+    default:
+      return amount > balance;
+  }
+}
 
 export default function AssetsPage() {
-  const { userWallet, network, hideBalance, updateNetworkValues, networkFilters, updateNetworkFilters, createWallet, hasConfirmedWallet } = useWallet();
-  const [isCreatingWallet, setIsCreatingWallet] = React.useState(false);
+  const { identity } = useAuth();
+  const { userWallet, network, hideBalance, updateNetworkValues, networkFilters, updateNetworkFilters, createWallet, hasConfirmedWallet, isCreatingWallet, setIsCreatingWallet } = useWallet();
 
-  useEffect(() => {
-    const initWallet = async () => {
-      try {
-        const walletResult = await backend.get_wallet();
-        if ("Err" in walletResult && hasConfirmedWallet) {
-          // Hanya buat wallet jika user sudah konfirmasi
-          setIsCreatingWallet(true);
+  // ================= STATE MANAGEMENT =================
+
+  // Modal States
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [selectedToken, setSelectedToken] = useState(null);
+  const [showNetworkFilter, setShowNetworkFilter] = useState(false);
+  const [openReceive, setOpenReceive] = useState(false);
+  const [qrDetail, setQrDetail] = useState({ open: false, coin: null });
+  const [showAnalyzeAddressModal, setShowAnalyzeAddressModal] = useState(false);
+
+  // QR Code state
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+
+  // Analysis States
+  const [isAnalyzeAddressSafe, setIsAnalyzeAddressSafe] = useState(false);
+  const [isAnalyzeAddressLoading, setIsAnalyzeAddressLoading] = useState(false);
+  const [analyzeAddressData, setAnalyzeAddressData] = useState(null);
+  const [aiAnalysisData, setAiAnalysisData] = useState(null);
+  const [analysisSource, setAnalysisSource] = useState("");
+
+  // Send Form States
+  const [destinationAddress, setDestinationAddress] = useState("");
+  const [sendAmount, setSendAmount] = useState("");
+  const [isSendLoading, setIsSendLoading] = useState(false);
+  const [sendErrors, setSendErrors] = useState({});
+  const [selectedTokenForSend, setSelectedTokenForSend] = useState(null);
+
+  // Balance States
+  const [tokenBalances, setTokenBalances] = useState({});
+  const [tokenAmountValues, setTokenAmountValues] = useState({});
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
+
+  // ================= TOKEN OPERATIONS FUNCTIONS =================
+
+  // Validate address for different token types
+  const validateAddress = (address, tokenType = null) => {
+    if (!address || typeof address !== "string") {
+      return { isValid: false, error: "Address is required" };
+    }
+
+    const detectedType = tokenType || detectTokenType(address);
+
+    if (detectedType === TokenType.UNKNOWN) {
+      return { isValid: false, error: "Unknown token type" };
+    }
+
+    return { isValid: true, tokenType: detectedType };
+  };
+
+  // Get balances for specific token type
+  const getBalance = async (tokenType, addresses) => {
+    const balances = {};
+    const errors = {};
+
+    switch (tokenType) {
+      case TokenType.BITCOIN:
+        for (const address of addresses) {
+          try {
+            const balance = await bitcoin.get_balance(address);
+            balances[address] = Number(balance);
+          } catch (error) {
+            console.error(`Error getting Bitcoin balance for ${address}:`, error);
+            errors[address] = error.message;
+            balances[address] = 0;
+          }
+        }
+        break;
+
+      case TokenType.SOLANA:
+        for (const address of addresses) {
+          try {
+            const balance = await solana.get_balance([address]);
+            balances[address] = Number(balance);
+          } catch (error) {
+            console.error(`Error getting Solana balance for ${address}:`, error);
+            errors[address] = error.message;
+            balances[address] = 0;
+          }
+        }
+        break;
+
+      case TokenType.ETHEREUM:
+      case TokenType.FUM:
+        // Placeholder for Ethereum/FUM - not implemented yet
+        for (const address of addresses) {
+          balances[address] = 0;
+        }
+        break;
+
+      default:
+        for (const address of addresses) {
+          balances[address] = 0;
+        }
+        break;
+    }
+
+    return { balances, errors };
+  };
+
+  // Send token function
+  const sendToken = async (tokenType, params) => {
+    const { destinationAddress, amount, senderAddress } = params;
+
+    // Validate destination address
+    const validation = validateAddress(destinationAddress, tokenType);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
+    }
+
+    switch (tokenType) {
+      case TokenType.BITCOIN:
+        try {
+          const satoshiAmount = amountToBaseUnit(TokenType.BITCOIN, parseFloat(amount));
+          const transactionId = await bitcoin.send_from_p2pkh_address({
+            destination_address: destinationAddress,
+            amount_in_satoshi: satoshiAmount,
+          });
+          return { transactionId, status: "completed", error: null };
+        } catch (error) {
+          throw new Error(`Bitcoin send failed: ${error.message}`);
+        }
+
+      case TokenType.SOLANA:
+        try {
+          const lamportAmount = amountToBaseUnit(TokenType.SOLANA, parseFloat(amount));
+          const transactionId = await solana.send_sol([identity.getPrincipal()], destinationAddress, lamportAmount);
+          return { transactionId, status: "completed", error: null };
+        } catch (error) {
+          throw new Error(`Solana send failed: ${error.message}`);
+        }
+
+      case TokenType.ETHEREUM:
+      case TokenType.FUM:
+        try {
+          // Placeholder for Ethereum/FUM send - not implemented
+          throw new Error("Ethereum transactions not yet implemented");
+        } catch (error) {
+          throw new Error(`Ethereum send failed: ${error.message}`);
+        }
+
+      default:
+        throw new Error(`Unsupported token type: ${tokenType}`);
+    }
+  };
+
+  // Helper function to save analyze history
+  const saveAnalyzeHistory = async (address, isSafe, analyzedType, metadata) => {
+    try {
+      await backend.create_analyze_history({
+        address: address,
+        is_safe: isSafe,
+        analyzed_type: analyzedType,
+        metadata: jsonStringify(metadata),
+        token_type: getTokenTypeVariant(detectTokenType(address)),
+      });
+    } catch (historyError) {
+      console.error("Failed to save analyze history:", historyError);
+    }
+  };
+
+  // Helper function to perform AI analysis
+  const performAIAnalysis = async (address) => {
+    try {
+      const tokenType = detectTokenType(address);
+
+      switch (tokenType) {
+        case TokenType.BITCOIN:
+          // Bitcoin AI Analysis - Implemented
+          const features = await extractFeatures(address);
+          const ransomwareReport = await ransomware_detector.analyze_address_v2(features, address, features.length);
+
+          if ("Ok" in ransomwareReport) {
+            return {
+              isSafe: !ransomwareReport.Ok.is_ransomware,
+              data: ransomwareReport.Ok,
+              source: "ai",
+            };
+          }
+          throw new Error("Bitcoin AI analysis failed");
+
+        case TokenType.ETHEREUM:
+          // Ethereum AI Analysis - NOT IMPLEMENT
+          console.warn("Ethereum AI analysis not implemented yet");
+          return null;
+
+        case TokenType.SOLANA:
+          // Solana AI Analysis - NOT IMPLEMENT
+          console.warn("Solana AI analysis not implemented yet");
+          return null;
+
+        case TokenType.FUM:
+          // Fradium AI Analysis - NOT IMPLEMENT
+          console.warn("Fradium AI analysis not implemented yet");
+          return null;
+
+        default:
+          // Unknown token type
+          console.warn(`AI analysis not supported for token type: ${tokenType}`);
+          return null;
+      }
+    } catch (error) {
+      console.error("AI analysis failed:", error);
+      return null;
+    }
+  };
+
+  // Helper function to set analysis result
+  const setAnalysisResult = (isSafe, data, source) => {
+    setIsAnalyzeAddressSafe(isSafe);
+    if (source === "community") {
+      setAnalyzeAddressData(data);
+    } else {
+      setAiAnalysisData(data);
+    }
+    setAnalysisSource(source);
+  };
+
+  // Convert chain name to token type variant
+  const getTokenTypeVariant = (chainName) => {
+    switch (chainName) {
+      case TokenType.BITCOIN:
+        return { Bitcoin: null };
+      case TokenType.ETHEREUM:
+        return { Ethereum: null };
+      case TokenType.SOLANA:
+        return { Solana: null };
+      case TokenType.FUM:
+        return { Fum: null };
+      default:
+        return { Unknown: null };
+    }
+  };
+
+  // ================= BALANCE MANAGEMENT =================
+
+  // Get addresses for specific token type
+  const getAddressesForToken = useCallback(
+    (tokenType) => {
+      if (!userWallet?.addresses) return [];
+
+      return userWallet.addresses
+        .filter((addressObj) => {
+          const addressTokenType = Object.keys(addressObj.token_type)[0];
+          return addressTokenType === tokenType;
+        })
+        .map((addressObj) => addressObj.address);
+    },
+    [userWallet?.addresses]
+  );
+
+  // Fetch all balances
+  const fetchAllBalances = useCallback(async () => {
+    if (!userWallet?.addresses) return;
+
+    setIsLoadingBalances(true);
+    const supportedTokens = Object.keys(TOKENS_CONFIG);
+
+    try {
+      for (const tokenType of supportedTokens) {
+        if (networkFilters[tokenType]) {
+          const addresses = getAddressesForToken(tokenType);
+
+          if (addresses.length > 0) {
+            try {
+              const balanceResult = await getBalance(tokenType, addresses);
+
+              setTokenBalances((prev) => ({
+                ...prev,
+                [tokenType]: balanceResult,
+              }));
+
+              const totalAmountInToken = Object.values(balanceResult.balances).reduce((sum, v) => sum + v, 0);
+
+              // Pastikan amount dalam format yang readable
+              const amount = getAmountToken(tokenType, totalAmountInToken);
+              const value = await getPriceUSD(tokenType, totalAmountInToken);
+
+              // Validate amount and value before saving
+              const finalAmount = amount && amount !== "0" ? amount : "0";
+              const finalValue = value && value !== "$NaN" && value !== "$0.00" ? value : "$0.00";
+
+              const amountValueResult = {
+                amount: finalAmount,
+                value: finalValue,
+                isLoading: false,
+              };
+
+              setTokenAmountValues((prev) => ({
+                ...prev,
+                [tokenType]: amountValueResult,
+              }));
+            } catch (error) {
+              console.error(`Error fetching ${tokenType} data:`, error);
+            }
+          } else {
+            // No addresses for this token type
+            setTokenBalances((prev) => ({
+              ...prev,
+              [tokenType]: { balances: {}, errors: {} },
+            }));
+            setTokenAmountValues((prev) => ({
+              ...prev,
+              [tokenType]: { amount: "0", value: "$0.00", isLoading: false },
+            }));
+          }
+        }
+      }
+    } finally {
+      setIsLoadingBalances(false);
+    }
+  }, [userWallet?.addresses, networkFilters, getAddressesForToken]);
+
+  // Get total portfolio value
+  const getTotalPortfolioValue = useCallback(() => {
+    let total = 0;
+
+    for (const tokenType in tokenAmountValues) {
+      const amountValue = tokenAmountValues[tokenType];
+      if (amountValue?.value && typeof amountValue.value === "string") {
+        const numericValue = parseFloat(amountValue.value.replace("$", "").replace(",", "")) || 0;
+        total += numericValue;
+      }
+    }
+
+    return total;
+  }, [tokenAmountValues]);
+
+  // ================= TOKEN LIST PROCESSING =================
+
+  const getTokenType = (addressObj) => {
+    return Object.keys(addressObj.token_type)[0];
+  };
+
+  const isAddressForCurrentNetwork = (addressObj) => {
+    if (network === "All Networks") {
+      return true;
+    }
+    const addressNetwork = Object.keys(addressObj.network)[0];
+    return addressNetwork.toLowerCase() === network.toLowerCase();
+  };
+
+  const getTokensForCurrentNetwork = () => {
+    if (!userWallet?.addresses) return [];
+
+    const networkAddresses = userWallet.addresses.filter(isAddressForCurrentNetwork);
+    const tokenGroups = {};
+
+    networkAddresses.forEach((addressObj) => {
+      const tokenType = getTokenType(addressObj);
+
+      if (!networkFilters[tokenType]) {
+        return;
+      }
+
+      if (!tokenGroups[tokenType]) {
+        const config = TOKENS_CONFIG[tokenType];
+
+        tokenGroups[tokenType] = {
+          addresses: [],
+          config,
+        };
+      }
+
+      tokenGroups[tokenType].addresses.push(addressObj.address);
+    });
+
+    return Object.entries(tokenGroups).map(([tokenType, data]) => {
+      const balanceResult = tokenBalances[tokenType] || { balances: {}, errors: {} };
+      const amountValueResult = tokenAmountValues[tokenType] || { amount: "0", value: "$0.00", isLoading: false };
+
+      return {
+        ...data.config,
+        tokenType,
+        addresses: data.addresses,
+        balances: balanceResult.balances,
+        currentAmount: amountValueResult.amount || "0",
+        currentValue: amountValueResult.value || "$0.00",
+        isLoading: amountValueResult.isLoading || isLoadingBalances,
+        hasError: Object.keys(balanceResult.errors || {}).length > 0,
+      };
+    });
+  };
+
+  // ================= EVENT HANDLERS =================
+
+  // Wallet creation
+  React.useEffect(() => {
+    if (userWallet) {
+      setIsCreatingWallet(false);
+      return;
+    }
+    if (hasConfirmedWallet && !userWallet && !isCreatingWallet) {
+      const create = async () => {
+        setIsCreatingWallet(true);
+        try {
           await createWallet();
+        } catch (e) {
+          console.error("Error creating wallet:", e);
+        } finally {
           setIsCreatingWallet(false);
         }
-      } catch (error) {
-        console.error("Error initializing wallet:", error);
-        setIsCreatingWallet(false);
-      }
+      };
+      create();
+    }
+  }, [hasConfirmedWallet, userWallet, createWallet, isCreatingWallet, setIsCreatingWallet]);
+
+  // Send Modal Actions
+  const handleSendClick = (token) => {
+    const tokenWithAmount = {
+      ...token,
+      currentAmount: token.currentAmount || "0",
     };
-    initWallet();
-  }, [createWallet, hasConfirmedWallet]);
+    setSelectedToken(tokenWithAmount);
+    setSelectedTokenForSend(tokenWithAmount);
+    setShowSendModal(true);
+  };
 
-  const {
-    // States
-    showSendModal,
-    selectedToken,
-    showNetworkFilter,
-    openReceive,
-    qrDetail,
-    showAnalyzeAddressModal,
-    qrCodeDataUrl,
-    isAnalyzeAddressSafe,
-    isAnalyzeAddressLoading,
-    analyzeAddressData,
-    aiAnalysisData,
-    analysisSource,
-    destinationAddress,
-    sendAmount,
-    isSendLoading,
-    sendErrors,
-    selectedTokenForSend,
-    isLoadingBalances,
+  const handleGeneralSendClick = () => {
+    setSelectedToken(null);
+    setSelectedTokenForSend(null);
+    setDestinationAddress("");
+    setSendAmount("");
+    setSendErrors({});
+    setShowSendModal(true);
+  };
 
-    // Actions
-    handleSendClick,
-    handleGeneralSendClick,
-    handleCloseSendModal,
-    handleReceiveClick,
-    handleConfirmSend,
-    handleMaxAmount,
-    handleAnalyzeAddress,
-    handleTokenSelection,
-    handleAddressInput,
-    handleAmountInput,
-    toggleNetworkFilter,
+  const handleCloseSendModal = () => {
+    setShowSendModal(false);
+    setSelectedToken(null);
+    setSelectedTokenForSend(null);
+    setDestinationAddress("");
+    setSendAmount("");
+    setSendErrors({});
+  };
 
-    // Modal setters
-    setShowNetworkFilter,
-    setOpenReceive,
-    setQrDetail,
-    setShowAnalyzeAddressModal,
-    setQrCodeDataUrl,
+  const handleTokenSelection = (selectedTokenType) => {
+    const tokens = getTokensForCurrentNetwork();
+    const token = tokens.find((t) => t.tokenType === selectedTokenType);
+    if (token) {
+      const tokenWithAmount = {
+        ...token,
+        currentAmount: token.currentAmount || "0",
+      };
+      setSelectedTokenForSend(tokenWithAmount);
+      setSelectedToken(tokenWithAmount);
+    } else {
+      setSelectedTokenForSend(null);
+      setSelectedToken(null);
+    }
+    setDestinationAddress("");
+    setSendAmount("");
+    setSendErrors({});
+  };
 
-    // Data
-    tokens,
-    receiveAddresses,
-    totalPortfolioValue,
-    formatTokenAmount,
-  } = useAssetPage(userWallet, network, networkFilters, updateNetworkFilters, updateNetworkValues);
+  const handleAddressInput = (value) => {
+    if (selectedTokenForSend) {
+      setDestinationAddress(value);
+      if (sendErrors.address) {
+        setSendErrors((prev) => ({ ...prev, address: null }));
+      }
+    }
+  };
 
-  // Format portfolio value for display
+  const handleAmountInput = (value) => {
+    if (selectedTokenForSend) {
+      setSendAmount(value);
+
+      if (sendErrors.amount) {
+        setSendErrors((prev) => ({ ...prev, amount: null }));
+      }
+
+      // Validate amount for Bitcoin
+      if (value && !isNaN(value) && parseFloat(value) > 0) {
+        if ((selectedTokenForSend?.tokenType === TokenType.BITCOIN || selectedTokenForSend?.tokenType === TokenType.SOLANA) && selectedTokenForSend?.currentAmount) {
+          const requestedBase = amountToBaseUnit(selectedTokenForSend.tokenType, parseFloat(value));
+          const currentBase = amountToBaseUnit(selectedTokenForSend.tokenType, parseFloat(selectedTokenForSend.currentAmount));
+          if (requestedBase > currentBase) {
+            setSendErrors((prev) => ({
+              ...prev,
+              amount: `Insufficient balance. Available: ${selectedTokenForSend.currentAmount} ${selectedTokenForSend.name}`,
+            }));
+          }
+        }
+      }
+    }
+  };
+
+  const handleMaxAmount = () => {
+    if (selectedTokenForSend?.currentAmount && selectedTokenForSend?.tokenType === TokenType.BITCOIN) {
+      setSendAmount(selectedTokenForSend.currentAmount);
+    }
+  };
+
+  // Form validation
+  const validateAddressField = (address) => {
+    if (!address.trim()) {
+      return "Recipient address is required";
+    }
+    const validation = validateAddress(address);
+    return validation.isValid ? null : validation.error;
+  };
+
+  const validateAmountField = (amount, tokenType, balances) => {
+    if (!amount.trim()) {
+      return "Amount is required";
+    }
+    if (isNaN(amount) || parseFloat(amount) <= 0) {
+      return "Please enter a valid amount";
+    }
+
+    if ((tokenType === TokenType.BITCOIN || tokenType === TokenType.SOLANA) && balances && Object.keys(balances).length > 0) {
+      const currentAmount = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
+      const requestedBase = amountToBaseUnit(tokenType, parseFloat(amount));
+      if (requestedBase > currentAmount) {
+        const displayAmount = getAmountToken(tokenType, currentAmount);
+        return `Insufficient balance. Available: ${displayAmount} ${tokenType}`;
+      }
+    }
+    return null;
+  };
+
+  // Network filter
+  const toggleNetworkFilter = (networkName) => {
+    const newFilters = {
+      ...networkFilters,
+      [networkName]: !networkFilters[networkName],
+    };
+    updateNetworkFilters(newFilters);
+  };
+
+  // Receive actions
+  const handleReceiveClick = (token) => {
+    setSelectedToken(token);
+    setOpenReceive(true);
+  };
+
+  const receiveAddresses =
+    userWallet?.addresses?.map((addressObj) => ({
+      label: getTokenType(addressObj),
+      address: addressObj.address,
+    })) || [];
+
+  // Address analysis
+  const handleAnalyzeAddress = async () => {
+    const addressError = validateAddressField(destinationAddress);
+    const amountError = validateAmountField(sendAmount, selectedTokenForSend?.tokenType, selectedTokenForSend?.balances);
+
+    // General validation for all tokens
+    if (selectedTokenForSend?.currentAmount && isAmountExceedBalance(selectedTokenForSend.tokenType, sendAmount, selectedTokenForSend.currentAmount)) {
+      setSendErrors((prev) => ({
+        ...prev,
+        amount: `Insufficient balance. Available: ${selectedTokenForSend.currentAmount} ${selectedTokenForSend.name}`,
+      }));
+      return;
+    }
+
+    if (addressError || amountError) {
+      setSendErrors({
+        address: addressError,
+        amount: amountError,
+      });
+      return;
+    }
+
+    setShowSendModal(false);
+    setIsAnalyzeAddressLoading(true);
+
+    try {
+      // Step 1: Try Community Analysis
+      const communityReport = await backend.analyze_address(destinationAddress);
+
+      if ("Ok" in communityReport) {
+        const communityIsSafe = communityReport.Ok.is_safe;
+
+        // Save community analysis history
+        await saveAnalyzeHistory(destinationAddress, communityIsSafe, { CommunityVote: null }, communityReport.Ok);
+
+        // Step 2: If community says safe, double-check with AI
+        if (communityIsSafe) {
+          const aiResult = await performAIAnalysis(destinationAddress);
+
+          if (aiResult && !aiResult.isSafe) {
+            // AI detected as unsafe, override community result
+            await saveAnalyzeHistory(destinationAddress, false, { AIAnalysis: null }, aiResult.data);
+            setAnalysisResult(false, aiResult.data, "ai");
+          } else {
+            // Use community result (safe)
+            setAnalysisResult(true, communityReport.Ok, "community");
+          }
+        } else {
+          // Community says unsafe, use community result
+          setAnalysisResult(false, communityReport.Ok, "community");
+        }
+      } else {
+        // Step 3: No community report, use AI analysis as fallback
+        const aiResult = await performAIAnalysis(destinationAddress);
+
+        if (aiResult) {
+          await saveAnalyzeHistory(destinationAddress, aiResult.isSafe, { AIAnalysis: null }, aiResult.data);
+          setAnalysisResult(aiResult.isSafe, aiResult.data, "ai");
+        } else {
+          // Both community and AI failed
+          toast.error("Failed to analyze address. Please try again later.");
+          setShowSendModal(true);
+          return;
+        }
+      }
+
+      setShowAnalyzeAddressModal(true);
+    } catch (error) {
+      console.error("Error analyzing address:", error);
+      toast.error("Failed to analyze address. Please try again later.");
+      setShowSendModal(true);
+    } finally {
+      setIsAnalyzeAddressLoading(false);
+    }
+  };
+
+  // Send confirmation
+  const handleConfirmSend = async () => {
+    try {
+      setIsSendLoading(true);
+
+      const tokenType = selectedTokenForSend?.tokenType || detectTokenType(destinationAddress);
+
+      const senderAddress = userWallet?.addresses?.find((addr) => {
+        const addressTokenType = Object.keys(addr.token_type)[0];
+        return addressTokenType === tokenType;
+      })?.address;
+
+      const sendResult = await sendToken(tokenType, {
+        destinationAddress,
+        amount: sendAmount,
+        senderAddress,
+      });
+
+      // Create transaction history entry
+      try {
+        const getTokenTypeVariant = (tokenType) => {
+          switch (tokenType) {
+            case TokenType.BITCOIN:
+              return { Bitcoin: null };
+            case TokenType.ETHEREUM:
+              return { Ethereum: null };
+            case TokenType.SOLANA:
+              return { Solana: null };
+            case TokenType.FUM:
+              return { Fum: null };
+            default:
+              return { Unknown: null };
+          }
+        };
+
+        let baseAmount;
+        let details;
+        switch (tokenType) {
+          case TokenType.BITCOIN:
+            baseAmount = amountToBaseUnit(TokenType.BITCOIN, parseFloat(sendAmount));
+            details = {
+              Bitcoin: {
+                txid: sendResult.transactionId || "pending",
+                from_address: senderAddress ? [senderAddress] : [],
+                to_address: destinationAddress,
+                fee_satoshi: [],
+                block_height: [],
+              },
+            };
+            break;
+          case TokenType.SOLANA:
+            baseAmount = amountToBaseUnit(TokenType.SOLANA, parseFloat(sendAmount));
+            details = {
+              Solana: {
+                signature: sendResult.transactionId || "pending",
+                slot: [],
+                sender: senderAddress || "",
+                recipient: destinationAddress,
+                lamports: baseAmount,
+              },
+            };
+            break;
+          default:
+            // NOT IMPLEMENT
+            return;
+        }
+
+        const transactionHistoryParams = {
+          chain: getTokenTypeVariant(tokenType),
+          direction: { Send: null },
+          amount: baseAmount,
+          timestamp: BigInt(Date.now() * 1000000),
+          details,
+          note: [`Sent ${sendAmount} ${tokenType} to ${destinationAddress.slice(0, 12)}...`],
+        };
+
+        console.log("transactionHistoryParams", jsonStringify(transactionHistoryParams));
+
+        await backend.create_transaction_history(transactionHistoryParams);
+      } catch (historyError) {
+        console.error("Failed to create transaction history:", historyError);
+      }
+
+      // Reset states
+      setIsSendLoading(false);
+      setShowAnalyzeAddressModal(false);
+      setSelectedToken(null);
+      setSelectedTokenForSend(null);
+      setDestinationAddress("");
+      setSendAmount("");
+      setSendErrors({});
+
+      await fetchAllBalances();
+      toast.success("Transaction sent successfully");
+    } catch (error) {
+      console.error("Error sending transaction:", error);
+      if (error.message.includes("Insufficient balance")) {
+        toast.error("Insufficient balance");
+      } else if (error.message.includes("Invalid") && error.message.includes("address")) {
+        toast.error("Invalid destination address");
+      } else {
+        toast.error("Error sending transaction");
+      }
+    } finally {
+      setIsSendLoading(false);
+    }
+  };
+
+  // ================= EFFECTS =================
+
+  // Balance fetching
+  useEffect(() => {
+    fetchAllBalances();
+  }, [fetchAllBalances]);
+
+  // Update network values
+  const prevNetworkValuesRef = useRef();
+  useEffect(() => {
+    const networkValues = {
+      "All Networks": getTotalPortfolioValue(),
+      Bitcoin: 0,
+      Ethereum: 0,
+      Solana: 0,
+      Fradium: 0,
+    };
+
+    for (const [tokenType, amountValue] of Object.entries(tokenAmountValues)) {
+      if (amountValue?.value && typeof amountValue.value === "string") {
+        const numericValue = parseFloat(amountValue.value.replace("$", "").replace(",", "")) || 0;
+        networkValues[tokenType] = numericValue;
+      }
+    }
+
+    if (JSON.stringify(prevNetworkValuesRef.current) !== JSON.stringify(networkValues)) {
+      updateNetworkValues(networkValues);
+      prevNetworkValuesRef.current = networkValues;
+    }
+  }, [tokenAmountValues, updateNetworkValues, getTotalPortfolioValue]);
+
+  // QR Code generation
+  useEffect(() => {
+    if (qrDetail.open && qrDetail.coin) {
+      const address = receiveAddresses.find((a) => a.label === qrDetail.coin)?.address;
+      if (address) {
+        QRCode.toDataURL(address, {
+          width: 320,
+          margin: 1,
+          scale: 8,
+          color: {
+            dark: "#000000",
+            light: "#FFFFFF",
+          },
+          errorCorrectionLevel: "H",
+        })
+          .then((url) => {
+            setQrCodeDataUrl(url);
+          })
+          .catch((err) => {
+            console.error("Error generating QR code:", err);
+          });
+      }
+    }
+  }, [qrDetail.open, qrDetail.coin, receiveAddresses]);
+
+  // ================= RENDER HELPERS =================
+
   const formatPortfolioValue = (value) => {
     if (hideBalance) return "••••••";
     if (isLoadingBalances) return "Loading...";
     return `$${value.toFixed(2)}`;
   };
 
-  if (isCreatingWallet) {
+  const tokens = getTokensForCurrentNetwork();
+  const totalPortfolioValue = getTotalPortfolioValue();
+
+  // ================= COMPONENT RENDER =================
+
+  if (isCreatingWallet || (!userWallet && hasConfirmedWallet)) {
     return <WelcomingWalletModal isOpen={true} />;
   }
 
@@ -165,6 +910,7 @@ export default function AssetsPage() {
             </div>
           </div>
         </div>
+
         {/* Token List */}
         <div>
           <div className="mb-4 flex items-center justify-between">
@@ -183,7 +929,7 @@ export default function AssetsPage() {
                 {Object.entries(networkFilters).map(([networkName, isEnabled]) => (
                   <div key={networkName} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <img src={TOKENS_CONFIG[networkName]?.icon || "/assets/unknown.svg"} alt={networkName} className="w-5 h-5" />
+                      <img src={TOKENS_CONFIG[networkName]?.icon || "/assets/svg/tokens/unknown.svg"} alt={networkName} className="w-5 h-5" />
                       <span className="text-[#B0B6BE] text-sm">{networkName}</span>
                     </div>
                     <button onClick={() => toggleNetworkFilter(networkName)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isEnabled ? "bg-[#9BE4A0]" : "bg-[#393E4B]"}`}>
@@ -197,7 +943,7 @@ export default function AssetsPage() {
 
           <div className="flex flex-col divide-y divide-[#23272F]">
             {tokens.length > 0 ? (
-              tokens.map((token, idx) => <TokenCard key={idx} token={token} onSendClick={handleSendClick} hideBalance={hideBalance} formatTokenAmount={formatTokenAmount} />)
+              tokens.map((token, idx) => <TokenCard key={idx} token={token} onSendClick={handleSendClick} hideBalance={hideBalance} />)
             ) : (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
@@ -208,8 +954,6 @@ export default function AssetsPage() {
             )}
           </div>
         </div>
-
-        {/* Send Modal */}
       </div>
       {/* Modal Send Coin */}
       {showSendModal && (
@@ -228,13 +972,11 @@ export default function AssetsPage() {
                 <div className="text-[#B0B6BE] text-sm mb-1">Select Token</div>
                 <select className="w-full bg-[#23272F] border border-[#393E4B] rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none" value={selectedTokenForSend ? selectedTokenForSend.tokenType : ""} onChange={(e) => handleTokenSelection(e.target.value)}>
                   <option value="">Select a token</option>
-                  {tokens.map((token, index) => {
-                    return (
-                      <option key={index} value={token.tokenType}>
-                        {token.name} ({token.isLoading ? "Loading..." : hideBalance ? "••••" : formatTokenAmount(token.currentAmount, token.tokenType)})
-                      </option>
-                    );
-                  })}
+                  {tokens.map((token, index) => (
+                    <option key={index} value={token.tokenType}>
+                      {token.name} ({token.isLoading ? "Loading..." : hideBalance ? "••••" : token.currentAmount || "0"})
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -246,7 +988,7 @@ export default function AssetsPage() {
                 <div className="flex justify-between items-center mb-1">
                   <div className="text-[#B0B6BE] text-sm">Amount {selectedTokenForSend?.name?.toUpperCase() || ""}</div>
                   <div className="text-[#B0B6BE] text-xs">
-                    Balance: {selectedTokenForSend?.isLoading ? "Loading..." : hideBalance ? "••••" : formatTokenAmount(selectedTokenForSend?.currentAmount || 0, selectedTokenForSend?.tokenType)} {selectedTokenForSend?.name?.toUpperCase() || ""}
+                    Balance: {selectedTokenForSend?.isLoading ? "Loading..." : hideBalance ? "••••" : selectedTokenForSend?.currentAmount || "0"} {selectedTokenForSend?.name?.toUpperCase() || ""}
                   </div>
                 </div>
                 <div className="relative">
@@ -608,7 +1350,7 @@ function AnalysisResultModal({ isOpen, isSafe, analyzeData, aiAnalysisData, anal
 }
 
 // Token card component using clean architecture data
-function TokenCard({ token, onSendClick, hideBalance, formatTokenAmount }) {
+function TokenCard({ token, onSendClick, hideBalance }) {
   const handleCardClick = () => {
     // Pass token data including current amount to send modal
     onSendClick({
@@ -626,7 +1368,7 @@ function TokenCard({ token, onSendClick, hideBalance, formatTokenAmount }) {
           <span className="text-white font-semibold text-base">{token.name}</span>
           {token.symbol && <span className="text-[#B0B6BE] text-base">• {token.symbol}</span>}
         </div>
-        <div className="text-[#B0B6BE] text-sm truncate">{token.desc}</div>
+        <div className="text-[#B0B6BE] text-sm truncate">{token.description}</div>
         {token.hasError && <div className="text-red-400 text-xs mt-1">Error fetching balance</div>}
       </div>
       <div className="flex flex-col items-end gap-2">
@@ -637,7 +1379,7 @@ function TokenCard({ token, onSendClick, hideBalance, formatTokenAmount }) {
           </div>
         ) : (
           <>
-            <span className="text-white font-semibold text-base">{hideBalance ? "••••" : formatTokenAmount(token.currentAmount, token.tokenType)}</span>
+            <span className="text-white font-semibold text-base">{hideBalance ? "••••" : token.currentAmount}</span>
             <span className="text-[#B0B6BE] text-sm">{hideBalance ? "••••" : token.currentValue}</span>
           </>
         )}

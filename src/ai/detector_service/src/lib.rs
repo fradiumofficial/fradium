@@ -106,11 +106,49 @@ async fn analyze_address(address: String) -> Result<RansomwareResult, String> {
             btc::analyze_btc_address(&address).await
         }
         address_detector::AddressType::Ethereum => {
-            ic_cdk::println!("Address detected as Ethereum. Routing to ETH analyzer...");
-            eth::analyze_eth_address(&address).await
+            Err("Currently, we do not support ETH addresses.".to_string())
+
+            // COMING SOON NEXT QUALIFICATION
+            // ic_cdk::println!("Address detected as Ethereum. Routing to ETH analyzer...");
+            // eth::analyze_eth_address(&address).await
+        }
+        address_detector::AddressType::Solana => {
+            // COMING SOON NEXT QUALIFICATION
+            Err("Currently, we do not support Solana addresses.".to_string())
         }
         address_detector::AddressType::Unknown => {
             Err("Address format is unknown. Not a valid BTC or ETH address.".to_string())
         }
     }
 }
+
+#[update]
+async fn analyze_address_v2(
+    features: Vec<f32>,
+    address: String,
+    transaction_count: u32
+) -> Result<RansomwareResult, String> {
+    match address_detector::detect_address_type(&address) {
+        address_detector::AddressType::Bitcoin => {
+            ic_cdk::println!("Address detected as Bitcoin. Routing to BTC analyzer...");
+            btc::analyze_btc_address_v2(features, &address, transaction_count).await
+        }
+        address_detector::AddressType::Ethereum => {
+            Err("Currently, we do not support ETH addresses.".to_string())
+
+            // COMING SOON NEXT QUALIFICATION
+            // ic_cdk::println!("Address detected as Ethereum. Routing to ETH analyzer...");
+            // eth::analyze_eth_address(&address).await
+        }
+        address_detector::AddressType::Solana => {
+            // COMING SOON NEXT QUALIFICATION
+            Err("Currently, we do not support Solana addresses.".to_string())
+        }
+        address_detector::AddressType::Unknown => {
+            Err("Address format is unknown. Not a valid BTC or ETH address.".to_string())
+        }
+    }
+}
+
+// Enable Candid export
+ic_cdk::export_candid!();

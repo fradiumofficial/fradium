@@ -1,37 +1,49 @@
+// Dependency
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import "./core/style/global.css";
+import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
-import HomePage from "./pages/home/home-page.jsx";
-import NotFoundPage from "./pages/SEO/not-found-page";
-import { AuthProvider } from "./core/providers/auth-provider.jsx";
+// Global Style
+import "@/core/style/global.css";
+
+// Canister Declarations
 import { backend } from "declarations/backend";
-import ListReportPage from "./pages/report/list-report-page.jsx";
-import ReportPage from "./pages/report/detail-report-page.jsx";
-import HomeLayout from "@/core/components/layouts/home-layout.jsx";
-import WalletLayout from "@/core/components/layouts/wallet-layout.jsx";
-import CreateReportPage from "./pages/report/create-report-page.jsx";
-import FaucetPage from "./pages/faucet-page.jsx";
-import BalancePage from "./pages/balance-page.jsx";
-import MyReportPage from "./pages/report/my-report-page.jsx";
 import { token } from "declarations/token";
-import AuthGuard from "./core/components/auth/auth-guard.jsx";
-import AssetsPage from "./pages/wallet/asset-page.jsx";
-import AnalyseAddressPage from "./pages/wallet/analyze-address-page.jsx";
-import AnalyseContractPage from "./pages/wallet/analyze-contract-page.jsx";
-import TransactionHistoryPage from "./pages/wallet/transaction-history.jsx";
-import ScanHistoryPage from "./pages/wallet/scan-history-page.jsx";
-import SettingPage from "./pages/wallet/setting-page.jsx";
 import { bitcoin } from "declarations/bitcoin";
 import { solana } from "declarations/solana";
-import ProductsExtension from "./pages/products/products-extension.jsx";
-import ProductsWallet from "./pages/products/products-wallet.jsx";
-import Assistant from "./pages/assistant/assistant.jsx";
+
+// Provider
+import { AuthProvider } from "@/core/providers/auth-provider.jsx";
+
+// Layouts
+import HomeLayout from "@/core/components/layouts/home-layout.jsx";
+import WalletLayout from "@/core/components/layouts/wallet-layout.jsx";
+
+// Auth
+import AuthGuard from "@/core/components/auth/auth-guard.jsx";
+
+// Pages
+import HomePage from "@/pages/home/home-page.jsx";
+import NotFoundPage from "@/pages/SEO/not-found-page";
+import ListReportPage from "@/pages/report/list-report-page.jsx";
+import ReportPage from "@/pages/report/detail-report-page.jsx";
+import CreateReportPage from "@/pages/report/create-report-page.jsx";
+import FaucetPage from "@/pages/faucet-page.jsx";
+import BalancePage from "@/pages/balance-page.jsx";
+import MyReportPage from "@/pages/report/my-report-page.jsx";
+import AssetsPage from "@/pages/wallet/asset-page.jsx";
+import AnalyseAddressPage from "@/pages/wallet/analyze-address-page.jsx";
+import AnalyseContractPage from "@/pages/wallet/analyze-contract-page.jsx";
+import TransactionHistoryPage from "@/pages/wallet/transaction-history-page.jsx";
+import ScanHistoryPage from "@/pages/wallet/scan-history-page.jsx";
+import SettingPage from "@/pages/wallet/setting-page.jsx";
+import ProductsExtension from "@/pages/products/products-extension.jsx";
+import ProductsWallet from "@/pages/products/products-wallet.jsx";
+import AssistantPage from "@/pages/assistant-page.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -102,7 +114,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="/faucet" element={<FaucetPage />} />
             <Route path="/products" element={<ProductsExtension />} />
             <Route path="/products-wallet" element={<ProductsWallet />} />
-            <Route path="/assistant" element={<Assistant />} />
+            <Route path="/assistant" element={<AssistantPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route
