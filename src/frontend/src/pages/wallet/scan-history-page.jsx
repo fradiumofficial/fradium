@@ -259,23 +259,23 @@ export default function ScanHistoryPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
+    <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219] md:p-0 p-2">
       {/* Header Section */}
       <div className="flex flex-col gap-4">
-        <h1 className="text-white text-2xl font-semibold">Scan History</h1>
-        <p className="text-[#B0B6BE] text-base font-normal">Your complete address analysis history with community reports and AI-powered security scans.</p>
+        <h1 className="text-white md:text-2xl text-lg font-semibold">Scan History</h1>
+        <p className="text-[#B0B6BE] md:text-base text-sm font-normal">Your complete address analysis history with community reports and AI-powered security scans.</p>
       </div>
 
       {/* Scan Activity List Section */}
       <div>
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-white text-lg font-semibold">List of scan activity</h2>
+          <h2 className="text-white md:text-lg text-base font-semibold">List of scan activity</h2>
           <div className="flex gap-4">
             <div className="relative">
-              <img src="/assets/icons/search.svg" alt="Search" className={`w-5 h-5 cursor-pointer transition-colors ${showSearchInput ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleSearchToggle} />
+              <img src="/assets/icons/search.svg" alt="Search" className={`md:w-5 md:h-5 w-4 h-4 cursor-pointer transition-colors ${showSearchInput ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleSearchToggle} />
             </div>
             <div className="relative">
-              <img src="/assets/icons/page_info.svg" alt="Filter" className={`w-5 h-5 cursor-pointer transition-colors ${activeFiltersCount > 0 ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleFilterToggle} />
+              <img src="/assets/icons/page_info.svg" alt="Filter" className={`md:w-5 md:h-5 w-4 h-4 cursor-pointer transition-colors ${activeFiltersCount > 0 ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleFilterToggle} />
               {activeFiltersCount > 0 && <span className="absolute -top-2 -right-2 bg-[#9BE4A0] text-black text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium">{activeFiltersCount}</span>}
             </div>
           </div>
@@ -284,7 +284,7 @@ export default function ScanHistoryPage() {
         {/* Search Input */}
         {showSearchInput && (
           <div className="mb-4">
-            <input type="text" placeholder="Search scan history..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-3 text-white placeholder-[#B0B6BE] text-sm outline-none focus:border-[#9BE4A0] transition-colors" autoFocus />
+            <input type="text" placeholder="Search scan history..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg md:px-4 px-2 md:py-3 py-2 text-white placeholder-[#B0B6BE] text-sm outline-none focus:border-[#9BE4A0] transition-colors" autoFocus />
           </div>
         )}
 
@@ -406,14 +406,14 @@ export default function ScanHistoryPage() {
             <div className="flex flex-col">
               {filteredHistory.slice(0, itemsToShow).map((activity, index) => (
                 <div key={activity.id}>
-                  <div className="flex items-start justify-between py-4">
+                  <div className="flex items-start justify-between md:py-4 py-2">
                     {/* Left Side - Icon and Details */}
-                    <div className="flex items-start gap-4 flex-1">
-                      <img src={activity.icon} alt={activity.coin} className="w-12 h-12 mt-1" />
+                    <div className="flex items-start md:gap-4 gap-2 flex-1">
+                      <img src={activity.icon} alt={activity.coin} className="md:w-12 md:h-12 w-8 h-8 mt-1" />
                       <div className="flex flex-col flex-1">
-                        <span className="text-white text-base font-medium leading-tight mb-2">{activity.title}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[#B0B6BE] text-sm font-medium font-mono">{activity.address}</span>
+                        <span className="text-white md:text-base text-sm font-medium leading-tight md:mb-2 mb-1">{activity.title}</span>
+                        <div className="flex items-center md:gap-2 gap-1">
+                          <span className="text-[#B0B6BE] md:text-sm text-xs font-medium font-mono">{activity.address}</span>
                           <button onClick={() => copyToClipboard(activity.fullAddress)} className="text-[#B0B6BE] hover:text-[#9BE4A0] transition-colors" title="Copy address">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -427,7 +427,7 @@ export default function ScanHistoryPage() {
                     {/* Right Side - Status and Date */}
                     <div className="flex flex-col items-end gap-1">
                       <div className={`px-2 py-0.5 rounded-lg text-xs font-medium ${activity.isSafe ? "text-[#9BE4A0] bg-[#9BE4A0] bg-opacity-20" : "text-red-400 bg-red-400 bg-opacity-20"}`}>{activity.isSafe ? "Safe" : "Unsafe"}</div>
-                      <span className="text-[#B0B6BE] text-sm font-medium">{activity.date}</span>
+                      <span className="text-[#B0B6BE] md:text-sm text-xs font-medium">{activity.date}</span>
                     </div>
                   </div>
                   {/* Divider */}

@@ -265,23 +265,23 @@ export default function TransactionHistoryPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
+    <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219] md:p-0 p-2">
       {/* Header Section */}
       <div className="flex flex-col gap-4">
-        <h1 className="text-white text-2xl font-semibold">Transaction History</h1>
-        <p className="text-[#B0B6BE] text-base font-normal">Track every move, stay in control. Your complete transaction timeline with real-time updates and intelligent status detection.</p>
+        <h1 className="text-white md:text-2xl text-lg font-semibold">Transaction History</h1>
+        <p className="text-[#B0B6BE] md:text-base text-sm font-normal">Track every move, stay in control. Your complete transaction timeline with real-time updates and intelligent status detection.</p>
       </div>
 
       {/* Transaction List Section */}
       <div>
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-white text-lg font-semibold">List of transactions</h2>
+          <h2 className="text-white md:text-lg text-base font-semibold">List of transactions</h2>
           <div className="flex gap-4">
             <div className="relative">
-              <img src="/assets/icons/search.svg" alt="Search" className={`w-5 h-5 cursor-pointer transition-colors ${showSearchInput ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleSearchToggle} />
+              <img src="/assets/icons/search.svg" alt="Search" className={`md:w-5 md:h-5 w-4 h-4 cursor-pointer transition-colors ${showSearchInput ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleSearchToggle} />
             </div>
             <div className="relative">
-              <img src="/assets/icons/page_info.svg" alt="Filter" className={`w-5 h-5 cursor-pointer transition-colors ${activeFiltersCount > 0 ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleFilterToggle} />
+              <img src="/assets/icons/page_info.svg" alt="Filter" className={`md:w-5 md:h-5 w-4 h-4 cursor-pointer transition-colors ${activeFiltersCount > 0 ? "opacity-100" : "opacity-70 hover:opacity-100"}`} onClick={handleFilterToggle} />
               {activeFiltersCount > 0 && <span className="absolute -top-2 -right-2 bg-[#9BE4A0] text-black text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium">{activeFiltersCount}</span>}
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function TransactionHistoryPage() {
         {/* Search Input */}
         {showSearchInput && (
           <div className="mb-4">
-            <input type="text" placeholder="Search transactions..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-3 text-white placeholder-[#B0B6BE] text-sm outline-none focus:border-[#9BE4A0] transition-colors" autoFocus />
+            <input type="text" placeholder="Search transactions..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg md:px-4 px-2 md:py-3 py-2 text-white placeholder-[#B0B6BE] text-sm outline-none focus:border-[#9BE4A0] transition-colors" autoFocus />
           </div>
         )}
 
@@ -411,23 +411,23 @@ export default function TransactionHistoryPage() {
           <div className="flex flex-col">
             {filteredTransactions.map((transaction, index) => (
               <div key={transaction.id}>
-                <div className="flex items-center justify-between py-4">
+                <div className="flex items-center justify-between md:py-4 py-2">
                   {/* Left Side - Icon and Details */}
-                  <div className="flex items-center gap-4">
-                    <img src={transaction.icon} alt={transaction.coin} className="w-12 h-12" />
+                  <div className="flex items-center md:gap-4 gap-2">
+                    <img src={transaction.icon} alt={transaction.coin} className="md:w-12 md:h-12 w-8 h-8" />
                     <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-base font-medium">{transaction.title}</span>
+                      <div className="flex items-center md:gap-2 gap-1">
+                        <span className="text-white md:text-base text-sm font-medium">{transaction.title}</span>
                         <div className={`px-2 py-0.5 rounded-lg text-xs font-medium ${transaction.status === "Completed" ? "text-[#9BE4A0] bg-[#9BE4A0] bg-opacity-20" : transaction.status === "Pending" ? "text-yellow-400 bg-yellow-400 bg-opacity-20" : "text-red-400 bg-red-400 bg-opacity-20"}`}>{transaction.status}</div>
                       </div>
-                      <span className="text-[#B0B6BE] text-sm font-medium">{transaction.coin}</span>
+                      <span className="text-[#B0B6BE] md:text-sm text-xs font-medium">{transaction.coin}</span>
                     </div>
                   </div>
 
                   {/* Right Side - Amount and Date */}
                   <div className="flex flex-col items-end gap-1">
                     <TransactionAmount amount={transaction.amount} rawAmount={transaction.rawAmount} tokenType={transaction.tokenType} />
-                    <span className="text-[#B0B6BE] text-sm">{formatTransactionDate(transaction.rawData.timestamp)}</span>
+                    <span className="text-[#B0B6BE] md:text-sm text-xs">{formatTransactionDate(transaction.rawData.timestamp)}</span>
                   </div>
                 </div>
                 {/* Divider */}

@@ -79,11 +79,11 @@ const Footer = () => {
           </div>
           <p className={styles.desc}>Fradium equips you with powerful tools to analyse, protect, and transact securely across the blockchain.</p>
           <div className={styles.socialRow}>
-            <a href="https://github.com/fradiumofficial/fradium" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="w-8 h-8 rounded-full flex items-center justify-center bg-[#181C22] hover:bg-[#23272F] transition-colors">
-              <img src="/assets/GithubLogo.svg" alt="GitHub" className="w-5 h-5" />
+            <a href="https://github.com/fradiumofficial/fradium" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="w-10 h-10 rounded-full flex items-center justify-center bg-[#181C22] hover:bg-[#23272F] transition-colors">
+              <img src="/assets/GithubLogo.svg" alt="GitHub" className="w-8 h-8" />
             </a>
-            <a href="https://x.com/fradiumofficial" target="_blank" rel="noopener noreferrer" aria-label="X" className="w-8 h-8 rounded-full flex items-center justify-center bg-[#181C22] hover:bg-[#23272F] transition-colors">
-              <img src="/assets/XLogo.svg" alt="X" className="w-5 h-5" />
+            <a href="https://x.com/fradiumofficial" target="_blank" rel="noopener noreferrer" aria-label="X" className="w-10 h-10 rounded-full flex items-center justify-center bg-[#181C22] hover:bg-[#23272F] transition-colors">
+              <img src="/assets/XLogo.svg" alt="X" className="w-8 h-8" />
             </a>
           </div>
         </div>

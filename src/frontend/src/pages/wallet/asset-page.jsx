@@ -106,11 +106,11 @@ export default function AssetsPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219]">
+      <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219] md:p-0 p-2">
         {/* Card Wallet - Sesuai Referensi */}
-        <div className="relative w-full bg-white bg-opacity-5 pb-4 overflow-hidden border border-[#393E4B]">
+        <div className="relative w-full bg-white bg-opacity-5 pb-4 overflow-hidden border border-[#393E4B] md:p-0 p-2">
           {/* Pattern Background */}
-          <img src="/assets/images/pattern-topside.png" alt="Pattern" className="absolute top-0 right-0 w-80 h-80 z-0 pointer-events-none select-none object-cover object-right-top" />
+          <img src="/assets/images/pattern-topside.png" alt="Pattern" className="absolute top-0 right-0 md:w-80 md:h-80 w-40 h-40 z-0 pointer-events-none select-none object-cover object-right-top" />
 
           {/* Character Illustration - Positioned at top center */}
           <div className="relative z-10 flex justify-center mb-2">
@@ -120,45 +120,45 @@ export default function AssetsPage() {
           {/* Content */}
           <div className="relative z-20 text-center">
             <div className="text-white text-sm font-normal mb-1">Total Portfolio Value</div>
-            <div className="text-white text-3xl font-semibold mb-1">{formatPortfolioValue(totalPortfolioValue)}</div>
-            <div className="text-[#9BE4A0] text-base font-medium mb-6">{totalPortfolioValue === 0 ? "Top up your wallet to start using it!" : "Your portfolio is growing!"}</div>
+            <div className="text-white md:text-3xl text-2xl font-semibold mb-1">{formatPortfolioValue(totalPortfolioValue)}</div>
+            <div className="text-[#9BE4A0] md:text-base text-sm font-medium md:mb-6 mb-3">{totalPortfolioValue === 0 ? "Top up your wallet to start using it!" : "Your portfolio is growing!"}</div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 w-full max-w-lg mx-auto">
+            <div className="flex md:gap-4 gap-2 w-full max-w-lg mx-auto">
               {/* Receive Button */}
               <div className="flex-1">
-                <div className="relative bg-white bg-opacity-10 h-32 w-full p-4 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={() => handleReceiveClick(tokens[0])}>
-                  <div className="absolute top-4 right-4">
+                <div className="relative bg-white bg-opacity-10 md:h-32 h-20 w-full md:p-4 p-2 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={() => handleReceiveClick(tokens[0])}>
+                  <div className="absolute md:top-4 top-2 md:right-4 right-2">
                     <TransactionButton
                       icon="/assets/icons/received.svg"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleReceiveClick(tokens[0]);
                       }}
-                      iconSize="w-6 h-6"
+                      iconSize="md:w-6 md:h-6 w-5 h-5"
                     />
                   </div>
-                  <div className="absolute bottom-4 left-4">
-                    <div className="text-white text-xl font-semibold">Receive</div>
+                  <div className="absolute md:bottom-4 bottom-2 md:left-4 left-2">
+                    <div className="text-white md:text-xl text-base font-semibold">Receive</div>
                   </div>
                 </div>
               </div>
 
               {/* Send Button */}
               <div className="flex-1">
-                <div className="relative bg-white bg-opacity-10 h-32 w-full p-4 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={handleGeneralSendClick}>
-                  <div className="absolute top-4 right-4">
+                <div className="relative bg-white bg-opacity-10 md:h-32 h-20 w-full md:p-4 p-2 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={handleGeneralSendClick}>
+                  <div className="absolute md:top-4 top-2 md:right-4 right-2">
                     <TransactionButton
                       icon="/assets/icons/send.svg"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleGeneralSendClick();
                       }}
-                      iconSize="w-6 h-6"
+                      iconSize="md:w-6 md:h-6 w-5 h-5"
                     />
                   </div>
-                  <div className="absolute bottom-4 left-4">
-                    <div className="text-white text-xl font-semibold">Send</div>
+                  <div className="absolute md:bottom-4 bottom-2 md:left-4 left-2">
+                    <div className="text-white md:text-xl text-base font-semibold">Send</div>
                   </div>
                 </div>
               </div>
@@ -168,10 +168,10 @@ export default function AssetsPage() {
         {/* Token List */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Tokens ({network})</h2>
-            <div className="flex gap-4">
-              <img src="/assets/icons/search.svg" alt="Search" className="w-5 h-5 cursor-pointer" />
-              <img src="/assets/icons/page_info.svg" alt="Filter" className="w-5 h-5 cursor-pointer" onClick={() => setShowNetworkFilter(!showNetworkFilter)} />
+            <h2 className="md:text-lg text-base font-semibold text-white">Tokens ({network})</h2>
+            <div className="flex md:gap-4 gap-2">
+              <img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" />
+              <img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onClick={() => setShowNetworkFilter(!showNetworkFilter)} />
             </div>
           </div>
 
@@ -619,26 +619,26 @@ function TokenCard({ token, onSendClick, hideBalance, formatTokenAmount }) {
   };
 
   return (
-    <div className="flex items-center px-2 py-4 gap-4 cursor-pointer hover:bg-[#181C22] transition-colors rounded-lg" onClick={handleCardClick}>
-      <img src={token.icon} alt={token.name} className="w-10 h-10" />
+    <div className="flex items-center md:px-2 px-1 md:py-4 py-2 md:gap-4 gap-2 cursor-pointer hover:bg-[#181C22] transition-colors rounded-lg" onClick={handleCardClick}>
+      <img src={token.icon} alt={token.name} className="md:w-10 md:h-10 w-8 h-8" />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-white font-semibold text-base">{token.name}</span>
-          {token.symbol && <span className="text-[#B0B6BE] text-base">• {token.symbol}</span>}
+        <div className="flex items-center md:gap-2 gap-1">
+          <span className="text-white md:font-semibold font-medium md:text-base text-sm">{token.name}</span>
+          {token.symbol && <span className="text-[#B0B6BE] md:text-base text-xs">• {token.symbol}</span>}
         </div>
-        <div className="text-[#B0B6BE] text-sm truncate">{token.desc}</div>
+        <div className="text-[#B0B6BE] md:text-sm text-xs truncate">{token.desc}</div>
         {token.hasError && <div className="text-red-400 text-xs mt-1">Error fetching balance</div>}
       </div>
       <div className="flex flex-col items-end gap-2">
         {token.isLoading ? (
           <div className="flex items-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#9BEB83]"></div>
-            <span className="text-[#B0B6BE] text-sm">Loading...</span>
+            <div className="animate-spin rounded-full md:h-4 md:w-4 h-3 w-3 border-b-2 border-[#9BEB83]"></div>
+            <span className="text-[#B0B6BE] md:text-sm text-xs">Loading...</span>
           </div>
         ) : (
           <>
-            <span className="text-white font-semibold text-base">{hideBalance ? "••••" : formatTokenAmount(token.currentAmount, token.tokenType)}</span>
-            <span className="text-[#B0B6BE] text-sm">{hideBalance ? "••••" : token.currentValue}</span>
+            <span className="text-white md:font-semibold font-medium md:text-base text-sm">{hideBalance ? "••••" : formatTokenAmount(token.currentAmount, token.tokenType)}</span>
+            <span className="text-[#B0B6BE] md:text-sm text-xs">{hideBalance ? "••••" : token.currentValue}</span>
           </>
         )}
       </div>

@@ -4,13 +4,26 @@
     "backend": {
       "main": "src/backend/main.mo",
       "type": "motoko",
-      "dependencies": ["token", "internet_identity"]
+      "dependencies": [
+        "token",
+        "internet_identity",
+        "bitcoin"
+      ]
     },
     "frontend": {
-      "source": ["src/frontend/dist"],
+      "source": [
+        "src/frontend/dist"
+      ],
       "type": "assets",
       "workspace": "frontend",
-      "dependencies": ["backend", "ransomware_detector", "bitcoin", "token", "chatbot", "solana"]
+      "dependencies": [
+        "backend",
+        "ransomware_detector",
+        "bitcoin",
+        "token",
+        "chatbot",
+        "solana"
+      ]
     },
     "internet_identity": {
       "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
@@ -25,7 +38,9 @@
       "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
     },
     "chatbot": {
-      "dependencies": ["llm"],
+      "dependencies": [
+        "llm"
+      ],
       "main": "src/chatbot/chatbot.mo",
       "type": "motoko"
     },
@@ -49,13 +64,21 @@
       "package": "ransomware_detector",
       "candid": "src/ai/detector_service/src/ransomware_detector.did",
       "optimize": "cycles",
-      "build": ["./bin/build.sh"]
+      "build": [
+        "./bin/build.sh"
+      ]
     },
     "sol_rpc": {
       "specified_id": "lxzze-o7777-77777-aaaaa-cai",
       "candid": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.did",
       "package": "sol_rpc_canister",
       "type": "custom",
+      "remote": {
+        "id": {
+          "ic": "tghme-zyaaa-aaaar-qarca-cai",
+          "playground": "tghme-zyaaa-aaaar-qarca-cai"
+        }
+      },
       "wasm": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.wasm.gz",
       "init_arg": "( record { manageApiKeys = null; overrideProvider = null; logFilter = opt variant { ShowAll }; numSubnetNodes = null; mode = opt variant { Demo }; } )"
     },
@@ -80,7 +103,9 @@
     },
     "bitcoin": {
       "enabled": true,
-      "nodes": ["127.0.0.1:18444"]
+      "nodes": [
+        "127.0.0.1:18444"
+      ]
     }
   },
   "output_env_file": ".env",
@@ -91,7 +116,9 @@
       "max_ingress_bytes_per_message": 10000000
     },
     "ic": {
-      "providers": ["https://ic0.app"],
+      "providers": [
+        "https://ic0.app"
+      ],
       "type": "persistent"
     }
   }

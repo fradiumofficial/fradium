@@ -298,7 +298,7 @@ function WalletLayoutContent() {
 
   return (
     <>
-      <div className="flex min-h-screen bg-[#0F1219]">
+      <div className="block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
         {/* Modal Manage Networks */}
         <Dialog
           open={showManageNetworks}
@@ -335,7 +335,8 @@ function WalletLayoutContent() {
             </div>
           </DialogContent>
         </Dialog>
-        <aside className="h-screen w-300 bg-[#0F1219] flex flex-col justify-between py-8 px-6 border-r border-[#23272F]">
+        {/* Sidebar kiri: hanya tampil di desktop */}
+        <aside className="h-screen w-300 bg-[#0F1219] flex flex-col justify-between py-8 px-6 border-r border-[#23272F] hidden md:flex">
           {/* Logo dan Brand */}
           <div>
             <div className="flex items-center gap-3 mb-12">
@@ -376,10 +377,127 @@ function WalletLayoutContent() {
             </button>
           </div>
         </aside>
-        <main className="flex-1 p-8 overflow-auto">
+        {/* Topbar khusus mobile */}
+        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219] sticky top-0 z-40 border-b border-[#23272F]">
+          {/* Logo Fradium kiri */}
+          <Link to="/">
+            <img src="/logo.svg" alt="Fradium Logo" className="w-10 h-10" />
+          </Link>
+          {/* Network dropdown & user button kanan */}
+          <div className="flex items-center gap-2">
+            {/* Network Dropdown */}
+            <div className="relative network-dropdown">
+              <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-2 bg-[#23272F] px-3 py-2 text-white font-medium text-xs rounded-md hover:bg-[#2A2F36] transition-all">
+                <img src="/assets/icons/construction.svg" alt="All Networks" className="w-5 h-5" />
+                <span className="text-white pr-1 capitalize text-xs">{network}</span>
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}>
+                  <path d="M7 10l5 5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              {/* Dropdown Menu (mobile: full screen modal) */}
+              {isDropdownOpen && (
+                <div className="fixed inset-0 z-50 bg-[#23242A] md:hidden flex flex-col">
+                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#23272F]">
+                    <div className="text-white text-xl font-semibold">All Networks</div>
+                    <button onClick={() => setIsDropdownOpen(false)} className="text-white text-2xl font-bold focus:outline-none">&times;</button>
+                  </div>
+                  <div className="flex-1 flex flex-col justify-start px-2 pt-2">
+                    <button onClick={() => { handleNetworkChange('All Networks'); setIsDropdownOpen(false); }} className={`flex items-center justify-between w-full px-4 py-4 text-base ${network === 'All Networks' ? 'bg-[#34373D]' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        {network === 'All Networks' ? (
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        ) : (<div className="w-4 h-4"></div>)}
+                        <span className="text-white font-medium">All Networks</span>
+                      </div>
+                      <span className="text-[#9CA3AF] text-base font-medium">{getNetworkValue('All Networks')}</span>
+                    </button>
+                    {getAvailableNetworks().map((net) => (
+                      <button key={net.key} onClick={() => { handleNetworkChange(net.name); setIsDropdownOpen(false); }} className={`flex items-center justify-between w-full px-4 py-4 text-base ${network === net.name ? 'bg-[#34373D]' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          {network === net.name ? (
+                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          ) : (<div className="w-4 h-4"></div>)}
+                          <span className="text-white font-medium">{net.name}</span>
+                        </div>
+                        <span className="text-[#9CA3AF] text-base font-medium">{net.value}</span>
+                      </button>
+                    ))}
+                    <button className="flex items-center gap-2 px-4 py-4 text-base text-[#9BEB83] font-medium mt-2" onClick={() => { setShowManageNetworks(true); setIsDropdownOpen(false); }}>
+                      <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
+                      Manage Networks
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* User Button */}
+            <div className="relative profile-dropdown">
+              <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="flex items-center justify-center bg-[#23272F] w-9 h-9 rounded-md hover:bg-[#2A2F36] transition-all">
+                <img src="/assets/icons/person.svg" alt="User" className="w-5 h-5" />
+              </button>
+              {/* Profile Dropdown Menu (mobile: full screen modal) */}
+              {isProfileDropdownOpen && (
+                <div className="fixed inset-0 z-50 bg-[#23242A] md:hidden flex flex-col">
+                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#23272F]">
+                    <div className="text-white text-xl font-semibold">Profile</div>
+                    <button onClick={() => setIsProfileDropdownOpen(false)} className="text-white text-2xl font-bold focus:outline-none">&times;</button>
+                  </div>
+                  <div className="flex-1 flex flex-col justify-start px-2 pt-2 gap-1 pb-24">
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={handleToggleHideBalance}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">{contextHideBalance ? (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="3" stroke="#9BEB83" strokeWidth="2" /><path d="M1 1l22 22" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>) : (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="3" stroke="#9BEB83" strokeWidth="2" /></>)}</svg>
+                      <span className="text-white">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]">
+                      <img src="/assets/icons/copy-green.svg" alt="Your addresses" className="w-5 h-5" />
+                      <span className="text-white">Your addresses</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]">
+                      <img src="/assets/icons/share-green.svg" alt="Refer your friends" className="w-5 h-5" />
+                      <span className="text-white">Refer your friends</span>
+                    </button>
+                    <div className="h-px bg-white/10 mx-4 my-2"></div>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open('https://fradium.gitbook.io/docs/introduction/why-fradium', '_blank')}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><circle cx="12" cy="12" r="10" stroke="#9BEB83" strokeWidth="2" /><line x1="12" y1="8" x2="12" y2="12" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" /><line x1="12" y1="16" x2="12.01" y2="16" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" /></svg>
+                      <span className="text-white">Why Fradium</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open('https://fradium.gitbook.io/docs', '_blank')}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="14,2 14,8 20,8" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="16" y1="13" x2="8" y2="13" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="16" y1="17" x2="8" y2="17" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="10,9 9,9 8,9" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <span className="text-white">Documentation</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open('https://github.com/fradiumofficial/fradium', '_blank')}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <span className="text-white">Source Code</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open('https://x.com/fradiumofficial', '_blank')}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <span className="text-white">X Account</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => { navigate('/wallet/setting'); setIsProfileDropdownOpen(false); }}>
+                      <img src="/assets/icons/setting-green.svg" alt="Settings" className="w-5 h-5" />
+                      <span className="text-white">Settings</span>
+                    </button>
+                    <div className="flex-1"></div>
+                    <button className="w-full bg-[#9BEB83] text-[#23272F] font-semibold text-base py-3 rounded-lg mb-6 mt-2" onClick={() => { navigate('/'); logout(); setIsProfileDropdownOpen(false); }}>
+                      <span className="flex items-center justify-center gap-2"><svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>Logout</span>
+                    </button>
+                  </div>
+                  {/* Logout button sticky di bawah */}
+                  <div className="sticky bottom-0 left-0 right-0 bg-[#23242A] px-4 pb-6 pt-2 z-10">
+                    <button className="w-full bg-[#9BEB83] text-[#23272F] font-semibold text-base py-3 rounded-lg flex items-center justify-center gap-2 shadow-md" onClick={() => { navigate('/'); logout(); setIsProfileDropdownOpen(false); }}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <main className="flex-1 w-full max-w-full p-4 md:p-8 overflow-auto pb-28 md:pb-8 pt-8 md:pt-7">
           <Outlet />
         </main>
-        <aside className="relative w-100 min-h-screen bg-[#0F1219] flex flex-col pt-6 pr-6 pb-6 pl-4 overflow-hidden">
+        {/* Sidebar kanan: hanya tampil di desktop */}
+        <aside className="relative w-100 min-h-screen bg-[#0F1219] flex flex-col pt-6 pr-6 pb-6 pl-4 overflow-hidden hidden md:flex">
           {/* Pattern background - diperbaiki positioning */}
           <img src="/assets/pattern-sidebar.png" alt="Pattern" className="absolute bottom-0 w-60 right-0 z-0 pointer-events-none select-none object-cover object-bottom-right " />
 
@@ -584,6 +702,34 @@ function WalletLayoutContent() {
           </div>
         </aside>
       </div>
+
+      {/* Bottom Navigation: hanya tampil di mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181C22] border-t border-[#23272F] flex md:hidden justify-between px-1 py-3" style={{ height: '80px' }}>
+        {menu.map((item, idx) => {
+          const isActive = normalize(location.pathname) === normalize(item.path);
+          // Mapping nama menu ke icon mobile
+          const mobileIconMap = {
+            wallet: 'wallet',
+            'analyze-address': 'analyze-address',
+            'analyze-contract': 'analyze-contract',
+            'transaction-history': 'transaction-history',
+            history: 'scan-history',
+          };
+          const mobileIconKey = mobileIconMap[item.icon] || item.icon;
+          const iconSrc = `/assets/icons/mobile/${mobileIconKey}-${isActive ? 'active' : 'non'}.svg`;
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-[#9BEB83] bg-[#9BE4A01A] rounded-sm shadow-[0_0_8px_0_#9BE4A01A]" : "text-[#FFFFFF99]"}`}
+              style={{ fontSize: '10px', minWidth: 0, minHeight: 0, padding: '6px 0', }}
+            >
+              <img src={iconSrc} alt={item.label} className="w-5 h-5 mb-0.5" />
+              <span className="leading-tight text-center text-xs" style={{ fontWeight: 400 }}>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* Confirm Create Wallet Modal */}
       <Dialog open={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal}>
