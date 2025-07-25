@@ -130,11 +130,9 @@ async fn analyze_address_v2(
             btc::analyze_btc_address_v2(features, &address, transaction_count).await
         }
         address_detector::AddressType::Ethereum => {
-            Err("Currently, we do not support ETH addresses.".to_string())
 
-            // COMING SOON NEXT QUALIFICATION
-            // ic_cdk::println!("Address detected as Ethereum. Routing to ETH analyzer...");
-            // eth::analyze_eth_address(&address).await
+            ic_cdk::println!("Address detected as Ethereum. Routing to ETH analyzer...");
+            eth::analyze_eth_address(&address).await
         }
         address_detector::AddressType::Solana => {
             // COMING SOON NEXT QUALIFICATION
