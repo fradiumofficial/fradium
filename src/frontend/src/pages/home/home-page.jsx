@@ -11,6 +11,18 @@ import { LoadingState } from "@/core/components/ui/loading-state";
 import { useWallet } from "@/core/providers/wallet-provider";
 import ConfirmCreateWalletModal from "@/core/components/modals/ConfirmCreateWalletModal";
 
+// Custom hook untuk deteksi mobile
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 600);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
 const HomePage = () => {
   const { isAuthenticated, handleLogin } = useAuth();
   const navigate = useNavigate();
@@ -209,65 +221,111 @@ const HomePage = () => {
       {/* Fradium Extension Section */}
 
       {/* KEY FEATURE SECTION */}
-      <section className={styles.keyFeatureSection}>
-        <div className={styles.keyFeatureHeader}>
-          <span className={styles.keyFeatureLabel}>KEY FEATURE</span>
-          <h2 className={styles.keyFeatureTitle}>Secure your digital assets with confidence</h2>
-        </div>
-        <div className={styles.keyFeatureContentWrapper}>
-          {/* Fitur kiri atas */}
-          <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemLeftTop}`}>
-            <img src="/assets/images/icon-detecion.png" alt="Fraud Detection" className={styles.keyFeatureIcon} />
-            <div>
-              <div className={styles.keyFeatureItemTitle}>Fraud Detection</div>
-              <div className={styles.keyFeatureItemDesc}>
-                Map the crypto projects
-                <br />
-                Identify wallet risks before any transaction
+      <section>
+        {useIsMobile() ? (
+          // MOBILE LAYOUT
+          <div className="w-full flex flex-col items-center px-4 py-10 bg-transparent">
+            <span className="text-[#7be495] text-[13px] font-medium tracking-[0.18em] uppercase mb-2">KEY FEATURE</span>
+            <h2 className="text-white text-[20px] font-semibold text-center mb-4 leading-tight">Secure your digital assets<br />with confidence</h2>
+            <img src="/assets/images/fradium-wallet.png" alt="Fradium Wallet" className="w-[220px] max-w-full mx-auto mb-6 rounded-2xl shadow-lg" draggable="false" />
+            <div className="flex flex-col gap-4 w-full max-w-xs mx-auto">
+              {/* Fraud Detection */}
+              <div className="flex items-center gap-4 mb-2">
+                <img src="/assets/images/icon-detecion.png" alt="Fraud Detection" className="w-10 h-10 rounded-full bg-[#181c22] p-2" />
+                <div>
+                  <div className="text-white text-[15px] font-semibold mb-1">Fraud Detection</div>
+                  <div className="text-[#b0b6be] text-[12px] leading-snug">Map the crypto projects Identify wallet risks before any transaction</div>
+                </div>
+              </div>
+              {/* Fradium Wallet */}
+              <div className="flex items-center gap-4 mb-2">
+                <img src="/assets/images/icon-wallet.png" alt="Fradium Wallet" className="w-10 h-10 rounded-full bg-[#181c22] p-2" />
+                <div>
+                  <div className="text-white text-[15px] font-semibold mb-1">Fradium Wallet</div>
+                  <div className="text-[#b0b6be] text-[12px] leading-snug">Prevent high-risk transactions with real-time alerts</div>
+                </div>
+              </div>
+              {/* Community Reporting */}
+              <div className="flex items-center gap-4 mb-2">
+                <img src="/assets/images/icon-community.png" alt="Community Reporting" className="w-10 h-10 rounded-full bg-[#181c22] p-2" />
+                <div>
+                  <div className="text-white text-[15px] font-semibold mb-1">Community Reporting</div>
+                  <div className="text-[#b0b6be] text-[12px] leading-snug">Submit and validate fraud cases collaboratively</div>
+                </div>
+              </div>
+              {/* Smart Contract Audit */}
+              <div className="flex items-center gap-4">
+                <img src="/assets/images/icon-audit.png" alt="Smart Contract Audit" className="w-10 h-10 rounded-full bg-[#181c22] p-2" />
+                <div>
+                  <div className="text-white text-[15px] font-semibold mb-1">Smart Contract Audit</div>
+                  <div className="text-[#b0b6be] text-[12px] leading-snug">Scan contracts for vulnerabilities automatically</div>
+                </div>
               </div>
             </div>
           </div>
-          {/* Fitur kiri bawah */}
-          <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemLeftBottom}`}>
-            <img src="/assets/images/icon-wallet.png" alt="Fradium Wallet" className={styles.keyFeatureIcon} />
-            <div>
-              <div className={styles.keyFeatureItemTitle}>Fradium Wallet</div>
-              <div className={styles.keyFeatureItemDesc}>
-                Prevent high-risk transactions
-                <br />
-                with real-time alerts
+        ) : (
+          // DESKTOP LAYOUT (tetap pakai className lama)
+          <section className={styles.keyFeatureSection}>
+            <div className={styles.keyFeatureHeader}>
+              <span className={styles.keyFeatureLabel}>KEY FEATURE</span>
+              <h2 className={styles.keyFeatureTitle}>Secure your digital assets with confidence</h2>
+            </div>
+            <div className={styles.keyFeatureContentWrapper}>
+              {/* Fitur kiri atas */}
+              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemLeftTop}`}>
+                <img src="/assets/images/icon-detecion.png" alt="Fraud Detection" className={styles.keyFeatureIcon} />
+                <div>
+                  <div className={styles.keyFeatureItemTitle}>Fraud Detection</div>
+                  <div className={styles.keyFeatureItemDesc}>
+                    Map the crypto projects
+                    <br />
+                    Identify wallet risks before any transaction
+                  </div>
+                </div>
+              </div>
+              {/* Fitur kiri bawah */}
+              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemLeftBottom}`}>
+                <img src="/assets/images/icon-wallet.png" alt="Fradium Wallet" className={styles.keyFeatureIcon} />
+                <div>
+                  <div className={styles.keyFeatureItemTitle}>Fradium Wallet</div>
+                  <div className={styles.keyFeatureItemDesc}>
+                    Prevent high-risk transactions
+                    <br />
+                    with real-time alerts
+                  </div>
+                </div>
+              </div>
+              {/* Fitur kanan atas */}
+              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemRightTop}`}>
+                <img src="/assets/images/icon-audit.png" alt="Smart Contract Audit" className={styles.keyFeatureIcon} />
+                <div>
+                  <div className={styles.keyFeatureItemTitle}>Smart Contract Audit</div>
+                  <div className={styles.keyFeatureItemDesc}>
+                    Scan contracts for
+                    <br />
+                    vulnerabilities automatically
+                  </div>
+                </div>
+              </div>
+              {/* Fitur kanan bawah */}
+              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemRightBottom}`}>
+                <img src="/assets/images/icon-community.png" alt="Community Reporting" className={styles.keyFeatureIcon} />
+                <div>
+                  <div className={styles.keyFeatureItemTitle}>Community Reporting</div>
+                  <div className={styles.keyFeatureItemDesc}>
+                    Submit and validate fraud
+                    <br />
+                    cases collaboratively
+                  </div>
+                </div>
+              </div>
+              {/* Gambar utama wallet */}
+              <div className={styles.keyFeatureImageWrapper}>
+                <img src="/assets/images/fradium-wallet.png" alt="Fradium Wallet" className={styles.keyFeatureImage} draggable="false" />
               </div>
             </div>
-          </div>
-          {/* Fitur kanan atas */}
-          <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemRightTop}`}>
-            <img src="/assets/images/icon-audit.png" alt="Smart Contract Audit" className={styles.keyFeatureIcon} />
-            <div>
-              <div className={styles.keyFeatureItemTitle}>Smart Contract Audit</div>
-              <div className={styles.keyFeatureItemDesc}>
-                Scan contracts for
-                <br />
-                vulnerabilities automatically
-              </div>
-            </div>
-          </div>
-          {/* Fitur kanan bawah */}
-          <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemRightBottom}`}>
-            <img src="/assets/images/icon-community.png" alt="Community Reporting" className={styles.keyFeatureIcon} />
-            <div>
-              <div className={styles.keyFeatureItemTitle}>Community Reporting</div>
-              <div className={styles.keyFeatureItemDesc}>
-                Submit and validate fraud
-                <br />
-                cases collaboratively
-              </div>
-            </div>
-          </div>
-          {/* Gambar utama wallet */}
-          <div className={styles.keyFeatureImageWrapper}>
-            <img src="/assets/images/fradium-wallet.png" alt="Fradium Wallet" className={styles.keyFeatureImage} draggable="false" />
-          </div>
-        </div>
+          </section>
+        )}
       </section>
 
       {/* Confirm Create Wallet Modal */}
