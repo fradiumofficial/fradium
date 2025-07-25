@@ -157,90 +157,176 @@ const Assistant = () => {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#000510] pt-[110px] px-0 md:px-8 flex flex-col md:flex-row gap-x-8">
-      {/* Left: Chat Area */}
-      <div className="flex-1 mx-auto bg-[#181C22] rounded-xl shadow p-8 flex flex-col h-[calc(100vh-180px)]">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-base md:text-xl font-normal text-white mb-1">Fradium Assistant</div>
-            <div className="text-[#B0B6BE] text-sm">Tanya apa saja tentang Fradium</div>
+    <>
+      {/* MOBILE ONLY */}
+      <div className="block md:hidden h-screen bg-[#000510] pt-[70px] pb-[90px] px-0 w-full">
+        <div className="flex flex-col h-full w-full max-w-full">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 pt-2 pb-1">
+            <div>
+              <div className="text-base font-normal text-white mb-0.5">Fradium Assistant</div>
+              <div className="text-[#B0B6BE] text-xs">Tanya apa saja tentang Fradium</div>
+            </div>
+            <button onClick={handleClear} size="sm" className="!bg-transparent text-xs !text-[#ffffff] !shadow-none hover:!bg-[#23272f] px-2 py-1 flex items-center gap-2">
+              <img src="/assets/icons/Trash.svg" alt="Clear" className="w-4 h-4" />
+            </button>
           </div>
-          <button onClick={handleClear} size="sm" className="!bg-transparent text-sm !text-[#ffffff] !shadow-none hover:!bg-[#23272f] px-3 py-2 flex items-center gap-2">
-            <img src="/assets/icons/Trash.svg" alt="Clear" className="w-5 h-5" />
-            Clear History
-          </button>
-        </div>
-        <div className="border-b border-[#23272f] mb-6" />
-        {/* Chat Bubbles */}
-        <div className="flex flex-col gap-6 overflow-y-auto flex-1 pr-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
-          {history.map((item, idx) => (
-            <ChatBubble key={idx} {...item} />
-          ))}
-          <div ref={chatEndRef} />
-        </div>
-        {/* Input */}
-        <div className="flex items-center gap-2 mt-auto bg-[#23272f] rounded-xs border border-[#23272f] px-4 py-4">
-          <input type="text" placeholder="Tulis pesan..." className="flex-1 bg-transparent outline-none border-none text-white text-base placeholder-[#B0B6BE] py-2" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} disabled={loading} />
-          <ButtonA size="sm" className="" onClick={handleSend} disabled={loading || !input.trim()}>
-            <img src="/assets/icons/submit.svg" alt="Send" />
-          </ButtonA>
+          <div className="border-b border-[#23272f] mb-2 mx-3" />
+          {/* Chat Bubbles */}
+          <div className="flex flex-col gap-3 overflow-y-auto flex-1 px-2 pb-2 pt-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
+            {history.map((item, idx) => (
+              <ChatBubble key={idx} {...item} />
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          {/* Input */}
+          <div className="flex items-center gap-2 bg-[#23272f] rounded-xs border border-[#23272f] px-3 py-3 mx-2 mt-2">
+            <input type="text" placeholder="Tulis pesan..." className="flex-1 bg-transparent outline-none border-none text-white text-xs placeholder-[#B0B6BE] py-1" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} disabled={loading} />
+            <ButtonA size="sm" className="" onClick={handleSend} disabled={loading || !input.trim()}>
+              <img src="/assets/icons/submit.svg" alt="Send" className="w-5 h-5" />
+            </ButtonA>
+          </div>
+          {/* Suggested Question */}
+          <div className="w-full bg-[#181C22] rounded-xl shadow p-3 mt-3 mx-0">
+            <div className="text-sm font-semibold text-white mb-2">Suggested Question</div>
+            <div className="border-b border-[#23272f] mb-2" />
+            <ul className="flex flex-col gap-1 overflow-y-auto max-h-[120px] pr-1">
+              {suggestedQuestions.map((q, idx) => (
+                <li
+                  key={idx}
+                  className="px-2 py-2 rounded-lg text-[#B0B6BE] hover:bg-[#23272f] transition cursor-pointer select-none text-xs"
+                  style={{ fontWeight: 500 }}
+                  onClick={async () => {
+                    if (loading) return;
+                    setInput("");
+                    const userMsg = {
+                      type: "user",
+                      message: q,
+                      time: getTimeNow(),
+                      isLink: q.startsWith("http"),
+                    };
+                    const loadingMsg = {
+                      type: "bot",
+                      message: "...",
+                      time: getTimeNow(),
+                      loading: true,
+                    };
+                    const currentHistory = [...history, userMsg, loadingMsg];
+                    updateHistory(currentHistory);
+                    setLoading(true);
+                    try {
+                      const res = await chatbot.ask(q);
+                      let botMsg = "";
+                      if (res && res.Ok) {
+                        botMsg = res.Ok;
+                      } else if (res && res.Err) {
+                        botMsg = "Maaf, terjadi kesalahan. Silakan coba lagi.";
+                      } else {
+                        botMsg = "Maaf, tidak ada respon.";
+                      }
+                      const newHistory = [...history, userMsg, { type: "bot", message: botMsg, time: getTimeNow() }];
+                      updateHistory(newHistory);
+                    } catch (e) {
+                      const errorHistory = [...history, userMsg, { type: "bot", message: "Maaf, terjadi error koneksi.", time: getTimeNow() }];
+                      updateHistory(errorHistory);
+                    }
+                    setLoading(false);
+                  }}
+                >
+                  {q}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-      {/* Right: Suggested Question */}
-      <div className="w-full md:w-[340px] mx-auto bg-[#181C22] rounded-xl shadow p-8 flex flex-col h-[calc(100vh-180px)] md:mt-0 overflow-hidden">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-lg font-semibold text-white">Suggested Question</div>
+      {/* DESKTOP ONLY */}
+      <div className="hidden md:flex h-screen mb-32 overflow-hidden bg-[#000510] pt-[110px] px-0 md:px-8 flex-col md:flex-row gap-x-8">
+        {/* Left: Chat Area */}
+        <div className="flex-1 mx-auto bg-[#181C22] rounded-xl shadow p-8 flex flex-col h-[calc(100vh-180px)]">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="text-base md:text-xl font-normal text-white mb-1">Fradium Assistant</div>
+              <div className="text-[#B0B6BE] text-sm">Tanya apa saja tentang Fradium</div>
+            </div>
+            <button onClick={handleClear} size="sm" className="!bg-transparent text-sm !text-[#ffffff] !shadow-none hover:!bg-[#23272f] px-3 py-2 flex items-center gap-2">
+              <img src="/assets/icons/Trash.svg" alt="Clear" className="w-5 h-5" />
+              Clear History
+            </button>
+          </div>
+          <div className="border-b border-[#23272f] mb-6" />
+          {/* Chat Bubbles */}
+          <div className="flex flex-col gap-6 overflow-y-auto flex-1 pr-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
+            {history.map((item, idx) => (
+              <ChatBubble key={idx} {...item} />
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          {/* Input */}
+          <div className="flex items-center gap-2 mt-auto bg-[#23272f] rounded-xs border border-[#23272f] px-4 py-4">
+            <input type="text" placeholder="Tulis pesan..." className="flex-1 bg-transparent outline-none border-none text-white text-base placeholder-[#B0B6BE] py-2" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} disabled={loading} />
+            <ButtonA size="sm" className="" onClick={handleSend} disabled={loading || !input.trim()}>
+              <img src="/assets/icons/submit.svg" alt="Send" />
+            </ButtonA>
+          </div>
         </div>
-        <div className="border-b border-[#23272f] mb-4" />
-        <ul className="flex flex-col gap-2 overflow-y-auto pr-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
-          {suggestedQuestions.map((q, idx) => (
-            <li
-              key={idx}
-              className="px-4 py-2 rounded-lg text-[#B0B6BE] hover:bg-[#23272f] transition cursor-pointer select-none"
-              style={{ fontWeight: 500 }}
-              onClick={async () => {
-                if (loading) return;
-                setInput("");
-                const userMsg = {
-                  type: "user",
-                  message: q,
-                  time: getTimeNow(),
-                  isLink: q.startsWith("http"),
-                };
-                const loadingMsg = {
-                  type: "bot",
-                  message: "...",
-                  time: getTimeNow(),
-                  loading: true,
-                };
-                const currentHistory = [...history, userMsg, loadingMsg];
-                updateHistory(currentHistory);
-                setLoading(true);
-                try {
-                  const res = await chatbot.ask(q);
-                  let botMsg = "";
-                  if (res && res.Ok) {
-                    botMsg = res.Ok;
-                  } else if (res && res.Err) {
-                    botMsg = "Maaf, terjadi kesalahan. Silakan coba lagi.";
-                  } else {
-                    botMsg = "Maaf, tidak ada respon.";
+        {/* Right: Suggested Question */}
+        <div className="w-full md:w-[340px] mx-auto bg-[#181C22] rounded-xl shadow p-8 flex flex-col h-[calc(100vh-180px)] md:mt-0 overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-lg font-semibold text-white">Suggested Question</div>
+          </div>
+          <div className="border-b border-[#23272f] mb-4" />
+          <ul className="flex flex-col gap-2 overflow-y-auto pr-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
+            {suggestedQuestions.map((q, idx) => (
+              <li
+                key={idx}
+                className="px-4 py-2 rounded-lg text-[#B0B6BE] hover:bg-[#23272f] transition cursor-pointer select-none"
+                style={{ fontWeight: 500 }}
+                onClick={async () => {
+                  if (loading) return;
+                  setInput("");
+                  const userMsg = {
+                    type: "user",
+                    message: q,
+                    time: getTimeNow(),
+                    isLink: q.startsWith("http"),
+                  };
+                  const loadingMsg = {
+                    type: "bot",
+                    message: "...",
+                    time: getTimeNow(),
+                    loading: true,
+                  };
+                  const currentHistory = [...history, userMsg, loadingMsg];
+                  updateHistory(currentHistory);
+                  setLoading(true);
+                  try {
+                    const res = await chatbot.ask(q);
+                    let botMsg = "";
+                    if (res && res.Ok) {
+                      botMsg = res.Ok;
+                    } else if (res && res.Err) {
+                      botMsg = "Maaf, terjadi kesalahan. Silakan coba lagi.";
+                    } else {
+                      botMsg = "Maaf, tidak ada respon.";
+                    }
+                    const newHistory = [...history, userMsg, { type: "bot", message: botMsg, time: getTimeNow() }];
+                    updateHistory(newHistory);
+                  } catch (e) {
+                    const errorHistory = [...history, userMsg, { type: "bot", message: "Maaf, terjadi error koneksi.", time: getTimeNow() }];
+                    updateHistory(errorHistory);
                   }
-                  const newHistory = [...history, userMsg, { type: "bot", message: botMsg, time: getTimeNow() }];
-                  updateHistory(newHistory);
-                } catch (e) {
-                  const errorHistory = [...history, userMsg, { type: "bot", message: "Maaf, terjadi error koneksi.", time: getTimeNow() }];
-                  updateHistory(errorHistory);
-                }
-                setLoading(false);
-              }}>
-              {q}
-            </li>
-          ))}
-        </ul>
+                  setLoading(false);
+                }}
+              >
+                {q}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
