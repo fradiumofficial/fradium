@@ -1,11 +1,11 @@
-import type { ICPAnalysisResult, ICPAnalysisCommunityResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
+import type { ICPAnalysisResult, CommunityAnalysisResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
 import type { Root as SmartContractAnalysisResult } from "@/modules/analyze_smartcontract/model/AnalyzeSmartContractModel";
 
 // Interface untuk History Item
 export interface HistoryItem {
   id: string;
   address: string;
-  result: ICPAnalysisResult | ICPAnalysisCommunityResult | SmartContractAnalysisResult;
+  result: ICPAnalysisResult | CommunityAnalysisResult | SmartContractAnalysisResult;
   timestamp: number;
   date: string;
   isSafe: boolean;
@@ -23,7 +23,7 @@ const MAX_HISTORY_ITEMS = 100;
 // Fungsi untuk menyimpan analysis result ke history
 export function saveAnalysisToHistory(
   address: string, 
-  result: ICPAnalysisResult | ICPAnalysisCommunityResult | SmartContractAnalysisResult,
+  result: ICPAnalysisResult | CommunityAnalysisResult | SmartContractAnalysisResult,
   analysisType: 'icp' | 'community' | 'smartcontract' = 'icp'
 ): HistoryItem {
   const timestamp = Date.now();
@@ -34,13 +34,13 @@ export function saveAnalysisToHistory(
   let riskScore: number;
   
   if (analysisType === 'community') {
-    const communityResult = result as ICPAnalysisCommunityResult;
+    const communityResult = result as CommunityAnalysisResult;
     isSafe = communityResult.is_safe === true;
     
     // Calculate risk score from community votes if available
-    if (communityResult.report) {
-      const totalVotes = communityResult.report.votes_yes + communityResult.report.votes_no;
-      riskScore = totalVotes > 0 ? (communityResult.report.votes_yes / totalVotes) * 100 : 0;
+    if (communityResult.report?.[0]) {
+      const totalVotes = communityResult.report[0].votes_yes + communityResult.report[0].votes_no;
+      riskScore = Number(totalVotes) > 0 ? (Number(communityResult.report[0].votes_yes) / Number(totalVotes)) * 100 : 0;
     } else {
       riskScore = isSafe ? 0 : 50; // Default risk score
     }
