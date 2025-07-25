@@ -103,15 +103,10 @@ async fn analyze_address(address: String) -> Result<RansomwareResult, String> {
     match address_detector::detect_address_type(&address) {
         address_detector::AddressType::Bitcoin => {
             ic_cdk::println!("Address detected as Bitcoin. Routing to BTC analyzer...");
-            Err("Using analyze_address_v2 instead.".to_string())
-            // btc::analyze_btc_address(&address).await
+            btc::analyze_btc_address(&address).await
         }
         address_detector::AddressType::Ethereum => {
-            Err("Currently, we do not support ETH addresses.".to_string())
-
-            // COMING SOON NEXT QUALIFICATION
-            // ic_cdk::println!("Address detected as Ethereum. Routing to ETH analyzer...");
-            // eth::analyze_eth_address(&address).await
+            eth::analyze_eth_address(&address).await
         }
         address_detector::AddressType::Solana => {
             // COMING SOON NEXT QUALIFICATION
