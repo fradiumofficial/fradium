@@ -3,7 +3,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/fradiumofficial/fradium">
-    <img src="docs/images/assets/cover.png" alt="Fradium Cover">
+    <img src="docs/images/cover.png" alt="Fradium Cover">
   </a>
 
   <h3 align="center">Fradium – The Trust Layer for Web3 Transactions</h3>
