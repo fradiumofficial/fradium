@@ -88,8 +88,6 @@
 }
 
 .socialRow img {
-    width: 50px;
-    height: 50px;
     border-radius: 50%;
     background: #181C22;
     padding: 5px;
@@ -205,7 +203,7 @@
 
 @media (max-width: 600px) {
     .footerRoot {
-        min-height: 320px;
+        min-height: 220px;
     }
 
     .illusFooter {
@@ -214,25 +212,68 @@
     }
 
     .footerContent {
-        padding: 20px 4vw 16px 4vw;
-        border-radius: 14px;
+        padding: 10px 2vw 10px 2vw;
+        border-radius: 8px;
+        gap: 18px;
+        flex-direction: column;
+        align-items: center;
+        min-height: unset;
+    }
+
+    .leftCol {
+        gap: 12px;
+        align-items: center;
+        text-align: center;
     }
 
     .logo {
-        width: 32px;
-        height: 32px;
-    }
-
-    .brand {
-        font-size: 1.3rem;
+        width: 50px;
+        height: 50px;
     }
 
     .desc {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
+        max-width: 90vw;
+    }
+
+    .socialRow {
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .linksCol {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        align-items: center;
+        text-align: center;
+    }
+
+    .linksTitle {
+        font-size: 1rem;
+        margin-bottom: 4px;
+    }
+
+    .linksBlock {
+        gap: 6px;
+        align-items: center;
+    }
+
+    .linksBlock a {
+        font-size: 0.93rem;
     }
 
     .ctaButton {
-        padding: 12px 18px;
-        font-size: 1rem;
+        margin-top: 22px;
+        padding: 10px 10px;
+        font-size: 0.98rem;
+        width: 100%;
+        max-width: 320px;
+        align-self: center;
+    }
+
+    .copyright {
+        font-size: 0.85rem;
+        margin: 18px 0 8px 0;
     }
 }

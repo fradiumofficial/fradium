@@ -14,6 +14,7 @@ import Nat64 "mo:base/Nat64";
 
 import TokenCanister "canister:token";
 import BitcoinCanister "canister:bitcoin";
+import Types "types";
 
 actor Fradium {
   // Vote deadline in nanoseconds (1 week = 7 * 24 * 60 * 60 * 1_000_000_000)
@@ -31,165 +32,23 @@ actor Fradium {
   // Minimum quorum for vote validation (minimum number of voters required)
   private let MINIMUM_QUORUM : Nat = 1;
 
-  public type Result<T, E> = { #Ok : T; #Err : E };
-
-  public type Voter = {
-    voter: Principal;
-    vote: Bool;
-    vote_weight: Nat; // Bobot vote = stake amount
-  };
-
-  public type ReportRole = {
-    #Reporter;
-    #Voter: Bool; // true = vote yes, false = vote no
-  };
-
-  public type Report = {
-    report_id: ReportId;
-    reporter: Principal;
-    chain: Text;
-    address: Text;
-    category: Text;
-    description: Text;
-    evidence: [Text];
-    url: ?Text;
-    votes_yes: Nat;
-    votes_no: Nat;
-    voted_by: [Voter];
-    vote_deadline: Time.Time;
-    created_at: Time.Time;
-  };
-  // ===== END REPORT =====
-
-  // ===== STAKE =====
-  public type StakeRecord = {
-    staker: Principal;
-    amount: Nat;
-    staked_at: Time.Time;
-    role: ReportRole;
-    report_id: ReportId;
-    unstaked_at: ?Time.Time;
-  };
-  // ===== END STAKE =====
-
-  // ===== WALLET APP =====
-  public type Network = {
-    #Ethereum;
-    #Solana;
-    #Bitcoin;
-    #ICP;
-  };
-
-  public type TokenType = {
-    #Bitcoin;
-    #Ethereum;
-    #Solana;
-    #Fradium;
-    #Unknown;
-  };
-
-  public type WalletAddress = {
-    network: Network;
-    token_type: TokenType;
-    address: Text;
-  };
-
-  public type UserWallet = {
-    principal: Principal;
-    addresses: [WalletAddress];
-    created_at: Time.Time;
-  };
-  // ===== END WALLET APP =====
-
-  // ===== ANALYZE ADDRESS =====
-  public type AnalyzeHistoryType = {
-    #CommunityVote;
-    #AIAnalysis;
-  };
-
-  public type AnalyzeHistory = {
-    address: Text;
-    is_safe: Bool;
-    analyzed_type: AnalyzeHistoryType;
-    token_type: TokenType;
-    created_at: Time.Time;
-    metadata: Text;
-  };
-  // ===== END ANALYZE ADDRESS =====
-
-  // ===== TRANSACTION HISTORY =====
-  public type ChainType = {
-    #Bitcoin;
-    #Ethereum;
-    #Solana;
-  };
-
-  public type ChainDetails = {
-    #Bitcoin : {
-      txid : Text;
-      from_address : ?Text;
-      to_address : Text;
-      fee_satoshi : ?Nat;
-      block_height : ?Nat;
-    };
-    #Ethereum : {
-      tx_hash : Text;
-      from : Text;
-      to : Text;
-      gas_fee_wei : Nat;
-      nonce : Nat;
-      block_number : ?Nat;
-    };
-    #Solana : {
-      signature : Text;
-      slot : ?Nat;
-      sender : Text;
-      recipient : Text;
-      lamports : Nat;
-    };
-  };
-
-  public type TransactionType = {
-    #Send;
-    #Receive;
-  };
-
-  public type TransactionStatus = {
-    #Pending;
-    #Success;
-    #Failed;
-  };
-
-  public type TransactionEntry = {
-    chain : ChainType;
-    direction : TransactionType;
-    amount : Nat;
-    timestamp : Nat64;
-    details : ChainDetails;
-    note : ?Text;
-    status : TransactionStatus;
-  };
-  // ===== END TRANSACTION HISTORY =====
-
-  public type ReportId = Nat32;
-
-  stable var reportsStorage : [(Principal, [Report])] = [];
+  stable var reportsStorage : [(Principal, [Types.Report])] = [];
   stable var faucetClaimsStorage : [(Principal, Time.Time)] = [];
-  stable var stakeRecordsStorage : [(Principal, StakeRecord)] = [];
-  stable var userWalletsStorage : [(Principal, UserWallet)] = [];
-  stable var analyzeAddressStorage : [(Principal, [AnalyzeHistory])] = [];
-  stable var transactionHistoryStorage : [(Principal, [TransactionEntry])] = [];
-  stable var analyzeHistoryStorage : [(Principal, [AnalyzeHistory])] = [];
+  stable var stakeRecordsStorage : [(Principal, Types.StakeRecord)] = [];
+  stable var userWalletsStorage : [(Principal, Types.UserWallet)] = [];
+  stable var analyzeAddressStorage : [(Principal, [Types.AnalyzeHistory])] = [];
+  stable var transactionHistoryStorage : [(Principal, [Types.TransactionEntry])] = [];
+  stable var analyzeHistoryStorage : [(Principal, [Types.AnalyzeHistory])] = [];
 
-  var reportStore = Map.HashMap<Principal, [Report]>(0, Principal.equal, Principal.hash);
+  var reportStore = Map.HashMap<Principal, [Types.Report]>(0, Principal.equal, Principal.hash);
   var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
-  var stakeRecordsStore = Map.HashMap<Principal, StakeRecord>(0, Principal.equal, Principal.hash);
-  var userWalletsStore = Map.HashMap<Principal, UserWallet>(0, Principal.equal, Principal.hash);
-  var analyzeAddressStore = Map.HashMap<Principal, [AnalyzeHistory]>(0, Principal.equal, Principal.hash);
-  var transactionHistoryStore = Map.HashMap<Principal, [TransactionEntry]>(0, Principal.equal, Principal.hash);
-  var analyzeHistoryStore = Map.HashMap<Principal, [AnalyzeHistory]>(0, Principal.equal, Principal.hash);
+  var stakeRecordsStore = Map.HashMap<Principal, Types.StakeRecord>(0, Principal.equal, Principal.hash);
+  var userWalletsStore = Map.HashMap<Principal, Types.UserWallet>(0, Principal.equal, Principal.hash);
+  var analyzeAddressStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
+  var transactionHistoryStore = Map.HashMap<Principal, [Types.TransactionEntry]>(0, Principal.equal, Principal.hash);
+  var analyzeHistoryStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
 
-  private stable var next_report_id : ReportId = 0;
+  private stable var next_report_id : Types.ReportId = 0;
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
@@ -205,7 +64,7 @@ actor Fradium {
 
   system func postupgrade() {
     // Restore data from stable storage
-    reportStore := Map.HashMap<Principal, [Report]>(reportsStorage.size(), Principal.equal, Principal.hash);
+    reportStore := Map.HashMap<Principal, [Types.Report]>(reportsStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in reportsStorage.vals()) {
         reportStore.put(key, value);
     };
@@ -215,34 +74,34 @@ actor Fradium {
         faucetClaimsStore.put(key, value);
     };
 
-    stakeRecordsStore := Map.HashMap<Principal, StakeRecord>(stakeRecordsStorage.size(), Principal.equal, Principal.hash);
+    stakeRecordsStore := Map.HashMap<Principal, Types.StakeRecord>(stakeRecordsStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in stakeRecordsStorage.vals()) {
         stakeRecordsStore.put(key, value);
     };
 
-    userWalletsStore := Map.HashMap<Principal, UserWallet>(userWalletsStorage.size(), Principal.equal, Principal.hash);
+    userWalletsStore := Map.HashMap<Principal, Types.UserWallet>(userWalletsStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in userWalletsStorage.vals()) {
         userWalletsStore.put(key, value);
     };
 
-    analyzeAddressStore := Map.HashMap<Principal, [AnalyzeHistory]>(analyzeAddressStorage.size(), Principal.equal, Principal.hash);
+    analyzeAddressStore := Map.HashMap<Principal, [Types.AnalyzeHistory]>(analyzeAddressStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in analyzeAddressStorage.vals()) {
         analyzeAddressStore.put(key, value);
     };
 
-    transactionHistoryStore := Map.HashMap<Principal, [TransactionEntry]>(transactionHistoryStorage.size(), Principal.equal, Principal.hash);
+    transactionHistoryStore := Map.HashMap<Principal, [Types.TransactionEntry]>(transactionHistoryStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in transactionHistoryStorage.vals()) {
         transactionHistoryStore.put(key, value);
     };
 
-    analyzeHistoryStore := Map.HashMap<Principal, [AnalyzeHistory]>(analyzeHistoryStorage.size(), Principal.equal, Principal.hash);
+    analyzeHistoryStore := Map.HashMap<Principal, [Types.AnalyzeHistory]>(analyzeHistoryStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in analyzeHistoryStorage.vals()) {
         analyzeHistoryStore.put(key, value);
     };
   };
 
-  public query func get_reports() : async Result<[Report], Text> {
-    var allReports : [Report] = [];
+  public query func get_reports() : async Types.Result<[Types.Report], Text> {
+    var allReports : [Types.Report] = [];
     
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
@@ -253,7 +112,7 @@ actor Fradium {
     return #Ok(allReports);
   };
 
-  public query func get_report(report_id : ReportId) : async Result<Report, Text> {
+  public query func get_report(report_id : Types.ReportId) : async Types.Result<Types.Report, Text> {
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
         if (report.report_id == report_id) {
@@ -339,14 +198,9 @@ actor Fradium {
   };
 
   // ===== COMMUNITY REPORT & STAKE FUNCTIONS =====
-  public type GetMyReportsParams = Report and {
-    stake_amount : Nat;
-    reward : Nat;
-    unstaked_at : ?Time.Time;
-  };
 
   // Reusable function to calculate reward for reporter
-  private func calculate_reporter_reward(report : Report, stakeAmount : Nat) : Nat {
+  private func calculate_reporter_reward(report : Types.Report, stakeAmount : Nat) : Nat {
     // Check if report was validated by community (YES majority)
     let isReportValidated = is_vote_correct(report, true); // Check if YES majority
     
@@ -361,7 +215,7 @@ actor Fradium {
   };
 
   // Reusable function to calculate reward for voter
-  private func calculate_voter_reward(report : Report, voteType : Bool, stakeAmount : Nat) : Nat {
+  private func calculate_voter_reward(report : Types.Report, voteType : Bool, stakeAmount : Nat) : Nat {
     // Check if vote was correct
     let isVoteCorrect = is_vote_correct(report, voteType);
     
@@ -375,7 +229,7 @@ actor Fradium {
     return rewardAmount;
   };
 
-  public shared({ caller }) func get_my_reports() : async Result<[GetMyReportsParams], Text> {
+  public shared({ caller }) func get_my_reports() : async Types.Result<[Types.GetMyReportsParams], Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
     };
@@ -383,7 +237,7 @@ actor Fradium {
     switch (reportStore.get(caller)) {
       case (?reports) {
         // Convert reports to GetMyReportsParams format
-        let reportsWithStakeInfo = Array.map(reports, func (report : Report) : GetMyReportsParams {
+        let reportsWithStakeInfo = Array.map(reports, func (report : Types.Report) : Types.GetMyReportsParams {
           // Get stake record for this report
           var stakeAmount : Nat = 0;
           var reward : Nat = 0;
@@ -429,19 +283,12 @@ actor Fradium {
     };
   };
 
-  public type GetMyVotesParams = Report and {
-    stake_amount : Nat;
-    reward : Nat;
-    vote_type : Bool;
-    unstaked_at : ?Time.Time;
-  };
-
-  public shared({ caller }) func get_my_votes() : async Result<[GetMyVotesParams], Text> {
+  public shared({ caller }) func get_my_votes() : async Types.Result<[Types.GetMyVotesParams], Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
     };
 
-    var votedReports : [GetMyVotesParams] = [];
+    var votedReports : [Types.GetMyVotesParams] = [];
     
     // Get all stake records for this caller with role Voter
     for ((staker, stakeRecord) in stakeRecordsStore.entries()) {
@@ -455,7 +302,7 @@ actor Fradium {
                   // Calculate reward for voter
                   let reward = calculate_voter_reward(report, vote_type, stakeRecord.amount);
                   
-                  let voteReport : GetMyVotesParams = {
+                  let voteReport : Types.GetMyVotesParams = {
                     report_id = report.report_id;
                     reporter = report.reporter;
                     chain = report.chain;
@@ -488,16 +335,7 @@ actor Fradium {
     return #Ok(votedReports);
   };
 
-  public type CreateReportParams = {
-    chain : Text;
-    address : Text;
-    category : Text;
-    description : Text;
-    url : ?Text;
-    evidence : [Text];
-    stake_amount : Nat;
-  };
-  public shared({ caller }) func create_report(params : CreateReportParams) : async Result<Text, Text> {
+  public shared({ caller }) func create_report(params : Types.CreateReportParams) : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
     };
@@ -545,7 +383,7 @@ actor Fradium {
     next_report_id += 1;
 
     // Record the stake
-    let stakeRecord : StakeRecord = {
+    let stakeRecord : Types.StakeRecord = {
       staker = caller;
       amount = params.stake_amount;
       staked_at = Time.now();
@@ -555,7 +393,7 @@ actor Fradium {
     };
     stakeRecordsStore.put(caller, stakeRecord);
 
-    let new_report : Report = {
+    let new_report : Types.Report = {
       report_id = new_report_id;
       reporter = caller;
       chain = params.chain;
@@ -582,18 +420,13 @@ actor Fradium {
     return #Ok("Report created successfully with ID: " # Nat32.toText(new_report_id));
   };
 
-  public type VoteReportParams = {
-    stake_amount : Nat;
-    vote_type : Bool;
-    report_id : ReportId;
-  };
-  public shared({ caller }) func vote_report(params : VoteReportParams) : async Result<Text, Text> {
+  public shared({ caller }) func vote_report(params : Types.VoteReportParams) : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
 
     // Find the report
-    var targetReport : ?Report = null;
+    var targetReport : ?Types.Report = null;
     var reportOwner : ?Principal = null;
     
     for ((principal, reports) in reportStore.entries()) {
@@ -660,7 +493,7 @@ actor Fradium {
         };
 
         // Record the stake
-        let stakeRecord : StakeRecord = {
+        let stakeRecord : Types.StakeRecord = {
           staker = caller;
           amount = params.stake_amount;
           staked_at = Time.now();
@@ -671,7 +504,7 @@ actor Fradium {
         stakeRecordsStore.put(caller, stakeRecord);
 
         // Update the report with new vote
-        let newVoter : Voter = {
+        let newVoter : Types.Voter = {
           voter = caller;
           vote = params.vote_type;
           vote_weight = (1 * calculate_activity_score(caller)) / 1000;
@@ -691,7 +524,7 @@ actor Fradium {
           report.votes_no + 1
         };
 
-        let updatedReport : Report = {
+        let updatedReport : Types.Report = {
           report_id = report.report_id;
           reporter = report.reporter;
           chain = report.chain;
@@ -715,7 +548,7 @@ actor Fradium {
               case null { [] };
             };
 
-            let updatedReports = Array.map(existingReports, func (r : Report) : Report {
+            let updatedReports = Array.map(existingReports, func (r : Types.Report) : Types.Report {
               if (r.report_id == report.report_id) {
                 updatedReport
               } else {
@@ -737,7 +570,7 @@ actor Fradium {
   };
 
   // Reusable function to check if a vote is correct based on majority and quorum
-  private func is_vote_correct(report : Report, vote_type : Bool) : Bool {
+  private func is_vote_correct(report : Types.Report, vote_type : Bool) : Bool {
     // Check if minimum quorum is met
     let totalVoters = report.voted_by.size();
     if (totalVoters < MINIMUM_QUORUM) {
@@ -771,7 +604,7 @@ actor Fradium {
     return isVoteCorrect;
   };
 
-  public shared({ caller }) func unstake_voted_report(report_id : ReportId) : async Result<Text, Text> {
+  public shared({ caller }) func unstake_voted_report(report_id : Types.ReportId) : async Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -792,7 +625,7 @@ actor Fradium {
         };
 
         // Find the report to check if voting deadline has passed
-        var targetReport : ?Report = null;
+        var targetReport : ?Types.Report = null;
         var reportOwner : ?Principal = null;
         
         for ((principal, reports) in reportStore.entries()) {
@@ -868,7 +701,7 @@ actor Fradium {
             };
 
             // Update stake record to mark as unstaked
-            let updatedStakeRecord : StakeRecord = {
+            let updatedStakeRecord : Types.StakeRecord = {
               staker = stakeRecord.staker;
               amount = stakeRecord.amount;
               staked_at = stakeRecord.staked_at;
@@ -888,7 +721,7 @@ actor Fradium {
     };
   };
 
-  public shared({ caller }) func unstake_created_report(report_id : ReportId) : async Result<Text, Text> {
+  public shared({ caller }) func unstake_created_report(report_id : Types.ReportId) : async Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -917,7 +750,7 @@ actor Fradium {
         };
 
         // Find the report to check if voting deadline has passed
-        var targetReport : ?Report = null;
+        var targetReport : ?Types.Report = null;
         var reportOwner : ?Principal = null;
         
         for ((principal, reports) in reportStore.entries()) {
@@ -982,7 +815,7 @@ actor Fradium {
             };
 
             // Update stake record to mark as unstaked
-            let updatedStakeRecord : StakeRecord = {
+            let updatedStakeRecord : Types.StakeRecord = {
               staker = stakeRecord.staker;
               amount = stakeRecord.amount;
               staked_at = stakeRecord.staked_at;
@@ -1091,10 +924,7 @@ actor Fradium {
   };
 
   // ===== WALLET APP =====
-  public type CreateWalletParams = {
-    addresses: [WalletAddress];
-  };
-  public shared({ caller }) func create_wallet(params : CreateWalletParams) : async Result<Text, Text> {
+  public shared({ caller }) func create_wallet(params : Types.CreateWalletParams) : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -1108,7 +938,7 @@ actor Fradium {
     };
 
     // Create new wallet
-    let newWallet : UserWallet = {
+    let newWallet : Types.UserWallet = {
       principal = caller;
       addresses = params.addresses;
       created_at = Time.now();
@@ -1120,7 +950,7 @@ actor Fradium {
     return #Ok("Wallet created successfully with " # Nat.toText(params.addresses.size()) # " addresses");
   };
 
-  public shared({ caller }) func get_wallet() : async Result<UserWallet, Text> {
+  public shared({ caller }) func get_wallet() : async Types.Result<Types.UserWallet, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -1137,15 +967,11 @@ actor Fradium {
   };
 
   // ===== ANALYZE ADDRESS =====
-  public type GetAnalyzeAddressResult = {
-    is_safe: Bool;
-    report: ?Report;
-  };
-  public shared({ caller }) func analyze_address(address : Text) : async Result<GetAnalyzeAddressResult, Text> {
+  public shared({ caller }) func analyze_address(address : Text) : async Types.Result<Types.GetAnalyzeAddressResult, Text> {
     // Cari report yang memiliki address tersebut
     var found : Bool = false;
     var isUnsafe : Bool = false;
-    var foundReport : ?Report = null;
+    var foundReport : ?Types.Report = null;
     
     for ((_, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
@@ -1173,7 +999,7 @@ actor Fradium {
       let isSafe = not isUnsafe;
       
       // If address is not safe, save to history
-      let historyEntry : AnalyzeHistory = {
+      let historyEntry : Types.AnalyzeHistory = {
         address = address;
         is_safe = isSafe;
         analyzed_type = #CommunityVote;
@@ -1197,19 +1023,12 @@ actor Fradium {
     };
   };
 
-  public type CreateAnalyzeHistoryParams = {
-    address: Text;
-    is_safe: Bool;
-    analyzed_type: AnalyzeHistoryType;
-    metadata: Text;
-    token_type: TokenType;
-  };
-  public shared({ caller }) func create_analyze_history(params : CreateAnalyzeHistoryParams) : async Result<[AnalyzeHistory], Text> {
+  public shared({ caller }) func create_analyze_history(params : Types.CreateAnalyzeHistoryParams) : async Types.Result<[Types.AnalyzeHistory], Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
     
-    let historyEntry : AnalyzeHistory = {
+    let historyEntry : Types.AnalyzeHistory = {
       address = params.address;
       is_safe = params.is_safe;
       analyzed_type = params.analyzed_type;
@@ -1229,7 +1048,7 @@ actor Fradium {
     return #Ok(updatedHistory);
   };
 
-  public shared({ caller }) func get_analyze_history() : async Result<[AnalyzeHistory], Text> {
+  public shared({ caller }) func get_analyze_history() : async Types.Result<[Types.AnalyzeHistory], Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -1245,21 +1064,13 @@ actor Fradium {
   };
 
   // ===== TRANSACTION HISTORY =====
-  public type CreateTransactionHistoryParams = {
-    chain : ChainType;
-    direction : TransactionType;
-    amount : Nat;
-    timestamp : Nat64;
-    details : ChainDetails;
-    note : ?Text;
-  };
-  public shared({ caller }) func create_transaction_history(params : CreateTransactionHistoryParams) : async Result<Text, Text> {
+  public shared({ caller }) func create_transaction_history(params : Types.CreateTransactionHistoryParams) : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
 
     // Create new transaction entry
-    let newTransaction : TransactionEntry = {
+    let newTransaction : Types.TransactionEntry = {
       chain = params.chain;
       direction = params.direction;
       amount = params.amount;
@@ -1282,7 +1093,7 @@ actor Fradium {
     return #Ok("Transaction history created successfully");
   };
 
-  public shared({ caller }) func get_transaction_history() : async Result<[TransactionEntry], Text> {
+  public shared({ caller }) func get_transaction_history() : async Types.Result<[Types.TransactionEntry], Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -1337,7 +1148,7 @@ actor Fradium {
               
               if (not existsInHistory) {
                 // Create new Receive transaction for this UTXO
-                let newTransaction : TransactionEntry = {
+                let newTransaction : Types.TransactionEntry = {
                   chain = #Bitcoin;
                   direction = #Receive;
                   amount = Nat64.toNat(utxo.value);
@@ -1356,7 +1167,7 @@ actor Fradium {
                 updatedHistory := Array.append(updatedHistory, [newTransaction]);
               } else if (needsStatusUpdate) {
                 // Update pending transaction status to Success
-                updatedHistory := Array.map<TransactionEntry, TransactionEntry>(updatedHistory, func (tx : TransactionEntry) : TransactionEntry {
+                updatedHistory := Array.map<Types.TransactionEntry, Types.TransactionEntry>(updatedHistory, func (tx : Types.TransactionEntry) : Types.TransactionEntry {
                   switch (tx.details) {
                     case (#Bitcoin(btcDetails)) {
                       if (btcDetails.txid == utxo.txidHex and tx.status == #Pending) {
@@ -1393,9 +1204,9 @@ actor Fradium {
 
 
   // ADMIN - DEBUG ONLY - DELETE LATER
-  public func admin_change_report_deadline(report_id : ReportId, new_deadline : Time.Time) : async Result<Text, Text> {
+  public func admin_change_report_deadline(report_id : Types.ReportId, new_deadline : Time.Time) : async Result<Text, Text> {
     // Find the report
-    var targetReport : ?Report = null;
+    var targetReport : ?Types.Report = null;
     var reportOwner : ?Principal = null;
     
     for ((principal, reports) in reportStore.entries()) {
@@ -1413,7 +1224,7 @@ actor Fradium {
       };
       case (?report) {
         // Update the report with new deadline
-        let updatedReport : Report = {
+        let updatedReport : Types.Report = {
           report_id = report.report_id;
           reporter = report.reporter;
           chain = report.chain;
@@ -1437,7 +1248,7 @@ actor Fradium {
               case null { [] };
             };
 
-            let updatedReports = Array.map(existingReports, func (r : Report) : Report {
+            let updatedReports = Array.map(existingReports, func (r : Types.Report) : Types.Report {
               if (r.report_id == report.report_id) {
                 updatedReport
               } else {
@@ -1456,9 +1267,9 @@ actor Fradium {
     };
   };
 
-  public func admin_delete_report(report_id : ReportId) : async Result<Text, Text> {
+  public func admin_delete_report(report_id : Types.ReportId) : async Result<Text, Text> {
     // Find the report
-    var targetReport : ?Report = null;
+    var targetReport : ?Types.Report = null;
     var reportOwner : ?Principal = null;
     
     for ((principal, reports) in reportStore.entries()) {
@@ -1483,7 +1294,7 @@ actor Fradium {
               case null { [] };
             };
 
-            let filteredReports = Array.filter(existingReports, func (r : Report) : Bool {
+            let filteredReports = Array.filter(existingReports, func (r : Types.Report) : Bool {
               r.report_id != report.report_id
             });
 

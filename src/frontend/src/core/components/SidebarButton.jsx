@@ -1,9 +1,8 @@
 import React from "react";
 import { cn } from "@/core/lib/utils";
 
-const NeoButton = ({ children, icon, onClick, className = "", buttonClassName = "", active, ...props }) => {
-  const baseClasses = `
-    w-full
+const NeoButton = ({ children, icon, onClick, className = "", buttonClassName = "", active, size = "default", ...props }) => {
+  let baseClasses = `
     flex items-center gap-3
     font-medium text-[#000510]
     bg-[#9BEB83]
@@ -12,14 +11,17 @@ const NeoButton = ({ children, icon, onClick, className = "", buttonClassName = 
     active:translate-y-0 active:translate-x-0
     transition-transform duration-150 ease-in-out
   `;
-
-  const defaultPaddingClasses = "px-4 py-3";
-
+  let defaultPaddingClasses = "px-4 py-3 w-full";
+  let fontSize = "text-[14px]";
+  if (size === "sm") {
+    defaultPaddingClasses = "px-3 py-2";
+    fontSize = "text-[13px]";
+  }
   return (
-    <div className={`bg-[#823EFD]`}>
+    <div className={size === "sm" ? "bg-[#823EFD] max-w-xs mx-auto" : "bg-[#823EFD]"}>
       <button type="button" onClick={onClick} className={cn(baseClasses, defaultPaddingClasses, buttonClassName)} {...props}>
         {icon && (typeof icon === "string" ? <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] " /> : icon)}
-        <span className="text-[14px]">{children}</span>
+        <span className={fontSize}>{children}</span>
       </button>
     </div>
   );

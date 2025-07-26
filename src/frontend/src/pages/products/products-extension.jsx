@@ -1,7 +1,60 @@
 import React from "react";
 import SidebarButton from "@/core/components/SidebarButton";
 
+// Custom hook untuk deteksi mobile
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 600);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
 const ProductsExtension = () => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    // Layout mobile khusus
+    return (
+      <div className="min-h-screen bg-[#000510] text-white font-inter w-full pb-16">
+        {/* Hero Section */}
+        <section className="w-full flex flex-col items-center mt-20 justify-center pt-10 px-4">
+          <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-2">FRADIUM EXTENSION</span>
+          <h1 className="text-[24px] font-medium leading-tight mb-8 text-center">Security that follows you,<br />anywhere you Browse</h1>
+          <SidebarButton className="w-full max-w-xs h-12 text-base">Download Extension</SidebarButton>
+        </section>
+
+        {/* Gambar utama */}
+        <div className="w-full flex justify-center items-center mb-4 mt-10 px-2">
+          <img src="/assets/images/products-extension.png" alt="Fradium Extension UI" className="w-full max-w-[340px] rounded-2xl" />
+        </div>
+
+        {/* About Section */}
+        <section className="w-full flex flex-col items-center px-4 mt-2">
+          <span className="block text-[#9beb83] text-[13px] font-semibold tracking-[0.15em] mb-1">KEY FEATURE</span>
+          <h2 className="text-[20px] font-medium mb-2 text-center">About Fradium Extension</h2>
+          <p className="text-[#B0B6BE] text-[14px] max-w-[340px] font-normal leading-[1.6] text-justify mb-4">Fradium Extension is a browser tool designed to help you assess the safety of blockchain interactions as you navigate Web3 platforms. After downloading and installing the extension, you can analyse wallet addresses and smart contracts directly from your browser. The extension runs checks in the background and displays risk information on the spot, so you can review potential threats without leaving the page or switching to another tool.</p>
+        </section>
+
+        {/* Gambar kedua */}
+        <div className="w-full flex justify-center items-center my-6 px-2">
+          <img src="/assets/images/products-extension-works.png" alt="How It Works" className="w-full max-w-[340px] rounded-2xl" />
+        </div>
+
+        {/* How it works */}
+        <section className="w-full flex flex-col items-center px-4 mt-2">
+          <span className="block text-[#9beb83] text-[13px] font-semibold tracking-[0.15em] mb-1">KEY FEATURE</span>
+          <h2 className="text-[20px] font-medium mb-2 text-center">How It Works</h2>
+          <p className="text-[#B0B6BE] text-[14px] max-w-[340px] font-normal leading-[1.6] text-justify">To use the Fradium Extension, simply download and install it on your browser. Once installed, you have two ways to scan wallet addresses or smart contracts. You can highlight the address or contract on any page, right-click, and select 'Scan with Fradium'. Alternatively, you can open the extension, enter the address or contract manually, and click the analyse button to check its risk level. Both options give you clear results directly in your browser, so you can verify before interacting.</p>
+        </section>
+      </div>
+    );
+  }
+
+  // Layout desktop lama
   return (
     <div className="min-h-screen bg-[#000510] mb-32 text-white font-inter w-full">
       {/* Hero Section */}
