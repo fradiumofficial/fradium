@@ -74,14 +74,6 @@ In the growing world of decentralized finance, users interact with thousands of 
 - Fully on-chain community reporting and voting system.
 - Developed custom $FUM token supporting ICRC-1 and ICRC-2 for staking, voting, and contributor rewards.
 
-## Architecture Diagram
-
-![Fradium Architecture Diagram](docs/images/architecture.png)
-
-## User Flow Diagram
-
-![Fradium UserFlow Diagram](docs/images/userflow.png)
-
 ## Buiild and Run Yourself
 
 ### Prerequisites
@@ -144,6 +136,14 @@ Once bitcoind is running successfully on your local machine, you can proceed to 
    chmod +x ./scripts/build.fradium_token.sh
    ./script/build.fradium_token.sh
   ```
+
+## Architecture Diagram
+
+![Fradium Architecture Diagram](docs/images/architecture.png)
+
+## User Flow Diagram
+
+![Fradium UserFlow Diagram](docs/images/userflow.png)
 
 ## 🛣️ Fradium Roadmap
 
