@@ -1456,7 +1456,7 @@ actor Fradium {
     };
   };
 
-  public shared({ caller }) func admin_delete_report(report_id : ReportId) : async Result<Text, Text> {
+  public func admin_delete_report(report_id : ReportId) : async Result<Text, Text> {
     // Find the report
     var targetReport : ?Report = null;
     var reportOwner : ?Principal = null;
@@ -1516,4 +1516,17 @@ actor Fradium {
       };
     };
   };
+
+  public func admin_delete_wallet(principal : Principal) : async Result<Text, Text> {
+    switch (userWalletsStore.get(principal)) {
+      case (?_) {
+        userWalletsStore.delete(principal);
+        return #Ok("Wallet deleted successfully");
+      };
+      case null {
+        return #Err("Wallet not found");
+      };
+    };
+  };
+  
 }

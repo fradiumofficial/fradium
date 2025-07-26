@@ -1,5 +1,5 @@
 use solana::{
-    client, solana_wallet::SolanaWallet, spl, state::init_state, validate_caller_not_anonymous,
+    client, solana_wallet::SolanaWallet, spl, state::{init_state, read_state}, validate_caller_not_anonymous,
     InitArg,
 };
 use candid::{Nat, Principal};
@@ -407,6 +407,16 @@ async fn get_account_owner(account: &Pubkey) -> Pubkey {
         .unwrap_or_else(|| panic!("Account not found for pubkey `{account}`"))
         .owner;
     Pubkey::from_str(&owner).unwrap()
+}
+
+#[update]
+async fn get_init_arg() -> InitArg {
+    read_state(|state| InitArg {
+        sol_rpc_canister_id: state.sol_rpc_canister_id(),
+        solana_network: Some(state.solana_network().clone()),
+        ed25519_key_name: Some(state.ed25519_key_name()),
+        solana_commitment_level: Some(state.solana_commitment_level()),
+    })
 }
 
 fn main() {}

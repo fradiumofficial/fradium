@@ -42,7 +42,7 @@ echo ""
 echo -e "${BLUE}🏭 Canister Balances:${NC}"
 
 # Array of canisters to check
-canisters=("backend" "token" "bitcoin" "ransomware_detector" "chatbot" "frontend")
+canisters=("backend" "token" "bitcoin" "ransomware_detector" "chatbot" "frontend" "solana")
 
 for canister in "${canisters[@]}"; do
     echo -n "   📦 ${canister}: "

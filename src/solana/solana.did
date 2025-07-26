@@ -187,6 +187,7 @@ service : (InitArg) -> {
   create_associated_token_account : (opt principal, text) -> (text);
   create_nonce_account : (opt principal) -> (text);
   get_balance : (opt text) -> (nat);
+  get_init_arg : () -> (InitArg);
   get_nonce : (opt text) -> (text);
   get_spl_token_balance : (opt text, text) -> (TokenAmount);
   get_transactions_by_address : (text, opt nat32) -> (
