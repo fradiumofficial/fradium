@@ -1,7 +1,9 @@
+# 🌟 Fradium
+
 <br />
 <div align="center">
   <a href="https://github.com/fradiumofficial/fradium">
-    <img src="docs/images/cover.png" alt="Fradium Cover">
+    <img src="docs/images/assets/cover.png" alt="Fradium Cover">
   </a>
 
   <h3 align="center">Fradium – The Trust Layer for Web3 Transactions</h3>
@@ -142,6 +144,34 @@ Once bitcoind is running successfully on your local machine, you can proceed to 
    chmod +x ./scripts/build.fradium_token.sh
    ./script/build.fradium_token.sh
   ```
+
+## 🛣️ Fradium Roadmap
+
+### 🧱 Phase 1 – Ecosystem Foundation
+
+- Launch **browser extension** for address analysis and transaction safety
+- Develop and deploy **Web Wallet App** with **Solana** and **Bitcoin** transaction support
+- Deploy **community-driven reporting system** with voting and contribution tracking
+- Launch **$FUM token** with full **ICRC-1** and **ICRC-2** standard support
+- Release browser extension on **Chrome Web Store** and **Firefox Add-ons**
+- Integrate **AI detection** for **Ethereum** and **Bitcoin** address analysis
+
+### 🌍 Phase 2 – Expanding Accessibility
+
+- Develop **cross-platform mobile wallet** using Flutter (**Android & iOS**)
+- Enable **Ethereum transaction support** and **ERC20 token** management
+- Add **SPL token** support for Solana (e.g., **USDC**, **USDT**)
+- Expand **AI detection** to support **Solana** address analysis
+
+### 🔗 Phase 3 – Full Multi-Chain Experience
+
+- Launch **integrated browser extension wallet** for unified user experience
+- Enable full support for **ICP native tokens** including `ckBTC`, `ckETH`, `ckUSDC`, and other **chain-key assets**
+
+### 🏛️ Phase 4 – Decentralized Governance & Advanced Integration
+
+- Integrate Fradium into the **SNS (Service Nervous System)** for decentralized protocol ownership and governance
+- Begin research and prototyping for **Fradium SDK/API** to allow third-party apps to access our **AI** and **security tools**
 
 ## Created by Fradium Team
 
