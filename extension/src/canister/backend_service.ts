@@ -3,6 +3,7 @@ import { idlFactory } from "../../../src/declarations/backend";
 import type { _SERVICE } from "../../../src/declarations/backend/backend.did";
 import { createAgent } from "./base_service";
 import { getCanisterId } from "@/lib/config";
+import type { CommunityAnalysisResponse } from "@/modules/analyze_address/model/AnalyzeAddressModel";
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
@@ -37,14 +38,14 @@ export const clearBackendActor = (): void => {
 };
 
 // Helper functions for common backend operations
-export const analyzeAddressCommunity = async (address: string) => {
+export const analyzeAddressCommunity = async (address: string): Promise<CommunityAnalysisResponse>  => {
   try {
     console.log('Creating backend actor...');
     const actor = await getBackendActor();
     console.log('Backend actor created, calling analyze_address...');
     const result = await actor.analyze_address(address);
     console.log('Analysis result:', result);
-    return result;
+    return result as CommunityAnalysisResponse;
   } catch (error) {
     console.error('Error in analyzeAddressCommunity:', error);
     throw new Error(`Failed to analyze address: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -85,22 +85,31 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
     return true;
   }
 
-  if (request.type === "ANALYZE_ADDRESS_COMMUNITY") {
+if (request.type === "ANALYZE_ADDRESS_COMMUNITY") {
     const addressToAnalyze = request.address;
 
     const callCanisterBackend = async () => {
       try {
         console.log(`Starting community analysis for address: ${addressToAnalyze}`);
         
-        // 1. Analisa alamat menggunakan ransomware detector
         const result = await analyzeAddressCommunity(addressToAnalyze);
-        console.log('Community analysis completed:', result);
-        
-        sendResponse({ success: true, data: result });
+
+        const convertResult = convertBigIntToString(result);
+
+        sendResponse({ success: true, data: convertResult });
       } catch (error) {
         console.error("Error calling ICP canister for community analysis:", error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        sendResponse({ success: false, error: errorMessage });
+        
+        let safeErrorMessage = 'An unknown error occurred during community analysis.';
+        if (error instanceof Error) {
+          safeErrorMessage = error.message;
+        } else if (typeof error === 'object' && error !== null) {
+          safeErrorMessage = `Canister error: ${JSON.stringify(error)}`;
+        } else if (error) {
+          safeErrorMessage = String(error);
+        }
+        
+        sendResponse({ success: false, error: safeErrorMessage });
       }
     };
 
@@ -108,3 +117,26 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
     return true;
   }
 });
+
+// Mengubah semua nilai BigInt dalam objek menjadi string secara rekursif.
+function convertBigIntToString(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertBigIntToString(item));
+  }
+  if (typeof obj === 'object') {
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        newObj[key] = convertBigIntToString(obj[key]);
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}

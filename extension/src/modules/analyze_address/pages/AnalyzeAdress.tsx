@@ -17,7 +17,7 @@ function AnalyzeAddress() {
     event.preventDefault();
     if (!isValidAddress(address)) return;
     
-    startAnalysis(address);
+    startAnalysis(address.trim());
   };
   
   const isSubmitDisabled = loading || !isValidAddress(address);

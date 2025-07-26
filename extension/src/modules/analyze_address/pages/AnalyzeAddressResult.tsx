@@ -157,31 +157,6 @@ function AnalyzeAdressResult() {
         </div>
       </div>
 
-      {/* Additional Analysis Info */}
-      {/* <div className="m-4">
-        <div className="bg-white/5 p-4 rounded">
-          <h3 className="text-[16px] font-semibold mb-2">Analysis Summary</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-white/70">Address Status:</span>
-              <span className={`font-medium ${isAddressSafe ? 'text-green-400' : 'text-red-400'}`}>
-                {isAddressSafe ? 'CLEAN' : 'SUSPICIOUS'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/70">Ransomware Probability:</span>
-              <span className={`font-medium ${result.ransomware_probability > 0.5 ? 'text-red-400' : 'text-green-400'}`}>
-                {(result.ransomware_probability * 100).toFixed(4)}%
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-white/70">Analysis Confidence:</span>
-              <span className="font-medium text-white">{result.confidence_level}</span>
-            </div>
-          </div>
-        </div>
-      </div> */}
-
       {/* Action Button */}
       <div className="p-4">
         <NeoButton icon={Wallet} onClick={() => navigate(ROUTES.HOME)}>

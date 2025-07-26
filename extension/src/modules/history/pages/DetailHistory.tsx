@@ -3,7 +3,7 @@ import ProfileHeader from "@/components/ui/header";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getHistoryItemById, type HistoryItem } from "@/lib/localStorage";
-import type { ICPAnalysisResult, ICPAnalysisCommunityResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
+import type { ICPAnalysisResult, CommunityAnalysisResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
 import type { Root as SmartContractAnalysisResult } from "@/modules/analyze_smartcontract/model/AnalyzeSmartContractModel";
 import { ROUTES } from "@/constants/routes";
 import NeoButton from "@/components/ui/custom-button";
@@ -96,10 +96,10 @@ function DetailHistory() {
       return Math.round(100 - riskScore);
     } else {
       // Untuk community, gunakan vote ratio sebagai confidence
-      const communityResult = historyItem.result as ICPAnalysisCommunityResult;
-      if (communityResult.report) {
-        const votesYes = communityResult.report.votes_yes || 0;
-        const votesNo = communityResult.report.votes_no || 0;
+      const communityResult = historyItem.result as CommunityAnalysisResult;
+      if (communityResult.report?.[0]) {
+        const votesYes = Number(communityResult.report[0].votes_yes || 0);
+        const votesNo = Number(communityResult.report[0].votes_no || 0);
         const totalVotes = votesYes + votesNo;
         return totalVotes > 0 ? Math.round((Math.max(votesYes, votesNo) / totalVotes) * 100) : 50;
       }
@@ -171,7 +171,7 @@ function DetailHistory() {
         },
       ];
     } else {
-      const communityResult = historyItem.result as ICPAnalysisCommunityResult;
+      const communityResult = historyItem.result as CommunityAnalysisResult;
       const details = [
         { 
           label: "Community Status", 
@@ -184,17 +184,17 @@ function DetailHistory() {
         details.push(
           { 
             label: "Report Category", 
-            value: communityResult.report.category || "Unknown", 
-            color: "white" 
+            value: communityResult.report[0].category || "Unknown", 
+            color: "white"
           },
           { 
             label: "Votes Yes", 
-            value: (communityResult.report.votes_yes || 0).toString(), 
+            value: (communityResult.report[0].votes_yes || 0).toString(), 
             color: "#4A834C" 
           },
           { 
             label: "Votes No", 
-            value: (communityResult.report.votes_no || 0).toString(), 
+            value: (communityResult.report[0].votes_no || 0).toString(), 
             color: "#E49B9C" 
           },
         );

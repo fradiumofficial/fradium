@@ -36,7 +36,7 @@ export function SafetyCard({
       {/* Description */}
       <div className="mt-4">
         <p className="text-white/70 font-normal text-[14px]">
-          This bitcoin address appears to be clean with no suspicious activity detected in our comprehensive database.
+          This address appears to be clean with no suspicious activity detected in our comprehensive database.
         </p>
       </div>
     </div>

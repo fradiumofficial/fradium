@@ -1,73 +1,52 @@
-import type { CommunityAnalysisResponse, ICPAnalysisCommunityResult, ICPAnalysisResult } from "../model/AnalyzeAddressModel";
+import type { 
+  CommunityAnalysisResponse,
+  CommunityAnalysisResult,
+  ICPAnalysisResult,
+  RansomwareAnalysisResponse,
+} from "../model/AnalyzeAddressModel";
 
-export const analyzeAddress = (address: string): Promise<ICPAnalysisResult> => {
-  return new Promise((resolve, reject) => {
-    // Set timeout di sisi client juga
-    const timeoutId = setTimeout(() => {
-      reject(new Error("Request timeout - analysis is taking too long"));
-    }, 130000); // 2.5 menit
-
-    chrome.runtime.sendMessage(
-      { type: 'ANALYZE_ADDRESS', address },
-      (response) => {
-        clearTimeout(timeoutId);
-        
-        if (chrome.runtime.lastError) {
-          return reject(new Error(chrome.runtime.lastError.message));
-        }
-
-        if (!response) {
-          return reject(new Error("No response received from background script"));
-        }
-
-        if (response.success) {
-          const canisterResponse = response.data;
-
-          // Handle Result<RansomwareResult, String> dari canister
-          if ('Ok' in canisterResponse) {
-            resolve(canisterResponse.Ok as ICPAnalysisResult);
-          } else if ('Err' in canisterResponse) {
-            reject(new Error(canisterResponse.Err));
-          } else {
-            // Fallback jika response langsung berupa data
-            resolve(canisterResponse as ICPAnalysisResult);
-          }
-        } else {
-          reject(new Error(response.error || "Failed to analyze address"));
-        }
-      }
-    );
+/**
+ * Menganalisis alamat menggunakan canister ransomware (sudah di-refactor).
+ */
+export const analyzeAddressRansomware = async (address: string): Promise<ICPAnalysisResult> => {
+  const responseData = await sendMessageToBackground<RansomwareAnalysisResponse>({
+    type: 'ANALYZE_ADDRESS',
+    address,
   });
+
+  if ('Ok' in responseData) {
+    return responseData.Ok;
+  } 
+  throw new Error(responseData.Err);
 };
 
-export const analyzeAddressCommunity = async (address: string): Promise<ICPAnalysisCommunityResult> => {
-  try {
-    console.log('Calling community canister for address:', address);
-    
-    const response = await chrome.runtime.sendMessage({
-      type: "ANALYZE_ADDRESS_COMMUNITY",
-      address: address,
-    });
+/**
+ * Menganalisis alamat menggunakan canister komunitas (sudah di-refactor).
+ */
+export const analyzeAddressCommunity = async (address: string): Promise<CommunityAnalysisResult> => {
+  const responseData = await sendMessageToBackground<CommunityAnalysisResponse>({
+    type: "ANALYZE_ADDRESS_COMMUNITY",
+    address,
+  });
 
-    console.log('Community canister response:', response);
-
-    if (!response.success) {
-      throw new Error(response.error || 'Community analysis failed');
-    }
-
-    // Handle the Result variant from Candid
-    const result = response.data as CommunityAnalysisResponse;
-    
-    if (result.Ok) {
-      return result.Ok;
-    } else if (result.Err) {
-      throw new Error(`Community analysis error: ${result.Err}`);
-    } else {
-      // Direct result format
-      return response.data as ICPAnalysisCommunityResult;
-    }
-  } catch (error) {
-    console.error('Community analysis error:', error);
-    throw new Error(`Community analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  if ('Ok' in responseData) {
+    return responseData.Ok;
   }
+  throw new Error(responseData.Err);
 };
+
+async function sendMessageToBackground<T>(message: object): Promise<T> {
+  const response = await chrome.runtime.sendMessage(message);
+
+  if (chrome.runtime.lastError) {
+    throw new Error(chrome.runtime.lastError.message);
+  }
+  if (!response) {
+    throw new Error("No response received from background script.");
+  }
+  if (!response.success) {
+    throw new Error(response.error || "An unknown error occurred in the background script.");
+  }
+  
+  return response.data as T;
+}
