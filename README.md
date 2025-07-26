@@ -23,7 +23,7 @@ In the growing world of decentralized finance, users interact with thousands of 
 ## 📚 Complete Resources
 
 - Mainnet: https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io
-- Video Demo: https://youtu.be/tku9JgFXq68
+- Video Demo: https://youtu.be/ojrI1sVdQl0
 - Pitch Deck: https://drive.google.com/file/d/1WuzlsoFHoZEb9zIQQohGaBz3mQPe8f2B/view?usp=sharing
 - Docs: https://fradium.gitbook.io/docs
 
