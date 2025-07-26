@@ -1,5 +1,3 @@
-# 🌟 Fradium
-
 <br />
 <div align="center">
   <a href="https://github.com/fradiumofficial/fradium">
