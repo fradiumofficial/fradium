@@ -1,0 +1,17 @@
+type AddressReply = record { address : text; public_key_hex : text };
+type Result = variant { Ok : AddressReply; Err : text };
+type Result_1 = variant { Ok : text; Err : text };
+type TransferArgs = record { to_address : text; amount_wei : text };
+service : {
+  ethereum_account : () -> (Result);
+  // Transfers ETH from one account to another on Sepolia testnet.
+  // 
+  // # Arguments
+  // 
+  // * `args` - Transfer arguments containing target address and amount in wei
+  // 
+  // # Returns
+  // 
+  // Transaction hash of the transfer
+  transfer_eth : (TransferArgs) -> (Result_1);
+}

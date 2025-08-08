@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "src/ai/detector_service",
     "src/solana",
+    "src/ethereum",
 ]
 
 [workspace.package]
