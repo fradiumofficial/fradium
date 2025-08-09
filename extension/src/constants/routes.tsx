@@ -1,5 +1,5 @@
 export const ROUTES = {
-  HOME: '/',
+  HOME: '/home',
   ANALYZE_ADDRESS: '/analyze-address',
   ANALYZE_SMART_CONTRACT: '/analyze-smart-contract',
   ANALYZE_ADDRESS_RESULT: '/analyze-address-result',
@@ -10,4 +10,5 @@ export const ROUTES = {
   ANALYZE_PROGRESS: '/analyze-progress',
   FAILED: '/failed',
   ANALYZE_ADDRESS_COMMUNITY_RESULT: '/analyze-address-community-result',
+  WELCOME: '/',
 }

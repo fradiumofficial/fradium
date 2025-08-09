@@ -180,7 +180,7 @@ function DetailHistory() {
         },
       ];
       
-      if (communityResult.report) {
+      if (communityResult.report && communityResult.report.length > 0) {
         details.push(
           { 
             label: "Report Category", 

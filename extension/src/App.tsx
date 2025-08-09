@@ -12,13 +12,13 @@ import History from "./modules/history/pages/History"
 import AnalysisProgress from "./modules/analyze_address/pages/AnalyzeProgress"
 import Failed from "./modules/SEO/Failed"
 import AnalyzeAddressCommunityResult from "./modules/analyze_address/pages/AnalyzeAddressCommunityResult"
+import Welcome from "./modules/onboarding/Welcome"
 
 function App() {
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Routes>
-        <Route path={ROUTES.HOME} element={<Home />} />
         <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
         <Route path={ROUTES.ANALYZE_SMART_CONTRACT} element={<AnalyzeSmartContract />} />
         <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={<AnalyzeAdressResult />} />
@@ -29,7 +29,9 @@ function App() {
         <Route path={ROUTES.ANALYZE_PROGRESS} element={<AnalysisProgress />} />
         <Route path={ROUTES.FAILED} element={<Failed />} />
         <Route path={ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT} element={<AnalyzeAddressCommunityResult />} />
-        <Route path="*" element={<Home />} />
+        <Route path={ROUTES.HOME} element={<Home />} />
+        <Route path={ROUTES.WELCOME} element={<Welcome />} />
+        <Route path="*" element={<Welcome />} />
       </Routes>
     </ThemeProvider>
   )

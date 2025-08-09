@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fradium - Crypto Security Extension",
-  "version": "1.0.0",
-  "description": "Advanced fraud detection and prevention for crypto transactions. Analyze addresses and smart contracts to protect against scams, ransomware, and malicious activities.",
+  "version": "1.0.2",
+  "description": "Advanced fraud detection and prevention for crypto transactions. Analyze addresses, smart contracts, and ransomware",
   "author": "Fradium Official",
   "homepage_url": "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
   "action": {
@@ -15,8 +15,7 @@
     "128": "assets/icon128.png"
   },
   "permissions": [
-    "contextMenus",
-    "storage"
+    "contextMenus"
   ],
   "host_permissions": [
     "https://fradium.motionlaboratory.com/*",

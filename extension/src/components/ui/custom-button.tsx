@@ -1,13 +1,23 @@
 import React from "react";
 
+
 interface NeoButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon?: string;
+  icon?: string | any;
+  iconPosition?: 'left' | 'right';
   children: React.ReactNode;
   onClick?: () => void;
-  classname?: string;
+  className?: string;
 }
 
-const NeoButton: React.FC<NeoButtonProps> = ({ children, icon, onClick, className = '' }) => {
+
+const NeoButton: React.FC<NeoButtonProps> = ({
+  children,
+  icon,
+  iconPosition = 'left',
+  onClick,
+  className = '',
+  ...rest
+}) => {
   return (
     <div className={`bg-green-300 ${className}`}>
       <button
@@ -15,7 +25,7 @@ const NeoButton: React.FC<NeoButtonProps> = ({ children, icon, onClick, classNam
         onClick={onClick}
         className={`
           w-full
-          flex items-center justify-center gap-
+          flex items-center justify-center gap-2
           px-3 py-3
           font-bold text-white
           bg-[#823EFD]
@@ -25,10 +35,15 @@ const NeoButton: React.FC<NeoButtonProps> = ({ children, icon, onClick, classNam
           active:translate-y-0 active:translate-x-0
           transition-transform duration-150 ease-in-out
         `}
+        {...rest}
       >
-        {/* We now render an <img> tag with the src pointing to our icon path. */}
-        {icon === null ? <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] pe-1" /> : <div></div>}
+        {icon && iconPosition === 'left' && (
+          <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] me-1" />
+        )}
         <span className="text-[14px]">{children}</span>
+        {icon && iconPosition === 'right' && (
+          <img src={icon} alt="Button Icon" className="w-[20px] h-[20px] ms-1" />
+        )}
       </button>
     </div>
   );
