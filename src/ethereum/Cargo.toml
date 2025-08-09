@@ -13,7 +13,10 @@ candid = "0.10"
 ic-cdk = "0.14"
 getrandom = { version = "0.2.15", features = ["custom"] }
 ic-cdk-timers = "0.11.0"
-serde_bytes = "0.11.15"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_bytes = "0.11.17"
+serde_json = "1.0.140"
+serde_with = "3.12.0"
 
 alloy = { git = "https://github.com/ic-alloy/ic-alloy.git", tag = "v0.3.5-icp.1", default-features = false, features = [
   "icp",

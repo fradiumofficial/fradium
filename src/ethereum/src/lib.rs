@@ -1,13 +1,14 @@
-mod service;
+pub mod service;
 
 use alloy::transports::icp::{RpcApi, RpcService};
 use candid::{Nat, Principal};
 use ic_cdk::export_candid;
+use crate::service::eth_get_transaction::TxRecordDto;
 use serde_bytes::ByteBuf;
 
 // ICP uses different ECDSA key names for mainnet and local
 // development.
-fn get_ecdsa_key_name() -> String {
+pub(crate) fn get_ecdsa_key_name() -> String {
     #[allow(clippy::option_env_unwrap)]
     let dfx_network = option_env!("DFX_NETWORK").unwrap();
     match dfx_network {
@@ -18,7 +19,7 @@ fn get_ecdsa_key_name() -> String {
 }
 
 // Modify this function to determine which EVM network canister connects to
-fn get_rpc_service() -> RpcService {
+pub(crate) fn get_rpc_service() -> RpcService {
     // RpcService::EthSepolia(EthSepoliaService::Alchemy)
     // RpcService::EthMainnet(EthMainnetService::Alchemy)
     // RpcService::BaseMainnet(L2MainnetService::Alchemy)
@@ -32,7 +33,7 @@ fn get_rpc_service() -> RpcService {
 
 // The derivation path determines the Ethereum address generated
 // by the signer.
-fn create_derivation_path(principal: &Principal) -> Vec<Vec<u8>> {
+pub(crate) fn create_derivation_path(principal: &Principal) -> Vec<Vec<u8>> {
     const SCHEMA_V1: u8 = 1;
     [
         ByteBuf::from(vec![SCHEMA_V1]),
@@ -43,7 +44,7 @@ fn create_derivation_path(principal: &Principal) -> Vec<Vec<u8>> {
     .collect()
 }
 
-fn auth_guard() -> Result<(), String> {
+pub(crate) fn auth_guard() -> Result<(), String> {
     match ic_cdk::caller() {
         caller if caller == Principal::anonymous() => {
             Err("Calls with the anonymous principal are not allowed.".to_string())

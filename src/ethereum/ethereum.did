@@ -1,17 +1,27 @@
-type AddressReply = record { address : text; public_key_hex : text };
-type Result = variant { Ok : AddressReply; Err : text };
-type Result_1 = variant { Ok : text; Err : text };
-type TransferArgs = record { to_address : text; amount_wei : text };
-service : {
-  ethereum_account : () -> (Result);
-  // Transfers ETH from one account to another on Sepolia testnet.
-  // 
-  // # Arguments
-  // 
-  // * `args` - Transfer arguments containing target address and amount in wei
-  // 
-  // # Returns
-  // 
-  // Transaction hash of the transfer
-  transfer_eth : (TransferArgs) -> (Result_1);
+type AssetKindDto = variant { Eth; Erc20 : record { contract : text } };
+type Result = variant { Ok : text; Err : text };
+type Result_1 = variant { Ok : vec TxRecordDto; Err : text };
+type Result_2 = variant { Ok; Err : text };
+type TxRecordDto = record {
+  to : opt text;
+  from : text;
+  hash : text;
+  kind : AssetKindDto;
+  block_number : nat64;
+  value_wei : text;
+  timestamp : nat64;
+  inbound : bool;
+};
+service : () -> {
+  get_address : (opt principal) -> (Result);
+  get_balance : (text) -> (Result);
+  get_history : (text, nat64, nat64) -> (Result_1) query;
+  get_latest_block : () -> (nat64);
+  get_scanned_blocks : (nat64, nat64) -> (vec nat64) query;
+  get_scanned_ranges : () -> (vec record { nat64; nat64 }) query;
+  get_watched : () -> (vec text) query;
+  send_eth : (text, nat) -> (Result);
+  start_with_interval_secs : (nat64) -> ();
+  unwatch_address : (text) -> (Result_2);
+  watch_address : (text) -> (Result_2);
 }
