@@ -13,12 +13,12 @@ import AnalysisProgress from "./modules/analyze_address/pages/AnalyzeProgress";
 import Failed from "./modules/SEO/Failed";
 import AnalyzeAddressCommunityResult from "./modules/analyze_address/pages/AnalyzeAddressCommunityResult";
 import Welcome from "./modules/onboarding/Welcome";
-import BottomNavbar from "./components/bottom-appbard";
+import BottomNavbar from "./components/ui/bottom-appbar";
 
 const MainLayout = () => {
   return (
     <div className="relative min-h-screen bg-background pb-16">
-      <main className="p-4">
+      <main>
         <Outlet />
       </main>
       <BottomNavbar />
