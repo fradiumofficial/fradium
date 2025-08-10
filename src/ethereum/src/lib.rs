@@ -13,7 +13,11 @@ pub(crate) fn get_ecdsa_key_name() -> String {
     let dfx_network = option_env!("DFX_NETWORK").unwrap();
     match dfx_network {
         "local" => "dfx_test_key".to_string(),
-        "ic" => "key_1".to_string(),
+        // "ic" => "key_1".to_string(),
+
+        // Currently using sepolia for local and ic
+        "ic" => "dfx_test_key".to_string(),
+
         _ => panic!("Unsupported network."),
     }
 }
