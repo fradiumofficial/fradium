@@ -15,6 +15,7 @@ import AnalyzeAddressCommunityResult from "./modules/analyze_address/pages/Analy
 import Welcome from "./modules/onboarding/Welcome";
 import BottomNavbar from "./components/ui/bottom-appbar";
 import Account from "./modules/account/pages/Account";
+import ScanHistory from "./modules/history/pages/ScanHistory";
 
 const MainLayout = () => {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path={ROUTES.HOME} element={<Home />} />
           <Route path={ROUTES.HISTORY} element={<History />} />
+          <Route path={ROUTES.SCAN_HISTORY} element={<ScanHistory />} />
           <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
           <Route path={ROUTES.ACCOUNT} element={<Account />} />
           <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
