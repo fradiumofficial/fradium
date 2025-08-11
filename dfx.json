@@ -46,7 +46,7 @@
     "ai": {
       "type": "custom",
       "package": "ai",
-      "candid": "src/ai/detector_service/src/ai.did",
+      "candid": "src/ai/ai.did",
       "optimize": "cycles",
       "wasm": "target/wasm32-unknown-unknown/release/ai.wasm",
       "metadata": [
@@ -54,7 +54,7 @@
           "name": "candid:service"
         }
       ],
-      "build": ["cargo build --target wasm32-unknown-unknown --release -p ai", "candid-extractor target/wasm32-unknown-unknown/release/ai.wasm > src/ai/detector_service/src/ai.did"]
+      "build": ["cargo build --target wasm32-unknown-unknown --release -p ai", "candid-extractor target/wasm32-unknown-unknown/release/ai.wasm > src/ai/ai.did"]
     },
     "sol_rpc": {
       "specified_id": "lxzze-o7777-77777-aaaaa-cai",

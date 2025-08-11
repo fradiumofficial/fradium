@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "src/ai/detector_service",
+    "src/ai",
     "src/solana",
     "src/ethereum",
 ]

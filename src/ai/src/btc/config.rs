@@ -1,5 +1,5 @@
 
-pub const MODEL_BYTES: &[u8] = include_bytes!("../../../models/btc_ransomware_model_mlp.onnx");
+pub const MODEL_BYTES: &[u8] = include_bytes!("../../models/btc_risk_model_mlp.onnx");
 
 pub const SCALER_PARAMS_JSON: &str = r#"
 {
