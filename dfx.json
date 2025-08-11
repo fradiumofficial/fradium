@@ -1,6 +1,88 @@
 {
   "version": 1,
   "canisters": {
+    "backend": {
+      "main": "src/backend/main.mo",
+      "type": "motoko",
+      "dependencies": ["token", "internet_identity", "bitcoin"]
+    },
+    "frontend": {
+      "source": ["src/frontend/dist"],
+      "type": "assets",
+      "workspace": "frontend",
+      "dependencies": ["backend", "ai", "bitcoin", "token", "chatbot", "solana"]
+    },
+    "internet_identity": {
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "frontend": {},
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai",
+          "playground": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    },
+    "chatbot": {
+      "dependencies": ["llm"],
+      "main": "src/chatbot/chatbot.mo",
+      "type": "motoko"
+    },
+    "llm": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.did",
+      "wasm": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.wasm"
+    },
+    "token": {
+      "main": "src/token/token.mo",
+      "type": "motoko",
+      "build": "scripts/build.fradium_token.sh"
+    },
+    "bitcoin": {
+      "main": "src/bitcoin/Main.mo",
+      "type": "motoko"
+    },
+    "ai": {
+      "type": "custom",
+      "package": "ai",
+      "candid": "src/ai/detector_service/src/ai.did",
+      "optimize": "cycles",
+      "wasm": "target/wasm32-unknown-unknown/release/ai.wasm",
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ],
+      "build": ["cargo build --target wasm32-unknown-unknown --release -p ai", "candid-extractor target/wasm32-unknown-unknown/release/ai.wasm > src/ai/detector_service/src/ai.did"]
+    },
+    "sol_rpc": {
+      "specified_id": "lxzze-o7777-77777-aaaaa-cai",
+      "candid": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.did",
+      "package": "sol_rpc_canister",
+      "type": "custom",
+      "remote": {
+        "id": {
+          "ic": "tghme-zyaaa-aaaar-qarca-cai",
+          "playground": "tghme-zyaaa-aaaar-qarca-cai"
+        }
+      },
+      "wasm": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.wasm.gz",
+      "init_arg": "( record { manageApiKeys = null; overrideProvider = null; logFilter = opt variant { ShowAll }; numSubnetNodes = null; mode = opt variant { Demo }; } )"
+    },
+    "solana": {
+      "candid": "src/solana/solana.did",
+      "package": "solana",
+      "type": "custom",
+      "build": "src/solana/build.sh",
+      "wasm": "target/wasm32-unknown-unknown/release/solana.wasm",
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ],
+      "init_arg": "( record { solana_network = opt variant { Devnet }; ed25519_key_name = opt variant { MainnetTestKey1 }; sol_rpc_canister_id = opt principal \"tghme-zyaaa-aaaar-qarca-cai\" } )"
+    },
     "ethereum": {
       "candid": "src/ethereum/ethereum.did",
       "package": "ethereum",
@@ -17,12 +99,8 @@
     },
     "evm_rpc": {
       "candid": "https://github.com/internet-computer-protocol/evm-rpc-canister/releases/latest/download/evm_rpc.did",
-      "declarations": {
-        "output": "src/evm_rpc/declarations"
-      },
       "init_arg": "(record { })",
       "remote": {
-        "candid": "packages/evm_rpc/declarations/evm_rpc.did",
         "id": {
           "ic": "7hfb6-caaaa-aaaar-qadga-cai"
         }
@@ -36,6 +114,10 @@
     "build": {
       "args": "",
       "packtool": "mops sources"
+    },
+    "bitcoin": {
+      "enabled": true,
+      "nodes": ["127.0.0.1:18444"]
     }
   },
   "output_env_file": ".env",

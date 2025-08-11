@@ -97,29 +97,23 @@ fn post_upgrade() {
     }
 }
 
-// --- Unified Public Endpoint ---
 #[update]
-async fn analyze_address(address: String) -> Result<RansomwareResult, String> {
+async fn analyze_eth_address(
+    features: std::collections::HashMap<String, f64>,
+    address: String,
+    transaction_count: u32,
+) -> Result<RansomwareResult, String> {
     match address_detector::detect_address_type(&address) {
-        address_detector::AddressType::Bitcoin => {
-            ic_cdk::println!("Address detected as Bitcoin. Routing to BTC analyzer...");
-            btc::analyze_btc_address(&address).await
-        }
         address_detector::AddressType::Ethereum => {
-            eth::analyze_eth_address(&address).await
+            ic_cdk::println!("Address detected as Ethereum. Predicting with provided features...");
+            eth::analyze_eth_features(features, &address, transaction_count)
         }
-        address_detector::AddressType::Solana => {
-            // COMING SOON NEXT QUALIFICATION
-            Err("Currently, we do not support Solana addresses.".to_string())
-        }
-        address_detector::AddressType::Unknown => {
-            Err("Address format is unknown. Not a valid BTC or ETH address.".to_string())
-        }
+        _ => Err("Address format is unknown. Not a valid ETH address.".to_string()),
     }
 }
 
 #[update]
-async fn analyze_address_v2(
+async fn analyze_btc_address(
     features: Vec<f32>,
     address: String,
     transaction_count: u32
@@ -127,20 +121,9 @@ async fn analyze_address_v2(
     match address_detector::detect_address_type(&address) {
         address_detector::AddressType::Bitcoin => {
             ic_cdk::println!("Address detected as Bitcoin. Routing to BTC analyzer...");
-            btc::analyze_btc_address_v2(features, &address, transaction_count).await
+            btc::predict_ransomware(features, &address, transaction_count)
         }
-        address_detector::AddressType::Ethereum => {
-
-            ic_cdk::println!("Address detected as Ethereum. Routing to ETH analyzer...");
-            eth::analyze_eth_address(&address).await
-        }
-        address_detector::AddressType::Solana => {
-            // COMING SOON NEXT QUALIFICATION
-            Err("Currently, we do not support Solana addresses.".to_string())
-        }
-        address_detector::AddressType::Unknown => {
-            Err("Address format is unknown. Not a valid BTC or ETH address.".to_string())
-        }
+        _ => Err("Address format is unknown. Not a valid BTC or ETH address.".to_string()),
     }
 }
 

@@ -1,18 +1,6 @@
 type Result = variant { Ok : text; Err : text };
-type Result_1 = variant { Ok : vec TxRecordDto; Err : text };
-type Result_2 = variant { Ok; Err : text };
-type TxRecordDto = record {
-  to : opt text;
-  is_receive : bool;
-  value : text;
-  from : text;
-  hash : text;
-  block_number : nat64;
-};
-service : () -> {
-  get_address : (opt principal) -> (Result);
+service : {
+  get_address : () -> (Result);
   get_balance : (text) -> (Result);
-  get_transaction_history : (text) -> (Result_1);
   send_eth : (text, nat) -> (Result);
-  watch_address : (text) -> (Result_2);
 }

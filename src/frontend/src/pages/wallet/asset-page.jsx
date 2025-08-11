@@ -13,7 +13,8 @@ import { useAuth } from "@/core/providers/auth-provider";
 import { backend } from "declarations/backend";
 import { bitcoin } from "declarations/bitcoin";
 import { solana } from "declarations/solana";
-import { ransomware_detector } from "declarations/ransomware_detector";
+import { ai } from "declarations/ai";
+import { ethereum } from "declarations/ethereum";
 
 // UI Components
 import TransactionButton from "@/core/components/TransactionButton";
@@ -132,6 +133,24 @@ export default function AssetsPage() {
         break;
 
       case TokenType.ETHEREUM:
+        for (const address of addresses) {
+          try {
+            const balance = await ethereum.get_balance(address);
+            if ("Ok" in balance) {
+              balances[address] = Number(balance.Ok);
+            } else {
+              console.error(`Error getting Ethereum balance for ${address}:`, balance);
+              errors[address] = balance.Err;
+              balances[address] = 0;
+            }
+          } catch (error) {
+            console.error(`Error getting Ethereum balance for ${address}:`, error);
+            errors[address] = error.message;
+            balances[address] = 0;
+          }
+        }
+        break;
+
       case TokenType.FUM:
         // Placeholder for Ethereum/FUM - not implemented yet
         for (const address of addresses) {
@@ -219,7 +238,7 @@ export default function AssetsPage() {
         case TokenType.BITCOIN:
           // Bitcoin AI Analysis - Implemented
           const features = await extractFeatures(address);
-          const ransomwareReport = await ransomware_detector.analyze_address_v2(features, address, features.length);
+          const ransomwareReport = await ai.analyze_btc_address(features, address, features.length);
 
           if ("Ok" in ransomwareReport) {
             return {
@@ -538,9 +557,7 @@ export default function AssetsPage() {
   };
 
   const handleMaxAmount = () => {
-    if (selectedTokenForSend?.currentAmount && selectedTokenForSend?.tokenType === TokenType.BITCOIN) {
-      setSendAmount(selectedTokenForSend.currentAmount);
-    }
+    setSendAmount(selectedTokenForSend.currentAmount);
   };
 
   // Form validation
@@ -560,7 +577,7 @@ export default function AssetsPage() {
       return "Please enter a valid amount";
     }
 
-    if ((tokenType === TokenType.BITCOIN || tokenType === TokenType.SOLANA) && balances && Object.keys(balances).length > 0) {
+    if (balances && Object.keys(balances).length > 0) {
       const currentAmount = Object.values(balances).reduce((sum, balance) => sum + balance, 0);
       const requestedBase = amountToBaseUnit(tokenType, parseFloat(amount));
       if (requestedBase > currentAmount) {

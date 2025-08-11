@@ -9,14 +9,14 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-candid = "0.10"
-ic-cdk = "0.14"
-getrandom = { version = "0.2.15", features = ["custom"] }
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+getrandom = { workspace = true, default-features = false, features = ["custom"] }
 ic-cdk-timers = "0.11.0"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_bytes = "0.11.17"
-serde_json = "1.0.140"
-serde_with = "3.12.0"
+serde = { workspace = true, features = ["derive"] }
+serde_bytes = { workspace = true }
+serde_json = { workspace = true }
+serde_with = { workspace = true }
 
 alloy = { git = "https://github.com/ic-alloy/ic-alloy.git", tag = "v0.3.5-icp.1", default-features = false, features = [
   "icp",

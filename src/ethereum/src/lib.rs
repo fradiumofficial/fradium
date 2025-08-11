@@ -3,7 +3,6 @@ pub mod service;
 use alloy::transports::icp::{RpcApi, RpcService};
 use candid::{Nat, Principal};
 use ic_cdk::export_candid;
-use crate::service::eth_get_transaction::TxRecordDto;
 use serde_bytes::ByteBuf;
 
 // ICP uses different ECDSA key names for mainnet and local

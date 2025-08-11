@@ -1,4 +1,3 @@
-pub const BTC_MAX_TRANSACTIONS: usize = 500;
 
 pub const MODEL_BYTES: &[u8] = include_bytes!("../../../models/btc_ransomware_model_mlp.onnx");
 

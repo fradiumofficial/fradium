@@ -11,6 +11,6 @@ type RansomwareResult = record {
 };
 type Result = variant { Ok : RansomwareResult; Err : text };
 service : () -> {
-  analyze_address : (text) -> (Result);
-  analyze_address_v2 : (vec float32, text, nat32) -> (Result);
+  analyze_btc_address : (vec float32, text, nat32) -> (Result);
+  analyze_eth_address : (vec record { text; float64 }, text, nat32) -> (Result);
 }

@@ -16,39 +16,39 @@ import TokenCanister "canister:token";
 import BitcoinCanister "canister:bitcoin";
 import Types "types";
 
-actor Fradium {
+persistent actor Fradium {
   // Vote deadline in nanoseconds (1 week = 7 * 24 * 60 * 60 * 1_000_000_000)
-  private let VOTE_DEADLINE_DURATION : Time.Time = 604_800_000_000_000;
+  private transient let VOTE_DEADLINE_DURATION : Time.Time = 604_800_000_000_000;
   
   // Faucet claim cooldown in nanoseconds (48 hours = 48 * 60 * 60 * 1_000_000_000)
-  private let FAUCET_COOLDOWN_DURATION : Time.Time = 172_800_000_000_000;
+  private transient let FAUCET_COOLDOWN_DURATION : Time.Time = 172_800_000_000_000;
   
   // Unstake voter reward percentage (10% = 1/10)
-  private let UNSTAKE_VOTER_REWARD_PERCENTAGE : Nat = 10;
+  private transient let UNSTAKE_VOTER_REWARD_PERCENTAGE : Nat = 10;
   
   // Unstake created report reward percentage (25% = 1/4)
-  private let UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE : Nat = 4;
+  private transient let UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE : Nat = 4;
 
   // Minimum quorum for vote validation (minimum number of voters required)
-  private let MINIMUM_QUORUM : Nat = 1;
+  private transient let MINIMUM_QUORUM : Nat = 1;
 
-  stable var reportsStorage : [(Principal, [Types.Report])] = [];
-  stable var faucetClaimsStorage : [(Principal, Time.Time)] = [];
-  stable var stakeRecordsStorage : [(Principal, Types.StakeRecord)] = [];
-  stable var userWalletsStorage : [(Principal, Types.UserWallet)] = [];
-  stable var analyzeAddressStorage : [(Principal, [Types.AnalyzeHistory])] = [];
-  stable var transactionHistoryStorage : [(Principal, [Types.TransactionEntry])] = [];
-  stable var analyzeHistoryStorage : [(Principal, [Types.AnalyzeHistory])] = [];
+  var reportsStorage : [(Principal, [Types.Report])] = [];
+  var faucetClaimsStorage : [(Principal, Time.Time)] = [];
+  var stakeRecordsStorage : [(Principal, Types.StakeRecord)] = [];
+  var userWalletsStorage : [(Principal, Types.UserWallet)] = [];
+  var analyzeAddressStorage : [(Principal, [Types.AnalyzeHistory])] = [];
+  var transactionHistoryStorage : [(Principal, [Types.TransactionEntry])] = [];
+  var analyzeHistoryStorage : [(Principal, [Types.AnalyzeHistory])] = [];
 
-  var reportStore = Map.HashMap<Principal, [Types.Report]>(0, Principal.equal, Principal.hash);
-  var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
-  var stakeRecordsStore = Map.HashMap<Principal, Types.StakeRecord>(0, Principal.equal, Principal.hash);
-  var userWalletsStore = Map.HashMap<Principal, Types.UserWallet>(0, Principal.equal, Principal.hash);
-  var analyzeAddressStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
-  var transactionHistoryStore = Map.HashMap<Principal, [Types.TransactionEntry]>(0, Principal.equal, Principal.hash);
-  var analyzeHistoryStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
+  transient var reportStore = Map.HashMap<Principal, [Types.Report]>(0, Principal.equal, Principal.hash);
+  transient var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
+  transient var stakeRecordsStore = Map.HashMap<Principal, Types.StakeRecord>(0, Principal.equal, Principal.hash);
+  transient var userWalletsStore = Map.HashMap<Principal, Types.UserWallet>(0, Principal.equal, Principal.hash);
+  transient var analyzeAddressStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
+  transient var transactionHistoryStore = Map.HashMap<Principal, [Types.TransactionEntry]>(0, Principal.equal, Principal.hash);
+  transient var analyzeHistoryStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
 
-  private stable var next_report_id : Types.ReportId = 0;
+  private var next_report_id : Types.ReportId = 0;
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
@@ -125,7 +125,7 @@ actor Fradium {
   };
 
   // ===== FAUCET FUNCTIONS =====
-  public shared({ caller }) func claim_faucet() : async Result<Text, Text> {
+  public shared({ caller }) func claim_faucet() : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
     };
@@ -164,7 +164,7 @@ actor Fradium {
     };
   };
 
-  public shared({ caller }) func check_faucet_claim() : async Result<Text, Text> {
+  public shared({ caller }) func check_faucet_claim() : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
         return #Err("Anonymous users can't perform this action.");
     };
@@ -298,7 +298,7 @@ actor Fradium {
             // Find the report with this report_id
             for ((principal, reports) in reportStore.entries()) {
               for (report in reports.vals()) {
-                if (report.report_id == Nat32.toNat(stakeRecord.report_id)) {
+                if (Nat32.toNat(report.report_id) == Nat32.toNat(stakeRecord.report_id)) {
                   // Calculate reward for voter
                   let reward = calculate_voter_reward(report, vote_type, stakeRecord.amount);
                   
@@ -431,7 +431,7 @@ actor Fradium {
     
     for ((principal, reports) in reportStore.entries()) {
       for (report in reports.vals()) {
-        if (report.report_id == Nat32.toNat(params.report_id)) {
+        if (Nat32.toNat(report.report_id) == Nat32.toNat(params.report_id)) {
           targetReport := ?report;
           reportOwner := ?principal;
         };
@@ -604,7 +604,7 @@ actor Fradium {
     return isVoteCorrect;
   };
 
-  public shared({ caller }) func unstake_voted_report(report_id : Types.ReportId) : async Result<Text, Text> {
+  public shared({ caller }) func unstake_voted_report(report_id : Types.ReportId) : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -630,7 +630,7 @@ actor Fradium {
         
         for ((principal, reports) in reportStore.entries()) {
           for (report in reports.vals()) {
-            if (report.report_id == Nat32.toNat(report_id)) {
+            if (Nat32.toNat(report.report_id) == Nat32.toNat(report_id)) {
               targetReport := ?report;
               reportOwner := ?principal;
             };
@@ -721,7 +721,7 @@ actor Fradium {
     };
   };
 
-  public shared({ caller }) func unstake_created_report(report_id : Types.ReportId) : async Result<Text, Text> {
+  public shared({ caller }) func unstake_created_report(report_id : Types.ReportId) : async Types.Result<Text, Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
@@ -755,7 +755,7 @@ actor Fradium {
         
         for ((principal, reports) in reportStore.entries()) {
           for (report in reports.vals()) {
-            if (report.report_id == Nat32.toNat(report_id)) {
+            if (Nat32.toNat(report.report_id) == Nat32.toNat(report_id)) {
               targetReport := ?report;
               reportOwner := ?principal;
             };
@@ -857,7 +857,7 @@ actor Fradium {
             // Find the report to check if vote was correct
             for ((principal, reports) in reportStore.entries()) {
               for (report in reports.vals()) {
-                if (report.report_id == Nat32.toNat(stakeRecord.report_id)) {
+                if (Nat32.toNat(report.report_id) == Nat32.toNat(stakeRecord.report_id)) {
                   // Check if voting deadline has passed
                   let currentTime = Time.now();
                   if (currentTime > report.vote_deadline) {
@@ -890,7 +890,7 @@ actor Fradium {
             // Count valid reports (reports that were validated by community)
             for ((principal, reports) in reportStore.entries()) {
               for (report in reports.vals()) {
-                if (report.report_id == Nat32.toNat(stakeRecord.report_id)) {
+                if (Nat32.toNat(report.report_id) == Nat32.toNat(stakeRecord.report_id)) {
                   // Check if voting deadline has passed
                   let currentTime = Time.now();
                   if (currentTime > report.vote_deadline) {
@@ -1204,7 +1204,7 @@ actor Fradium {
 
 
   // ADMIN - DEBUG ONLY - DELETE LATER
-  public func admin_change_report_deadline(report_id : Types.ReportId, new_deadline : Time.Time) : async Result<Text, Text> {
+  public func admin_change_report_deadline(report_id : Types.ReportId, new_deadline : Time.Time) : async Types.Result<Text, Text> {
     // Find the report
     var targetReport : ?Types.Report = null;
     var reportOwner : ?Principal = null;
@@ -1267,7 +1267,7 @@ actor Fradium {
     };
   };
 
-  public func admin_delete_report(report_id : Types.ReportId) : async Result<Text, Text> {
+  public func admin_delete_report(report_id : Types.ReportId) : async Types.Result<Text, Text> {
     // Find the report
     var targetReport : ?Types.Report = null;
     var reportOwner : ?Principal = null;
@@ -1328,7 +1328,7 @@ actor Fradium {
     };
   };
 
-  public func admin_delete_wallet(principal : Principal) : async Result<Text, Text> {
+  public func admin_delete_wallet(principal : Principal) : async Types.Result<Text, Text> {
     switch (userWalletsStore.get(principal)) {
       case (?_) {
         userWalletsStore.delete(principal);

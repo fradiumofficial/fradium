@@ -4,11 +4,8 @@ use crate::STATE;
 
 // --- Modules internal to ETH ---
 pub mod config;
-pub mod data_extractor;
-pub mod feature_calculator;
 pub mod models;
 pub mod prediction;
-pub mod price_converter;
 
 pub fn init() -> models::ModelMetadata {
     ic_cdk::println!("[init_eth] Initializing Ethereum analyzer state...");
@@ -32,26 +29,10 @@ pub fn init() -> models::ModelMetadata {
     metadata
 }
 
-pub async fn analyze_eth_address(address: &str) -> Result<RansomwareResult, String> {
-    models::logs::drain_logs();
-    ic_cdk::println!("--- Processing ETH Address: {} ---", address);
-    let address_lowercase = address.to_lowercase();
-
-    let transactions = data_extractor::get_all_transactions(&address_lowercase).await?;
-    let tx_count = transactions.len() as u32;
-
-    if transactions.is_empty() {
-        return Err("No transactions found for this address.".to_string());
-    }
-    ic_cdk::println!("✅ Found {} combined transactions.", tx_count);
-
-    let features = feature_calculator::calculate_features(&address_lowercase, transactions).await?;
-    ic_cdk::println!("✅ Features calculated successfully.");
-
+pub fn analyze_eth_features(features: std::collections::HashMap<String, f64>, address: &str, tx_count: u32) -> Result<RansomwareResult, String> {
     STATE.with(|s| {
         let state = s.borrow();
-        let metadata = &state.eth_metadata; // Get ETH metadata from the global state
-
+        let metadata = &state.eth_metadata;
         prediction::predict_from_features(&features, metadata, address, tx_count)
     })
 }
