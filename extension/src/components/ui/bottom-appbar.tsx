@@ -5,10 +5,13 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 
-const WalletIcon: React.FC<{ className?: string }> = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
-  </svg>
+const WalletIcon: React.FC<{ className?: string; isActive?: boolean }> = ({ isActive, ...props }) => (
+  <img
+    {...props}
+    src={isActive ? "/assets/wallet-green.svg" : "/assets/wallet-grey.svg"}
+    alt="Wallet"
+    className="w-6 h-6"
+  />
 );
 
 const AnalyzerIcon: React.FC<{ className?: string }> = (props) => (
@@ -32,7 +35,7 @@ const AccountIcon: React.FC<{ className?: string }> = (props) => (
 interface NavItem {
   id: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; isActive?: boolean }>;
   path: string; // Tambahkan properti path untuk URL tujuan
 }
 
@@ -73,10 +76,14 @@ const BottomNavbar: React.FC = () => {
             )}
 
             {/* Ikon */}
-            <Icon
-              className={`w-6 h-6 mb-1 transition-colors duration-300 ${isActive ? 'text-[#9aff8a]' : 'text-gray-400'
-                }`}
-            />
+            {item.id === 'Wallet' ? (
+              <WalletIcon isActive={isActive} className="mb-1 transition-colors duration-300" />
+            ) : (
+              <Icon
+                className={`w-6 h-6 mb-1 transition-colors duration-300 ${isActive ? 'text-[#9aff8a]' : 'text-gray-400'
+                  }`}
+              />
+            )}
 
             {/* Label Teks */}
             <span

@@ -54,10 +54,10 @@ function History() {
       <div className="px-4 pb-4">
         {/* Tabs */}
         <div className="flex items-center justify-between pt-3 select-none">
-          <div className="text-white text-[18px] font-semibold">Transaction</div>
+          <div className="text-white text-[14px] font-semibold">Transaction</div>
           <button
             type="button"
-            className="text-white/60 text-[18px] font-semibold"
+            className="text-white/60 text-[14px] font-semibold"
             onClick={() => navigate(ROUTES.SCAN_HISTORY)}
           >
             Scan history
