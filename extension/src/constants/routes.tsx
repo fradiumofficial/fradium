@@ -7,6 +7,7 @@ export const ROUTES = {
   ANALYZE_SMART_CONTRACT_PROGRESS: '/analyze-smart-contract-progress',
   HISTORY: '/history',
   DETAIL_HISTORY: '/history/:id',
+  ACCOUNT: '/account',
   ANALYZE_PROGRESS: '/analyze-progress',
   FAILED: '/failed',
   ANALYZE_ADDRESS_COMMUNITY_RESULT: '/analyze-address-community-result',

@@ -3,6 +3,7 @@
 import React from 'react';
 // Impor Link dan useLocation dari react-router-dom
 import { Link, useLocation } from 'react-router-dom';
+import { ROUTES } from '@/constants/routes';
 
 const WalletIcon: React.FC<{ className?: string }> = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -36,10 +37,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'Wallet', label: 'Wallet', icon: WalletIcon, path: '/wallet' },
-  { id: 'AI Analyzer', label: 'AI Analyzer', icon: AnalyzerIcon, path: '/analyzer' },
-  { id: 'History', label: 'History', icon: HistoryIcon, path: '/history' },
-  { id: 'Account', label: 'Account', icon: AccountIcon, path: '/account' },
+  { id: 'Wallet', label: 'Wallet', icon: WalletIcon, path: ROUTES.HOME },
+  { id: 'AI Analyzer', label: 'AI Analyzer', icon: AnalyzerIcon, path: ROUTES.ANALYZE_ADDRESS },
+  { id: 'History', label: 'History', icon: HistoryIcon, path: ROUTES.HISTORY },
+  { id: 'Account', label: 'Account', icon: AccountIcon, path: ROUTES.ACCOUNT },
 ];
 
 const BottomNavbar: React.FC = () => {
@@ -47,7 +48,7 @@ const BottomNavbar: React.FC = () => {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#212121] flex justify-around items-center shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#212121] grid grid-cols-4 items-stretch shadow-lg">
       {navItems.map((item) => {
         // Tab aktif jika path saat ini dimulai dengan path item
         // Menggunakan startsWith agar sub-route juga dianggap aktif, misal /wallet/send
@@ -63,21 +64,24 @@ const BottomNavbar: React.FC = () => {
           >
             {/* Indikator aktif */}
             {isActive && (
-              <div className="absolute top-0 h-[3px] w-12 bg-[#9aff8a] rounded-b-full"></div>
+              <>
+                {/* Stroke atas */}
+                <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[2px] w-full bg-[#99E39E] rounded-b-full" />
+                {/* Gradient putih 10% di bawah stroke */}
+                <div className="pointer-events-none absolute top-[2px] left-1/2 -translate-x-1/2 w-full h-8 bg-gradient-to-b from-white/10 to-transparent" />
+              </>
             )}
-            
+
             {/* Ikon */}
             <Icon
-              className={`w-6 h-6 mb-1 transition-colors duration-300 ${
-                isActive ? 'text-[#9aff8a]' : 'text-gray-400'
-              }`}
+              className={`w-6 h-6 mb-1 transition-colors duration-300 ${isActive ? 'text-[#9aff8a]' : 'text-gray-400'
+                }`}
             />
-            
+
             {/* Label Teks */}
             <span
-              className={`transition-colors duration-300 ${
-                isActive ? 'text-[#9aff8a]' : 'text-gray-400'
-              }`}
+              className={`transition-colors duration-300 ${isActive ? 'text-[#9aff8a]' : 'text-gray-400'
+                }`}
             >
               {item.label}
             </span>

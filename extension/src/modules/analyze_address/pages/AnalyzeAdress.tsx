@@ -16,29 +16,29 @@ function AnalyzeAddress() {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!isValidAddress(address)) return;
-    
+
     startAnalysis(address.trim());
   };
-  
+
   const isSubmitDisabled = loading || !isValidAddress(address);
 
   return (
-    <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
+    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md">
       <ProfileHeader />
 
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>
 
         <form onSubmit={handleSubmit}>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Input address here..."
             className="border-1 border-white/5 p-3 w-full mt-[20px] mb-[8px] text-white text-[14px] font-normal bg-white/10 rounded"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             disabled={loading}
           />
-          
+
           <NeoButton
             icon={AnalyzeAddressIcon}
             disabled={isSubmitDisabled}
@@ -46,7 +46,7 @@ function AnalyzeAddress() {
           >
             {loading ? "Analysis..." : "Analyze Address"}
           </NeoButton>
-          
+
           {error && (
             <div className="mt-2 p-2 bg-red-500/20 border border-red-500/50 rounded">
               <p className="text-red-400 text-sm">{error}</p>

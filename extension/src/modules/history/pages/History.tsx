@@ -41,18 +41,18 @@ function History() {
     } else if (item.analysisType === 'smartcontract') {
       typeText = 'Smart Contract';
     }
-    
+
     const statusText = item.isSafe ? 'Safe' : 'Risky';
     return `${statusText} - ${typeText}`;
   };
 
   return (
-    <div className="w-[400px] h-full bg-[#25262B] text-white">
+    <div className="w-[375px] h-[600px] bg-[#25262B] text-white">
       <ProfileHeader />
 
       <div className="m-4 p-4">
         <h1 className="font-semibold text-[20px] text-white mb-4">Scan History</h1>
-        
+
         {historyItems.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-white/50">No analysis history found</p>

@@ -14,6 +14,7 @@ import Failed from "./modules/SEO/Failed";
 import AnalyzeAddressCommunityResult from "./modules/analyze_address/pages/AnalyzeAddressCommunityResult";
 import Welcome from "./modules/onboarding/Welcome";
 import BottomNavbar from "./components/ui/bottom-appbar";
+import Account from "./modules/account/pages/Account";
 
 const MainLayout = () => {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path={ROUTES.HOME} element={<Home />} />
           <Route path={ROUTES.HISTORY} element={<History />} />
           <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
+          <Route path={ROUTES.ACCOUNT} element={<Account />} />
           <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
           <Route
             path={ROUTES.ANALYZE_SMART_CONTRACT}
