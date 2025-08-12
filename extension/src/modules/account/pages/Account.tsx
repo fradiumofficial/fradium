@@ -1,7 +1,11 @@
 import ProfileHeader from "@/components/ui/header";
 import LogoutButton from "@/components/ui/logout-button";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
 
 function Account() {
+    const navigate = useNavigate();
+
     return (
         <div className="w-[375px] h-[600px] bg-[#25262B] text-white overflow-y-auto pb-20">
             <ProfileHeader />
@@ -50,7 +54,10 @@ function Account() {
                     </div>
 
                     {/* Setting */}
-                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                    <div
+                        className="flex items-center justify-between py-4 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
+                        onClick={() => navigate(ROUTES.SETTING)}
+                    >
                         <div className="flex items-center">
                             <img src="/assets/setting.svg" alt="Setting" className="w-5 h-5 mr-4" />
                             <span className="text-white text-[16px]">Setting</span>
