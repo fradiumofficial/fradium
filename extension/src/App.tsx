@@ -16,6 +16,7 @@ import Welcome from "./modules/onboarding/Welcome";
 import BottomNavbar from "./components/ui/bottom-appbar";
 import Account from "./modules/account/pages/Account";
 import ScanHistory from "./modules/history/pages/ScanHistory";
+import AIAnalyzer from "./modules/ai_analyzer/AIAnalyzer";
 
 const MainLayout = () => {
   return (
@@ -40,6 +41,8 @@ function App() {
           <Route path={ROUTES.SCAN_HISTORY} element={<ScanHistory />} />
           <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
           <Route path={ROUTES.ACCOUNT} element={<Account />} />
+
+          <Route path={ROUTES.AI_ANALYZER} element={<AIAnalyzer />} />
           <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
           <Route
             path={ROUTES.ANALYZE_SMART_CONTRACT}

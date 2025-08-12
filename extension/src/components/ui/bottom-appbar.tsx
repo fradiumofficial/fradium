@@ -41,7 +41,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'Wallet', label: 'Wallet', icon: WalletIcon, path: ROUTES.HOME },
-  { id: 'AI Analyzer', label: 'AI Analyzer', icon: AnalyzerIcon, path: ROUTES.ANALYZE_ADDRESS },
+  { id: 'AI Analyzer', label: 'AI Analyzer', icon: AnalyzerIcon, path: ROUTES.AI_ANALYZER },
   { id: 'History', label: 'History', icon: HistoryIcon, path: ROUTES.HISTORY },
   { id: 'Account', label: 'Account', icon: AccountIcon, path: ROUTES.ACCOUNT },
 ];
@@ -50,16 +50,37 @@ const BottomNavbar: React.FC = () => {
   // Dapatkan informasi lokasi (URL) saat ini
   const location = useLocation();
 
+  const isAnalyzerPath = (pathname: string) => {
+    return [
+      ROUTES.AI_ANALYZER,
+      ROUTES.ANALYZE_ADDRESS,
+      ROUTES.ANALYZE_SMART_CONTRACT,
+      ROUTES.ANALYZE_PROGRESS,
+      ROUTES.ANALYZE_ADDRESS_RESULT,
+      ROUTES.ANALYZE_SMART_CONTRACT_RESULT,
+      ROUTES.ANALYZE_SMART_CONTRACT_PROGRESS,
+    ].some((p) => pathname.startsWith(p));
+  };
+
+  const isHistoryPath = (pathname: string) => {
+    return [ROUTES.HISTORY, ROUTES.SCAN_HISTORY, ROUTES.DETAIL_HISTORY.replace(':id', '')].some((p) => pathname.startsWith(p));
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#212121] grid grid-cols-4 items-stretch shadow-lg">
       {navItems.map((item) => {
-        // Tab aktif jika path saat ini dimulai dengan path item
-        // Menggunakan startsWith agar sub-route juga dianggap aktif, misal /wallet/send
-        const isActive = location.pathname.startsWith(item.path);
+        const pathname = location.pathname;
+        let isActive = false;
+        if (item.id === 'AI Analyzer') {
+          isActive = isAnalyzerPath(pathname);
+        } else if (item.id === 'History') {
+          isActive = isHistoryPath(pathname);
+        } else {
+          isActive = pathname.startsWith(item.path);
+        }
         const Icon = item.icon;
 
         return (
-          // Ganti button dengan Link, arahkan ke 'path' yang ditentukan
           <Link
             to={item.path}
             key={item.id}
