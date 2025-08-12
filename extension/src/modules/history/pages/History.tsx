@@ -48,7 +48,7 @@ function History() {
   const SHOW_EMPTY = false;
 
   return (
-    <div className="w-[375px] h-[600px] bg-[#25262B] text-white">
+    <div className="w-[375px] h-[600px] bg-[#25262B] text-white overflow-y-auto pb-20">
       <ProfileHeader />
 
       <div className="px-4 pb-4">

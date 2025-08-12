@@ -1,15 +1,83 @@
 import ProfileHeader from "@/components/ui/header";
+import LogoutButton from "@/components/ui/logout-button";
 
 function Account() {
     return (
-        <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md">
+        <div className="w-[375px] h-[600px] bg-[#25262B] text-white overflow-y-auto pb-20">
             <ProfileHeader />
-            <div className="m-4 p-4">
-                <h1 className="font-semibold text-[20px] text-white mb-2">Account</h1>
-                <p className="text-white/60 text-sm">
-                    Halaman akun masih dummy. Tambahkan detail profil, pengaturan, dan
-                    preferensi di sini.
-                </p>
+
+            <div className="px-4 pt-4">
+                {/* Menu Items */}
+                <div className="space-y-0">
+                    {/* Contact */}
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center">
+                            <img src="/assets/contact.svg" alt="Contact" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">Contact</span>
+                        </div>
+                    </div>
+
+                    {/* Refer your friends */}
+                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                        <div className="flex items-center">
+                            <img src="/assets/share.svg" alt="Share" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">Refer your friends</span>
+                        </div>
+                    </div>
+
+                    {/* Why Fradium */}
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center">
+                            <img src="/assets/info.svg" alt="Info" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">Why Fradium</span>
+                        </div>
+                    </div>
+
+                    {/* Documentation */}
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center">
+                            <img src="/assets/documentation.svg" alt="Documentation" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">Documentation</span>
+                        </div>
+                    </div>
+
+                    {/* Support */}
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center">
+                            <img src="/assets/help.svg" alt="Help" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">Support</span>
+                        </div>
+                    </div>
+
+                    {/* Setting */}
+                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                        <div className="flex items-center">
+                            <img src="/assets/setting.svg" alt="Setting" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">Setting</span>
+                        </div>
+                    </div>
+
+                    {/* Source Code */}
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center">
+                            <img src="/assets/GithubLogo.svg" alt="GitHub" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">Source Code</span>
+                        </div>
+                    </div>
+
+                    {/* X Account - No divider after this */}
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center">
+                            <img src="/assets/XLogo.svg" alt="X" className="w-5 h-5 mr-4" />
+                            <span className="text-white text-[16px]">X Account</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Logout Button */}
+                <div className="mt-8">
+                    <LogoutButton />
+                </div>
             </div>
         </div>
     );

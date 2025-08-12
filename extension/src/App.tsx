@@ -20,8 +20,8 @@ import AIAnalyzer from "./modules/ai_analyzer/AIAnalyzer";
 
 const MainLayout = () => {
   return (
-    <div className="relative min-h-screen bg-background pb-16">
-      <main>
+    <div className="relative w-[375px] h-[600px] overflow-hidden bg-[#25262B]">
+      <main className="w-full h-full">
         <Outlet />
       </main>
       <BottomNavbar />

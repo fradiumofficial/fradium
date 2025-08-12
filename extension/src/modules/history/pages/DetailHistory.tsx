@@ -20,7 +20,7 @@ function DetailHistory() {
       console.log('DetailHistory: Loading history item with ID:', id);
       const item = getHistoryItemById(id);
       console.log('DetailHistory: History item loaded:', item);
-      
+
       if (item) {
         console.log('DetailHistory: Item details:', {
           analysisType: item.analysisType,
@@ -29,7 +29,7 @@ function DetailHistory() {
           isSafe: item.isSafe
         });
       }
-      
+
       setHistoryItem(item);
       setLoading(false);
     } else {
@@ -40,7 +40,7 @@ function DetailHistory() {
 
   if (loading) {
     return (
-      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md flex items-center justify-center">
+      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md flex items-center justify-center">
         <p>Loading...</p>
       </div>
     );
@@ -48,13 +48,13 @@ function DetailHistory() {
 
   if (!historyItem) {
     return (
-      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
+      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
         <ProfileHeader />
         <div className="m-4 text-center">
           <h1 className="font-semibold text-[20px] text-white mb-4">History Not Found</h1>
           <p className="text-white/50 mb-4">The requested history item could not be found.</p>
-          <NeoButton 
-            icon={Wallet} 
+          <NeoButton
+            icon={Wallet}
             onClick={() => navigate(ROUTES.HISTORY)}
           >
             Back to History
@@ -68,13 +68,13 @@ function DetailHistory() {
   if (!historyItem.result || !historyItem.analysisType) {
     console.error('DetailHistory: Invalid history item structure:', historyItem);
     return (
-      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
+      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
         <ProfileHeader />
         <div className="m-4 text-center">
           <h1 className="font-semibold text-[20px] text-white mb-4">Invalid Data</h1>
           <p className="text-white/50 mb-4">The history item data is corrupted or invalid.</p>
-          <NeoButton 
-            icon={Wallet} 
+          <NeoButton
+            icon={Wallet}
             onClick={() => navigate(ROUTES.HISTORY)}
           >
             Back to History
@@ -111,25 +111,25 @@ function DetailHistory() {
     if (historyItem.analysisType === 'icp') {
       const icpResult = historyItem.result as ICPAnalysisResult;
       return [
-        { 
-          label: "Ransomware Probability", 
-          value: `${((icpResult.ransomware_probability || 0) * 100).toFixed(2)}%`, 
-          color: (icpResult.ransomware_probability || 0) > 0.5 ? "#E49B9C" : "#4A834C" 
+        {
+          label: "Ransomware Probability",
+          value: `${((icpResult.ransomware_probability || 0) * 100).toFixed(2)}%`,
+          color: (icpResult.ransomware_probability || 0) > 0.5 ? "#E49B9C" : "#4A834C"
         },
-        { 
-          label: "Confidence Level", 
-          value: icpResult.confidence_level || "UNKNOWN", 
-          color: "white" 
+        {
+          label: "Confidence Level",
+          value: icpResult.confidence_level || "UNKNOWN",
+          color: "white"
         },
-        { 
-          label: "Transactions Analyzed", 
-          value: (icpResult.transactions_analyzed || 0).toString(), 
-          color: "white" 
+        {
+          label: "Transactions Analyzed",
+          value: (icpResult.transactions_analyzed || 0).toString(),
+          color: "white"
         },
-        { 
-          label: "Threshold Used", 
-          value: (icpResult.threshold_used || 0).toString().substring(0, 6), 
-          color: "white" 
+        {
+          label: "Threshold Used",
+          value: (icpResult.threshold_used || 0).toString().substring(0, 6),
+          color: "white"
         },
       ];
     } else if (historyItem.analysisType === 'smartcontract') {
@@ -144,68 +144,68 @@ function DetailHistory() {
       };
 
       return [
-        { 
-          label: "Total Issues", 
-          value: summary.total_issues.toString(), 
-          color: summary.total_issues > 0 ? "#E49B9C" : "#4A834C" 
+        {
+          label: "Total Issues",
+          value: summary.total_issues.toString(),
+          color: summary.total_issues > 0 ? "#E49B9C" : "#4A834C"
         },
-        { 
-          label: "High Severity", 
-          value: summary.high.toString(), 
-          color: summary.high > 0 ? "#E49B9C" : "#4A834C" 
+        {
+          label: "High Severity",
+          value: summary.high.toString(),
+          color: summary.high > 0 ? "#E49B9C" : "#4A834C"
         },
-        { 
-          label: "Medium Severity", 
-          value: summary.medium.toString(), 
-          color: summary.medium > 0 ? "#FFA500" : "#4A834C" 
+        {
+          label: "Medium Severity",
+          value: summary.medium.toString(),
+          color: summary.medium > 0 ? "#FFA500" : "#4A834C"
         },
-        { 
-          label: "Low Severity", 
-          value: summary.low.toString(), 
-          color: summary.low > 0 ? "#FFFF00" : "#4A834C" 
+        {
+          label: "Low Severity",
+          value: summary.low.toString(),
+          color: summary.low > 0 ? "#FFFF00" : "#4A834C"
         },
-        { 
-          label: "Risk Score", 
-          value: `${(historyItem.riskScore || 0).toFixed(1)}%`, 
-          color: (historyItem.riskScore || 0) > 50 ? "#E49B9C" : "#4A834C" 
+        {
+          label: "Risk Score",
+          value: `${(historyItem.riskScore || 0).toFixed(1)}%`,
+          color: (historyItem.riskScore || 0) > 50 ? "#E49B9C" : "#4A834C"
         },
       ];
     } else {
       const communityResult = historyItem.result as CommunityAnalysisResult;
       const details = [
-        { 
-          label: "Community Status", 
-          value: communityResult.is_safe ? "Safe" : "Risky", 
-          color: communityResult.is_safe ? "#4A834C" : "#E49B9C" 
+        {
+          label: "Community Status",
+          value: communityResult.is_safe ? "Safe" : "Risky",
+          color: communityResult.is_safe ? "#4A834C" : "#E49B9C"
         },
       ];
-      
+
       if (communityResult.report && communityResult.report.length > 0) {
         details.push(
-          { 
-            label: "Report Category", 
-            value: communityResult.report[0].category || "Unknown", 
+          {
+            label: "Report Category",
+            value: communityResult.report[0].category || "Unknown",
             color: "white"
           },
-          { 
-            label: "Votes Yes", 
-            value: (communityResult.report[0].votes_yes || 0).toString(), 
-            color: "#4A834C" 
+          {
+            label: "Votes Yes",
+            value: (communityResult.report[0].votes_yes || 0).toString(),
+            color: "#4A834C"
           },
-          { 
-            label: "Votes No", 
-            value: (communityResult.report[0].votes_no || 0).toString(), 
-            color: "#E49B9C" 
+          {
+            label: "Votes No",
+            value: (communityResult.report[0].votes_no || 0).toString(),
+            color: "#E49B9C"
           },
         );
       }
-      
+
       return details;
     }
   };
 
   const analysisDetails = getAnalysisDetails();
-  
+
   // Safe determination of reporter based on analysis type
   const getReportedBy = () => {
     switch (historyItem.analysisType) {
@@ -219,20 +219,20 @@ function DetailHistory() {
         return "Fradium Analysis";
     }
   };
-  
+
   const reportedBy = getReportedBy();
 
   return (
-    <div className="w-[400px] h-full space-y-4 bg-[#25262B] text-white shadow-md">
+    <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
       <ProfileHeader />
 
       <div className="m-4">
         <h1 className="font-semibold text-[20px] text-white mb-4">Detail History</h1>
-        
-        <SafetyCard 
-          confidence={getConfidencePercentage()} 
-          title={"Address"} 
-          isSafe={historyItem.isSafe} 
+
+        <SafetyCard
+          confidence={getConfidencePercentage()}
+          title={"Address"}
+          isSafe={historyItem.isSafe}
         />
 
         {/* Address Name */}
@@ -261,9 +261,9 @@ function DetailHistory() {
           <div className="flex flex-row space-x-4 py-1">
             <p className="w-32 flex font-normal text-[14px] text-white/50">Analysis Type</p>
             <p className="flex-1 text-white text-[14px] font-medium">
-              {historyItem.analysisType === 'icp' ? 'AI Analysis' : 
-               historyItem.analysisType === 'smartcontract' ? 'Smart Contract Analysis' : 
-               'Community Report'}
+              {historyItem.analysisType === 'icp' ? 'AI Analysis' :
+                historyItem.analysisType === 'smartcontract' ? 'Smart Contract Analysis' :
+                  'Community Report'}
             </p>
           </div>
           <div className="flex flex-row space-x-4 py-1">
@@ -279,23 +279,22 @@ function DetailHistory() {
             {(() => {
               const smartContractResult = historyItem.result as SmartContractAnalysisResult;
               const issues = smartContractResult.issues || [];
-              
+
               if (issues.length === 0) {
                 return (
                   <p className="text-green-300 text-[14px]">✅ No security issues detected</p>
                 );
               }
-              
+
               return (
                 <div className="space-y-2 max-h-[200px] overflow-y-auto">
                   {issues.slice(0, 3).map((issue, index) => (
                     <div key={index} className="bg-white/5 p-3 rounded">
                       <div className="flex items-center mb-1">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          (issue.severity || "").toLowerCase() === 'high' ? 'bg-red-500/20 text-red-300' :
-                          (issue.severity || "").toLowerCase() === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-                          'bg-blue-500/20 text-blue-300'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${(issue.severity || "").toLowerCase() === 'high' ? 'bg-red-500/20 text-red-300' :
+                            (issue.severity || "").toLowerCase() === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                              'bg-blue-500/20 text-blue-300'
+                          }`}>
                           {issue.severity || "Unknown"}
                         </span>
                       </div>
@@ -320,8 +319,8 @@ function DetailHistory() {
 
         {/* Action Button */}
         <div className="mt-6 p-4">
-          <NeoButton 
-            icon={Wallet} 
+          <NeoButton
+            icon={Wallet}
             onClick={() => navigate(ROUTES.HISTORY)}
           >
             Back to History

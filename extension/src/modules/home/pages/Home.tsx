@@ -49,7 +49,7 @@ function Home() {
   };
 
   return (
-    <div className="w-[375px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
+    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
       {/* Header Sections */}
       <ProfileHeader />
 
@@ -107,7 +107,7 @@ function Home() {
                         active:translate-y-0 active:translate-x-0
                         transition-transform duration-150 ease-in-out"
                       >
-                        <MoveUpRight className="text-black"/>
+                        <MoveUpRight className="text-black" />
                       </button>
                     </div>
                   </div>
@@ -130,7 +130,7 @@ function Home() {
                         active:translate-y-0 active:translate-x-0
                         transition-transform duration-150 ease-in-out"
                       >
-                        <MoveDownLeft className="text-black"/>
+                        <MoveDownLeft className="text-black" />
                       </button>
                     </div>
                   </div>

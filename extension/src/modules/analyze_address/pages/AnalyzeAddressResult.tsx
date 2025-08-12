@@ -12,7 +12,7 @@ function AnalyzeAdressResult() {
   const navigate = useNavigate();
   const result = location.state?.result as ICPAnalysisResult;
   const address = location.state?.address as string;
-  
+
   // Inisialisasi state dengan nilai yang benar langsung
   const [isAddressSafe, setIsAddressSafe] = useState<boolean>(() => {
     return result?.is_ransomware === false;
@@ -29,7 +29,7 @@ function AnalyzeAdressResult() {
     if (isAddressSafe) {
       return [
         "No suspicious transaction patterns detected",
-        "Transaction volume within normal range", 
+        "Transaction volume within normal range",
         "No connections to known malicious addresses",
         "Address activity appears legitimate"
       ];
@@ -72,7 +72,7 @@ function AnalyzeAdressResult() {
   // Guard clause untuk menangani case ketika result tidak ada
   if (!result) {
     return (
-      <div className="w-[400px] h-full flex items-center justify-center bg-[#25262B] text-white">
+      <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex items-center justify-center overflow-y-auto pb-20">
         <p>No analysis result found</p>
       </div>
     );
@@ -82,7 +82,7 @@ function AnalyzeAdressResult() {
   const confidencePercentage = Math.round((result.confidence_level === "HIGH" ? 95 : result.confidence_level === "MEDIUM" ? 75 : 50));
 
   return (
-    <div className="w-[400px] h-full space-y-4 bg-[#25262B] text-white shadow-md">
+    <div className="w-[375px] h-[600px] bg-[#25262B] text-white overflow-y-auto pb-20">
 
       {/* Header Sections */}
       <ProfileHeader />
@@ -90,48 +90,48 @@ function AnalyzeAdressResult() {
       {/* Analyze Address Section */}
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>
-        
+
         {/* Display analyzed address */}
         <div className="mt-4 bg-white/5 p-3  rounded">
           <p className="text-sm font-mono break-all">{address}</p>
         </div>
 
-        <SafetyCard 
-          confidence={confidencePercentage} 
-          title={"Address"} 
-          isSafe={isAddressSafe} 
+        <SafetyCard
+          confidence={confidencePercentage}
+          title={"Address"}
+          isSafe={isAddressSafe}
         />
-        
+
         <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Analysis Details</h1>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white/5 flex-1 items-center gap-2 p-4">
             <p className="font-medium text-[18px] pb-2">{result.transactions_analyzed}</p>
             <div className="flex flex-row">
-              <img src={Wallet} alt="Transactions" className="w-5 h-5"/>
+              <img src={Wallet} alt="Transactions" className="w-5 h-5" />
               <p className="font-normal text-[14px] text-white/60 ps-1">Transactions</p>
             </div>
           </div>
-          
+
           <div className="bg-white/5 flex-1 items-center gap-2 p-4">
             <p className="font-medium text-[18px] pb-2">{(result.ransomware_probability * 100).toFixed(2)}%</p>
             <div className="flex flex-row">
-              <img src={Wallet} alt="Risk" className="w-5 h-5"/>
+              <img src={Wallet} alt="Risk" className="w-5 h-5" />
               <p className="font-normal text-[14px] text-white/60 ps-1">Risk Score</p>
             </div>
           </div>
-          
+
           <div className="bg-white/5 flex-1 items-center gap-2 p-4">
             <p className="font-medium text-[18px] pb-2">{result.confidence_level}</p>
             <div className="flex flex-row">
-              <img src={Wallet} alt="Confidence" className="w-5 h-5"/>
+              <img src={Wallet} alt="Confidence" className="w-5 h-5" />
               <p className="font-normal text-[14px] text-white/60 ps-1">Confidence</p>
             </div>
           </div>
-          
+
           <div className="bg-white/5 flex-1 items-center gap-2 p-4">
             <p className="font-medium text-[18px] pb-2">{result.threshold_used.toString().substring(0, 4)}</p>
             <div className="flex flex-row">
-              <img src={Wallet} alt="Threshold" className="w-5 h-5"/>
+              <img src={Wallet} alt="Threshold" className="w-5 h-5" />
               <p className="font-normal text-[14px] text-white/60 ps-1">Threshold</p>
             </div>
           </div>
@@ -161,7 +161,7 @@ function AnalyzeAdressResult() {
       <div className="p-4">
         <NeoButton icon={Wallet} onClick={() => navigate(ROUTES.HOME)}>
           Complete
-        </NeoButton>  
+        </NeoButton>
       </div>
     </div>
   );
