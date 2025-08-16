@@ -18,3 +18,11 @@ getrandom = { workspace = true, default-features = false, features = ["custom"] 
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
 hex = { workspace = true }
 num-traits = { workspace = true }
+thiserror = "1.0.61"
+
+[profile.release]
+opt-level = 's'  # Optimize for size
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

@@ -7,10 +7,15 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use getrandom::{register_custom_getrandom, Error};
 
+//Ini hapus kalau mau pindahin ke FE
+use ic_cdk::api::management_canister::http_request::TransformArgs;
+use ic_cdk::api::management_canister::http_request::HttpResponse;
+
 // --- Main Modules ---
 mod address_detector;
 mod btc;
 mod eth;
+mod sol;
 mod shared_models;
 use shared_models::RansomwareResult;
 
@@ -124,6 +129,17 @@ async fn analyze_btc_address(
             btc::predict_ransomware(features, &address, transaction_count)
         }
         _ => Err("Address format is unknown. Not a valid BTC or ETH address.".to_string()),
+    }
+}
+
+#[update]
+async fn analyze_sol_address(address: String) -> Result<RansomwareResult, String> {
+    match address_detector::detect_address_type(&address) {
+        address_detector::AddressType::Solana => {
+            ic_cdk::println!("Address detected as Solana. Routing to SOL analyzer...");
+            sol::analyze_solana_address(&address).await
+        }
+        _ => Err("This endpoint only accepts valid Solana addresses.".to_string()),
     }
 }
 
