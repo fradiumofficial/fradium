@@ -43,7 +43,7 @@ function AnalyzeSmartContract() {
   }
 
   return (
-    <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
+    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
       { /* Header Sections */}
       <ProfileHeader />
 

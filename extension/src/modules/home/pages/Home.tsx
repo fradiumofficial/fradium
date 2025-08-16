@@ -13,6 +13,8 @@ import {
 import { useWallet } from "@/lib/walletContext";
 import { useNetwork } from "@/modules/all_network/networkContext";
 import type { WalletAddress } from "@/icp/services/backend_service";
+import { ROUTES } from "@/constants/routes";
+import { useNavigate } from "react-router-dom";
 
 interface TokenBalance {
   symbol: string;
@@ -36,7 +38,7 @@ function Home() {
     networkFilters
   } = useWallet();
   const { selectedNetwork, getNetworkDisplayName, getNetworkTokenType } = useNetwork();
-
+  const navigate = useNavigate();
 
   const toggleVisibility = () => setHideBalance(!hideBalance);
 
@@ -47,12 +49,12 @@ function Home() {
 
   const handleSendClick = () => {
     // Navigate to wallet home page for send functionality
-    // navigate(ROUTES.WALLET_HOME);
+    navigate(ROUTES.SEND);
   };
 
   const handleReceiveClick = () => {
     // Navigate to wallet home page for receive functionality
-    // navigate(ROUTES.WALLET_HOME);
+    navigate(ROUTES.RECEIVE);
   };
 
   useEffect(() => {

@@ -25,6 +25,8 @@ import { WalletProvider } from "./lib/walletContext";
 import CreateWallet from "./modules/wallet/pages/CreateWallet";
 import AuthGuard from "./lib/AuthGuard";
 import ManageNetwork from "./modules/all_network/pages/ManageNetwork";
+import Receive from "./modules/transaction/pages/Receive";
+import Send from "./modules/transaction/pages/Send";
 
 const MainLayout = () => {
   return (
@@ -92,6 +94,8 @@ function App() {
                 path={ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT}
                 element={<AnalyzeAddressCommunityResult />}
               />
+              <Route path={ROUTES.RECEIVE} element={<Receive />} />
+              <Route path={ROUTES.SEND} element={<Send />} />
             </Route>
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
