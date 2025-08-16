@@ -1,11 +1,22 @@
 import { ChevronDown, Copy } from "lucide-react";
+import { useState } from "react";
+import { useNetwork } from "@/modules/all_network/networkContext";
+import AllNetwork from "@/modules/all_network/pages/AllNetwork";
 
 const ProfileHeader = () => {
+  const { selectedNetwork } = useNetwork();
+  const [open, setOpen] = useState(false);
+
+  const rightIconSrc = selectedNetwork === "btc"
+    ? "/assets/images/bitcoin.png"
+    : selectedNetwork === "eth"
+      ? "/assets/images/ethereum.png"
+      : selectedNetwork === "fra"
+        ? "/assets/icon128.png"
+        : "/assets/images/icon-network.png";
+
   return (
     <div className="sticky top-0 z-20 relative w-full bg-[#1C1D22] p-4">
-      {/* Background glow effect */}
-      {/* <div className="absolute inset-0 bg-gradient-to-br from-[#99E39E]/20 to-transparent opacity-30" /> */}
-
       <div className="relative flex items-center justify-between">
         {/* Left: Fradium Logo */}
         <div className="flex items-center">
@@ -25,16 +36,20 @@ const ProfileHeader = () => {
           </div>
         </div>
 
-        {/* Right: Settings Icon with Dropdown */}
+        {/* Right: Context-aware Icon + trigger */}
         <div className="flex items-center">
-          <div className="w-12 h-12 bg-[#9BE4A01A] rounded-full flex items-center justify-center mr-2">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center mr-1 transition-colors"
+          >
             <img
-              src="/assets/construction.svg"
-              alt="Settings"
-              className="w-6 h-6"
+              src={rightIconSrc}
+              alt="Network"
+              className={`w-10 h-10 ${selectedNetwork !== 'all' ? 'rounded-full' : ''}`}
             />
-          </div>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          </button>
+          <ChevronDown className="w-5 h-5 text-gray-300" />
         </div>
       </div>
 
@@ -48,6 +63,9 @@ const ProfileHeader = () => {
           backgroundRepeat: 'no-repeat'
         }}
       />
+
+      {/* Modal Dropdown */}
+      <AllNetwork isOpen={open} onClose={() => setOpen(false)} />
     </div>
   );
 };

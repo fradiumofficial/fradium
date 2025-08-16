@@ -15,4 +15,5 @@ export const ROUTES = {
   WELCOME: '/',
   AI_ANALYZER: '/ai-analyzer',
   SETTING: '/setting',
+  ALL_NETWORK: '/all-network',
 }
