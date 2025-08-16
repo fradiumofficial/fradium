@@ -1,10 +1,13 @@
 import ProfileHeader from "@/components/ui/header";
+import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/lib/authContext";
 import { shortenIcId } from "@/lib/utils";
 import { Copy, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function Setting() {
   const { principal, sessionInfo, refreshSessionInfo } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="w-[375px] h-[600px] bg-[#25262B] text-white overflow-y-auto pb-20">
@@ -119,6 +122,7 @@ function Setting() {
                 />
                 <button
                   type="button"
+                  onClick={() => navigate(ROUTES.MANAGE_NETWORK)}
                   className="text-[#9BE4A0] text-[14px] font-medium flex items-center gap-2"
                 >
                   Edit <span className="inline-block">→</span>

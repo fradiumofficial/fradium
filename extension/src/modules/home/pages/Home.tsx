@@ -32,7 +32,8 @@ function Home() {
     hideBalance, 
     setHideBalance, 
     getNetworkValue,
-    networkValues
+    networkValues,
+    networkFilters
   } = useWallet();
   const { selectedNetwork, getNetworkDisplayName, getNetworkTokenType } = useNetwork();
 
@@ -71,26 +72,32 @@ function Home() {
         let symbol = '';
         let name = '';
         let icon = '';
+        let isEnabled = false;
         
         if ('Bitcoin' in addr.token_type) {
           symbol = 'BTC';
           name = 'Bitcoin';
           icon = '/assets/tokens/bitcoin.svg';
+          isEnabled = networkFilters?.Bitcoin ?? true;
         } else if ('Ethereum' in addr.token_type) {
           symbol = 'ETH';
           name = 'Ethereum';
           icon = '/assets/tokens/eth.svg';
+          isEnabled = networkFilters?.Ethereum ?? true;
         } else if ('Solana' in addr.token_type) {
           symbol = 'SOL';
           name = 'Solana';
           icon = '/assets/tokens/solana.svg';
+          isEnabled = networkFilters?.Solana ?? true;
         } else if ('Fradium' in addr.token_type) {
           symbol = 'FUM';
           name = 'Fradium';
           icon = '/assets/tokens/fum.svg';
+          isEnabled = networkFilters?.Fradium ?? true;
         }
         
-        if (symbol) {
+        // Only add token if the network is enabled
+        if (symbol && isEnabled) {
           const networkKey = name as keyof typeof networkValues;
           walletTokens.push({
             symbol,
@@ -108,7 +115,7 @@ function Home() {
     if (userWallet && !isLoading) {
       loadWalletData();
     }
-  }, [userWallet, isLoading, networkValues]);
+  }, [userWallet, isLoading, networkValues, networkFilters]);
 
   // Filter tokens and calculate network value based on selected network
   useEffect(() => {

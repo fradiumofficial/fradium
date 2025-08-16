@@ -327,18 +327,18 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setNetworkValues((prev) => {
       const updated = { ...prev, ...values };
       
-      // Auto-calculate "All Networks" as sum of individual networks
+      // Auto-calculate "All Networks" as sum of enabled individual networks only
       if (!values["All Networks"]) {
         updated["All Networks"] = 
-          updated.Bitcoin + 
-          updated.Ethereum + 
-          updated.Solana + 
-          updated.Fradium;
+          (networkFilters.Bitcoin ? updated.Bitcoin : 0) + 
+          (networkFilters.Ethereum ? updated.Ethereum : 0) + 
+          (networkFilters.Solana ? updated.Solana : 0) + 
+          (networkFilters.Fradium ? updated.Fradium : 0);
       }
       
       return updated;
     });
-  }, []);
+  }, [networkFilters]);
 
   // Fetch wallet when user is authenticated
   useEffect(() => {

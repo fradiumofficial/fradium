@@ -4,7 +4,7 @@ import AnalyzeAddress from "./modules/analyze_address/pages/AnalyzeAdress";
 import AnalyzeSmartContract from "./modules/analyze_smartcontract/pages/AnalyzeSmartContract";
 import AnalyzeSmartContractResult from "./modules/analyze_smartcontract/pages/AnalyzeSmartContractResult";
 import AnalyzeSmartContractProgress from "./modules/analyze_smartcontract/pages/AnalyzeSmartContractProgress";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import { ROUTES } from "./constants/routes";
 import AnalyzeAdressResult from "./modules/analyze_address/pages/AnalyzeAddressResult";
 import DetailHistory from "./modules/history/pages/DetailHistory";
@@ -24,6 +24,7 @@ import { AuthProvider } from "./lib/authContext";
 import { WalletProvider } from "./lib/walletContext";
 import CreateWallet from "./modules/wallet/pages/CreateWallet";
 import AuthGuard from "./lib/AuthGuard";
+import ManageNetwork from "./modules/all_network/pages/ManageNetwork";
 
 const MainLayout = () => {
   return (
@@ -34,6 +35,11 @@ const MainLayout = () => {
       <BottomNavbar />
     </div>
   );
+};
+
+const ManageNetworkWrapper = () => {
+  const navigate = useNavigate();
+  return <ManageNetwork onClose={() => navigate(-1)} />;
 };
 
 function App() {
@@ -80,6 +86,7 @@ function App() {
                 path={ROUTES.ANALYZE_PROGRESS}
                 element={<AnalysisProgress />}
               />
+              <Route path={ROUTES.MANAGE_NETWORK} element={<ManageNetworkWrapper />} />
               <Route path={ROUTES.FAILED} element={<Failed />} />
               <Route
                 path={ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT}

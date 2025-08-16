@@ -18,4 +18,5 @@ export const ROUTES = {
   ALL_NETWORK: '/all-network',
   CREATE_WALLET: '/create-wallet',
   WALLET_HOME: '/wallet-home',
+  MANAGE_NETWORK: '/manage-network',
 }

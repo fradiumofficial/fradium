@@ -42,11 +42,22 @@ export default function AllNetwork({
   onClose = () => {},
 }: AllNetworkProps) {
   const { selectedNetwork, setSelectedNetwork, getNetworkDisplayName } = useNetwork();
-  const { getNetworkValue } = useWallet();
+  const { getNetworkValue, networkFilters } = useWallet();
   const [manageOpen, setManageOpen] = useState(false);
 
-  // Generate networks with actual values from wallet
-  const networks = BASE_NETWORKS.map(network => ({
+  // Generate networks with actual values from wallet, filtered by enabled networks
+  const networks = BASE_NETWORKS.filter(network => {
+    if (network.key === "all") return true; // Always show "All Networks"
+    
+    // Filter based on network filters
+    switch (network.key) {
+      case "btc": return networkFilters?.Bitcoin ?? true;
+      case "eth": return networkFilters?.Ethereum ?? true;
+      case "sol": return networkFilters?.Solana ?? true;
+      case "fra": return networkFilters?.Fradium ?? true;
+      default: return true;
+    }
+  }).map(network => ({
     ...network,
     amount: network.key === "all" 
       ? getNetworkValue("All Networks")
