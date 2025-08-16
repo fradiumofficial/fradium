@@ -2,78 +2,137 @@ import NeoButton from "@/components/ui/custom-button";
 import { useState } from "react";
 
 type ManageNetworkProps = {
-    onClose: () => void;
+  onClose: () => void;
 };
 
 export default function ManageNetwork({ onClose }: ManageNetworkProps) {
-    const [btc, setBtc] = useState(true);
-    const [eth, setEth] = useState(true);
-    const [fra, setFra] = useState(true);
+  const [btc, setBtc] = useState(true);
+  const [eth, setEth] = useState(true);
+  const [fra, setFra] = useState(true);
 
-    return (
-        <div className="bg-[#25262B] overflow-hidden w-[344px]">
-            <div className="px-6 pt-6 pb-2">
-                <h2 className="text-white text-[20px] font-semibold">Manage Network</h2>
-                <p className="text-white/60 text-[14px] font-normal mt-2">All network you are using here</p>
+  return (
+    <div className="bg-[#25262B] overflow-hidden w-[344px]">
+      <div className="px-6 pt-6 pb-2">
+        <h2 className="text-white text-[20px] font-semibold">Manage Network</h2>
+        <p className="text-white/60 text-[14px] font-normal mt-2">
+          All network you are using here
+        </p>
+      </div>
+
+      <div className="px-6 mt-6">
+        {/* BTC */}
+        <div className="py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/bitcoin-dark.svg"
+                className="w-6 h-6"
+                alt="btc"
+              />
+              <span className="text-white text-[14px] font-normal">
+                Bitcoin
+              </span>
             </div>
-
-            <div className="px-6 mt-6">
-                {/* BTC */}
-                <div className="py-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <img src="/assets/bitcoin-dark.svg" className="w-6 h-6" alt="btc" />
-                            <span className="text-white text-[14px] font-normal">Bitcoin</span>
-                        </div>
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only" checked={btc} onChange={(e) => setBtc(e.target.checked)} />
-                            <span className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${btc ? 'bg-[#37C058]' : 'bg-white/20'}`}>
-                                <span className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${btc ? 'translate-x-7' : ''}`}></span>
-                            </span>
-                        </label>
-                    </div>
-                    <div className="mt-2 h-px w-full bg-white/10" />
-                </div>
-
-                {/* ETH */}
-                <div className="py-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <img src="/assets/ethereum-dark.svg" className="w-6 h-6" alt="eth" />
-                            <span className="text-white text-[14px] font-normal">Ethereum</span>
-                        </div>
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only" checked={eth} onChange={(e) => setEth(e.target.checked)} />
-                            <span className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${eth ? 'bg-[#37C058]' : 'bg-white/20'}`}>
-                                <span className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${eth ? 'translate-x-7' : ''}`}></span>
-                            </span>
-                        </label>
-                    </div>
-                    <div className="mt-2 h-px w-full bg-white/10" />
-                </div>
-
-                {/* FRA */}
-                <div className="py-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <img src="/assets/fradium-dark.svg" className="w-6 h-6" alt="fra" />
-                            <span className="text-white text-[14px] font-normal">Fradium</span>
-                        </div>
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only" checked={fra} onChange={(e) => setFra(e.target.checked)} />
-                            <span className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${fra ? 'bg-[#37C058]' : 'bg-white/20'}`}>
-                                <span className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${fra ? 'translate-x-7' : ''}`}></span>
-                            </span>
-                        </label>
-                    </div>
-                    <div className="mt-2 h-px w-full bg-white/10" />
-                </div>
-
-                {/* Save button */}
-                <div className="mt-10 mb-6">
-                    <NeoButton onClick={onClose}>Save</NeoButton>
-                </div>
-            </div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={btc}
+                onChange={(e) => setBtc(e.target.checked)}
+              />
+              <span
+                className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
+                  btc ? "bg-[#37C058]" : "bg-white/20"
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                    btc ? "translate-x-7" : ""
+                  }`}
+                ></span>
+              </span>
+            </label>
+          </div>
+          <div className="mt-2 h-px w-full bg-white/10" />
         </div>
-    );
+
+        {/* ETH */}
+        <div className="py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/ethereum-dark.svg"
+                className="w-6 h-6"
+                alt="eth"
+              />
+              <span className="text-white text-[14px] font-normal">
+                Ethereum
+              </span>
+            </div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={eth}
+                onChange={(e) => setEth(e.target.checked)}
+              />
+              <span
+                className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
+                  eth ? "bg-[#37C058]" : "bg-white/20"
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                    eth ? "translate-x-7" : ""
+                  }`}
+                ></span>
+              </span>
+            </label>
+          </div>
+          <div className="mt-2 h-px w-full bg-white/10" />
+        </div>
+
+        {/* FRA */}
+        <div className="py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/fradium-dark.svg"
+                className="w-6 h-6"
+                alt="fra"
+              />
+              <span className="text-white text-[14px] font-normal">
+                Fradium
+              </span>
+            </div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={fra}
+                onChange={(e) => setFra(e.target.checked)}
+              />
+              <span
+                className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
+                  fra ? "bg-[#37C058]" : "bg-white/20"
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                    fra ? "translate-x-7" : ""
+                  }`}
+                ></span>
+              </span>
+            </label>
+          </div>
+          <div className="mt-2 h-px w-full bg-white/10" />
+        </div>
+
+        {/* Save button */}
+        <div className="mt-10 mb-6">
+          <NeoButton onClick={onClose}>Save</NeoButton>
+        </div>
+      </div>
+    </div>
+  );
 }
