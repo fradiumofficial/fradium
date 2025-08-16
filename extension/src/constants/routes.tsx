@@ -16,4 +16,6 @@ export const ROUTES = {
   AI_ANALYZER: '/ai-analyzer',
   SETTING: '/setting',
   ALL_NETWORK: '/all-network',
+  CREATE_WALLET: '/create-wallet',
+  WALLET_HOME: '/wallet-home',
 }

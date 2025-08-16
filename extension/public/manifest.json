@@ -15,7 +15,8 @@
     "128": "assets/icon128.png"
   },
   "permissions": [
-    "contextMenus"
+    "contextMenus",
+    "storage"
   ],
   "host_permissions": [
     "https://fradium.motionlaboratory.com/*",

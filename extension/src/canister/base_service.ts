@@ -1,12 +1,14 @@
 import { CANISTER_HOST } from "@/lib/config";
-import { HttpAgent } from "@dfinity/agent";
+import { HttpAgent, type Identity } from "@dfinity/agent";
 
-export const createAgent = async (): Promise<HttpAgent> => {
+export const createAgent = async (identity?: Identity): Promise<HttpAgent> => {
   try {
     console.log('Creating HttpAgent with host:', CANISTER_HOST);
+    console.log('Using identity:', identity ? 'authenticated' : 'anonymous');
     
     const agent = new HttpAgent({
       host: CANISTER_HOST,
+      identity, // Use the provided identity
       // Add fetch polyfill for browser extension
       fetch: globalThis.fetch?.bind?.(globalThis) || fetch,
       // Add retry configuration

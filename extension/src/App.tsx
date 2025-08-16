@@ -20,6 +20,11 @@ import AIAnalyzer from "./modules/ai_analyzer/AIAnalyzer";
 import Setting from "./modules/account/pages/Setting";
 import AllNetwork from "./modules/all_network/pages/AllNetwork";
 import { NetworkProvider } from "./modules/all_network/networkContext";
+import { AuthProvider } from "./lib/authContext";
+import { WalletProvider } from "./lib/walletContext";
+import CreateWallet from "./modules/wallet/pages/CreateWallet";
+import WalletHome from "./modules/wallet/pages/WalletHome";
+import AuthGuard from "./lib/AuthGuard";
 
 const MainLayout = () => {
   return (
@@ -35,50 +40,59 @@ const MainLayout = () => {
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <NetworkProvider>
-        <Routes>
-          <Route path={ROUTES.WELCOME} element={<Welcome />} />
-          <Route path="/" element={<Navigate to={ROUTES.HOME} replace />} />
-          <Route element={<MainLayout />}>
-            <Route path={ROUTES.HOME} element={<Home />} />
-            <Route path={ROUTES.HISTORY} element={<History />} />
-            <Route path={ROUTES.SCAN_HISTORY} element={<ScanHistory />} />
-            <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
-            <Route path={ROUTES.ACCOUNT} element={<Account />} />
-            <Route path={ROUTES.SETTING} element={<Setting />} />
-            <Route path={ROUTES.ALL_NETWORK} element={<AllNetwork />} />
+      <AuthProvider>
+        <WalletProvider>
+          <NetworkProvider>
+          <Routes>
+            <Route path={ROUTES.WELCOME} element={<Welcome />} />
+            <Route path="/" element={<Navigate to={ROUTES.HOME} replace />} />
+            
+            {/* Wallet Routes */}
+            <Route path={ROUTES.CREATE_WALLET} element={<AuthGuard><CreateWallet /></AuthGuard>} />
+            <Route path={ROUTES.WALLET_HOME} element={<AuthGuard><WalletHome /></AuthGuard>} />
+            
+            <Route element={<MainLayout />}>
+              <Route path={ROUTES.HOME} element={<AuthGuard><Home /></AuthGuard>} />
+              <Route path={ROUTES.HISTORY} element={<History />} />
+              <Route path={ROUTES.SCAN_HISTORY} element={<ScanHistory />} />
+              <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
+              <Route path={ROUTES.ACCOUNT} element={<Account />} />
+              <Route path={ROUTES.SETTING} element={<Setting />} />
+              <Route path={ROUTES.ALL_NETWORK} element={<AllNetwork />} />
 
-            <Route path={ROUTES.AI_ANALYZER} element={<AIAnalyzer />} />
-            <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
-            <Route
-              path={ROUTES.ANALYZE_SMART_CONTRACT}
-              element={<AnalyzeSmartContract />}
-            />
-            <Route
-              path={ROUTES.ANALYZE_ADDRESS_RESULT}
-              element={<AnalyzeAdressResult />}
-            />
-            <Route
-              path={ROUTES.ANALYZE_SMART_CONTRACT_RESULT}
-              element={<AnalyzeSmartContractResult />}
-            />
-            <Route
-              path={ROUTES.ANALYZE_SMART_CONTRACT_PROGRESS}
-              element={<AnalyzeSmartContractProgress />}
-            />
-            <Route
-              path={ROUTES.ANALYZE_PROGRESS}
-              element={<AnalysisProgress />}
-            />
-            <Route path={ROUTES.FAILED} element={<Failed />} />
-            <Route
-              path={ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT}
-              element={<AnalyzeAddressCommunityResult />}
-            />
-          </Route>
-          <Route path="*" element={<Navigate to={ROUTES.WELCOME} replace />} />
-        </Routes>
-      </NetworkProvider>
+              <Route path={ROUTES.AI_ANALYZER} element={<AIAnalyzer />} />
+              <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
+              <Route
+                path={ROUTES.ANALYZE_SMART_CONTRACT}
+                element={<AnalyzeSmartContract />}
+              />
+              <Route
+                path={ROUTES.ANALYZE_ADDRESS_RESULT}
+                element={<AnalyzeAdressResult />}
+              />
+              <Route
+                path={ROUTES.ANALYZE_SMART_CONTRACT_RESULT}
+                element={<AnalyzeSmartContractResult />}
+              />
+              <Route
+                path={ROUTES.ANALYZE_SMART_CONTRACT_PROGRESS}
+                element={<AnalyzeSmartContractProgress />}
+              />
+              <Route
+                path={ROUTES.ANALYZE_PROGRESS}
+                element={<AnalysisProgress />}
+              />
+              <Route path={ROUTES.FAILED} element={<Failed />} />
+              <Route
+                path={ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT}
+                element={<AnalyzeAddressCommunityResult />}
+              />
+            </Route>
+            <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+          </Routes>
+          </NetworkProvider>
+        </WalletProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

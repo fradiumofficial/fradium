@@ -12,12 +12,20 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getAnalysisHistory, type HistoryItem } from "@/lib/localStorage";
+import { useWallet } from "@/lib/walletContext";
+import { ROUTES } from "@/constants/routes";
 
 function Home() {
-  const [isBalanceVisible, setIsBalanceVisible] = useState(false);
-  const toggleVisibility = () => setIsBalanceVisible(!isBalanceVisible);
   const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
   const navigate = useNavigate();
+  const { 
+    hideBalance, 
+    setHideBalance, 
+    getNetworkValue,
+    isLoading 
+  } = useWallet();
+
+  const toggleVisibility = () => setHideBalance(!hideBalance);
 
   useEffect(() => {
     // Load recent history (maksimal 2 item terbaru)
@@ -40,12 +48,19 @@ function Home() {
     return `${statusText} - ${typeText}`;
   };
 
-  const handleTryWalletClick = () => {
-    // Open Fradium Wallet page in new tab
-    window.open(
-      "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io/products-wallet",
-      "_blank"
-    );
+  const handleWalletClick = () => {
+    // Navigate to wallet home page
+    navigate(ROUTES.WALLET_HOME);
+  };
+
+  const handleSendClick = () => {
+    // Navigate to wallet home page for send functionality
+    navigate(ROUTES.WALLET_HOME);
+  };
+
+  const handleReceiveClick = () => {
+    // Navigate to wallet home page for receive functionality
+    navigate(ROUTES.WALLET_HOME);
   };
 
   return (
@@ -54,7 +69,7 @@ function Home() {
       <ProfileHeader />
 
       <div className="flex flex-col items-center space-y-4">
-        <div className="w-[327px] h-[215px] bg-[#1F2025]">
+        <div className="w-[327px] h-[215px] bg-[#1F2025] cursor-pointer hover:bg-[#2A2B30] transition-colors" onClick={handleWalletClick}>
           <div className="flex flex-row justify-between">
             <img src={TopLeft} alt="Top Left" />
             <img src={TopRight} alt="Top Right" />
@@ -62,29 +77,30 @@ function Home() {
           <div className="flex justify-center items-center">
             <div className="font-sans flex-col items-start">
               <div className="flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">$</span>
-                {isBalanceVisible ? (
-                  <span className="text-white text-4xl font-bold tracking-wider">
-                    -----
-                  </span>
-                ) : (
-                  <div
-                    className="text-white text-4xl font-bold tracking-wider tracking-tighter"
-                    aria-hidden="true"
-                  >
-                    400.01
-                  </div>
-                )}
+                <span className="text-white text-4xl font-bold">
+                  {getNetworkValue("All Networks")}
+                </span>
 
                 <button
-                  onClick={toggleVisibility}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent wallet navigation when toggling visibility
+                    toggleVisibility();
+                  }}
                   className="ml-1 text-gray-400 hover:text-white transition-colors"
                   aria-label="Toggle balance visibility"
                 >
-                  {isBalanceVisible ? <EyeClosedIcon /> : <EyeIcon />}
+                  {hideBalance ? <EyeClosedIcon /> : <EyeIcon />}
                 </button>
               </div>
-
+              
+              {/* Wallet Status */}
+              {isLoading && (
+                <div className="flex items-center justify-center mt-2">
+                  <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-sm text-white/70">Loading wallet...</span>
+                </div>
+              )}
+              
               <div className="flex flex-col items-center mt-1">
                 <p className="text-[#9BE4A0]">+US$0 (+12.44%)</p>
               </div>
@@ -96,6 +112,10 @@ function Home() {
                     </div>
                     <div className="w-[50px] bg-[#823EFD]">
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSendClick();
+                        }}
                         className="
                         w-[50px] h-[45px] flex items-center 
                         justify-center gap-2
@@ -119,6 +139,10 @@ function Home() {
                     </div>
                     <div className="w-[50px] bg-[#823EFD]">
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReceiveClick();
+                        }}
                         className="
                         w-[50px] h-[45px] flex items-center 
                         justify-center gap-2
