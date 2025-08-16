@@ -50,9 +50,9 @@ function Receive() {
         </div>
 
         <div>
-        <NeoButton onClick={() => navigate(ROUTES.HOME)}>
-          Done
-        </NeoButton>
+          <NeoButton onClick={() => navigate(ROUTES.HOME)}>
+            Done
+          </NeoButton>
       </div>
       </div>
     </div>
