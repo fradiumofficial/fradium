@@ -1,16 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { readStoredPrincipal, isStoredAuthenticated, clearStoredAuth, getAuthClient } from '@/icp/icpAuth';
+import { 
+  readStoredPrincipal, 
+  isStoredAuthenticated, 
+  clearStoredAuth, 
+  getAuthClient, 
+  getSessionInfo, 
+  isSessionNearExpiry,
+  type SessionInfo 
+} from '@/icp/icpAuth';
 
 interface AuthState {
   isAuthenticated: boolean;
   principal: string | null;
   identity: any | null;
   isLoading: boolean;
+  sessionInfo: SessionInfo | null;
 }
 
 interface AuthContextType extends AuthState {
   checkAuth: () => Promise<void>;
   logout: () => Promise<void>;
+  refreshSessionInfo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     principal: null,
     identity: null,
     isLoading: true,
+    sessionInfo: null,
   });
 
   const checkAuth = async () => {
@@ -53,11 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const principal = identity.getPrincipal().toText();
           console.log('AuthContext: Setting authenticated state with principal:', principal);
           
+          // Get session information
+          const sessionInfo = await getSessionInfo();
+          
           setAuthState({
             isAuthenticated: true,
             principal,
             identity,
             isLoading: false,
+            sessionInfo,
           });
           return;
         } else {
@@ -74,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         principal: null,
         identity: null,
         isLoading: false,
+        sessionInfo: null,
       });
     } catch (error) {
       console.error('AuthContext: Error checking authentication:', error);
@@ -84,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         principal: null,
         identity: null,
         isLoading: false,
+        sessionInfo: null,
       });
     }
   };
@@ -100,6 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         principal: null,
         identity: null,
         isLoading: false,
+        sessionInfo: null,
       });
       
       console.log('AuthContext: Logout completed');
@@ -112,7 +130,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         principal: null,
         identity: null,
         isLoading: false,
+        sessionInfo: null,
       });
+    }
+  };
+
+  const refreshSessionInfo = async () => {
+    if (authState.isAuthenticated) {
+      const sessionInfo = await getSessionInfo();
+      setAuthState(prev => ({ ...prev, sessionInfo }));
     }
   };
 
@@ -120,10 +146,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
+  // Check for session expiry periodically
+  useEffect(() => {
+    if (!authState.isAuthenticated) return;
+
+    const checkSessionExpiry = async () => {
+      const nearExpiry = await isSessionNearExpiry();
+      if (nearExpiry) {
+        console.warn('Session is near expiry!');
+        // You could show a warning to the user here
+      }
+      
+      // Refresh session info
+      await refreshSessionInfo();
+    };
+
+    // Check every minute
+    const interval = setInterval(checkSessionExpiry, 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [authState.isAuthenticated]);
+
   const value: AuthContextType = {
     ...authState,
     checkAuth,
     logout,
+    refreshSessionInfo,
   };
 
   return (
