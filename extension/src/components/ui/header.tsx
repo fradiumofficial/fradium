@@ -1,11 +1,17 @@
 import { ChevronDown, Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNetwork } from "@/modules/all_network/networkContext";
 import AllNetwork from "@/modules/all_network/pages/AllNetwork";
+import { shortPrincipal, readStoredPrincipal } from "@/lib/icpAuth";
 
 const ProfileHeader = () => {
   const { selectedNetwork } = useNetwork();
   const [open, setOpen] = useState(false);
+  const [principal, setPrincipal] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPrincipal(readStoredPrincipal());
+  }, []);
 
   const rightIconSrc = selectedNetwork === "btc"
     ? "/assets/images/bitcoin.png"
@@ -14,6 +20,8 @@ const ProfileHeader = () => {
       : selectedNetwork === "fra"
         ? "/assets/icon128.png"
         : "/assets/images/icon-network.png";
+
+  const principalText = shortPrincipal(principal || undefined);
 
   return (
     <div className="sticky top-0 z-20 relative w-full bg-[#1C1D22] p-4">
@@ -31,7 +39,7 @@ const ProfileHeader = () => {
         <div className="flex-1 flex flex-col items-center">
           <h1 className="text-white text-sm font-medium mb-1">Neu's Wallet</h1>
           <div className="flex items-center gap-2">
-            <span className="text-gray-400 font-medium text-xs">Au...Ux</span>
+            <span className="text-gray-400 font-medium text-xs">{principalText}</span>
             <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white transition-colors" />
           </div>
         </div>
