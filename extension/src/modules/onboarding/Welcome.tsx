@@ -4,7 +4,7 @@ import WelcomeCard from "../../assets/welcome_card.svg";
 import ArrowRight from "../../assets/arrow_forward.svg";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-import { loginWithInternetIdentity, resetAuthState } from "@/lib/icpAuth";
+import { loginWithInternetIdentity, resetAuthState } from "@/icp/icpAuth";
 import { useAuth } from "@/lib/authContext";
 
 function Welcome() {

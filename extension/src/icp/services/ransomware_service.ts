@@ -1,6 +1,6 @@
 import { Actor, type ActorSubclass } from "@dfinity/agent";
-import { idlFactory } from "../../../src/declarations/ai";
-import type { _SERVICE } from "../../../src/declarations/ai/ai.did";
+import { idlFactory } from "../../../../src/declarations/ai";
+import type { _SERVICE } from "../../../../src/declarations/ai/ai.did";
 import { createAgent } from "./base_service";
 import { getCanisterId } from "@/lib/config";
 

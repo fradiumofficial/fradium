@@ -11,57 +11,102 @@ import {
   Settings2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getAnalysisHistory, type HistoryItem } from "@/lib/localStorage";
 import { useWallet } from "@/lib/walletContext";
-import { ROUTES } from "@/constants/routes";
+import type { WalletAddress } from "@/icp/services/backend_service";
+
+interface TokenBalance {
+  symbol: string;
+  name: string;
+  balance: string;
+  usdValue: string;
+  icon: string;
+}
 
 function Home() {
-  const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
+  const [ tokens, setTokens ] = useState<TokenBalance[]>([]);
   const navigate = useNavigate();
   const { 
+    userWallet, 
+    isLoading, 
     hideBalance, 
     setHideBalance, 
     getNetworkValue,
-    isLoading 
+    networkValues
   } = useWallet();
+
 
   const toggleVisibility = () => setHideBalance(!hideBalance);
 
-  useEffect(() => {
-    // Load recent history (maksimal 2 item terbaru)
-    const loadRecentHistory = () => {
-      const history = getAnalysisHistory();
-      setRecentHistory(history.items.slice(0, 2)); // Ambil 2 item terbaru
-    };
-
-    loadRecentHistory();
-
-    // Set up interval untuk refresh history setiap 5 detik (opsional)
-    const interval = setInterval(loadRecentHistory, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const getCategoryText = (item: HistoryItem) => {
-    const typeText = item.analysisType === "icp" ? "AI Analysis" : "Community";
-    const statusText = item.isSafe ? "Safe" : "Risky";
-    return `${statusText} - ${typeText}`;
-  };
-
   const handleWalletClick = () => {
     // Navigate to wallet home page
-    navigate(ROUTES.WALLET_HOME);
+    // navigate(ROUTES.WALLET_HOME);
   };
 
   const handleSendClick = () => {
     // Navigate to wallet home page for send functionality
-    navigate(ROUTES.WALLET_HOME);
+    // navigate(ROUTES.WALLET_HOME);
   };
 
   const handleReceiveClick = () => {
     // Navigate to wallet home page for receive functionality
-    navigate(ROUTES.WALLET_HOME);
+    // navigate(ROUTES.WALLET_HOME);
   };
+
+    useEffect(() => {
+    // Load wallet data from the wallet context
+    const loadWalletData = async () => {
+      if (!userWallet || !userWallet.addresses) {
+        setTokens([]);
+        return;
+      }
+      
+      console.log("WalletHome: Loading wallet data for addresses:", userWallet.addresses);
+      
+      // Create token balances based on wallet addresses
+      const walletTokens: TokenBalance[] = [];
+      
+      userWallet.addresses.forEach((addr: WalletAddress) => {
+        let symbol = '';
+        let name = '';
+        let icon = '';
+        
+        if ('Bitcoin' in addr.token_type) {
+          symbol = 'BTC';
+          name = 'Bitcoin';
+          icon = '/assets/tokens/bitcoin.svg';
+        } else if ('Ethereum' in addr.token_type) {
+          symbol = 'ETH';
+          name = 'Ethereum';
+          icon = '/assets/tokens/eth.svg';
+        } else if ('Solana' in addr.token_type) {
+          symbol = 'SOL';
+          name = 'Solana';
+          icon = '/assets/tokens/solana.svg';
+        } else if ('Fradium' in addr.token_type) {
+          symbol = 'FUM';
+          name = 'Fradium';
+          icon = '/assets/tokens/fum.svg';
+        }
+        
+        if (symbol) {
+          const networkKey = name as keyof typeof networkValues;
+          walletTokens.push({
+            symbol,
+            name,
+            balance: '0.00', // In real implementation, you'd fetch actual balances
+            usdValue: networkValues[networkKey] ? networkValues[networkKey].toFixed(2) : '0.00',
+            icon
+          });
+        }
+      });
+      
+      setTokens(walletTokens);
+    };
+
+    if (userWallet && !isLoading) {
+      loadWalletData();
+    }
+  }, [userWallet, isLoading, networkValues]);
 
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
@@ -94,16 +139,17 @@ function Home() {
               </div>
               
               {/* Wallet Status */}
-              {isLoading && (
-                <div className="flex items-center justify-center mt-2">
+              {isLoading ? (
+                <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2 text-sm text-white/70">Loading wallet...</span>
+                  <span className="text-sm text-[#9BE4A0]">Loading wallet...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <span className="text-sm text-[#9BE4A0]">Wallet loaded</span>
                 </div>
               )}
               
-              <div className="flex flex-col items-center mt-1">
-                <p className="text-[#9BE4A0]">+US$0 (+12.44%)</p>
-              </div>
               <div className="flex flex-row">
                 <div className="basis-64 m-1">
                   <div className="flex flex-row w-[145px] h-[60px] bg-white/10 justify-center items-center gap-4">
@@ -162,7 +208,7 @@ function Home() {
               </div>
             </div>
           </div>
-          <div className="flex flex-row justify-between mt-2">
+          <div className="flex flex-row justify-between mt-[20px]">
             <div className="flex flex-col-1">
               <h1 className="text-[16px] font-semibold">Tokens</h1>
             </div>
@@ -170,6 +216,29 @@ function Home() {
               <Search />
               <Settings2 />
             </div>
+          </div>
+
+          {/* Token List */}
+          <div className="space-y-2 mt-[10px]">
+            {tokens.map((token) => (
+              <div
+                key={token.symbol}
+                className="flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <img src={token.icon} alt={token.name} className="w-8 h-8" />
+                  <div>
+                    <div className="text-white font-medium">{token.symbol}</div>
+                    <div className="text-white/50 text-sm">{token.name}</div>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <div className="text-white font-medium">{token.balance}</div>
+                  <div className="text-white/50 text-sm">${token.usdValue}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

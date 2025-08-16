@@ -1,6 +1,6 @@
 import { Actor, type ActorSubclass, type Identity } from "@dfinity/agent";
-import { idlFactory } from "../../../src/declarations/backend";
-import type { _SERVICE } from "../../../src/declarations/backend/backend.did";
+import { idlFactory } from "../../../../src/declarations/backend";
+import type { _SERVICE } from "../../../../src/declarations/backend/backend.did";
 import { createAgent } from "./base_service";
 import { getCanisterId } from "@/lib/config";
 import type { CommunityAnalysisResponse } from "@/modules/analyze_address/model/AnalyzeAddressModel";
@@ -52,7 +52,7 @@ import type {
   CreateWalletParams, 
   WalletAddress, 
   UserWallet 
-} from "../../../src/declarations/backend/backend.did";
+} from "../../../../src/declarations/backend/backend.did";
 
 // Helper functions for common backend operations
 export const analyzeAddressCommunity = async (address: string): Promise<CommunityAnalysisResponse>  => {

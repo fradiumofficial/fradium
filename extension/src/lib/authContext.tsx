@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { readStoredPrincipal, isStoredAuthenticated, clearStoredAuth, getAuthClient } from './icpAuth';
+import { readStoredPrincipal, isStoredAuthenticated, clearStoredAuth, getAuthClient } from '@/icp/icpAuth';
 
 interface AuthState {
   isAuthenticated: boolean;

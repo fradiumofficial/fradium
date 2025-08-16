@@ -2,7 +2,7 @@ import { ChevronDown, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNetwork } from "@/modules/all_network/networkContext";
 import AllNetwork from "@/modules/all_network/pages/AllNetwork";
-import { shortPrincipal, readStoredPrincipal } from "@/lib/icpAuth";
+import { shortPrincipal, readStoredPrincipal } from "@/icp/icpAuth";
 
 const ProfileHeader = () => {
   const { selectedNetwork } = useNetwork();
@@ -22,6 +22,7 @@ const ProfileHeader = () => {
         : "/assets/images/icon-network.png";
 
   const principalText = shortPrincipal(principal || undefined);
+  console.log("haosdisodihasiod ", principalText);
 
   return (
     <div className="sticky top-0 z-20 relative w-full bg-[#1C1D22] p-4">

@@ -1,5 +1,5 @@
-import { analyzeAddress } from "../canister/ransomware_service";
-import { analyzeAddressCommunity } from "../canister/backend_service";
+import { analyzeAddress } from "@/icp/services/ransomware_service";
+import { analyzeAddressCommunity } from "@/icp/services/backend_service";
 
 // Listener untuk saat ekstensi pertama kali di-install atau di-update
 chrome.runtime.onInstalled.addListener(() => {

@@ -23,7 +23,6 @@ import { NetworkProvider } from "./modules/all_network/networkContext";
 import { AuthProvider } from "./lib/authContext";
 import { WalletProvider } from "./lib/walletContext";
 import CreateWallet from "./modules/wallet/pages/CreateWallet";
-import WalletHome from "./modules/wallet/pages/WalletHome";
 import AuthGuard from "./lib/AuthGuard";
 
 const MainLayout = () => {
@@ -49,7 +48,6 @@ function App() {
             
             {/* Wallet Routes */}
             <Route path={ROUTES.CREATE_WALLET} element={<AuthGuard><CreateWallet /></AuthGuard>} />
-            <Route path={ROUTES.WALLET_HOME} element={<AuthGuard><WalletHome /></AuthGuard>} />
             
             <Route element={<MainLayout />}>
               <Route path={ROUTES.HOME} element={<AuthGuard><Home /></AuthGuard>} />

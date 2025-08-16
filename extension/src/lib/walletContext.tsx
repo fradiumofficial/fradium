@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./authContext";
-import type { WalletAddress, UserWallet } from "@/canister/backend_service";
+import type { WalletAddress, UserWallet } from "@/icp/services/backend_service";
 
 interface NetworkFilters {
   Bitcoin: boolean;
@@ -178,7 +178,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const getServices = useCallback(async () => {
     try {
       // Import services dynamically to avoid circular dependencies
-      const { createWallet: backendCreateWallet, getUserWallet } = await import("@/canister/backend_service");
+      const { createWallet: backendCreateWallet, getUserWallet } = await import("@/icp/services/backend_service");
       
       // For now, we'll create mock bitcoin and solana services
       // In a real implementation, you'd import these from their respective service files
