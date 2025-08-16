@@ -1,31 +1,33 @@
 import { Check } from "lucide-react";
 import { useNetwork } from "@/modules/all_network/networkContext";
+import { useWallet } from "@/lib/walletContext";
 import { useState } from "react";
 import ManageNetwork from "./ManageNetwork";
 
-const NETWORKS = [
+const BASE_NETWORKS = [
   {
-    key: "all",
+    key: "all" as const,
     name: "All Networks",
-    amount: "$0.00",
     icon: "/assets/construction.svg",
   },
   {
-    key: "btc",
+    key: "btc" as const,
     name: "Bitcoin",
-    amount: "$0.00",
     icon: "/assets/bitcoin-dark.svg",
   },
   {
-    key: "eth",
+    key: "eth" as const,
     name: "Ethereum",
-    amount: "$0.00",
     icon: "/assets/ethereum-dark.svg",
   },
   {
-    key: "fra",
+    key: "sol" as const,
+    name: "Solana",
+    icon: "/assets/solana-dark.svg",
+  },
+  {
+    key: "fra" as const,
     name: "Fradium",
-    amount: "$0.00",
     icon: "/assets/fradium-dark.svg",
   },
 ] as const;
@@ -39,8 +41,17 @@ export default function AllNetwork({
   isOpen = true,
   onClose = () => {},
 }: AllNetworkProps) {
-  const { selectedNetwork, setSelectedNetwork } = useNetwork();
+  const { selectedNetwork, setSelectedNetwork, getNetworkDisplayName } = useNetwork();
+  const { getNetworkValue } = useWallet();
   const [manageOpen, setManageOpen] = useState(false);
+
+  // Generate networks with actual values from wallet
+  const networks = BASE_NETWORKS.map(network => ({
+    ...network,
+    amount: network.key === "all" 
+      ? getNetworkValue("All Networks")
+      : getNetworkValue(getNetworkDisplayName(network.key))
+  }));
 
   if (!isOpen) return null;
 
@@ -66,7 +77,7 @@ export default function AllNetwork({
 
           {/* List */}
           <div className="divide-y divide-white/5">
-            {NETWORKS.map((n) => {
+            {networks.map((n) => {
               const isActive = n.key === selectedNetwork;
               return (
                 <button

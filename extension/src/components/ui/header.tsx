@@ -14,12 +14,14 @@ const ProfileHeader = () => {
   }, []);
 
   const rightIconSrc = selectedNetwork === "btc"
-    ? "/assets/images/bitcoin.png"
+    ? "/assets/bitcoin-dark.svg"
     : selectedNetwork === "eth"
-      ? "/assets/images/ethereum.png"
-      : selectedNetwork === "fra"
-        ? "/assets/icon128.png"
-        : "/assets/images/icon-network.png";
+      ? "/assets/ethereum-dark.svg"
+      : selectedNetwork === "sol"
+        ? "/assets/solana-dark.svg"
+        : selectedNetwork === "fra"
+          ? "/assets/fradium-dark.svg"
+          : "/assets/construction.svg";
 
   const principalText = shortPrincipal(principal || undefined);
   console.log("haosdisodihasiod ", principalText);

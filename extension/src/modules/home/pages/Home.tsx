@@ -10,8 +10,8 @@ import {
   Search,
   Settings2,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useWallet } from "@/lib/walletContext";
+import { useNetwork } from "@/modules/all_network/networkContext";
 import type { WalletAddress } from "@/icp/services/backend_service";
 
 interface TokenBalance {
@@ -24,7 +24,8 @@ interface TokenBalance {
 
 function Home() {
   const [ tokens, setTokens ] = useState<TokenBalance[]>([]);
-  const navigate = useNavigate();
+  const [ filteredTokens, setFilteredTokens ] = useState<TokenBalance[]>([]);
+  const [ currentNetworkValue, setCurrentNetworkValue ] = useState<string>("$0.00");
   const { 
     userWallet, 
     isLoading, 
@@ -33,6 +34,7 @@ function Home() {
     getNetworkValue,
     networkValues
   } = useWallet();
+  const { selectedNetwork, getNetworkDisplayName, getNetworkTokenType } = useNetwork();
 
 
   const toggleVisibility = () => setHideBalance(!hideBalance);
@@ -52,7 +54,7 @@ function Home() {
     // navigate(ROUTES.WALLET_HOME);
   };
 
-    useEffect(() => {
+  useEffect(() => {
     // Load wallet data from the wallet context
     const loadWalletData = async () => {
       if (!userWallet || !userWallet.addresses) {
@@ -60,7 +62,7 @@ function Home() {
         return;
       }
       
-      console.log("WalletHome: Loading wallet data for addresses:", userWallet.addresses);
+      console.log("Home: Loading wallet data for addresses:", userWallet.addresses);
       
       // Create token balances based on wallet addresses
       const walletTokens: TokenBalance[] = [];
@@ -108,6 +110,26 @@ function Home() {
     }
   }, [userWallet, isLoading, networkValues]);
 
+  // Filter tokens and calculate network value based on selected network
+  useEffect(() => {
+    const filterTokensAndCalculateValue = () => {
+      if (selectedNetwork === "all") {
+        setFilteredTokens(tokens);
+        setCurrentNetworkValue(getNetworkValue("All Networks"));
+      } else {
+        const networkType = getNetworkTokenType(selectedNetwork);
+        const filtered = tokens.filter(token => token.name === networkType);
+        setFilteredTokens(filtered);
+        
+        // Calculate value for specific network
+        const networkDisplayName = getNetworkDisplayName(selectedNetwork);
+        setCurrentNetworkValue(getNetworkValue(networkDisplayName));
+      }
+    };
+
+    filterTokensAndCalculateValue();
+  }, [tokens, selectedNetwork, getNetworkValue, getNetworkDisplayName, getNetworkTokenType]);
+
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
       {/* Header Sections */}
@@ -123,7 +145,7 @@ function Home() {
             <div className="font-sans flex-col items-start">
               <div className="flex items-center justify-center">
                 <span className="text-white text-4xl font-bold">
-                  {getNetworkValue("All Networks")}
+                  {hideBalance ? "••••" : currentNetworkValue}
                 </span>
 
                 <button
@@ -220,7 +242,7 @@ function Home() {
 
           {/* Token List */}
           <div className="space-y-2 mt-[10px]">
-            {tokens.map((token) => (
+            {filteredTokens.map((token) => (
               <div
                 key={token.symbol}
                 className="flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"

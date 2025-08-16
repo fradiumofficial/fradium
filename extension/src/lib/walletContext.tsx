@@ -44,6 +44,7 @@ interface WalletContextType {
   networkValues: NetworkValues;
   updateNetworkValues: (values: Partial<NetworkValues>) => void;
   getNetworkValue: (networkName: string) => string;
+  refreshBalances: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -321,6 +322,24 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [isAuthenticated, principal, identity, getServices, createWallet]);
 
+  // Function to update network values
+  const updateNetworkValues = useCallback((values: Partial<NetworkValues>) => {
+    setNetworkValues((prev) => {
+      const updated = { ...prev, ...values };
+      
+      // Auto-calculate "All Networks" as sum of individual networks
+      if (!values["All Networks"]) {
+        updated["All Networks"] = 
+          updated.Bitcoin + 
+          updated.Ethereum + 
+          updated.Solana + 
+          updated.Fradium;
+      }
+      
+      return updated;
+    });
+  }, []);
+
   // Fetch wallet when user is authenticated
   useEffect(() => {
     if (isAuthenticated && principal) {
@@ -331,6 +350,75 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setHasConfirmedWallet(false);
     }
   }, [isAuthenticated, principal, fetchUserWallet]);
+
+  // Fetch real balance data for each network
+  const fetchNetworkBalances = useCallback(async () => {
+    if (!userWallet || !userWallet.addresses) return;
+
+    try {
+      // Import balance services dynamically
+      const { 
+        fetchBitcoinBalance, 
+        fetchEthereumBalance, 
+        fetchSolanaBalance, 
+        fetchFradiumBalance,
+        fetchMockBalances 
+      } = await import('./balanceService');
+
+      // For testing, you can use mock balances
+      const useMockData = false; // Set to false when ready to use real APIs
+      
+      if (useMockData) {
+        const mockBalances = fetchMockBalances();
+        const balances: Partial<NetworkValues> = {};
+        
+        Object.entries(mockBalances).forEach(([network, data]) => {
+          balances[network as keyof NetworkValues] = data.usdValue;
+        });
+        
+        updateNetworkValues(balances);
+        return;
+      }
+
+      // Real balance fetching (when useMockData = false)
+      const balances: Partial<NetworkValues> = {};
+      
+      // Fetch balances for each address
+      for (const addr of userWallet.addresses) {
+        let networkName = '';
+        let balanceData = { balance: 0, usdValue: 0 };
+        
+        if ('Bitcoin' in addr.token_type) {
+          networkName = 'Bitcoin';
+          balanceData = await fetchBitcoinBalance(addr.address);
+        } else if ('Ethereum' in addr.token_type) {
+          networkName = 'Ethereum';
+          balanceData = await fetchEthereumBalance(addr.address);
+        } else if ('Solana' in addr.token_type) {
+          networkName = 'Solana';
+          balanceData = await fetchSolanaBalance(addr.address);
+        } else if ('Fradium' in addr.token_type) {
+          networkName = 'Fradium';
+          balanceData = await fetchFradiumBalance(addr.address);
+        }
+        
+        if (networkName) {
+          balances[networkName as keyof NetworkValues] = balanceData.usdValue;
+        }
+      }
+      
+      updateNetworkValues(balances);
+    } catch (error) {
+      console.error('Error fetching network balances:', error);
+    }
+  }, [userWallet, updateNetworkValues]);
+
+  // Fetch balances when wallet is loaded
+  useEffect(() => {
+    if (isAuthenticated && userWallet) {
+      fetchNetworkBalances();
+    }
+  }, [isAuthenticated, userWallet, fetchNetworkBalances]);
 
   // Helper function to add new address to existing wallet
   const addAddressToWallet = useCallback(
@@ -380,11 +468,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [userWallet, identity, getServices, fetchUserWallet]
   );
 
-  // Function to update network values
-  const updateNetworkValues = useCallback((values: Partial<NetworkValues>) => {
-    setNetworkValues((prev) => ({ ...prev, ...values }));
-  }, []);
-
   // Function to get formatted network value
   const getNetworkValue = useCallback(
     (networkName: string) => {
@@ -412,6 +495,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       networkValues,
       updateNetworkValues,
       getNetworkValue,
+      refreshBalances: fetchNetworkBalances,
       networkFilters,
       updateNetworkFilters,
       hasConfirmedWallet,
@@ -429,6 +513,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       networkValues,
       updateNetworkValues,
       getNetworkValue,
+      fetchNetworkBalances,
       networkFilters,
       updateNetworkFilters,
       hasConfirmedWallet,
