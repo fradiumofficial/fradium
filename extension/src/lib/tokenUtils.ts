@@ -1,0 +1,152 @@
+export const TokenType = Object.freeze({
+  BITCOIN: "Bitcoin",
+  ETHEREUM: "Ethereum", 
+  SOLANA: "Solana",
+  FUM: "Fradium",
+  UNKNOWN: "Unknown",
+});
+
+export const TOKENS_CONFIG = {
+  [TokenType.BITCOIN]: {
+    id: "bitcoin",
+    name: "BTC",
+    symbol: "Bitcoin",
+    displayName: "Bitcoin",
+    description: "Bitcoin • Internet Computer",
+    icon: "/assets/svg/tokens/bitcoin.svg",
+    decimals: 8,
+    unitConversion: {
+      base: "satoshi",
+      display: "BTC", 
+      factor: 100000000,
+    },
+  },
+  [TokenType.ETHEREUM]: {
+    id: "ethereum",
+    name: "ETH",
+    symbol: "Ethereum",
+    displayName: "Ethereum",
+    description: "Ethereum • Internet Computer",
+    icon: "/assets/svg/tokens/eth.svg",
+    decimals: 18,
+    unitConversion: {
+      base: "wei",
+      display: "ETH",
+      factor: 1000000000000000000,
+    },
+  },
+  [TokenType.SOLANA]: {
+    id: "solana",
+    name: "SOL",
+    symbol: "Solana",
+    displayName: "Solana",
+    description: "Solana • Internet Computer",
+    icon: "/assets/svg/tokens/solana.svg",
+    decimals: 9,
+    unitConversion: {
+      base: "lamport",
+      display: "SOL",
+      factor: 1000000000,
+    },
+  },
+  [TokenType.FUM]: {
+    id: "fradium",
+    name: "FUM",
+    symbol: "Fradium",
+    displayName: "Fradium",
+    description: "Fradium • Internet Computer",
+    icon: "/assets/svg/tokens/fum.svg",
+    decimals: 8,
+    unitConversion: {
+      base: "e8s",
+      display: "FUM",
+      factor: 100000000,
+    },
+  },
+  [TokenType.UNKNOWN]: {
+    id: "unknown",
+    name: "Unknown",
+    symbol: "Unknown",
+    displayName: "Unknown",
+    description: "Unknown • Internet Computer",
+    icon: "/assets/svg/tokens/unknown.svg",
+    decimals: 0,
+    unitConversion: {
+      base: "unknown",
+      display: "Unknown",
+      factor: 1,
+    },
+  },
+};
+
+export function detectTokenType(address: string): string {
+  const lower = address.toLowerCase();
+
+  // Ethereum (0x + 40 hexdigits)
+  if (address.startsWith("0x") && address.length === 42 && /^[0-9a-fA-F]+$/.test(address.slice(2))) {
+    return TokenType.ETHEREUM;
+  }
+
+  // Bitcoin Mainnet Legacy (starts with 1 or 3)
+  if ((address.startsWith("1") || address.startsWith("3")) && address.length >= 26 && address.length <= 35) {
+    return TokenType.BITCOIN;
+  }
+
+  // Bitcoin Mainnet Bech32 (bc1q / bc1p)
+  if (lower.startsWith("bc1q") || lower.startsWith("bc1p")) {
+    return TokenType.BITCOIN;
+  }
+
+  // Bitcoin Testnet Legacy (m / n / 2)
+  if ((address.startsWith("m") || address.startsWith("n") || address.startsWith("2")) && address.length >= 26 && address.length <= 35) {
+    return TokenType.BITCOIN;
+  }
+
+  // Bitcoin Testnet Bech32 (tb1q / tb1p)
+  if (lower.startsWith("tb1q") || lower.startsWith("tb1p")) {
+    return TokenType.BITCOIN;
+  }
+
+  // Solana (Base58, 32–44 chars, valid Base58 chars)
+  const base58Chars = /^[1-9A-HJ-NP-Za-km-z]+$/;
+  if (address.length >= 36 && address.length <= 44 && base58Chars.test(address)) {
+    return TokenType.SOLANA;
+  }
+
+  return TokenType.UNKNOWN;
+}
+
+// Convert chain name to token type variant for canister
+export const getTokenTypeVariant = (chainName: string) => {
+  switch (chainName) {
+    case TokenType.BITCOIN:
+      return { Bitcoin: null };
+    case TokenType.ETHEREUM:
+      return { Ethereum: null };
+    case TokenType.SOLANA:
+      return { Solana: null };
+    case TokenType.FUM:
+      return { Fum: null };
+    default:
+      return { Unknown: null };
+  }
+};
+
+function capitalize(s: string) {
+  return String(s[0]).toUpperCase() + String(s).slice(1);
+}
+
+export function getTokenImageURL(chain: string) {
+  switch (capitalize(chain)) {
+    case TokenType.ETHEREUM:
+      return "/assets/svg/tokens/eth.svg";
+    case TokenType.BITCOIN:
+      return "/assets/svg/tokens/bitcoin.svg";
+    case TokenType.SOLANA:
+      return "/assets/svg/tokens/solana.svg";
+    case TokenType.FUM:
+      return "/assets/svg/tokens/fum.svg";
+    default:
+      return "/assets/svg/tokens/unknown.svg";
+  }
+}

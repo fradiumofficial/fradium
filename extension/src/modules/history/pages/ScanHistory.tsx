@@ -2,42 +2,73 @@ import ProfileHeader from "@/components/ui/header";
 import { Search, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-
-type ScanItem = {
-    id: string;
-    icon: string;
-    address: string;
-    subtitle: string;
-    date: string;
-};
-
-const scanItems: ScanItem[] = [
-    {
-        id: "1",
-        icon: "/assets/images/bitcoin.png",
-        address: "m1psqxsfsnfnfd...",
-        subtitle: "Ransomware - AI",
-        date: "24/04/35",
-    },
-    {
-        id: "2",
-        icon: "/assets/images/ethereum.png",
-        address: "m1psqxsfsnfnfd...",
-        subtitle: "Ransomware - AI",
-        date: "24/04/35",
-    },
-    {
-        id: "3",
-        icon: "/assets/images/bitcoin.png",
-        address: "m1psqxsfsnfnfd...",
-        subtitle: "Ransomware - AI",
-        date: "24/04/35",
-    },
-];
+import { getScanHistory, type ScanHistoryItem } from "@/lib/localStorage";
+import { getTokenImageURL } from "@/lib/tokenUtils";
+import { useState, useEffect } from "react";
 
 function ScanHistory() {
     const navigate = useNavigate();
-    const SHOW_EMPTY = true;
+    const [scanItems, setScanItems] = useState<ScanHistoryItem[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filteredItems, setFilteredItems] = useState<ScanHistoryItem[]>([]);
+
+    // Load scan history on component mount
+    useEffect(() => {
+        const loadScanHistory = () => {
+            const scanHistory = getScanHistory();
+            setScanItems(scanHistory.items);
+        };
+
+        loadScanHistory();
+
+        // Listen for storage changes to update in real-time
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'fradium_scan_history') {
+                loadScanHistory();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    // Filter items based on search term
+    useEffect(() => {
+        if (searchTerm.trim() === "") {
+            setFilteredItems(scanItems);
+        } else {
+            const filtered = scanItems.filter(item =>
+                item.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.tokenType.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setFilteredItems(filtered);
+        }
+    }, [scanItems, searchTerm]);
+
+    // Format address for display
+    const formatAddress = (address: string) => {
+        if (address.length <= 16) return address;
+        return `${address.slice(0, 8)}...${address.slice(-8)}`;
+    };
+
+    // Get subtitle based on analysis result
+    const getSubtitle = (item: ScanHistoryItem) => {
+        const riskStatus = item.isSafe ? "Safe" : "Risk Detected";
+        const source = item.source === "ai" ? "AI" : "Community";
+        return `${riskStatus} - ${source}`;
+    };
+
+    // Handle item click to navigate to detail
+    const handleItemClick = (item: ScanHistoryItem) => {
+        navigate(ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT, {
+            state: { 
+                result: item.analysisResult, 
+                address: item.address 
+            }
+        });
+    };
+
+    const SHOW_EMPTY = filteredItems.length === 0;
 
     return (
         <div className={`w-[375px] h-[600px] bg-[#25262B] text-white pb-20 flex flex-col`}>
@@ -70,6 +101,8 @@ function ScanHistory() {
                                 type="text"
                                 placeholder="Search by token"
                                 className="bg-transparent outline-none placeholder:text-white/60 w-full text-sm"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <button
@@ -96,16 +129,29 @@ function ScanHistory() {
                             </>
                         ) : (
                             <div className="mt-1 space-y-3">
-                                {scanItems.map((item) => (
-                                    <div key={item.id} className="">
+                                {filteredItems.map((item) => (
+                                    <div 
+                                        key={item.id} 
+                                        className="cursor-pointer hover:bg-white/5 rounded-lg p-2 transition-colors"
+                                        onClick={() => handleItemClick(item)}
+                                    >
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center">
-                                                <img src={item.icon} alt="token" className="w-10 h-10 rounded-full" />
+                                                <img 
+                                                    src={getTokenImageURL(item.tokenType)} 
+                                                    alt={item.tokenType} 
+                                                    className="w-10 h-10 rounded-full"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = "/assets/images/default-token.png";
+                                                    }}
+                                                />
                                                 <div className="ml-3">
                                                     <div className="text-[14px] font-normal leading-6">
-                                                        {item.address}
+                                                        {formatAddress(item.address)}
                                                     </div>
-                                                    <div className="text-white/60 mt-1">{item.subtitle}</div>
+                                                    <div className={`text-[12px] mt-1 ${item.isSafe ? 'text-green-400' : 'text-red-400'}`}>
+                                                        {getSubtitle(item)}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="text-white/60 text-[14px] mt-1">{item.date}</div>
