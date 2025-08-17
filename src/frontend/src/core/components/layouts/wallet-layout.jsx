@@ -142,7 +142,7 @@ function WalletLayoutContent() {
 
   // Menu configuration with logout function
   const menu = [
-    { label: "Transactions", icon: "wallet", path: "/wallet" },
+    { label: "Assets", icon: "wallet", path: "/wallet" },
     {
       label: "Analyze Address",
       icon: "analyze-address",

@@ -31,25 +31,25 @@ ic-ed25519 = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sol_rpc_types = { version = "1.0.0", path = "../types" }
-solana-account-decoder-client-types = { workspace = true, features = ["zstd"] }
-solana-hash = { workspace = true }
-solana-instruction = { workspace = true }
-solana-keypair = { workspace = true, optional = true }
-solana-message = { workspace = true, optional = true }
-solana-nonce = { workspace = true, features = ["serde"] }
-solana-program = { workspace = true }
-solana-pubkey = { workspace = true }
-solana-reward-info = { workspace = true }
-solana-sdk-ids = { workspace = true }
-solana-signature = { workspace = true }
-solana-transaction = { workspace = true, optional = true }
-solana-transaction-error = { workspace = true }
-solana-transaction-status-client-types = { workspace = true }
+solana-account-decoder-client-types = { version = "=2.3.3", features = ["zstd"] }
+solana-hash = "=2.3.0"
+solana-instruction = "=2.3.0"
+solana-keypair = { version = "=2.2.3", optional = true }
+solana-message = { version = "=2.4.0", optional = true }
+solana-nonce = { version = "=2.2.1", features = ["serde"] }
+solana-program = "=2.3.0"
+solana-pubkey = "=2.4.0"
+solana-reward-info = "=2.2.1"
+solana-sdk-ids = "=2.2.1"
+solana-signature = "=2.3.0"
+solana-transaction = { version = "=2.2.3", optional = true }
+solana-transaction-error = "=2.2.1"
+solana-transaction-status-client-types = "=2.3.3"
 strum = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
-solana-keypair = { workspace = true }
-solana-transaction = { workspace = true }
+solana-keypair = "=2.2.3"
+solana-transaction = "=2.2.3"
 tokio = { workspace = true, features = ["full"] }

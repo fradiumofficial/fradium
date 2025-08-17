@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import { backend } from "declarations/backend";
 import { bitcoin } from "declarations/bitcoin";
 import { solana } from "declarations/solana";
+import { ethereum } from "declarations/ethereum";
 import { useAuth } from "./auth-provider";
 
 // Create context for wallet data
@@ -134,12 +135,28 @@ export const WalletProvider = ({ children }) => {
 
   const createWallet = useCallback(async () => {
     setIsCreatingWallet(true);
+
+    console.log("identity", identity);
     try {
       // Get bitcoin address
       const bitcoinResponse = await bitcoin.get_p2pkh_address();
 
       // Get solana address
       const solanaResponse = await solana.solana_account([identity?.getPrincipal()]);
+
+      // Get Ethereum address
+      const ethereumResponse = await ethereum.get_address();
+
+      console.log("ethereumResponse", ethereumResponse);
+
+      let ethereumAddress = "-";
+
+      if ("Err" in ethereumResponse) {
+        console.error("Failed to get Ethereum address:", ethereumResponse);
+        throw new Error("Failed to get Ethereum address");
+      } else {
+        ethereumAddress = ethereumResponse.Ok;
+      }
 
       // Create wallet with new structure
       const response = await backend.create_wallet({
@@ -152,7 +169,7 @@ export const WalletProvider = ({ children }) => {
           {
             network: { Ethereum: null },
             token_type: { Ethereum: null },
-            address: "0x0000000000000000000000000000000000000000",
+            address: ethereumAddress,
           },
           {
             network: { Solana: null },
@@ -193,8 +210,6 @@ export const WalletProvider = ({ children }) => {
       const response = await backend.get_wallet();
       if ("Ok" in response) {
         setUserWallet(response.Ok);
-      } else {
-        createWallet();
       }
     } catch (error) {
       setUserWallet(null);

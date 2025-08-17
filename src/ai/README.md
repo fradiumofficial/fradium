@@ -1,25 +1,32 @@
-# 🛡️ On-Chain Ransomware Detector on the Internet Computer
+# 🛡️ Multi-Chain On-Chain Ransomware Detector on the Internet Computer
 
-This project showcases a fully **on-chain machine learning** system that detects ransomware-related activity based on the behavioral patterns of Bitcoin addresses. It is deployed as a **canister smart contract on the Internet Computer (ICP)** blockchain, allowing **trustless and decentralized** inference directly on-chain—no external servers needed.
+This project showcases an advanced **multi-chain machine learning** system that detects ransomware-related activity across Bitcoin, Ethereum, and Solana blockchains. Deployed as a **canister smart contract on the Internet Computer (ICP)** blockchain, it provides **trustless and decentralized** inference with flexible preprocessing architectures tailored for each blockchain's unique characteristics.
 
 ---
 
 ## 🚀 Key Features
 
-* **Fully On-Chain ML Inference**
-  All predictions are executed within the canister using a neural network (MLP) model powered by [`tract-onnx`](https://github.com/sonos/tract). No off-chain computation is required.
+* **Multi-Chain Support**
+  Comprehensive analysis across Bitcoin, Ethereum, and Solana networks with chain-specific optimizations and feature extraction methodologies.
+
+* **Hybrid Processing Architecture**
+  - **Bitcoin & Ethereum**: Optimized hybrid approach with preprocessing handled client-side for enhanced efficiency
+  - **Solana**: Full on-chain processing with integrated feature extraction and analysis
+
+* **Advanced ML Inference**
+  Neural network models (MLP) powered by [`tract-onnx`](https://github.com/sonos/tract) for high-performance on-chain predictions.
 
 * **Stateful & Upgrade-Safe**
-  The canister persists its model and metadata across upgrades using **stable memory**, ensuring reliability in production.
+  Canisters persist models and metadata across upgrades using **stable memory**, ensuring production reliability.
 
-* **Decoupled Preprocessing**
-  Preprocessing and feature scaling are separated from the model, following machine learning deployment best practices.
+* **Flexible Data Processing**
+  Modular preprocessing pipeline that adapts to different blockchain architectures and data availability patterns.
 
 * **Atomic ML Deployment**
-  The ONNX model is **embedded into the Wasm binary** during compilation to ensure exact model-code synchronization.
+  ONNX models are **embedded into the Wasm binary** during compilation, ensuring perfect model-code synchronization.
 
-* **Robust Input/API Handling**
-  Pagination, API call limits, and malformed input are gracefully handled to ensure resilience and responsiveness.
+* **Production-Ready APIs**
+  Robust input validation, pagination support, and graceful error handling for enterprise-grade reliability.
 
 ---
 
@@ -31,7 +38,7 @@ This project showcases a fully **on-chain machine learning** system that detects
 | **Blockchain**     | Internet Computer (DFINITY)      |
 | **ML Inference**   | tract-onnx                       |
 | **Model Training** | Python (Scikit-learn + skl2onnx) |
-| **Data Source**    | blockchain.info API              |
+| **Data Sources**   | Multi-chain APIs (Bitcoin, Ethereum, Solana) |
 
 ---
 
@@ -39,33 +46,41 @@ This project showcases a fully **on-chain machine learning** system that detects
 
 ```
 ai/
-├── config/
-│   ├── model_metadata.json          # Thresholds and metadata
-│   └── scaler_parameters.json       # Scaler values for preprocessing
-├── data_samples/
-│   └── test_sample.json             # Sample input used for testing
-├── detector_service/
-│   └── src/
-│       ├── btc/                     # Bitcoin-specific 
-│       │   ├── config.rs
-│       │   ├── mod.rs
-│       │   └── models.rs
-│       ├── eth/                     # Ethereum-specific with ERC20 Support
-│       │   ├── config.rs
-│       │   ├── data_extractor.rs
-│       │   ├── feature_calculator.rs
-│       │   ├── mod.rs
-│       │   ├── models.rs
-│       │   ├── prediction.rs
-│       │   └── price_converter.rs
-│       ├── address_detector.rs      # Unified address prediction logic
-│       ├── lib.rs                   # Main entry point of the canister
-│       ├── ransomware_detector.did  # Candid interface definition
-│       └── shared_models.rs         # Reusable types or shared utilities
-├── models/                          # (Optional) Store generated models
-├── scripts/                         # (Optional) For any extra tooling/scripts
-├── Cargo.toml                       # Rust crate config
-├── Cargo.lock                       # Locked Rust dependencies
+├── models/
+│   ├── btc_risk_model_mlp.onnx      # Bitcoin MLP model
+│   ├── eth_risk_model_mlp.onnx      # Ethereum MLP model
+│   └── sol_risk_model_mlp.onnx      # Solana MLP model
+├── src/
+│   ├── btc/                         # Bitcoin-specific modules
+│   │   ├── config.rs                # BTC configuration
+│   │   ├── mod.rs                   # BTC module entry
+│   │   └── models.rs                # BTC model handling
+│   ├── eth/                         # Ethereum-specific with ERC20 Support
+│   │   ├── config.rs                # ETH configuration
+│   │   ├── mod.rs                   # ETH module entry
+│   │   ├── models.rs                # ETH model handling
+│   │   └── prediction.rs            # ETH prediction logic
+│   ├── sol/                         # Solana-specific modules
+│   │   ├── config.rs                # SOL configuration
+│   │   ├── data_extractor.rs        # SOL data extraction
+│   │   ├── feature_calculator.rs    # SOL feature calculation
+│   │   ├── mod.rs                   # SOL module entry
+│   │   ├── models.rs                # SOL model handling
+│   │   ├── prediction.rs            # SOL prediction logic
+│   │   └── price_converter.rs       # SOL price conversion
+│   ├── address_detector.rs          # Multi-chain address detection
+│   ├── lib.rs                       # Main canister entry point
+│   └── shared_models.rs             # Cross-chain shared utilities
+├── training/
+│   ├── config/
+│   │   ├── model_metadata.json      # Model thresholds and metadata
+│   │   └── scaler_parameters.json   # Feature scaling parameters
+│   ├── data_samples/
+│   │   └── test_sample.json         # Testing data samples
+│   └── scripts/
+│       └── onnx_xgtrain_v3.py       # Model training script
+├── ai.did                           # Candid interface definition
+├── Cargo.toml                       # Rust crate configuration
 └── README.md                        # Documentation (this file)
 ```
 
@@ -98,38 +113,39 @@ pip install pandas numpy scikit-learn onnx onnxruntime skl2onnx joblib
 
 ---
 
-### 🤖 Step 2: Train the Model & Export Artifacts
+### 🤖 Step 2: Train the Models & Export Artifacts
 
 ```bash
-# Navigate to scripts directory and run training
-cd scripts
-python train_model.py
+# Navigate to training scripts directory
+cd training/scripts
+python onnx_xgtrain_v3.py
 ```
 
 This script will:
 
-* Train the MLPClassifier and StandardScaler
-* Export artifacts to the `ai/config/` directory:
+* Train MLPClassifier models for each blockchain
+* Export configuration artifacts to `training/config/`:
   * `model_metadata.json`
   * `scaler_parameters.json`
-* Save trained models to the `ai/models/` directory
+* Generate ONNX models for Bitcoin, Ethereum, and Solana
 
 ---
 
 ### 🧬 Step 3: Configure the Canister
 
-The model artifacts are automatically loaded from the `ai/config/` directory:
+Model artifacts are automatically loaded during canister initialization:
 
-1. **Model Metadata:**
-   * Configuration is loaded from `ai/config/model_metadata.json`
-   * Contains classification thresholds and model parameters
+1. **Multi-Chain Models:**
+   * Bitcoin: `models/btc_risk_model_mlp.onnx`
+   * Ethereum: `models/eth_risk_model_mlp.onnx`
+   * Solana: `models/sol_risk_model_mlp.onnx`
 
-2. **Scaler Parameters:**
-   * Feature scaling parameters are loaded from `ai/config/scaler_parameters.json`
-   * Ensures consistent data preprocessing
+2. **Configuration Files:**
+   * Model metadata loaded from `training/config/model_metadata.json`
+   * Scaling parameters from `training/config/scaler_parameters.json`
 
 3. **Test Data:**
-   * Sample addresses for testing are available in `ai/data_samples/test_samples.json`
+   * Sample data available in `training/data_samples/test_sample.json`
 
 ---
 
@@ -147,111 +163,157 @@ dfx start --clean --background
 dfx deploy
 ```
 
-> You should see logs such as:
+> Expected initialization logs:
 >
 > ```
-> [init] ✅ Metadata loaded successfully
-> [init] ✅ Embedded model loaded
+> [init] ✅ Multi-chain models loaded successfully
+> [init] ✅ Configuration metadata loaded
+> [init] ✅ Ready for multi-chain analysis
 > ```
 
 ---
 
 ### ♻️ Optional: Redeploy After Model Updates
 
-If you retrain the model or update metadata:
+For model retraining or configuration updates:
 
 ```bash
 dfx deploy --mode reinstall
 ```
 
-This ensures the `#[init]` function is triggered again, reloading the new model and metadata.
+This triggers the `#[init]` function, reloading updated models and configurations.
 
 ---
 
-### 🧪 Step 5: Test the Canister
+### 🧪 Step 5: Test Multi-Chain Analysis
 
 #### ✔️ Check Deployment Status
 
 ```bash
-dfx canister call ransomware_detector get_model_info
+dfx canister call ai get_model_info
 ```
 
-> Expected Output:
->
-> ```bash
-> (variant { Ok = "Status - Metadata: LOADED... | Model: LOADED" })
-> ```
-
-#### 🔍 Analyze Bitcoin Addresses
+#### 🔍 Analyze Bitcoin Addresses (Hybrid Processing)
 
 ```bash
-# Illicit address (example)
-dfx canister call ransomware_detector analyze_address '("13AM4VW2dhxYgXeQepoHkHSQuy6NgaEb94")'
-
-# Normal address
-dfx canister call ransomware_detector analyze_address '("1NDyJtNTjmwk5xPNhjgAMu4HDHigtobu1s")'
+# Bitcoin analysis with preprocessed features
+dfx canister call ai analyze_btc_address '(vec {0.1; 0.5; 0.8; 0.3}, "13AM4VW2dhxYgXeQepoHkHSQuy6NgaEb94", 42)'
 ```
 
-#### 🔍 Analyze Ethereum Addresses
+#### 🔍 Analyze Ethereum Addresses (Hybrid Processing)
 
 ```bash
-# Ethereum address analysis
-dfx canister call ransomware_detector analyze_eth_address '("0x123...")'
+# Ethereum analysis with feature map
+dfx canister call ai analyze_eth_address '(vec {record {"tx_frequency"; 0.7}; record {"amount_variance"; 0.3}}, "0x123...", 15)'
+```
+
+#### 🔍 Analyze Solana Addresses (Full On-Chain Processing)
+
+```bash
+# Solana analysis with complete on-chain processing
+dfx canister call ai analyze_sol_address '("11111111111111111111111111111112")'
 ```
 
 ---
 
 ## 🏗️ Architecture Overview
 
+### Processing Models by Chain
+
+#### 🟠 Bitcoin & Ethereum - Hybrid Architecture
+- **Client-Side Preprocessing**: Feature extraction and data preparation handled externally for optimal efficiency
+- **On-Chain Inference**: ML model predictions executed within the canister
+- **Benefits**: Reduced computational overhead while maintaining decentralized inference
+
+#### 🟣 Solana - Full On-Chain Processing
+- **Integrated Pipeline**: Complete feature extraction, preprocessing, and inference on-chain
+- **Self-Contained**: No external dependencies for data processing
+- **Advanced Integration**: Direct blockchain data access and real-time analysis
+
 ### Core Components
 
-- **Detector Service**: Main service handling address analysis requests
-- **Feature Calculator**: Extracts behavioral features from blockchain data
-- **Model Interface**: Handles ML model loading and inference
-- **Data Extractor**: Retrieves blockchain transaction data
-- **Prediction Engine**: Processes features through trained models
-
-### Multi-Chain Support
-
-- **Bitcoin**: Primary ransomware detection using transaction patterns
-- **Ethereum**: Extended support for Ethereum address analysis including Ethereum address which has ERC20 transactions
+- **Address Detector**: Multi-chain address format recognition and routing
+- **Chain-Specific Modules**: Tailored processing for Bitcoin, Ethereum, and Solana
+- **Model Interface**: Unified ML model loading and inference across chains
+- **Feature Processors**: Chain-optimized feature extraction and calculation
+- **Prediction Engines**: Specialized prediction logic for each blockchain
 
 ---
 
 ## 📊 Model Information
 
-The system uses machine learning models trained on behavioral patterns of Bitcoin addresses, including:
+The system employs specialized machine learning models trained on blockchain-specific behavioral patterns:
 
-- Transaction frequency patterns
+### Bitcoin Features
+- Transaction frequency and timing patterns
+- Address clustering and wallet behavior
 - Amount distribution analysis
-- Address clustering behavior
-- Temporal transaction patterns
+- UTXO spending patterns
 
-Models are trained using scikit-learn and exported to ONNX format for efficient on-chain inference.
+### Ethereum Features  
+- Smart contract interaction patterns
+- ERC-20 token transaction behavior
+- Gas usage optimization patterns
+- Address interaction networks
+
+### Solana Features
+- Program interaction analysis
+- Token account management patterns
+- Transaction fee optimization
+- Validator interaction behavior
+
+All models are trained using scikit-learn and exported to ONNX format for efficient on-chain inference.
 
 ---
 
 ## 🔧 Development
 
-### Adding New Features
+### Adding New Blockchain Support
 
-1. Update feature calculation in `ai/eth/feature_calculator.rs` or equivalent
-2. Retrain models using updated scripts
-3. Update configuration files in `ai/config/`
-4. Redeploy the canister
+1. Create new chain module in `src/{chain}/`
+2. Implement chain-specific feature extraction
+3. Train and export ONNX model to `models/`
+4. Update address detection in `address_detector.rs`
+5. Add new endpoint in `lib.rs`
+
+### Updating Existing Models
+
+1. Modify feature calculation in respective chain modules
+2. Retrain models using `training/scripts/onnx_xgtrain_v3.py`
+3. Update configuration in `training/config/`
+4. Redeploy canister with `--mode reinstall`
 
 ### Testing
 
-Test samples are provided in `ai/data_samples/test_samples.json` for validation and testing purposes.
+Comprehensive test samples are provided in `training/data_samples/test_sample.json` for validation across all supported chains.
+
+---
+
+## 🔄 API Reference
+
+### Analyze Bitcoin Address
+```rust
+analyze_btc_address(features: Vec<f32>, address: String, transaction_count: u32) -> Result<RansomwareResult, String>
+```
+
+### Analyze Ethereum Address  
+```rust
+analyze_eth_address(features: HashMap<String, f64>, address: String, transaction_count: u32) -> Result<RansomwareResult, String>
+```
+
+### Analyze Solana Address
+```rust
+analyze_sol_address(address: String) -> Result<RansomwareResult, String>
+```
 
 ---
 
 ## 📌 Notes
 
-* The project is designed with upgrade hooks (`pre_upgrade`, `post_upgrade`) to ensure resilience.
-* The model supports inference for Bitcoin and Ethereum addresses based on transaction patterns.
-* Prediction output is probabilistic and should be used as one of several indicators for illicit activity.
-* Multi-chain architecture allows for easy extension to other blockchain networks for later development.
+* The project implements upgrade-safe patterns (`pre_upgrade`, `post_upgrade`) for production resilience
+* Multi-chain architecture allows seamless extension to additional blockchain networks
+* Prediction outputs are probabilistic and should be used as part of comprehensive risk assessment
+* Each chain module is optimized for its specific blockchain characteristics and data availability patterns
 
 ---
 

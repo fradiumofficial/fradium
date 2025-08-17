@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import CustomButton from "@/core/components/custom-button-a";
 import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal";
 import { backend } from "declarations/backend";
-import { ransomware_detector } from "declarations/ransomware_detector";
-import { extractFeatures } from "@/core/services/ai/bitcoinAnalyzeService";
+import { ai } from "declarations/ai";
+import { extractFeatures as extractFeaturesBTC } from "@/core/services/ai/bitcoinAnalyzeService";
+import { extractFeatures as extractFeaturesETH, getTxCountFromFeatures as getTxCountFromFeaturesETH } from "@/core/services/ai/ethereumAnalyzeService";
 import { jsonStringify } from "@/core/lib/canisterUtils";
 import { detectTokenType, TokenType } from "@/core/lib/tokenUtils";
 
@@ -62,13 +63,16 @@ export default function AnalyseAddressPage() {
   // Helper function to perform AI analysis
   const performAIAnalysis = async (address) => {
     try {
+      let features;
+      let ransomwareReport;
+
       const tokenType = detectTokenType(address);
 
       switch (tokenType) {
         case TokenType.BITCOIN:
           // Bitcoin AI Analysis - Implemented
-          const features = await extractFeatures(address);
-          const ransomwareReport = await ransomware_detector.analyze_address_v2(features, address, features.length);
+          features = await extractFeaturesBTC(address);
+          ransomwareReport = await ai.analyze_btc_address(features, address, features.length);
 
           if ("Ok" in ransomwareReport) {
             return {
@@ -80,9 +84,20 @@ export default function AnalyseAddressPage() {
           throw new Error("Bitcoin AI analysis failed");
 
         case TokenType.ETHEREUM:
-          // Ethereum AI Analysis - NOT IMPLEMENT
-          console.warn("Ethereum AI analysis not implemented yet");
-          return null;
+          // Ethereum AI Analysis - Implemented
+          features = await extractFeaturesETH(address);
+          const featuresPairs = Object.entries(features).map(([k, v]) => [k, Number(v)]);
+          const txCount = getTxCountFromFeaturesETH(features);
+          ransomwareReport = await ai.analyze_eth_address(featuresPairs, address, txCount);
+
+          if ("Ok" in ransomwareReport) {
+            return {
+              isSafe: !ransomwareReport.Ok.is_ransomware,
+              data: ransomwareReport.Ok,
+              source: "ai",
+            };
+          }
+          throw new Error("Ethereum AI analysis failed");
 
         case TokenType.SOLANA:
           // Solana AI Analysis - NOT IMPLEMENT

@@ -19,66 +19,7 @@ pub mod logs {
     }
 }
 
-#[allow(dead_code)]
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct EtherscanTx {
-    pub block_number: String,
-    pub time_stamp: String,
-    pub hash: String,
-    #[serde(default)]
-    pub from: String,
-    #[serde(default)]
-    pub to: String,
-    #[serde(default)]
-    pub value: String,
-    #[serde(default)]
-    pub contract_address: String,
-    #[serde(default)]
-    pub gas_used: String,
-    #[serde(default)]
-    pub gas_price: String,
-    #[serde(default, rename = "tokenSymbol")]
-    pub token_symbol: String,
-    #[serde(default, rename = "tokenDecimal")]
-    pub token_decimal: String,
-    #[serde(skip)]
-    pub tx_type: TxType,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TxType {
-    ETH,
-    ERC20,
-}
-
-impl Default for TxType {
-    fn default() -> Self {
-        TxType::ETH
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct MoralisTokenMetadata {
-    pub symbol: String,
-    pub decimals: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct MoralisPrice {
-    pub usd_price: f64,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct DefiLlamaResponse {
-    pub coins: HashMap<String, DefiLlamaCoin>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct DefiLlamaCoin {
-    pub price: f64,
-}
+// Remove external fetch-related structs; handled on frontend
 
 #[derive(CandidType, Deserialize, Debug, Clone, PartialEq)]
 pub struct TokenInfo {

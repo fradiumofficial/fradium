@@ -1,0 +1,26 @@
+[package]
+name = "ethereum"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+getrandom = { workspace = true, default-features = false, features = ["custom"] }
+ic-cdk-timers = "0.11.0"
+serde = { workspace = true, features = ["derive"] }
+serde_bytes = { workspace = true }
+serde_json = { workspace = true }
+serde_with = { workspace = true }
+
+alloy = { git = "https://github.com/ic-alloy/ic-alloy.git", tag = "v0.3.5-icp.1", default-features = false, features = [
+  "icp",
+  "sol-types",
+  "json",
+  "contract",
+] }

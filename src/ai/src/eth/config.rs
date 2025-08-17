@@ -1,26 +1,7 @@
 // src/config.rs
 
-// --- API Keys ---
-pub const ETHERSCAN_API_KEY: &str = "Q5RI68P5I737N2XUU9Y14JH5BJF97HU1I3";
-pub const CRYPTOCOMPARE_API_KEY: &str = "05c9ed12474c1681807b9948d95d4b3a55e0842ae70bb6091d65c15ad3393296";
-pub const MORALIS_API_KEY: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjllNmM5OGRhLTJhMGEtNDcxMy1hMGY0LTUxNzBiZTc5ZWIyNyIsIm9yZ0lkIjoiNDU5OTkzIiwidXNlcklkIjoiNDczMjQ4IiwidHlwZUlkIjoiZTRlZmY4OTctMGQzZi00OGY0LTlhY2QtMGI2ZDY1NjU5NDg3IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTI4MzQ0OTEsImV4cCI6NDkwODU5NDQ5MX0.RGZajAu8YGhjtDHZ9LgZn64m-dlRv9oBTEwegLQybM";
+pub const ETH_MODEL_BYTES: &[u8] = include_bytes!("../../models/eth_risk_model_mlp.onnx");
 
-// --- Constants ---
-pub const WEI_TO_ETH: f64 = 1_000_000_000_000_000_000.0;
-pub const MAX_TRANSACTIONS_PER_ADDRESS: usize = 100;
-pub const ETHERSCAN_MAX_RECORDS: usize = 10000;
-
-// Base URLs for APIs
-pub const ETHERSCAN_API_URL: &str = "https://api.etherscan.io/api";
-pub const MORALIS_METADATA_URL: &str = "https://deep-index.moralis.io/api/v2.2/erc20/metadata";
-pub const MORALIS_PRICE_URL: &str = "https://deep-index.moralis.io/api/v2.2/erc20";
-pub const CRYPTOCOMPARE_URL: &str = "https://min-api.cryptocompare.com/data/pricehistorical";
-pub const DEFILLAMA_URL: &str = "https://coins.llama.fi/prices/historical";
-pub const HTTP_OUTCALL_CYCLES: u128 = 25_000_000_000;
-
-pub const ETH_MODEL_BYTES: &[u8] = include_bytes!("../../../models/eth_ransomware_model_mlp.onnx");
-
-// PASTE THE CONTENT of your 'eth_scaler_parameters.json' file here.
 pub const ETH_SCALER_PARAMS_JSON: &str = r#"
 {
   "mean": [

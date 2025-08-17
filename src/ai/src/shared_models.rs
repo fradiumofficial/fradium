@@ -14,3 +14,11 @@ pub struct RansomwareResult {
     pub confidence: f64,
     pub data_source: String,
 }
+
+#[derive(CandidType, Deserialize, Debug)]
+pub enum PredictionError {
+    ModelInitialization(String),
+    DataExtraction(String),
+    FeatureCalculation(String),
+    ModelInference(String),
+}

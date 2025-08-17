@@ -10,7 +10,7 @@
       "source": ["src/frontend/dist"],
       "type": "assets",
       "workspace": "frontend",
-      "dependencies": ["backend", "ai", "bitcoin", "token", "chatbot", "solana"]
+      "dependencies": ["backend", "ransomware_detector", "bitcoin", "token", "chatbot", "solana"]
     },
     "internet_identity": {
       "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
@@ -43,18 +43,12 @@
       "main": "src/bitcoin/Main.mo",
       "type": "motoko"
     },
-    "ai": {
-      "type": "custom",
-      "package": "ai",
-      "candid": "src/ai/ai.did",
+    "ransomware_detector": {
+      "type": "rust",
+      "package": "ransomware_detector",
+      "candid": "src/ai/detector_service/src/ransomware_detector.did",
       "optimize": "cycles",
-      "wasm": "target/wasm32-unknown-unknown/release/ai.wasm",
-      "metadata": [
-        {
-          "name": "candid:service"
-        }
-      ],
-      "build": ["cargo build --target wasm32-unknown-unknown --release -p ai", "candid-extractor target/wasm32-unknown-unknown/release/ai.wasm > src/ai/ai.did"]
+      "build": ["./bin/build.sh"]
     },
     "sol_rpc": {
       "specified_id": "lxzze-o7777-77777-aaaaa-cai",
@@ -83,31 +77,23 @@
       ],
       "init_arg": "( record { solana_network = opt variant { Devnet }; ed25519_key_name = opt variant { MainnetTestKey1 }; sol_rpc_canister_id = opt principal \"tghme-zyaaa-aaaar-qarca-cai\" } )"
     },
-    "ethereum": {
-      "candid": "src/ethereum/ethereum.did",
-      "package": "ethereum",
-      "type": "custom",
-      "shrink": true,
-      "gzip": true,
-      "wasm": "target/wasm32-unknown-unknown/release/ethereum.wasm",
-      "build": ["cargo build --target wasm32-unknown-unknown --release -p ethereum", "candid-extractor target/wasm32-unknown-unknown/release/ethereum.wasm > src/ethereum/ethereum.did"],
-      "metadata": [
-        {
-          "name": "candid:service"
-        }
-      ]
-    },
     "evm_rpc": {
+      "type": "rust",
       "candid": "https://github.com/internet-computer-protocol/evm-rpc-canister/releases/latest/download/evm_rpc.did",
-      "init_arg": "(record { })",
+      "wasm": "https://github.com/internet-computer-protocol/evm-rpc-canister/releases/latest/download/evm_rpc.wasm.gz",
       "remote": {
         "id": {
           "ic": "7hfb6-caaaa-aaaar-qadga-cai"
         }
       },
-      "specified_id": "7hfb6-caaaa-aaaar-qadga-cai",
-      "type": "custom",
-      "wasm": "https://github.com/internet-computer-protocol/evm-rpc-canister/releases/latest/download/evm_rpc.wasm.gz"
+      "init_arg": "(record {})"
+    },
+    "ethereum": {
+      "type": "rust",
+      "candid": "src/ethereum/ethereum.did",
+      "package": "ethereum",
+      "wasm": "target/wasm32-unknown-unknown/release/ethereum.wasm",
+      "build": ["cargo build --target wasm32-unknown-unknown --release -p ethereum", "candid-extractor target/wasm32-unknown-unknown/release/ethereum.wasm > src/ethereum/ethereum.did"]
     }
   },
   "defaults": {

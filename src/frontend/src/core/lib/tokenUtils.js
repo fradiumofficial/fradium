@@ -160,6 +160,7 @@ export async function getPriceUSD(tokenType, amountInToken) {
   // Try CoinGecko first
   try {
     const response = await fetch(urlCoingecko);
+
     if (response.ok) {
       const data = await response.json();
       price = data[id]?.usd || 0;
@@ -203,7 +204,26 @@ export async function getPriceUSD(tokenType, amountInToken) {
     return "$0.00";
   }
 
-  return `$${usdValue.toFixed(2)}`;
+  // Format USD dinamis:
+  // - >= 0.01: 2 desimal
+  // - < 0.01 dan > 0: gunakan toLocaleString tanpa trailing zero (hingga 20 desimal)
+  let formattedUsd = "0.00";
+  if (usdValue >= 0.01) {
+    formattedUsd = usdValue.toFixed(2);
+  } else if (usdValue > 0) {
+    const small = usdValue
+      .toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 20,
+        useGrouping: false,
+      })
+      .replace(/0+$/, "")
+      .replace(/\.$/, "");
+    formattedUsd = small && small !== "" ? small : "0.00";
+  } else {
+    formattedUsd = "0.00";
+  }
+  return `$${formattedUsd}`;
 }
 
 export function getAmountToken(tokenType, amountInToken) {
@@ -216,14 +236,13 @@ export function getAmountToken(tokenType, amountInToken) {
   const decimals = TOKENS_CONFIG[tokenType]?.decimals ?? 8;
   const amount = amountInToken / factor;
 
-  // Format dengan fixed decimal, lalu hapus trailing zero
+  // Format dengan fixed decimal, lalu hapus trailing zero tanpa mengubah ke Number
+  // agar tidak menjadi notasi ilmiah (e.g., 1e-8)
   const formattedAmount = amount.toFixed(decimals);
-  const result = Number(formattedAmount)
-    .toString()
-    .replace(/\.?0+$/, "");
+  const trimmed = formattedAmount.replace(/\.?0+$/, "");
 
-  // Ensure we don't return empty string
-  return result || "0";
+  // Pastikan tidak mengembalikan string kosong
+  return trimmed.length > 0 ? trimmed : "0";
 }
 
 /**
@@ -236,6 +255,7 @@ export function amountToBaseUnit(tokenType, amount) {
   const factor = TOKENS_CONFIG[tokenType]?.unitConversion?.factor || 1;
   const n = parseFloat(amount);
   if (isNaN(n) || n <= 0) return 0;
+
   return Math.floor(n * factor);
 }
 
@@ -250,5 +270,6 @@ export function baseUnitToAmount(tokenType, baseAmount) {
   if (!baseAmount || isNaN(baseAmount) || baseAmount <= 0) return "0";
   const amount = baseAmount / factor;
   const decimals = TOKENS_CONFIG[tokenType]?.decimals ?? 8;
+
   return amount.toFixed(decimals).replace(/\.?0+$/, "");
 }

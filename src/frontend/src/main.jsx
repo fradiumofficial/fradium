@@ -15,6 +15,7 @@ import { backend } from "declarations/backend";
 import { token } from "declarations/token";
 import { bitcoin } from "declarations/bitcoin";
 import { solana } from "declarations/solana";
+import { ethereum } from "declarations/ethereum";
 
 // Provider
 import { AuthProvider } from "@/core/providers/auth-provider.jsx";
@@ -95,7 +96,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider canisters={{ backend, token, bitcoin, solana }}>
+      <AuthProvider canisters={{ backend, token, bitcoin, solana, ethereum }}>
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />

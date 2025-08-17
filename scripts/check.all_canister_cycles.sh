@@ -28,27 +28,14 @@ format_cycles() {
     fi
 }
 
-# Check wallet balance first
-echo -e "${BLUE}📊 Wallet Balance:${NC}"
-wallet_balance=$(dfx wallet --ic balance 2>/dev/null | grep -o '[0-9,]*' | tr -d ',')
-if [ ! -z "$wallet_balance" ]; then
-    formatted_wallet=$(format_cycles $wallet_balance)
-    echo -e "   💰 ${GREEN}${formatted_wallet} cycles${NC}"
-else
-    echo -e "   ${RED}❌ Could not fetch wallet balance${NC}"
-fi
-
-echo ""
-echo -e "${BLUE}🏭 Canister Balances:${NC}"
-
 # Array of canisters to check
-canisters=("backend" "token" "bitcoin" "ransomware_detector" "chatbot" "frontend" "solana")
+canisters=("backend" "token" "bitcoin" "ransomware_detector" "chatbot" "frontend" "solana" "ethereum")
 
 for canister in "${canisters[@]}"; do
     echo -n "   📦 ${canister}: "
     
     # Get canister status and extract cycles
-    status_output=$(dfx canister --ic status $canister 2>/dev/null)
+    status_output=$(dfx canister status $canister 2>/dev/null)
     
     if [ $? -eq 0 ]; then
         # Extract cycles from status output
