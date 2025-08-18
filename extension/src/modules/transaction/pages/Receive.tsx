@@ -5,9 +5,139 @@ import CopyIcon from "../../../../public/assets/content_copy.svg";
 import NeoButton from "@/components/ui/custom-button";
 import { ROUTES } from "@/constants/routes";
 import { useNavigate } from "react-router-dom";
+import { useWalletApi } from "@/modules/wallet/api/WalletApi";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/authContext";
+
+interface NetworkAddress {
+  network: string;
+  address: string;
+  isLoading: boolean;
+  error?: string;
+}
 
 function Receive() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { getAddressForNetwork, hasWallet, isLoading: walletLoading } = useWalletApi();
+  const [addresses, setAddresses] = useState<NetworkAddress[]>([
+    { network: 'Bitcoin', address: '', isLoading: true },
+    { network: 'Ethereum', address: '', isLoading: true },
+    { network: 'Solana', address: '', isLoading: true },
+    { network: 'Fradium', address: '', isLoading: true }
+  ]);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  // Load addresses when component mounts
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (!isAuthenticated || !hasWallet || walletLoading) {
+        return;
+      }
+
+      const networks = ['Bitcoin', 'Ethereum', 'Solana', 'Fradium'];
+      const updatedAddresses = await Promise.all(
+        networks.map(async (network) => {
+          const result = getAddressForNetwork(network);
+          return {
+            network,
+            address: result.success ? result.data || '' : '',
+            isLoading: false,
+            error: result.success ? undefined : result.error
+          };
+        })
+      );
+
+      setAddresses(updatedAddresses);
+    };
+
+    loadAddresses();
+  }, [isAuthenticated, hasWallet, walletLoading, getAddressForNetwork]);
+
+  // Copy address to clipboard
+  const handleCopyAddress = async (address: string, network: string) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedAddress(`${network}-${address}`);
+      setTimeout(() => setCopiedAddress(null), 2000); // Clear after 2 seconds
+    } catch (error) {
+      console.error('Failed to copy address:', error);
+    }
+  };
+
+  // Generate QR code (placeholder - you might want to implement actual QR generation)
+  const handleShowQRCode = (address: string, network: string) => {
+    // TODO: Implement QR code modal
+    console.log(`Show QR code for ${network}: ${address}`);
+  };
+
+  const renderAddressInput = (networkData: NetworkAddress) => {
+    const { network, address, isLoading, error } = networkData;
+    const isCopied = copiedAddress === `${network}-${address}`;
+
+    return (
+      <div key={network} className="mb-4">
+        <h1 className="text-[14px] font-medium text-white mb-[6px]">{network}:</h1>
+        <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between">
+          <input 
+            type="text" 
+            value={isLoading ? "Loading..." : error ? `Error: ${error}` : address || "No address available"}
+            placeholder={`${network} address...`}
+            className="bg-transparent outline-none flex-1 text-xs"
+            readOnly
+          />
+          <div className="flex flex-row gap-[12px]">
+            <img 
+              src={QrCodeIcon} 
+              alt="QR Code" 
+              className={`w-5 h-5 cursor-pointer ${!address || isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+              onClick={() => address && !isLoading && handleShowQRCode(address, network)}
+            />
+            <div className="relative">
+              <img 
+                src={CopyIcon} 
+                alt="Copy" 
+                className={`w-5 h-5 cursor-pointer ${!address || isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+                onClick={() => address && !isLoading && handleCopyAddress(address, network)}
+              />
+              {isCopied && (
+                <div className="absolute -top-8 -left-4 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                  Copied!
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Redirect if not authenticated or no wallet
+  if (!isAuthenticated) {
+    return (
+      <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md p-[24px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white/70 mb-4">Please authenticate to view your addresses</p>
+          <NeoButton onClick={() => navigate(ROUTES.WELCOME)}>
+            Go to Login
+          </NeoButton>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasWallet && !walletLoading) {
+    return (
+      <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md p-[24px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white/70 mb-4">You need to create a wallet first</p>
+          <NeoButton onClick={() => navigate(ROUTES.WALLET_CONFIRMATION)}>
+            Create Wallet
+          </NeoButton>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
@@ -19,41 +149,13 @@ function Receive() {
       </div>
 
       <div className="flex flex-col px-[24px]">
-        {/* Bitcoin */}
-        <h1 className="text-[14px] font-medium text-white mb-[6px]">Bitcoin:</h1>
-        <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between mb-[16px]">
-          <input type="text" placeholder="Input address here..." className="bg-transparent outline-none flex-1"/>
-          <div className="flex flex-row gap-[12px]">
-            <img src={QrCodeIcon} alt="QR Code" className="w-5 h-5 cursor-pointer" />
-            <img src={CopyIcon} alt="Copy" className="w-5 h-5 cursor-pointer" />
-          </div>
-        </div>
+        {addresses.map(renderAddressInput)}
 
-        {/* Ethereum */}
-        <h1 className="text-[14px] font-medium text-white mb-[6px]">Ethereum:</h1>
-        <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between mb-[16px]">
-          <input type="text" placeholder="Input address here..." className="bg-transparent outline-none flex-1"/>
-          <div className="flex flex-row gap-[12px]">
-            <img src={QrCodeIcon} alt="QR Code" className="w-5 h-5 cursor-pointer" />
-            <img src={CopyIcon} alt="Copy" className="w-5 h-5 cursor-pointer" />
-          </div>
-        </div>
-
-        {/* Fradium */}
-        <h1 className="text-[14px] font-medium text-white mb-[6px]">Fradium:</h1>
-        <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between mb-[24px]">
-          <input type="text" placeholder="Input address here..." className="bg-transparent outline-none flex-1"/>
-          <div className="flex flex-row gap-[12px]">
-            <img src={QrCodeIcon} alt="QR Code" className="w-5 h-5 cursor-pointer" />
-            <img src={CopyIcon} alt="Copy" className="w-5 h-5 cursor-pointer" />
-          </div>
-        </div>
-
-        <div>
+        <div className="mt-6">
           <NeoButton onClick={() => navigate(ROUTES.HOME)}>
             Done
           </NeoButton>
-      </div>
+        </div>
       </div>
     </div>
   )

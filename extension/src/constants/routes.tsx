@@ -16,6 +16,7 @@ export const ROUTES = {
   SETTING: '/setting',
   ALL_NETWORK: '/all-network',
   CREATE_WALLET: '/create-wallet',
+  WALLET_CONFIRMATION: '/wallet-confirmation',
   WALLET_HOME: '/wallet-home',
   MANAGE_NETWORK: '/manage-network',
   RECEIVE: '/receive',

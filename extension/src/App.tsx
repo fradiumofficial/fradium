@@ -12,6 +12,7 @@ import History from "./modules/history/pages/History";
 import AnalysisProgress from "./modules/analyze_address/pages/AnalyzeProgress";
 import Failed from "./modules/SEO/Failed";
 import Welcome from "./modules/onboarding/Welcome";
+import WalletConfirmation from "./modules/onboarding/WalletConfirmation";
 import BottomNavbar from "./components/ui/bottom-appbar";
 import Account from "./modules/account/pages/Account";
 import ScanHistory from "./modules/history/pages/ScanHistory";
@@ -54,6 +55,7 @@ function App() {
             <Route path="/" element={<Navigate to={ROUTES.HOME} replace />} />
             
             {/* Wallet Routes */}
+            <Route path={ROUTES.WALLET_CONFIRMATION} element={<AuthGuard><WalletConfirmation /></AuthGuard>} />
             <Route path={ROUTES.CREATE_WALLET} element={<AuthGuard><CreateWallet /></AuthGuard>} />
             
             <Route element={<MainLayout />}>

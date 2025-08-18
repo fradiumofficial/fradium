@@ -98,5 +98,24 @@ export const getUserWallet = async (identity?: Identity): Promise<{ Ok: UserWall
   }
 };
 
+export const deleteUserWallet = async (userPrincipal: string, identity?: Identity): Promise<{ Ok: null } | { Err: string }> => {
+  try {
+    console.log('BackendService: Deleting user wallet for principal:', userPrincipal);
+    console.log('BackendService: Using identity:', identity ? 'authenticated' : 'anonymous');
+    const actor = await getBackendActor(identity);
+    
+    // Convert string to Principal
+    const { Principal } = await import('@dfinity/principal');
+    const principal = Principal.fromText(userPrincipal);
+    
+    const result = await actor.admin_delete_wallet(principal);
+    console.log('BackendService: Delete wallet result:', result);
+    return result as { Ok: null } | { Err: string };
+  } catch (error) {
+    console.error('Error in deleteUserWallet:', error);
+    throw new Error(`Failed to delete wallet: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
 // Export types for use in other files
 export type { WalletAddress, CreateWalletParams, UserWallet };

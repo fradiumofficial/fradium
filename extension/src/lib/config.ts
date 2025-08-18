@@ -5,12 +5,20 @@ const CANISTER_IDS = {
   local: {
     ransomware_detector: 'uxrrr-q7777-77774-qaaaq-cai',
     backend: 'uzt4z-lp777-77774-qaabq-cai',
-    ai: 'z7777-77777-77777-77777-77777-77777-77777-77777-cai'
+    ai: 'z7777-77777-77777-77777-77777-77777-77777-77777-cai',
+    bitcoin: '',
+    solana: '',
+    ethereum: '',
+    token: ''
   },
   ic: {
     ransomware_detector: 'zkoni-faaaa-aaaar-qbsaa-cai', // This is actually the AI canister
     backend: 'oqcob-6iaaa-aaaar-qbr7q-cai', // Mainnet canister ID
-    ai: 'zkoni-faaaa-aaaar-qbsaa-cai' // Use the actual AI canister ID
+    ai: 'zkoni-faaaa-aaaar-qbsaa-cai', // Use the actual AI canister ID
+    bitcoin: 'sr4wk-4qaaa-aaaae-qfdta-cai',
+    solana: 'vjrnc-hiaaa-aaaam-aejza-cai',
+    ethereum: '',
+    token: 'v3x23-lyaaa-aaaam-aej2a-cai'
   }
 };
 

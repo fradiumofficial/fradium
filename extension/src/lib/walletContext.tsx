@@ -180,36 +180,20 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       // Import services dynamically to avoid circular dependencies
       const { createWallet: backendCreateWallet, getUserWallet } = await import("@/icp/services/backend_service");
+      const { getBitcoinAddress } = await import("@/icp/services/bitcoin_service");
+      const { getSolanaAddress } = await import("@/icp/services/solana_service");
       
-      // For now, we'll create mock bitcoin and solana services
-      // In a real implementation, you'd import these from their respective service files
-      const mockBitcoinService = {
-        get_p2pkh_address: async () => {
-          // Generate a more realistic mock address based on user principal
-          const hash = principal ? principal.slice(-8) : "12345678";
-          return `1${hash}MockBitcoinAddr`;
-        }
-      };
-      
-      const mockSolanaService = {
-        solana_account: async (_principalArray: any) => {
-          // Generate a more realistic mock address based on user principal
-          const hash = principal ? principal.slice(-8) : "12345678";
-          return `${hash}MockSolanaAddress1111111111`;
-        }
-      };
-
       return {
         createWallet: backendCreateWallet,
         getUserWallet,
-        bitcoin: mockBitcoinService,
-        solana: mockSolanaService
+        getBitcoinAddress,
+        getSolanaAddress
       };
     } catch (error) {
       console.error("Error getting services:", error);
       throw error;
     }
-  }, [principal]);
+  }, []);
 
   const createWallet = useCallback(async () => {
     if (!identity || !principal) {
@@ -219,16 +203,16 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsCreatingWallet(true);
     try {
       console.log("WalletProvider: Starting wallet creation...");
-      const { createWallet: backendCreateWallet, getUserWallet, bitcoin, solana } = await getServices();
+      const { createWallet: backendCreateWallet, getUserWallet, getBitcoinAddress, getSolanaAddress } = await getServices();
 
       // Get bitcoin address
       console.log("WalletProvider: Getting Bitcoin address...");
-      const bitcoinResponse = await bitcoin.get_p2pkh_address();
+      const bitcoinResponse = await getBitcoinAddress();
       console.log("WalletProvider: Bitcoin address:", bitcoinResponse);
 
       // Get solana address
       console.log("WalletProvider: Getting Solana address...");
-      const solanaResponse = await solana.solana_account([principal]);
+      const solanaResponse = await getSolanaAddress(identity);
       console.log("WalletProvider: Solana address:", solanaResponse);
 
       // Create wallet with new structure
@@ -302,16 +286,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setUserWallet(response.Ok);
         setHasConfirmedWallet(true);
       } else {
-        console.log("WalletProvider: No wallet found, automatically creating one...");
+        console.log("WalletProvider: No wallet found");
         setUserWallet(null);
         setHasConfirmedWallet(false);
-        
-        // Automatically create wallet for new users
-        try {
-          await createWallet();
-        } catch (createError) {
-          console.error("WalletProvider: Failed to auto-create wallet:", createError);
-        }
       }
     } catch (error) {
       console.error("WalletProvider: Error fetching wallet:", error);

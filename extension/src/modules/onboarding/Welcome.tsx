@@ -6,21 +6,39 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { loginWithInternetIdentity } from "@/icp/icpAuth";
 import { useAuth } from "@/lib/authContext";
+import { useWallet } from "@/lib/walletContext";
 
 function Welcome() {
   const navigate = useNavigate();
   const { checkAuth, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { userWallet, isLoading: walletLoading, hasConfirmedWallet } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Auto-redirect if user becomes authenticated
+  // Auto-redirect if user becomes authenticated and has wallet
   useEffect(() => {
-    console.log("Welcome: useEffect - isAuthenticated:", isAuthenticated, "authLoading:", authLoading);
-    if (!authLoading && isAuthenticated) {
-      console.log("Welcome: User is authenticated, redirecting to home...");
-      navigate(ROUTES.HOME, { replace: true });
+    console.log("Welcome: useEffect - isAuthenticated:", isAuthenticated, "authLoading:", authLoading, "userWallet:", userWallet, "walletLoading:", walletLoading);
+    if (!authLoading && !walletLoading && isAuthenticated) {
+      if (userWallet && hasConfirmedWallet) {
+        // Check if wallet has mock data
+        const hasMockData = userWallet.addresses.some(addr => 
+          addr.address.includes('Mock') || addr.address.includes('mock')
+        );
+        
+        if (hasMockData) {
+          console.log("Welcome: User has wallet with mock data, redirecting to wallet confirmation...");
+          navigate(ROUTES.WALLET_CONFIRMATION, { replace: true });
+        } else {
+          console.log("Welcome: User is authenticated with real wallet, redirecting to home...");
+          navigate(ROUTES.HOME, { replace: true });
+        }
+      } else if (userWallet === null) {
+        // User is authenticated but has no wallet - redirect to wallet confirmation
+        console.log("Welcome: User is authenticated but has no wallet, redirecting to wallet confirmation...");
+        navigate(ROUTES.WALLET_CONFIRMATION, { replace: true });
+      }
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, userWallet, walletLoading, hasConfirmedWallet, navigate]);
 
   const handleCreateWallet = async () => {
     try {
@@ -43,8 +61,8 @@ function Welcome() {
       
       // Small delay to ensure auth state is updated
       setTimeout(() => {
-        console.log("Welcome: Final navigation to HOME");
-        navigate(ROUTES.HOME);
+        console.log("Welcome: Final navigation - checking wallet status...");
+        // The useEffect will handle the appropriate navigation based on wallet status
       }, 1000);
       
     } catch (e) {
@@ -56,7 +74,7 @@ function Welcome() {
         console.log("Welcome: Retrying auth check...");
         await checkAuth();
         console.log("Welcome: Retry - isAuthenticated:", isAuthenticated);
-        navigate(ROUTES.HOME);
+        // The useEffect will handle the appropriate navigation based on wallet status
       }, 1000);
     } finally {
       setIsLoading(false);
