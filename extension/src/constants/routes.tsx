@@ -11,7 +11,6 @@ export const ROUTES = {
   ACCOUNT: '/account',
   ANALYZE_PROGRESS: '/analyze-progress',
   FAILED: '/failed',
-  ANALYZE_ADDRESS_COMMUNITY_RESULT: '/analyze-address-community-result',
   WELCOME: '/',
   AI_ANALYZER: '/ai-analyzer',
   SETTING: '/setting',

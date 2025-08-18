@@ -1,6 +1,6 @@
 import { analyzeAddressCommunity } from "@/icp/services/backend_service";
 import { detectTokenType, TokenType } from "@/lib/tokenUtils";
-import { analyzeBtcAddress, analyzeEthAddress } from "@/icp/services/ai_service";
+import { analyzeBtcAddress, analyzeEthAddress, analyzeSolAddress } from "@/icp/services/ai_service";
 import { extractFeatures as extractFeaturesBTC } from "../services/ai/bitcoinAnalyzeService";
 import { extractFeatures as extractFeaturesETH } from "../services/ai/ethereumAnalyzeService";
 
@@ -68,9 +68,16 @@ async function performAIAnalysis(address: string): Promise<{ isSafe: boolean; da
         throw new Error("Ethereum AI analysis failed");
 
       case TokenType.SOLANA:
-        // Solana AI Analysis - NOT IMPLEMENTED YET
-        console.warn("Solana AI analysis not implemented yet");
-        return null;
+        // Solana AI Analysis
+        ransomwareReport = await analyzeSolAddress(address);
+        
+        if ("Ok" in ransomwareReport) {
+          return {
+            isSafe: !ransomwareReport.Ok.is_ransomware,
+            data: ransomwareReport.Ok,
+          };
+        }
+        throw new Error("Solana AI analysis failed");
 
       case TokenType.FUM:
         // Fradium AI Analysis - NOT IMPLEMENTED YET
@@ -436,7 +443,7 @@ async function extractFeaturesBTCFallback(address: string): Promise<number[]> {
   }
 }
 
-async function extractFeaturesETHFallback(address: string): Promise<Record<string, number>> {
+async function extractFeaturesETHFallback(_address: string): Promise<Record<string, number>> {
   try {
     // Simple Ethereum feature extraction - return basic structure
     return {

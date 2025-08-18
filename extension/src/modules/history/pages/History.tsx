@@ -48,7 +48,7 @@ function History() {
   const SHOW_EMPTY = false;
 
   return (
-    <div className={`w-[375px] h-[600px] bg-[#25262B] text-white pb-20 flex flex-col`}>
+    <div className="w-[375px] h-[600px] bg-[#25262B] text-white pb-20 flex flex-col">
       <ProfileHeader />
 
       {/* Content wrapper fills remaining height */}

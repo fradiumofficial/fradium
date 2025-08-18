@@ -11,7 +11,6 @@ import DetailHistory from "./modules/history/pages/DetailHistory";
 import History from "./modules/history/pages/History";
 import AnalysisProgress from "./modules/analyze_address/pages/AnalyzeProgress";
 import Failed from "./modules/SEO/Failed";
-import AnalyzeAddressCommunityResult from "./modules/analyze_address/pages/AnalyzeAddressCommunityResult";
 import Welcome from "./modules/onboarding/Welcome";
 import BottomNavbar from "./components/ui/bottom-appbar";
 import Account from "./modules/account/pages/Account";
@@ -90,10 +89,6 @@ function App() {
               />
               <Route path={ROUTES.MANAGE_NETWORK} element={<ManageNetworkWrapper />} />
               <Route path={ROUTES.FAILED} element={<Failed />} />
-              <Route
-                path={ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT}
-                element={<AnalyzeAddressCommunityResult />}
-              />
               <Route path={ROUTES.RECEIVE} element={<Receive />} />
               <Route path={ROUTES.SEND} element={<Send />} />
             </Route>

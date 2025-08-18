@@ -50,7 +50,7 @@ export const useAddressAnalysis = () => {
         // Continue with navigation even if save fails
       }
       
-      navigate(ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT, {
+      navigate(ROUTES.ANALYZE_ADDRESS_RESULT, {
         state: { result: finalResult, address },
         replace: true
       });

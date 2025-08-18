@@ -1,3 +1,9 @@
+import bitcoinIcon from "@/../public/assets/tokens/bitcoin.svg";
+import ethIcon from "@/../public/assets/tokens/eth.svg";
+import solanaIcon from "@/../public/assets/tokens/solana.svg";
+import fumIcon from "@/../public/assets/tokens/fum.svg";
+import unknownIcon from "@/../public/assets/tokens/unknown.svg";
+
 export const TokenType = Object.freeze({
   BITCOIN: "Bitcoin",
   ETHEREUM: "Ethereum", 
@@ -139,14 +145,14 @@ function capitalize(s: string) {
 export function getTokenImageURL(chain: string) {
   switch (capitalize(chain)) {
     case TokenType.ETHEREUM:
-      return "/assets/svg/tokens/eth.svg";
+      return ethIcon;
     case TokenType.BITCOIN:
-      return "/assets/svg/tokens/bitcoin.svg";
+      return bitcoinIcon;
     case TokenType.SOLANA:
-      return "/assets/svg/tokens/solana.svg";
+      return solanaIcon;
     case TokenType.FUM:
-      return "/assets/svg/tokens/fum.svg";
+      return fumIcon;
     default:
-      return "/assets/svg/tokens/unknown.svg";
+      return unknownIcon;
   }
 }

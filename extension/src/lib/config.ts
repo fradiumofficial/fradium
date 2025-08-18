@@ -8,9 +8,9 @@ const CANISTER_IDS = {
     ai: 'z7777-77777-77777-77777-77777-77777-77777-77777-cai'
   },
   ic: {
-    ransomware_detector: 'zkoni-faaaa-aaaar-qbsaa-cai', // Mainnet canister ID
+    ransomware_detector: 'zkoni-faaaa-aaaar-qbsaa-cai', // This is actually the AI canister
     backend: 'oqcob-6iaaa-aaaar-qbr7q-cai', // Mainnet canister ID
-    ai: 'z7777-77777-77777-77777-77777-77777-77777-77777-cai'
+    ai: 'zkoni-faaaa-aaaar-qbsaa-cai' // Use the actual AI canister ID
   }
 };
 
