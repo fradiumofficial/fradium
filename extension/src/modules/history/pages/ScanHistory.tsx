@@ -61,12 +61,8 @@ function ScanHistory() {
 
   // Handle item click to navigate to detail
   const handleItemClick = (item: ScanHistoryItem) => {
-    navigate(ROUTES.DETAIL_HISTORY, {
-      state: {
-        result: item.analysisResult,
-        address: item.address,
-      },
-    });
+    console.log('HIAHSIDHAISDhi',item);
+    navigate(ROUTES.DETAIL_HISTORY.replace(":id", item.id));
   };
 
   const SHOW_EMPTY = filteredItems.length === 0;

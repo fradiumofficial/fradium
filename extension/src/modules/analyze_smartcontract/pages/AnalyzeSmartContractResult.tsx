@@ -5,7 +5,6 @@ import NeoButton from "@/components/ui/custom-button";
 import type { Root as AnalysisReport } from "../model/AnalyzeSmartContractModel";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getHistoryItemById } from "@/lib/localStorage";
 import { ROUTES } from "@/constants/routes";
 
 interface LocationState {
@@ -22,31 +21,31 @@ function AnalyzeSmartContractResult() {
     address: string;
   } | null>(null);
 
-  useEffect(() => {
-    const state = location.state as LocationState;
+  // useEffect(() => {
+  //   const state = location.state as LocationState;
 
-    if (state && state.result && state.address) {
-      setAnalysisData({
-        result: state.result,
-        address: state.address
-      });
-    } else if (state && state.historyId) {
-      // Try to get from localStorage if direct state not available
-      const historyItem = getHistoryItemById(state.historyId);
-      if (historyItem && historyItem.analysisType === 'smartcontract') {
-        setAnalysisData({
-          result: historyItem.result as AnalysisReport,
-          address: historyItem.address
-        });
-      } else {
-        // Redirect back if no valid data available
-        navigate(ROUTES.ANALYZE_SMART_CONTRACT);
-      }
-    } else {
-      // Redirect back if no state available
-      navigate(ROUTES.ANALYZE_SMART_CONTRACT);
-    }
-  }, [location.state, navigate]);
+  //   if (state && state.result && state.address) {
+  //     setAnalysisData({
+  //       result: state.result,
+  //       address: state.address
+  //     });
+  //   } else if (state && state.historyId) {
+  //     // Try to get from localStorage if direct state not available
+  //     const historyItem = getHistoryItemById(state.historyId);
+  //     if (historyItem && historyItem.analysisType === 'smartcontract') {
+  //       setAnalysisData({
+  //         result: historyItem.result as AnalysisReport,
+  //         address: historyItem.address
+  //       });
+  //     } else {
+  //       // Redirect back if no valid data available
+  //       navigate(ROUTES.ANALYZE_SMART_CONTRACT);
+  //     }
+  //   } else {
+  //     // Redirect back if no state available
+  //     navigate(ROUTES.ANALYZE_SMART_CONTRACT);
+  //   }
+  // }, [location.state, navigate]);
 
   if (!analysisData) {
     return (

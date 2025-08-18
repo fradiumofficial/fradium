@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { analyzeAddressSmartContract } from "../api/AnalyzeAddressSmartcontractApi";
-import { saveAnalysisToHistory } from "@/lib/localStorage";
+// import { saveAnalysisToHistory } from "@/lib/localStorage";
 import Search from "../../../../../src/frontend/public/assets/images/analisis-progres.png";
 
 export default function AnalyzeSmartContractProgress() {
@@ -36,15 +36,14 @@ export default function AnalyzeSmartContractProgress() {
         const result = await analyzeAddressSmartContract(address);
 
         // Simpan ke localStorage
-        const historyItem = saveAnalysisToHistory(address, result, 'smartcontract');
-        console.log('Smart contract analysis saved to history:', historyItem);
+        // const historyItem = saveAnalysisToHistory(address, result, 'smartcontract');
+        // console.log('Smart contract analysis saved to history:', historyItem);
 
         // Navigate ke halaman result dengan data
         navigate(ROUTES.ANALYZE_SMART_CONTRACT_RESULT, {
           state: {
             result,
             address,
-            historyId: historyItem.id
           }
         });
       } catch (err) {
