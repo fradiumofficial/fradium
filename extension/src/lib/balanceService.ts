@@ -6,31 +6,57 @@ export interface BalanceResult {
   usdValue: number;
 }
 
+export interface TokenBalanceResult {
+  balances: Record<string, number>;
+  errors: Record<string, string>;
+}
+
+// Token types enum similar to asset-page.jsx
+export const TokenType = {
+  BITCOIN: 'Bitcoin',
+  ETHEREUM: 'Ethereum', 
+  SOLANA: 'Solana',
+  FRADIUM: 'Fradium',
+  UNKNOWN: 'Unknown'
+} as const;
+
+export type TokenType = typeof TokenType[keyof typeof TokenType];
+
 /**
  * Fetch Bitcoin balance for a given address
  * @param address Bitcoin address
  * @returns Promise with balance in BTC and USD value
  */
 export const fetchBitcoinBalance = async (address: string): Promise<BalanceResult> => {
+  console.log('BalanceService: Fetching Bitcoin balance for address:', address);
+  
   try {
-    // Example using a public Bitcoin API (you can replace with your preferred service)
-    const response = await fetch(`https://blockstream.info/api/address/${address}`);
-    const data = await response.json();
+    // Use canister service first
+    const { getBitcoinBalance } = await import('../icp/services/bitcoin_service');
     
-    // Convert satoshi to BTC
-    const balanceInBTC = data.chain_stats.funded_txo_sum / 100000000;
+    const balanceInSatoshi = await getBitcoinBalance(address);
+    const balanceInBTC = Number(balanceInSatoshi) / 100000000; // Convert satoshi to BTC
     
-    // Get current BTC price (you might want to cache this)
+    console.log('BalanceService: Bitcoin balance result:', {
+      satoshi: balanceInSatoshi.toString(),
+      btc: balanceInBTC
+    });
+    
+    // Get current BTC price
     const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
     const priceData = await priceResponse.json();
     const btcPrice = priceData.bitcoin.usd;
     
-    return {
+    const result = {
       balance: balanceInBTC,
       usdValue: balanceInBTC * btcPrice
     };
+    
+    console.log('BalanceService: Final Bitcoin balance result:', result);
+    return result;
+    
   } catch (error) {
-    console.error('Error fetching Bitcoin balance:', error);
+    console.error('BalanceService: Error fetching Bitcoin balance:', error);
     return { balance: 0, usdValue: 0 };
   }
 };
@@ -41,25 +67,35 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
  * @returns Promise with balance in ETH and USD value
  */
 export const fetchEthereumBalance = async (address: string): Promise<BalanceResult> => {
+  console.log('BalanceService: Fetching Ethereum balance for address:', address);
+  
   try {
-    // Example using Infura or Alchemy (you'll need an API key)
-    const response = await fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=YourApiKeyToken`);
-    const data = await response.json();
+    // Use canister service first
+    const { getEthereumBalance } = await import('../icp/services/ethereum_service');
     
-    // Convert wei to ETH
-    const balanceInETH = parseInt(data.result) / Math.pow(10, 18);
+    const balanceInWei = await getEthereumBalance(address);
+    const balanceInETH = Number(balanceInWei) / Math.pow(10, 18); // Convert wei to ETH
+    
+    console.log('BalanceService: Ethereum balance result:', {
+      wei: balanceInWei.toString(),
+      eth: balanceInETH
+    });
     
     // Get current ETH price
     const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
     const priceData = await priceResponse.json();
     const ethPrice = priceData.ethereum.usd;
     
-    return {
+    const result = {
       balance: balanceInETH,
       usdValue: balanceInETH * ethPrice
     };
+    
+    console.log('BalanceService: Final Ethereum balance result:', result);
+    return result;
+    
   } catch (error) {
-    console.error('Error fetching Ethereum balance:', error);
+    console.error('BalanceService: Error fetching Ethereum balance:', error);
     return { balance: 0, usdValue: 0 };
   }
 };
@@ -69,38 +105,80 @@ export const fetchEthereumBalance = async (address: string): Promise<BalanceResu
  * @param address Solana address
  * @returns Promise with balance in SOL and USD value
  */
-export const fetchSolanaBalance = async (address: string): Promise<BalanceResult> => {
+export const fetchSolanaBalance = async (address: string, identity?: any): Promise<BalanceResult> => {
+  console.log('BalanceService: Fetching Solana balance for address:', address);
+  console.log('BalanceService: Using identity:', identity ? 'authenticated' : 'anonymous');
+  
   try {
-    // Example using Solana RPC
-    const response = await fetch('https://api.mainnet-beta.solana.com', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'getBalance',
-        params: [address]
-      })
-    });
+    // First, try using our internal canister service
+    try {
+      console.log('BalanceService: Trying canister service first...');
+      const { getSolanaBalance } = await import('../icp/services/solana_service');
+      
+      const balanceInLamports = await getSolanaBalance(address, identity);
+      const balanceInSOL = Number(balanceInLamports) / Math.pow(10, 9);
+      
+      console.log('BalanceService: Canister balance result:', {
+        lamports: balanceInLamports.toString(),
+        sol: balanceInSOL
+      });
+      
+      // Get current SOL price
+      const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+      const priceData = await priceResponse.json();
+      const solPrice = priceData.solana.usd;
+      
+      const result = {
+        balance: balanceInSOL,
+        usdValue: balanceInSOL * solPrice
+      };
+      
+      console.log('BalanceService: Final Solana balance result:', result);
+      return result;
+      
+    } catch (canisterError) {
+      console.warn('BalanceService: Canister service failed, trying external API...', canisterError);
+      
+      // Fallback to external Solana RPC
+      const response = await fetch('https://api.mainnet-beta.solana.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'getBalance',
+          params: [address]
+        })
+      });
+      
+      const data = await response.json();
+      console.log('BalanceService: External API response:', data);
+      
+      if (data.error) {
+        throw new Error(`Solana RPC error: ${data.error.message}`);
+      }
+      
+      // Convert lamports to SOL
+      const balanceInSOL = data.result.value / Math.pow(10, 9);
+      
+      // Get current SOL price
+      const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+      const priceData = await priceResponse.json();
+      const solPrice = priceData.solana.usd;
+      
+      const result = {
+        balance: balanceInSOL,
+        usdValue: balanceInSOL * solPrice
+      };
+      
+      console.log('BalanceService: External API Solana balance result:', result);
+      return result;
+    }
     
-    const data = await response.json();
-    
-    // Convert lamports to SOL
-    const balanceInSOL = data.result.value / Math.pow(10, 9);
-    
-    // Get current SOL price
-    const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
-    const priceData = await priceResponse.json();
-    const solPrice = priceData.solana.usd;
-    
-    return {
-      balance: balanceInSOL,
-      usdValue: balanceInSOL * solPrice
-    };
   } catch (error) {
-    console.error('Error fetching Solana balance:', error);
+    console.error('BalanceService: Error fetching Solana balance:', error);
     return { balance: 0, usdValue: 0 };
   }
 };
@@ -110,7 +188,7 @@ export const fetchSolanaBalance = async (address: string): Promise<BalanceResult
  * @param address ICP principal or address
  * @returns Promise with balance in FUM and USD value
  */
-export const fetchFradiumBalance = async (address: string): Promise<BalanceResult> => {
+export const fetchFradiumBalance = async (_address: string): Promise<BalanceResult> => {
   try {
     // This would connect to your Fradium token canister
     // You'll need to implement this based on your token's interface
@@ -130,29 +208,76 @@ export const fetchFradiumBalance = async (address: string): Promise<BalanceResul
 };
 
 /**
- * Mock balance service for testing purposes
- * Returns realistic demo values that change slightly each time
+ * Get balances for specific token type (following asset-page.jsx pattern)
+ * @param tokenType Token type to fetch balances for
+ * @param addresses Array of addresses to check
+ * @param identity Optional identity for authenticated calls (required for Solana)
+ * @returns Promise with balances and errors
  */
-export const fetchMockBalances = (): Record<string, BalanceResult> => {
-  // Add some randomness to make it feel more realistic
-  const randomFactor = 0.95 + Math.random() * 0.1; // ±5% variation
+export const getBalance = async (tokenType: TokenType, addresses: string[], identity?: any): Promise<TokenBalanceResult> => {
+  console.log(`BalanceService: Getting ${tokenType} balance for addresses:`, addresses);
+  console.log(`BalanceService: Using identity:`, identity ? 'authenticated' : 'anonymous');
   
-  return {
-    Bitcoin: {
-      balance: 0.05 * randomFactor,
-      usdValue: 0.05 * 45000 * randomFactor // ~$2,250
-    },
-    Ethereum: {
-      balance: 1.2 * randomFactor,
-      usdValue: 1.2 * 3000 * randomFactor // ~$3,600
-    },
-    Solana: {
-      balance: 25 * randomFactor,
-      usdValue: 25 * 100 * randomFactor // ~$2,500
-    },
-    Fradium: {
-      balance: 1000 * randomFactor,
-      usdValue: 1000 * 0.1 * randomFactor // ~$100
-    }
-  };
+  const balances: Record<string, number> = {};
+  const errors: Record<string, string> = {};
+
+  switch (tokenType) {
+    case TokenType.BITCOIN:
+      try {
+        const { getBitcoinBalances } = await import('../icp/services/bitcoin_service');
+        const result = await getBitcoinBalances(addresses);
+        return result;
+      } catch (error) {
+        console.error('Error getting Bitcoin balances:', error);
+        addresses.forEach(addr => {
+          balances[addr] = 0;
+          errors[addr] = error instanceof Error ? error.message : 'Unknown error';
+        });
+      }
+      break;
+
+    case TokenType.SOLANA:
+      try {
+        const { getSolanaBalances } = await import('../icp/services/solana_service');
+        const result = await getSolanaBalances(addresses, identity);
+        return result;
+      } catch (error) {
+        console.error('Error getting Solana balances:', error);
+        addresses.forEach(addr => {
+          balances[addr] = 0;
+          errors[addr] = error instanceof Error ? error.message : 'Unknown error';
+        });
+      }
+      break;
+
+    case TokenType.ETHEREUM:
+      try {
+        const { getEthereumBalances } = await import('../icp/services/ethereum_service');
+        const result = await getEthereumBalances(addresses);
+        return result;
+      } catch (error) {
+        console.error('Error getting Ethereum balances:', error);
+        addresses.forEach(addr => {
+          balances[addr] = 0;
+          errors[addr] = error instanceof Error ? error.message : 'Unknown error';
+        });
+      }
+      break;
+
+    case TokenType.FRADIUM:
+      // Placeholder for Fradium - not implemented yet
+      addresses.forEach(addr => {
+        balances[addr] = 0;
+      });
+      break;
+
+    default:
+      addresses.forEach(addr => {
+        balances[addr] = 0;
+        errors[addr] = 'Unsupported token type';
+      });
+      break;
+  }
+
+  return { balances, errors };
 };

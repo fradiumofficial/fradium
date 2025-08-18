@@ -175,19 +175,21 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // Function to get backend, bitcoin, and solana services
+  // Function to get backend, bitcoin, solana, and ethereum services
   const getServices = useCallback(async () => {
     try {
       // Import services dynamically to avoid circular dependencies
       const { createWallet: backendCreateWallet, getUserWallet } = await import("@/icp/services/backend_service");
       const { getBitcoinAddress } = await import("@/icp/services/bitcoin_service");
       const { getSolanaAddress } = await import("@/icp/services/solana_service");
+      const { getEthereumAddress } = await import("@/icp/services/ethereum_service");
       
       return {
         createWallet: backendCreateWallet,
         getUserWallet,
         getBitcoinAddress,
-        getSolanaAddress
+        getSolanaAddress,
+        getEthereumAddress
       };
     } catch (error) {
       console.error("Error getting services:", error);
@@ -203,12 +205,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsCreatingWallet(true);
     try {
       console.log("WalletProvider: Starting wallet creation...");
-      const { createWallet: backendCreateWallet, getUserWallet, getBitcoinAddress, getSolanaAddress } = await getServices();
+      const { createWallet: backendCreateWallet, getUserWallet, getBitcoinAddress, getSolanaAddress, getEthereumAddress } = await getServices();
 
       // Get bitcoin address
       console.log("WalletProvider: Getting Bitcoin address...");
       const bitcoinResponse = await getBitcoinAddress();
       console.log("WalletProvider: Bitcoin address:", bitcoinResponse);
+
+      // Get ethereum address
+      console.log("WalletProvider: Getting Ethereum address...");
+      const ethereumResponse = await getEthereumAddress();
+      console.log("WalletProvider: Ethereum address:", ethereumResponse);
 
       // Get solana address
       console.log("WalletProvider: Getting Solana address...");
@@ -227,7 +234,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           {
             network: { Ethereum: null },
             token_type: { Ethereum: null },
-            address: "0x0000000000000000000000000000000000000000", // Placeholder
+            address: ethereumResponse,
           },
           {
             network: { Solana: null },
@@ -328,67 +335,97 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [isAuthenticated, principal, fetchUserWallet]);
 
-  // Fetch real balance data for each network
+    // Get addresses for specific token type (following asset-page.jsx pattern)
+  const getAddressesForToken = useCallback(
+    (tokenType: string) => {
+      if (!userWallet?.addresses) return [];
+
+      return userWallet.addresses
+        .filter((addressObj) => {
+          const addressTokenType = Object.keys(addressObj.token_type)[0];
+          return addressTokenType === tokenType;
+        })
+        .map((addressObj) => addressObj.address);
+    },
+    [userWallet?.addresses]
+  );
+
+  // Fetch real balance data for each network (following asset-page.jsx pattern)
   const fetchNetworkBalances = useCallback(async () => {
     if (!userWallet || !userWallet.addresses) return;
 
+    console.log('WalletProvider: Fetching balances for wallet:', userWallet);
+    
     try {
-      // Import balance services dynamically
-      const { 
-        fetchBitcoinBalance, 
-        fetchEthereumBalance, 
-        fetchSolanaBalance, 
-        fetchFradiumBalance,
-        fetchMockBalances 
-      } = await import('./balanceService');
-
-      // For testing, you can use mock balances
-      const useMockData = false; // Set to false when ready to use real APIs
+      // Import services
+      const { getBalance, TokenType } = await import('./balanceService');
       
-      if (useMockData) {
-        const mockBalances = fetchMockBalances();
-        const balances: Partial<NetworkValues> = {};
-        
-        Object.entries(mockBalances).forEach(([network, data]) => {
-          balances[network as keyof NetworkValues] = data.usdValue;
-        });
-        
-        updateNetworkValues(balances);
-        return;
-      }
-
-      // Real balance fetching (when useMockData = false)
+      const supportedTokens = [TokenType.BITCOIN, TokenType.ETHEREUM, TokenType.SOLANA, TokenType.FRADIUM];
       const balances: Partial<NetworkValues> = {};
-      
-      // Fetch balances for each address
-      for (const addr of userWallet.addresses) {
-        let networkName = '';
-        let balanceData = { balance: 0, usdValue: 0 };
+
+      for (const tokenType of supportedTokens) {
+        const networkName = tokenType as keyof NetworkValues;
         
-        if ('Bitcoin' in addr.token_type) {
-          networkName = 'Bitcoin';
-          balanceData = await fetchBitcoinBalance(addr.address);
-        } else if ('Ethereum' in addr.token_type) {
-          networkName = 'Ethereum';
-          balanceData = await fetchEthereumBalance(addr.address);
-        } else if ('Solana' in addr.token_type) {
-          networkName = 'Solana';
-          balanceData = await fetchSolanaBalance(addr.address);
-        } else if ('Fradium' in addr.token_type) {
-          networkName = 'Fradium';
-          balanceData = await fetchFradiumBalance(addr.address);
-        }
-        
-        if (networkName) {
-          balances[networkName as keyof NetworkValues] = balanceData.usdValue;
+        // Check if this network is enabled in filters
+        if (networkName !== 'All Networks' && networkFilters[networkName as keyof NetworkFilters]) {
+          const addresses = getAddressesForToken(tokenType);
+          
+          if (addresses.length > 0) {
+            console.log(`WalletProvider: Fetching ${tokenType} balance for addresses:`, addresses);
+            
+            try {
+              const balanceResult = await getBalance(tokenType, addresses, identity);
+              console.log(`WalletProvider: ${tokenType} balance result:`, balanceResult);
+              
+              // Calculate total balance for this token type
+              const totalBalance = Object.values(balanceResult.balances).reduce((sum, balance) => sum + balance, 0);
+              
+              // Get USD value using individual balance services for price conversion
+              let usdValue = 0;
+              if (totalBalance > 0) {
+                switch (tokenType) {
+                  case TokenType.BITCOIN:
+                    const { fetchBitcoinBalance } = await import('./balanceService');
+                    const btcResult = await fetchBitcoinBalance(addresses[0]);
+                    usdValue = (btcResult.usdValue / btcResult.balance) * (totalBalance / 100000000); // Convert satoshi to BTC
+                    break;
+                  case TokenType.ETHEREUM:
+                    const { fetchEthereumBalance } = await import('./balanceService');
+                    const ethResult = await fetchEthereumBalance(addresses[0]);
+                    usdValue = (ethResult.usdValue / ethResult.balance) * (totalBalance / Math.pow(10, 18)); // Convert wei to ETH
+                    break;
+                  case TokenType.SOLANA:
+                    const { fetchSolanaBalance } = await import('./balanceService');
+                    const solResult = await fetchSolanaBalance(addresses[0], identity);
+                    usdValue = (solResult.usdValue / solResult.balance) * (totalBalance / Math.pow(10, 9)); // Convert lamports to SOL
+                    break;
+                  case TokenType.FRADIUM:
+                    usdValue = totalBalance * 1.0; // Placeholder price
+                    break;
+                }
+              }
+              
+              balances[networkName] = usdValue;
+              console.log(`WalletProvider: Updated ${networkName} balance to $${usdValue}`);
+              
+            } catch (error) {
+              console.error(`WalletProvider: Error fetching ${tokenType} balance:`, error);
+              balances[networkName] = 0;
+            }
+          } else {
+            console.log(`WalletProvider: No addresses found for ${tokenType}`);
+            balances[networkName] = 0;
+          }
         }
       }
       
+      console.log('WalletProvider: Final balances to update:', balances);
       updateNetworkValues(balances);
+      
     } catch (error) {
-      console.error('Error fetching network balances:', error);
+      console.error('WalletProvider: Error in fetchNetworkBalances:', error);
     }
-  }, [userWallet, updateNetworkValues]);
+  }, [userWallet, networkFilters, getAddressesForToken, updateNetworkValues]);
 
   // Fetch balances when wallet is loaded
   useEffect(() => {

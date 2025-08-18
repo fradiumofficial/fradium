@@ -203,11 +203,132 @@ export const useWalletApi = () => {
    */
   const refreshWallet = async (): Promise<WalletApiResponse<boolean>> => {
     try {
+      console.log('WalletApi: Starting wallet refresh...');
       await fetchUserWallet();
       await refreshBalances();
+      console.log('WalletApi: Wallet refresh completed successfully');
       return { success: true, data: true };
     } catch (error) {
-      console.error('Error refreshing wallet:', error);
+      console.error('WalletApi: Error refreshing wallet:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  };
+
+  /**
+   * Get addresses for specific token type (following asset-page.jsx pattern)
+   */
+  const getAddressesForToken = (tokenType: string): string[] => {
+    if (!userWallet?.addresses) return [];
+
+    return userWallet.addresses
+      .filter((addressObj) => {
+        const addressTokenType = Object.keys(addressObj.token_type)[0];
+        return addressTokenType === tokenType;
+      })
+      .map((addressObj) => addressObj.address);
+  };
+
+  /**
+   * Force refresh balance for specific network
+   */
+  const refreshNetworkBalance = async (network: string): Promise<WalletApiResponse<NetworkBalance>> => {
+    try {
+      console.log(`WalletApi: Refreshing ${network} balance...`);
+      
+      if (!userWallet) {
+        return { success: false, error: "No wallet found" };
+      }
+
+      // Get addresses for this network
+      const addresses = getAddressesForToken(network);
+      if (addresses.length === 0) {
+        return { success: false, error: `No addresses found for network: ${network}` };
+      }
+
+      // Use the new getBalance function following asset-page.jsx pattern
+      const { getBalance, TokenType } = await import("@/lib/balanceService");
+      
+      let tokenType: any;
+      switch (network) {
+        case 'Bitcoin':
+          tokenType = TokenType.BITCOIN;
+          break;
+        case 'Ethereum':
+          tokenType = TokenType.ETHEREUM;
+          break;
+        case 'Solana':
+          tokenType = TokenType.SOLANA;
+          break;
+        case 'Fradium':
+          tokenType = TokenType.FRADIUM;
+          break;
+        default:
+          return { success: false, error: `Unsupported network: ${network}` };
+      }
+
+      console.log(`WalletApi: Fetching ${network} balance for addresses:`, addresses);
+      const balanceResult = await getBalance(tokenType, addresses, identity);
+      console.log(`WalletApi: ${network} balance result:`, balanceResult);
+
+      // Calculate total balance
+      const totalBalance = Object.values(balanceResult.balances).reduce((sum, balance) => sum + balance, 0);
+      
+      // Get USD value using individual balance service for price conversion
+      let balanceData = { balance: 0, usdValue: 0 };
+      if (totalBalance > 0) {
+        switch (network) {
+          case 'Bitcoin':
+            const { fetchBitcoinBalance } = await import("@/lib/balanceService");
+            const btcResult = await fetchBitcoinBalance(addresses[0]);
+            balanceData = {
+              balance: totalBalance / 100000000, // Convert satoshi to BTC
+              usdValue: (btcResult.usdValue / btcResult.balance) * (totalBalance / 100000000)
+            };
+            break;
+          case 'Ethereum':
+            const { fetchEthereumBalance } = await import("@/lib/balanceService");
+            const ethResult = await fetchEthereumBalance(addresses[0]);
+            balanceData = {
+              balance: totalBalance / Math.pow(10, 18), // Convert wei to ETH
+              usdValue: (ethResult.usdValue / ethResult.balance) * (totalBalance / Math.pow(10, 18))
+            };
+            break;
+          case 'Solana':
+            const { fetchSolanaBalance } = await import("@/lib/balanceService");
+            const solResult = await fetchSolanaBalance(addresses[0], identity);
+            balanceData = {
+              balance: totalBalance / Math.pow(10, 9), // Convert lamports to SOL
+              usdValue: (solResult.usdValue / solResult.balance) * (totalBalance / Math.pow(10, 9))
+            };
+            break;
+          case 'Fradium':
+            balanceData = {
+              balance: totalBalance,
+              usdValue: totalBalance * 1.0 // Placeholder price
+            };
+            break;
+        }
+      }
+      
+      console.log(`WalletApi: Final ${network} balance data:`, balanceData);
+      
+      // Update network values with new balance
+      await refreshBalances();
+      
+      return {
+        success: true,
+        data: {
+          network,
+          balance: balanceData.balance,
+          usdValue: balanceData.usdValue,
+          address: addresses[0] // Return first address as primary
+        }
+      };
+    } catch (error) {
+      console.error(`WalletApi: Error refreshing ${network} balance:`, error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -272,6 +393,7 @@ export const useWalletApi = () => {
     getBalanceForNetwork,
     createNewWallet,
     refreshWallet,
+    refreshNetworkBalance,
     getSupportedNetworks,
     deleteWallet
   };

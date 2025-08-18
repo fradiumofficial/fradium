@@ -55,7 +55,34 @@ export const getBitcoinAddress = async (): Promise<string> => {
 };
 
 export const getBitcoinBalance = async (address: string): Promise<bigint> => {
-  const actor = await getBitcoinActor();
-  const balance = await actor.get_balance(address);
-  return balance;
+  try {
+    console.log('getBitcoinBalance: Starting for address:', address);
+    const actor = await getBitcoinActor();
+    const balance = await actor.get_balance(address);
+    console.log('getBitcoinBalance: Received balance:', balance.toString());
+    return balance;
+  } catch (error) {
+    console.error('getBitcoinBalance: Error occurred:', error);
+    throw error;
+  }
+};
+
+// Get balances for multiple Bitcoin addresses
+export const getBitcoinBalances = async (addresses: string[]): Promise<{ balances: Record<string, number>; errors: Record<string, string> }> => {
+  const balances: Record<string, number> = {};
+  const errors: Record<string, string> = {};
+
+  for (const address of addresses) {
+    try {
+      const balance = await getBitcoinBalance(address);
+      balances[address] = Number(balance);
+      console.log(`Bitcoin balance for ${address}: ${balance}`);
+    } catch (error) {
+      console.error(`Error getting Bitcoin balance for ${address}:`, error);
+      errors[address] = error instanceof Error ? error.message : 'Unknown error';
+      balances[address] = 0;
+    }
+  }
+
+  return { balances, errors };
 };
