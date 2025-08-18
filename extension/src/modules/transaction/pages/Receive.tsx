@@ -7,7 +7,7 @@ import { ROUTES } from "@/constants/routes";
 import { useNavigate } from "react-router-dom";
 import { useWalletApi } from "@/modules/wallet/api/WalletApi";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/authContext";
+import { useAuth } from "@/lib/contexts/authContext";
 
 interface NetworkAddress {
   network: string;
