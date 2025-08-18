@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TopLeft from "../../../assets/top_left.svg";
 import TopRight from "../../../assets/top_right.svg";
 import ProfileHeader from "../../../components/ui/header";
@@ -28,10 +28,20 @@ interface TokenBalance {
   icon: string;
 }
 
+interface TokenPrice {
+  usd: number;
+}
+
+interface PriceResponse {
+  [key: string]: TokenPrice;
+}
+
+
 function Home() {
   const [ tokens, setTokens ] = useState<TokenBalance[]>([]);
   const [ filteredTokens, setFilteredTokens ] = useState<TokenBalance[]>([]);
   const [ currentNetworkValue, setCurrentNetworkValue ] = useState<string>("$0.00");
+  const [ tokenPrices, setTokenPrices ] = useState<Record<string, number>>({});
   const { 
     userWallet, 
     isLoading, 
@@ -61,67 +71,140 @@ function Home() {
     navigate(ROUTES.RECEIVE);
   };
 
+  // Fetch current token prices from CoinGecko
+  const fetchTokenPrices = useCallback(async () => {
+    try {
+      console.log('Home: Fetching token prices...');
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+      const data: PriceResponse = await response.json();
+      
+      const prices = {
+        Bitcoin: data.bitcoin?.usd || 0,
+        Ethereum: data.ethereum?.usd || 0,
+        Solana: data.solana?.usd || 0,
+        Fradium: 1.0 // Placeholder price for Fradium
+      };
+      
+      console.log('Home: Token prices fetched:', prices);
+      setTokenPrices(prices);
+    } catch (error) {
+      console.error('Home: Error fetching token prices:', error);
+      // Set default prices if API fails
+      setTokenPrices({
+        Bitcoin: 45000,
+        Ethereum: 3000,
+        Solana: 100,
+        Fradium: 1.0
+      });
+    }
+  }, []);
+
+  // Calculate token balance from USD value and current price
+  const calculateTokenBalance = useCallback((usdValue: number, tokenPrice: number): string => {
+    // If token price is 0, return default format
+    if (tokenPrice === 0) return '0.00';
+    
+    const balance = usdValue / tokenPrice;
+    
+    // Format to 6 decimal places then remove trailing zeros
+    let formattedBalance = balance.toFixed(6);
+    
+    // Remove trailing zeros and unnecessary decimal point
+    formattedBalance = formattedBalance.replace(/\.?0+$/, '');
+    
+    // If the result is empty or just a dot, return 0.00
+    if (!formattedBalance || formattedBalance === '0' || formattedBalance === '.') {
+      return '0.00';
+    }
+    
+    // If no decimal point, add .00 for consistency
+    if (!formattedBalance.includes('.')) {
+      return formattedBalance + '.00';
+    }
+    
+    // If only one decimal place, add one more zero
+    const parts = formattedBalance.split('.');
+    if (parts[1] && parts[1].length === 1) {
+      return formattedBalance + '0';
+    }
+    
+    return formattedBalance;
+  }, []);
+
+  // Fetch token prices on component mount
   useEffect(() => {
-    // Load wallet data from the wallet context
-    const loadWalletData = async () => {
-      if (!userWallet || !userWallet.addresses) {
-        setTokens([]);
-        return;
+    fetchTokenPrices();
+  }, [fetchTokenPrices]);
+
+  // Load wallet data from the wallet context
+  const loadWalletData = useCallback(async () => {
+    if (!userWallet || !userWallet.addresses) {
+      setTokens([]);
+      return;
+    }
+    
+    console.log("Home: Loading wallet data for addresses:", userWallet.addresses);
+    
+    // Create token balances based on wallet addresses
+    const walletTokens: TokenBalance[] = [];
+    
+    userWallet.addresses.forEach((addr: WalletAddress) => {
+      let symbol = '';
+      let name = '';
+      let icon = '';
+      let isEnabled = false;
+      
+      if ('Bitcoin' in addr.token_type) {
+        symbol = 'BTC';
+        name = 'Bitcoin';
+        icon = bitoinIcon;
+        isEnabled = networkFilters?.Bitcoin ?? true;
+      } else if ('Ethereum' in addr.token_type) {
+        symbol = 'ETH';
+        name = 'Ethereum';
+        icon = ethIcon;
+        isEnabled = networkFilters?.Ethereum ?? true;
+      } else if ('Solana' in addr.token_type) {
+        symbol = 'SOL';
+        name = 'Solana';
+        icon = solanaIcon;
+        isEnabled = networkFilters?.Solana ?? true;
+      } else if ('Fradium' in addr.token_type) {
+        symbol = 'FUM';
+        name = 'Fradium';
+        icon = fumIcon;
+        isEnabled = networkFilters?.Fradium ?? true;
       }
       
-      console.log("Home: Loading wallet data for addresses:", userWallet.addresses);
-      
-      // Create token balances based on wallet addresses
-      const walletTokens: TokenBalance[] = [];
-      
-      userWallet.addresses.forEach((addr: WalletAddress) => {
-        let symbol = '';
-        let name = '';
-        let icon = '';
-        let isEnabled = false;
+      // Only add token if the network is enabled
+      if (symbol && isEnabled) {
+        const networkKey = name as keyof typeof networkValues;
+        const usdValue = networkValues[networkKey] || 0;
+        const tokenPrice = tokenPrices[name] || 0;
         
-        if ('Bitcoin' in addr.token_type) {
-          symbol = 'BTC';
-          name = 'Bitcoin';
-          icon = bitoinIcon;
-          isEnabled = networkFilters?.Bitcoin ?? true;
-        } else if ('Ethereum' in addr.token_type) {
-          symbol = 'ETH';
-          name = 'Ethereum';
-          icon = ethIcon;
-          isEnabled = networkFilters?.Ethereum ?? true;
-        } else if ('Solana' in addr.token_type) {
-          symbol = 'SOL';
-          name = 'Solana';
-          icon = solanaIcon;
-          isEnabled = networkFilters?.Solana ?? true;
-        } else if ('Fradium' in addr.token_type) {
-          symbol = 'FUM';
-          name = 'Fradium';
-          icon = fumIcon;
-          isEnabled = networkFilters?.Fradium ?? true;
-        }
+        // Calculate actual token balance from USD value and current price
+        const tokenBalance = calculateTokenBalance(usdValue, tokenPrice);
         
-        // Only add token if the network is enabled
-        if (symbol && isEnabled) {
-          const networkKey = name as keyof typeof networkValues;
-          walletTokens.push({
-            symbol,
-            name,
-            balance: '0.00', // In real implementation, you'd fetch actual balances
-            usdValue: networkValues[networkKey] ? networkValues[networkKey].toFixed(2) : '0.00',
-            icon
-          });
-        }
-      });
-      
-      setTokens(walletTokens);
-    };
+        console.log(`Home: ${name} - USD: $${usdValue}, Price: $${tokenPrice}, Balance: ${tokenBalance}`);
+        
+        walletTokens.push({
+          symbol,
+          name,
+          balance: tokenBalance,
+          usdValue: usdValue.toFixed(2),
+          icon
+        });
+      }
+    });
+    
+    setTokens(walletTokens);
+  }, [userWallet, networkValues, networkFilters, tokenPrices, calculateTokenBalance]);
 
-    if (userWallet && !isLoading) {
+  useEffect(() => {
+    if (userWallet && !isLoading && Object.keys(tokenPrices).length > 0) {
       loadWalletData();
     }
-  }, [userWallet, isLoading, networkValues, networkFilters]);
+  }, [userWallet, isLoading, tokenPrices, loadWalletData]);
 
   // Filter tokens and calculate network value based on selected network
   useEffect(() => {
