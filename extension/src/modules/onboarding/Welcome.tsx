@@ -4,7 +4,7 @@ import WelcomeCard from "../../assets/welcome_card.svg";
 import ArrowRight from "../../assets/arrow_forward.svg";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-import { loginWithInternetIdentity, resetAuthState } from "@/icp/icpAuth";
+import { loginWithInternetIdentity } from "@/icp/icpAuth";
 import { useAuth } from "@/lib/authContext";
 
 function Welcome() {
@@ -45,7 +45,7 @@ function Welcome() {
       setTimeout(() => {
         console.log("Welcome: Final navigation to HOME");
         navigate(ROUTES.HOME);
-      }, 500);
+      }, 1000);
       
     } catch (e) {
       console.error('Welcome: Login failed:', e);
@@ -93,30 +93,6 @@ function Welcome() {
       >
         {isLoading ? "Authenticating..." : "Create Wallet"}
       </NeoButton>
-      
-      {/* Debug button for testing */}
-      <div className="flex space-x-2">
-        <button
-          onClick={async () => {
-            await resetAuthState();
-            await checkAuth();
-            setMessage("Authentication state reset");
-          }}
-          className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-500"
-        >
-          Reset Auth (Debug)
-        </button>
-        <button
-          onClick={() => {
-            console.log("Debug - isAuthenticated:", isAuthenticated);
-            console.log("Debug - authLoading:", authLoading);
-            navigate(ROUTES.HOME);
-          }}
-          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-500"
-        >
-          Force Home
-        </button>
-      </div>
     </div>
   );
 }

@@ -66,7 +66,7 @@ export interface ICPAnalysisResult {
  */
 export interface AnalysisResult {
   isSafe: boolean;
-  source: "community" | "ai";
+  source: "community" | "ai" | "smartcontract";
   communityData?: CommunityAnalysisResult;
   aiData?: ICPAnalysisResult;
   tokenType: string;

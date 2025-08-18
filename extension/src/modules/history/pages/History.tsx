@@ -45,7 +45,7 @@ const transactions: Tx[] = [
 
 function History() {
   const navigate = useNavigate();
-  const SHOW_EMPTY = false;
+  const SHOW_EMPTY = true;
 
   return (
     <div className="w-[375px] h-[600px] bg-[#25262B] text-white pb-20 flex flex-col">
@@ -55,14 +55,14 @@ function History() {
       <div className={`relative flex-1 ${SHOW_EMPTY ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <div className="px-4 pb-4 h-full flex flex-col">
           {/* Tabs */}
-          <div className="flex items-center justify-between pt-3 select-none">
-            <div className="text-white text-[14px] font-semibold">Transaction</div>
+          <div className="flex flex-row justify-between pt-3 select-none">
+            <div className="flex-1 text-center text-white text-[14px] font-semibold">Transaction</div>
             <button
               type="button"
-              className="text-white/60 text-[14px] font-semibold"
+              className="flex-1 text-center text-white/60 text-[14px] font-semibold"
               onClick={() => navigate(ROUTES.SCAN_HISTORY)}
             >
-              Scan history
+              Scan History
             </button>
           </div>
           {/* underline line with active segment */}

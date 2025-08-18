@@ -4,7 +4,7 @@ import { performComprehensiveAnalysis } from "@/lib/backgroundMessaging";
 import { detectTokenType, TokenType } from "@/lib/tokenUtils";
 import type { AnalysisResult, AnalysisOptions } from "../../model/AnalyzeAddressModel";
 import { ROUTES } from "@/constants/routes";
-import { saveComprehensiveAnalysisToScanHistory } from "@/lib/localStorage";
+import { saveAnalysisToHistory, saveComprehensiveAnalysisToScanHistory } from "@/lib/localStorage";
 
 /**
  * Hook untuk mengelola logika analisis alamat menggunakan kombinasi Community dan AI.
@@ -14,6 +14,28 @@ export const useAddressAnalysis = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper function to convert AnalysisResult to HistoryItem format
+  const convertToHistoryItem = (analysisResult: AnalysisResult) => {
+    if (analysisResult.source === 'ai' && analysisResult.aiData) {
+      // Convert AI result to ICPAnalysisResult format
+      return saveAnalysisToHistory(
+        analysisResult.address,
+        analysisResult.aiData,
+        'icp'
+      );
+    } else if (analysisResult.source === 'community' && analysisResult.communityData) {
+      // Convert community result to CommunityAnalysisResult format  
+      return saveAnalysisToHistory(
+        analysisResult.address,
+        analysisResult.communityData,
+        'community'
+      );
+    }
+    
+    // Fallback - shouldn't happen but handle gracefully
+    throw new Error('Invalid analysis result format');
+  };
 
   const startAnalysis = async (address: string, _options: AnalysisOptions = {}) => {
     setLoading(true);
@@ -47,7 +69,6 @@ export const useAddressAnalysis = () => {
         saveComprehensiveAnalysisToScanHistory(finalResult);
       } catch (saveError) {
         console.warn('Failed to save to scan history:', saveError);
-        // Continue with navigation even if save fails
       }
       
       navigate(ROUTES.ANALYZE_ADDRESS_RESULT, {

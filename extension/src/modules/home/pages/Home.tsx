@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import TopLeft from "../../../assets/top_left.svg";
 import TopRight from "../../../assets/top_right.svg";
 import ProfileHeader from "../../../components/ui/header";
+import bitoinIcon from "@/../public/assets/tokens/bitcoin.svg";
+import ethIcon from "@/../public/assets/tokens/eth.svg";
+import solanaIcon from "@/../public/assets/tokens/solana.svg";
+import fumIcon from "@/../public/assets/tokens/fum.svg";
 import {
   EyeClosedIcon,
   EyeIcon,
@@ -79,22 +83,22 @@ function Home() {
         if ('Bitcoin' in addr.token_type) {
           symbol = 'BTC';
           name = 'Bitcoin';
-          icon = '/assets/tokens/bitcoin.svg';
+          icon = bitoinIcon;
           isEnabled = networkFilters?.Bitcoin ?? true;
         } else if ('Ethereum' in addr.token_type) {
           symbol = 'ETH';
           name = 'Ethereum';
-          icon = '/assets/tokens/eth.svg';
+          icon = ethIcon;
           isEnabled = networkFilters?.Ethereum ?? true;
         } else if ('Solana' in addr.token_type) {
           symbol = 'SOL';
           name = 'Solana';
-          icon = '/assets/tokens/solana.svg';
+          icon = solanaIcon;
           isEnabled = networkFilters?.Solana ?? true;
         } else if ('Fradium' in addr.token_type) {
           symbol = 'FUM';
           name = 'Fradium';
-          icon = '/assets/tokens/fum.svg';
+          icon = fumIcon;
           isEnabled = networkFilters?.Fradium ?? true;
         }
         

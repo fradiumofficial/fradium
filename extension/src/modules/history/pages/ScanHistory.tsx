@@ -61,7 +61,7 @@ function ScanHistory() {
 
   // Handle item click to navigate to detail
   const handleItemClick = (item: ScanHistoryItem) => {
-    navigate(ROUTES.ANALYZE_ADDRESS_RESULT, {
+    navigate(ROUTES.DETAIL_HISTORY, {
       state: {
         result: item.analysisResult,
         address: item.address,
@@ -88,13 +88,13 @@ function ScanHistory() {
           <div className="flex items-center justify-between pt-3 select-none">
             <button
               type="button"
-              className="text-white/60 text-[14px] font-semibold"
+              className="flex-1 text-center text-white/60 text-[14px] font-semibold"
               onClick={() => navigate(ROUTES.HISTORY)}
             >
               Transaction
             </button>
-            <div className="text-white text-[14px] font-semibold">
-              Scan history
+            <div className="flex-1 text-center text-white text-[14px] font-semibold">
+              Scan History
             </div>
           </div>
           {/* underline line with active segment at right */}

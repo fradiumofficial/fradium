@@ -1,6 +1,5 @@
 import type { ICPAnalysisResult, CommunityAnalysisResult, AnalysisResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
 import type { Root as SmartContractAnalysisResult } from "@/modules/analyze_smartcontract/model/AnalyzeSmartContractModel";
-import { detectTokenType } from "@/lib/tokenUtils";
 
 // Interface untuk History Item
 export interface HistoryItem {
@@ -23,7 +22,7 @@ export interface ScanHistoryItem {
   timestamp: number;
   date: string;
   isSafe: boolean;
-  source: "community" | "ai";
+  source: "community" | "ai" | "smartcontract";
 }
 
 export interface HistoryStorage {
