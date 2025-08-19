@@ -7,10 +7,18 @@ import NeoButton from "@/components/ui/custom-button";
 import { ROUTES } from "@/constants/routes";
 import { useWallet } from "@/lib/contexts/walletContext";
 import { useAuth } from "@/lib/contexts/authContext";
-import { TokenType, validateAddress, TOKENS_CONFIG } from "@/lib/utils/tokenUtils";
+import {
+  TokenType,
+  validateAddress,
+  TOKENS_CONFIG,
+  detectTokenType,
+} from "@/lib/utils/tokenUtils";
 import SendService from "@/services/sendService";
-import { performAIAnalysis, performComprehensiveAnalysis, type AnalysisResponse } from "@/lib/backgroundMessaging";
+import {
+  performComprehensiveAnalysis,
+} from "@/lib/backgroundMessaging";
 import { saveComprehensiveAnalysisToScanHistory } from "@/lib/localStorage";
+import type { AnalysisResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
 
 interface SendFormData {
   destinationAddress: string;
@@ -29,22 +37,23 @@ function Send() {
   const navigate = useNavigate();
   const { userWallet, network } = useWallet();
   const { identity } = useAuth();
-  
+
+
   // Form state
   const [formData, setFormData] = useState<SendFormData>({
     destinationAddress: "",
     amount: "",
     selectedToken: "",
   });
-  
+
   // UI state
   const [errors, setErrors] = useState<SendErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  
+
   // Analysis state
-  const [analysisResult, setAnalysisResult] = useState<{
+  const [analysisResult ] = useState<{
     isSafe: boolean;
     data: any;
     source: string;
@@ -61,7 +70,7 @@ function Send() {
     });
 
     const tokenGroups: { [key: string]: any } = {};
-    
+
     networkAddresses.forEach((addressObj) => {
       const tokenType = Object.keys(addressObj.token_type)[0];
       if (!tokenGroups[tokenType]) {
@@ -84,31 +93,34 @@ function Send() {
   }, [userWallet?.addresses, network]);
 
   // Get user's balance for a specific token
-  const getUserBalance = useCallback(async (tokenType: string) => {
-    if (!userWallet?.addresses) return 0;
-    
-    const addresses = userWallet.addresses
-      .filter((addr) => Object.keys(addr.token_type)[0] === tokenType)
-      .map((addr) => addr.address);
+  const getUserBalance = useCallback(
+    async (tokenType: string) => {
+      if (!userWallet?.addresses) return 0;
 
-    if (addresses.length === 0) return 0;
+      const addresses = userWallet.addresses
+        .filter((addr) => Object.keys(addr.token_type)[0] === tokenType)
+        .map((addr) => addr.address);
 
-    try {
-      switch (tokenType) {
-        case TokenType.BITCOIN:
-          // This would need to be implemented based on your balance service
-          return 0; // Placeholder
-        case TokenType.SOLANA:
-          // This would need to be implemented based on your balance service
-          return 0; // Placeholder
-        default:
-          return 0;
+      if (addresses.length === 0) return 0;
+
+      try {
+        switch (tokenType) {
+          case TokenType.BITCOIN:
+            // This would need to be implemented based on your balance service
+            return 0; // Placeholder
+          case TokenType.SOLANA:
+            // This would need to be implemented based on your balance service
+            return 0; // Placeholder
+          default:
+            return 0;
+        }
+      } catch (error) {
+        console.error(`Error fetching ${tokenType} balance:`, error);
+        return 0;
       }
-    } catch (error) {
-      console.error(`Error fetching ${tokenType} balance:`, error);
-      return 0;
-    }
-  }, [userWallet?.addresses]);
+    },
+    [userWallet?.addresses]
+  );
 
   // Validate form data
   const validateForm = useCallback((): boolean => {
@@ -118,7 +130,10 @@ function Send() {
     if (!formData.destinationAddress.trim()) {
       newErrors.destinationAddress = "Recipient address is required";
     } else {
-      const validation = validateAddress(formData.destinationAddress, formData.selectedToken);
+      const validation = validateAddress(
+        formData.destinationAddress,
+        formData.selectedToken
+      );
       if (!validation.isValid) {
         newErrors.destinationAddress = validation.error;
       }
@@ -145,11 +160,11 @@ function Send() {
 
   // Handle form input changes
   const handleInputChange = (field: keyof SendFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear field-specific error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -162,13 +177,14 @@ function Send() {
   // Set maximum amount
   const handleMaxAmount = async () => {
     if (!formData.selectedToken) return;
-    
+
     const balance = await getUserBalance(formData.selectedToken);
     if (balance > 0) {
       // Convert from base unit to display unit
-      const tokenConfig = TOKENS_CONFIG[formData.selectedToken as keyof typeof TOKENS_CONFIG];
+      const tokenConfig =
+        TOKENS_CONFIG[formData.selectedToken as keyof typeof TOKENS_CONFIG];
       if (tokenConfig) {
-        const displayAmount = balance / (10 ** tokenConfig.decimals);
+        const displayAmount = balance / 10 ** tokenConfig.decimals;
         handleInputChange("amount", displayAmount.toString());
       }
     }
@@ -180,55 +196,44 @@ function Send() {
 
     setIsAnalyzing(true);
     try {
-      const communityReport = await performComprehensiveAnalysis(formData.destinationAddress) as AnalysisResponse;
+      const tokenType = detectTokenType(formData.destinationAddress);
 
-      if ("Ok" in communityReport) {
-        const communityIsSafe = communityReport.data.is_safe;
-
-        // Save community analysis history
-        await saveComprehensiveAnalysisToScanHistory(communityReport.data);
-
-        // Step 2: If community says safe, double-check with AI
-        if (communityIsSafe) {
-          const aiResult = await performAIAnalysis(formData.destinationAddress) as AnalysisResponse;
-
-          if (aiResult && !aiResult.data.is_safe) {
-            // AI detected as unsafe, override community result
-            await saveComprehensiveAnalysisToScanHistory(aiResult.data);
-            setAnalysisResult({ isSafe: false, data: aiResult.data!, source: "ai" });
-          } else {
-            // Use community result (safe)
-            setAnalysisResult({ isSafe: true, data: communityReport.Ok, source: "community" });
-          }
-        } else {
-          // Community says unsafe, use community result
-          setAnalysisResult({ isSafe: false, data: communityReport.Ok, source: "community"});
-        }
-      } else {
-        // Step 3: No community report, use AI analysis as fallback
-        const aiResult = await performAIAnalysis(formData.destinationAddress);
-
-        if (aiResult) {
-          await saveComprehensiveAnalysisToScanHistory(aiResult.data);
-          setAnalysisResult({ isSafe: aiResult.data.is_safe, data: aiResult.data, source: "ai" });
-        } else {
-          // Both community and AI failed
-          toast.error("Failed to analyze address. Please try again later.");
-          return;
-        }
+      if (tokenType === TokenType.UNKNOWN) {
+        throw new Error(
+          "Unsupported address format. Please provide a valid Bitcoin, Ethereum, or Solana address."
+        );
       }
 
-      // For now, we'll skip the complex analysis and go straight to confirmation
-      // In a real implementation, you would call your analysis service here
-      setAnalysisResult({
-        isSafe: true, // Placeholder - should come from actual analysis
-        data: null,
-        source: "placeholder"
-      });
+      const response = await performComprehensiveAnalysis(
+        formData.destinationAddress
+      );
+
+      if (!response.success) {
+        throw new Error(response.error || "Analysis failed");
+      }
+
+      const finalResult: AnalysisResult = response.data;
+
+      // 2. Save to scan history and navigate to result page
+      console.log(
+        "Analysis successful. Saving to scan history and navigating to result page."
+      );
+      try {
+        saveComprehensiveAnalysisToScanHistory(finalResult);
+      } catch (saveError) {
+        console.warn("Failed to save to scan history:", saveError);
+      }
+
       setShowConfirmation(true);
-    } catch (error) {
-      console.error("Error analyzing address:", error);
-      toast.error("Failed to analyze address. Please try again.");
+
+    } catch (err) {
+      console.error('A critical error occurred during analysis:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+
+      navigate(ROUTES.FAILED, {
+        state: { error: errorMessage, address: formData.destinationAddress },
+        replace: true
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -251,12 +256,15 @@ function Send() {
       }
 
       // Send transaction using the service
-      const result = await SendService.sendTransaction({
-        tokenType: formData.selectedToken,
-        destinationAddress: formData.destinationAddress,
-        amount: formData.amount,
-        senderAddress,
-      }, identity);
+      const result = await SendService.sendTransaction(
+        {
+          tokenType: formData.selectedToken,
+          destinationAddress: formData.destinationAddress,
+          amount: formData.amount,
+          senderAddress,
+        },
+        identity
+      );
 
       if (result.success) {
         toast.success("Transaction sent successfully!");
@@ -266,7 +274,8 @@ function Send() {
       }
     } catch (error) {
       console.error("Error sending transaction:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to send transaction";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to send transaction";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -282,21 +291,25 @@ function Send() {
 
       <div className="flex flex-col px-[24px]">
         <div className="flex flex-row items-center">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="p-1 hover:bg-white/10 rounded"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-[20px] font-semibold text-white px-[12px]">Send Coin</h1>
+          <h1 className="text-[20px] font-semibold text-white px-[12px]">
+            Send Coin
+          </h1>
         </div>
       </div>
 
       <div className="flex flex-col px-[24px] space-y-4">
         {/* Token Selection */}
         <div>
-          <p className="text-[14px] text-white/60 font-normal mb-[6px]">Select Token</p>
-          <select 
+          <p className="text-[14px] text-white/60 font-normal mb-[6px]">
+            Select Token
+          </p>
+          <select
             value={formData.selectedToken}
             onChange={(e) => handleTokenSelection(e.target.value)}
             className="w-full bg-white/10 border border-white/10 p-2 text-white rounded"
@@ -315,18 +328,24 @@ function Send() {
 
         {/* Recipient Address */}
         <div>
-          <p className="text-[14px] text-white/60 font-normal mb-[6px]">Recipient Address</p>
-          <input 
-            type="text" 
+          <p className="text-[14px] text-white/60 font-normal mb-[6px]">
+            Recipient Address
+          </p>
+          <input
+            type="text"
             placeholder="Enter recipient address"
             value={formData.destinationAddress}
-            onChange={(e) => handleInputChange("destinationAddress", e.target.value)}
+            onChange={(e) =>
+              handleInputChange("destinationAddress", e.target.value)
+            }
             className={`w-full bg-white/10 border p-2 text-white rounded ${
               errors.destinationAddress ? "border-red-500" : "border-white/10"
             }`}
           />
           {errors.destinationAddress && (
-            <p className="text-red-400 text-xs mt-1">{errors.destinationAddress}</p>
+            <p className="text-red-400 text-xs mt-1">
+              {errors.destinationAddress}
+            </p>
           )}
         </div>
 
@@ -334,7 +353,10 @@ function Send() {
         <div>
           <div className="flex justify-between items-center mb-[6px]">
             <p className="text-[14px] text-white/60 font-normal">
-              Amount {formData.selectedToken ? `- ${formData.selectedToken.toUpperCase()}` : ""}
+              Amount{" "}
+              {formData.selectedToken
+                ? `- ${formData.selectedToken.toUpperCase()}`
+                : ""}
             </p>
             {formData.selectedToken && (
               <button
@@ -345,8 +367,8 @@ function Send() {
               </button>
             )}
           </div>
-          <input 
-            type="number" 
+          <input
+            type="number"
             placeholder="0.00"
             value={formData.amount}
             onChange={(e) => handleInputChange("amount", e.target.value)}
@@ -369,9 +391,15 @@ function Send() {
         </div>
 
         {/* Continue Button */}
-        <NeoButton 
+        <NeoButton
           onClick={handleAnalyzeAddress}
-          disabled={!formData.selectedToken || !formData.destinationAddress || !formData.amount || isLoading || isAnalyzing}
+          disabled={
+            !formData.selectedToken ||
+            !formData.destinationAddress ||
+            !formData.amount ||
+            isLoading ||
+            isAnalyzing
+          }
           className="w-full"
         >
           {isAnalyzing ? "Analyzing..." : "Continue"}
@@ -382,23 +410,24 @@ function Send() {
       {showConfirmation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div className="bg-[#23272F] px-6 py-8 w-full max-w-sm rounded-lg shadow-lg relative">
-            <button 
-              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold" 
+            <button
+              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
               onClick={() => setShowConfirmation(false)}
             >
               ×
             </button>
-            
+
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
                 <AlertCircle className="w-8 h-8 text-green-400" />
               </div>
-              <h3 className="text-white text-lg font-semibold mb-2">Address Analysis Complete</h3>
+              <h3 className="text-white text-lg font-semibold mb-2">
+                Address Analysis Complete
+              </h3>
               <p className="text-[#B0B6BE] text-sm">
-                {analysisResult?.isSafe 
+                {analysisResult?.isSafe
                   ? "The address appears to be safe. You can proceed with the transaction."
-                  : "The address has been flagged as potentially unsafe. Proceed with caution."
-                }
+                  : "The address has been flagged as potentially unsafe. Proceed with caution."}
               </p>
             </div>
 
@@ -409,7 +438,7 @@ function Send() {
                   {formData.amount} {formData.selectedToken}
                 </p>
               </div>
-              
+
               <div className="bg-[#1A1D23] p-3 rounded">
                 <p className="text-[#B0B6BE] text-xs">To</p>
                 <p className="text-white font-medium text-sm break-all">
@@ -429,8 +458,8 @@ function Send() {
                 onClick={handleConfirmSend}
                 disabled={isLoading}
                 className={`flex-1 py-3 rounded-lg font-semibold transition ${
-                  analysisResult?.isSafe 
-                    ? "bg-[#99E39E] text-black hover:bg-[#8BD88B]" 
+                  analysisResult?.isSafe
+                    ? "bg-[#99E39E] text-black hover:bg-[#8BD88B]"
                     : "bg-red-500 text-white hover:bg-red-600"
                 }`}
               >
