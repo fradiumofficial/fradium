@@ -29,21 +29,21 @@ export class SendService {
   ): Promise<SendTransactionResult> {
     try {
       // Validate address
-      const validation = validateAddress(destinationAddress, TokenType.UNKNOWN);
+      const validation = validateAddress(destinationAddress, TokenType.BITCOIN);
       if (!validation.isValid) {
         return { success: false, error: validation.error };
       }
 
-      // Convert amount to satoshi
+      // Convert amount to satoshi (returns BigInt, which matches Nat64 in Motoko)
       const satoshiAmount = amountToBaseUnit(TokenType.BITCOIN, parseFloat(amount));
       if (satoshiAmount <= 0) {
         return { success: false, error: "Invalid amount" };
       }
       
-      // Send transaction
+      // Send transaction - keep as BigInt for Bitcoin canister compatibility
       const transactionId = await bitcoin.send_from_p2pkh_address({
         destination_address: destinationAddress,
-        amount_in_satoshi: BigInt(satoshiAmount),
+        amount_in_satoshi: satoshiAmount,
       });
 
       return {
@@ -88,7 +88,7 @@ export class SendService {
       const transactionId = await solana.send_sol(
         [identity.getPrincipal()], 
         destinationAddress, 
-        BigInt(lamportAmount)
+        lamportAmount // Keep as BigInt for Solana
       );
 
       return {
@@ -155,7 +155,7 @@ export class SendService {
               slot: [] as [] | [bigint],
               sender: senderAddress || "",
               recipient: destinationAddress,
-              lamports: BigInt(baseAmount),
+              lamports: baseAmount,
             },
           };
           break;
@@ -168,7 +168,7 @@ export class SendService {
       const transactionHistoryParams = {
         chain: getTokenTypeVariant(tokenType),
         direction: { Send: null },
-        amount: BigInt(baseAmount),
+        amount: baseAmount,
         timestamp: BigInt(Date.now() * 1000000),
         details,
         note: [`Sent ${amount} ${tokenType} to ${destinationAddress.slice(0, 12)}...`] as [string],
@@ -187,6 +187,12 @@ export class SendService {
    */
   static async sendTransaction(params: SendTransactionParams, identity?: any): Promise<SendTransactionResult> {
     const { tokenType, destinationAddress, amount, senderAddress } = params;
+
+    // Validate parameters first
+    const validation = this.validateSendParams(params);
+    if (!validation.isValid) {
+      return { success: false, error: validation.error };
+    }
 
     let result: SendTransactionResult;
 
@@ -211,13 +217,18 @@ export class SendService {
 
     // If send was successful, try to create transaction history
     if (result.success && result.transactionId && senderAddress) {
-      await this.createTransactionHistory(
-        tokenType,
-        amount,
-        destinationAddress,
-        senderAddress,
-        result.transactionId
-      );
+      try {
+        await this.createTransactionHistory(
+          tokenType,
+          amount,
+          destinationAddress,
+          senderAddress,
+          result.transactionId
+        );
+      } catch (historyError) {
+        console.error("Failed to create transaction history:", historyError);
+        // Don't fail the transaction if history creation fails
+      }
     }
 
     return result;

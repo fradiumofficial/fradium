@@ -152,12 +152,6 @@ function Receive() {
 
       <div className="flex flex-col px-[24px]">
         {addresses.map(renderAddressInput)}
-
-        <div className="mt-6">
-          <NeoButton onClick={() => navigate(ROUTES.HOME)}>
-            Done
-          </NeoButton>
-        </div>
       </div>
     </div>
   )

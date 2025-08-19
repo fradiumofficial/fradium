@@ -4,6 +4,7 @@ import type { _SERVICE } from "../../../../src/declarations/backend/backend.did"
 import { createAgent } from "./base_service";
 import { getCanisterId } from "@/lib/config";
 import type { CommunityAnalysisResponse } from "@/modules/analyze_address/model/AnalyzeAddressModel";
+import { Principal } from '@dfinity/principal';
 import type { 
   CreateWalletParams, 
   WalletAddress, 
@@ -103,7 +104,6 @@ export const deleteUserWallet = async (userPrincipal: string, identity?: Identit
     const actor = await getBackendActor(identity);
     
     // Convert string to Principal
-    const { Principal } = await import('@dfinity/principal');
     const principal = Principal.fromText(userPrincipal);
     
     const result = await actor.admin_delete_wallet(principal);
