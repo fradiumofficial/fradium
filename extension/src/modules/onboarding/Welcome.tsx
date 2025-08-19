@@ -5,8 +5,8 @@ import ArrowRight from "../../assets/arrow_forward.svg";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { loginWithInternetIdentity } from "@/icp/icpAuth";
-import { useAuth } from "@/lib/authContext";
-import { useWallet } from "@/lib/walletContext";
+import { useAuth } from "@/lib/contexts/authContext";
+import { useWallet } from "@/lib/contexts/walletContext";
 
 function Welcome() {
   const navigate = useNavigate();

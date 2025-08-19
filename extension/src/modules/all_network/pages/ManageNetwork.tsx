@@ -1,6 +1,6 @@
 import NeoButton from "@/components/ui/custom-button";
 import { useState, useEffect } from "react";
-import { useWallet } from "@/lib/walletContext";
+import { useWallet } from "@/lib/contexts/walletContext";
 
 type ManageNetworkProps = {
   onClose: () => void;

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAddressAnalysis } from "./hook/useAnalyzeAddressHook";
-import { detectTokenType, TokenType } from "@/lib/tokenUtils";
+import { detectTokenType, TokenType } from "@/lib/utils/tokenUtils";
 import ProfileHeader from "@/components/ui/header";
 import NeoButton from "@/components/ui/custom-button";
 import AnalyzeAddressIcon from "../../../assets/analyze_address.svg";

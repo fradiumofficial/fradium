@@ -1,7 +1,7 @@
 import ProfileHeader from "@/components/ui/header";
 import { ROUTES } from "@/constants/routes";
-import { useAuth } from "@/lib/authContext";
-import { shortenIcId } from "@/lib/utils";
+import { useAuth } from "@/lib/contexts/authContext";
+import { shortenIcId } from "@/lib/utils/utils";
 import { Copy, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

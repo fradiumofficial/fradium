@@ -14,7 +14,7 @@ import {
   Search,
   Settings2,
 } from "lucide-react";
-import { useWallet } from "@/lib/walletContext";
+import { useWallet } from "@/lib/contexts/walletContext";
 import { useNetwork } from "@/modules/all_network/networkContext";
 import type { WalletAddress } from "@/icp/services/backend_service";
 import { ROUTES } from "@/constants/routes";

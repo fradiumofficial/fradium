@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { performComprehensiveAnalysis } from "@/lib/backgroundMessaging";
-import { detectTokenType, TokenType } from "@/lib/tokenUtils";
+import { detectTokenType, TokenType } from "@/lib/utils/tokenUtils";
 import type { AnalysisResult, AnalysisOptions } from "../../model/AnalyzeAddressModel";
 import { ROUTES } from "@/constants/routes";
 import { saveComprehensiveAnalysisToScanHistory } from "@/lib/localStorage";

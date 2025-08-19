@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { useNetwork } from "@/modules/all_network/networkContext";
-import { useWallet } from "@/lib/walletContext";
+import { useWallet } from "@/lib/contexts/walletContext";
 import { useState } from "react";
 import ManageNetwork from "./ManageNetwork";
 

@@ -3,7 +3,7 @@ import { Search, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { getScanHistory, type ScanHistoryItem } from "@/lib/localStorage";
-import { getTokenImageURL } from "@/lib/tokenUtils";
+import { getTokenImageURL } from "@/lib/utils/tokenUtils";
 import { useState, useEffect } from "react";
 
 function ScanHistory() {

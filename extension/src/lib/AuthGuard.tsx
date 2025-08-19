@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from './authContext';
+import { useAuth } from './contexts/authContext';
 import { ROUTES } from '@/constants/routes';
 
 interface AuthGuardProps {

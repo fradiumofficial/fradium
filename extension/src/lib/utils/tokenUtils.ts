@@ -122,6 +122,21 @@ export function detectTokenType(address: string): string {
   return TokenType.UNKNOWN;
 }
 
+export function amountToBaseUnit(cryptoName: string, amount: number) {
+  // Get token config for the crypto name
+  const tokenConfig = TOKENS_CONFIG[cryptoName as keyof typeof TOKENS_CONFIG];
+  if (!tokenConfig) {
+    throw new Error(`Error: Mata uang kripto '${cryptoName}' tidak didukung.`);
+  }
+
+  // Get decimals from token config
+  const decimals = tokenConfig.decimals;
+
+  // Convert to base unit using BigInt for precision
+  const baseUnitValue = BigInt(Math.floor(amount * (10 ** decimals)));
+
+  return baseUnitValue;
+}
 // Convert chain name to token type variant for canister
 export const getTokenTypeVariant = (chainName: string) => {
   switch (chainName) {

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NeoButton from '@/components/ui/custom-button';
 import { ROUTES } from '@/constants/routes';
-import { useAuth } from '@/lib/authContext';
-import { useWallet } from '@/lib/walletContext';
+import { useAuth } from '@/lib/contexts/authContext';
+import { useWallet } from '@/lib/contexts/walletContext';
 
 function CreateWallet() {
   const [step, setStep] = useState(1);

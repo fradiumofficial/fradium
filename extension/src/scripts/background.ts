@@ -1,5 +1,5 @@
 import { analyzeAddressCommunity } from "@/icp/services/backend_service";
-import { detectTokenType, TokenType } from "@/lib/tokenUtils";
+import { detectTokenType, TokenType } from "@/lib/utils/tokenUtils";
 import { analyzeBtcAddress, analyzeEthAddress, analyzeSolAddress } from "@/icp/services/ai_service";
 import { extractFeatures as extractFeaturesBTC } from "../services/ai/bitcoinAnalyzeService";
 import { extractFeatures as extractFeaturesETH } from "../services/ai/ethereumAnalyzeService";
@@ -79,7 +79,7 @@ async function performAIAnalysis(address: string): Promise<{ isSafe: boolean; da
         }
         throw new Error("Solana AI analysis failed");
 
-      case TokenType.FUM:
+      case TokenType.FRADIUM:
         // Fradium AI Analysis - NOT IMPLEMENTED YET
         console.warn("Fradium AI analysis not implemented yet");
         return null;

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import NeoButton from "@/components/ui/custom-button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-import { useAuth } from "@/lib/authContext";
-import { useWallet } from "@/lib/walletContext";
+import { useAuth } from "@/lib/contexts/authContext";
+import { useWallet } from "@/lib/contexts/walletContext";
 import { useWalletApi } from "@/modules/wallet/api/WalletApi";
 import ArrowRight from "../../assets/arrow_forward.svg";
 

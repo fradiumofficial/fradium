@@ -1,7 +1,12 @@
-import { useWallet } from "@/lib/walletContext";
-import { useAuth } from "@/lib/authContext";
+import { useWallet } from "@/lib/contexts/walletContext";
+import { useAuth } from "@/lib/contexts/authContext";
 import type { WalletAddress, UserWallet } from "@/icp/services/backend_service";
-
+import { bitcoin } from "@/../../src/declarations/bitcoin";
+import { solana } from "@/../../src/declarations/solana";
+import { backend } from "@/../../src/declarations/backend";
+import { deleteUserWallet } from "@/icp/services/backend_service";
+import { getBalance, TokenType, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance } from "@/lib/balanceService";
+import { amountToBaseUnit, detectTokenType } from "@/lib/utils/tokenUtils";
 export interface WalletApiResponse<T> {
   success: boolean;
   data?: T;
@@ -249,7 +254,6 @@ export const useWalletApi = () => {
       }
 
       // Use the new getBalance function following asset-page.jsx pattern
-      const { getBalance, TokenType } = await import("@/lib/balanceService");
       
       let tokenType: any;
       switch (network) {
@@ -281,7 +285,6 @@ export const useWalletApi = () => {
       if (totalBalance > 0) {
         switch (network) {
           case 'Bitcoin':
-            const { fetchBitcoinBalance } = await import("@/lib/balanceService");
             const btcResult = await fetchBitcoinBalance(addresses[0]);
             balanceData = {
               balance: totalBalance / 100000000, // Convert satoshi to BTC
@@ -289,7 +292,6 @@ export const useWalletApi = () => {
             };
             break;
           case 'Ethereum':
-            const { fetchEthereumBalance } = await import("@/lib/balanceService");
             const ethResult = await fetchEthereumBalance(addresses[0]);
             balanceData = {
               balance: totalBalance / Math.pow(10, 18), // Convert wei to ETH
@@ -297,7 +299,6 @@ export const useWalletApi = () => {
             };
             break;
           case 'Solana':
-            const { fetchSolanaBalance } = await import("@/lib/balanceService");
             const solResult = await fetchSolanaBalance(addresses[0], identity);
             balanceData = {
               balance: totalBalance / Math.pow(10, 9), // Convert lamports to SOL
@@ -351,6 +352,183 @@ export const useWalletApi = () => {
   };
 
   /**
+   * Send token to destination address
+   */
+  const sendToken = async (
+    tokenType: string, 
+    destinationAddress: string, 
+    amount: string
+  ): Promise<WalletApiResponse<{ transactionId: string; status: string }>> => {
+    try {
+      if (!isAuthenticated || !identity) {
+        return { success: false, error: "User not authenticated" };
+      }
+
+      if (!userWallet) {
+        return { success: false, error: "No wallet found" };
+      }
+
+      // Validate destination address
+      const validation = validateAddress(destinationAddress, tokenType);
+      if (!validation.isValid) {
+        return { success: false, error: validation.error };
+      }
+
+      // Get sender address for the token type
+      const senderAddress = userWallet.addresses.find((addr) => {
+        const addressTokenType = Object.keys(addr.token_type)[0];
+        return addressTokenType === tokenType;
+      })?.address;
+
+      if (!senderAddress) {
+        return { success: false, error: `No ${tokenType} address found in wallet` };
+      }
+
+      let result;
+      switch (tokenType) {
+        case 'Bitcoin':
+          try {
+            const satoshiAmount = amountToBaseUnit('Bitcoin', parseFloat(amount));
+            
+            const transactionId = await bitcoin.send_from_p2pkh_address({
+              destination_address: destinationAddress,
+              amount_in_satoshi: BigInt(satoshiAmount),
+            });
+            
+            result = { transactionId, status: "completed" };
+          } catch (error) {
+            return { success: false, error: `Bitcoin send failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
+          }
+          break;
+
+        case 'Solana':
+          try {
+            const lamportAmount = amountToBaseUnit('Solana', parseFloat(amount));
+            
+            const transactionId = await solana.send_sol([identity.getPrincipal()], destinationAddress, BigInt(lamportAmount));
+            
+            result = { transactionId, status: "completed" };
+          } catch (error) {
+            return { success: false, error: `Solana send failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
+          }
+          break;
+
+        case 'Ethereum':
+        case 'Fradium':
+          return { success: false, error: "Ethereum/Fradium transactions not yet implemented" };
+
+        default:
+          return { success: false, error: `Unsupported token type: ${tokenType}` };
+      }
+
+      // Create transaction history entry
+      try {
+        
+        const getTokenTypeVariant = (tokenType: string) => {
+          switch (tokenType) {
+            case 'Bitcoin':
+              return { Bitcoin: null } as const;
+            case 'Ethereum':
+              return { Ethereum: null } as const;
+            case 'Solana':
+              return { Solana: null } as const;
+            default:
+              return { Bitcoin: null } as const;
+          }
+        };
+
+        let baseAmount;
+        let details;
+        switch (tokenType) {
+          case 'Bitcoin':
+            baseAmount = amountToBaseUnit('Bitcoin', parseFloat(amount));
+            details = {
+              Bitcoin: {
+                txid: result.transactionId || "pending",
+                from_address: (senderAddress ? [senderAddress] : []) as [] | [string],
+                to_address: destinationAddress,
+                fee_satoshi: [] as [] | [bigint],
+                block_height: [] as [] | [bigint],
+              },
+            };
+            break;
+          case 'Solana':
+            baseAmount = amountToBaseUnit('Solana', parseFloat(amount));
+            details = {
+              Solana: {
+                signature: result.transactionId || "pending",
+                slot: [] as [] | [bigint],
+                sender: senderAddress || "",
+                recipient: destinationAddress,
+                lamports: BigInt(baseAmount),
+              },
+            };
+            break;
+          default:
+            return { success: true, data: result };
+        }
+
+        const transactionHistoryParams = {
+          chain: getTokenTypeVariant(tokenType),
+          direction: { Send: null },
+          amount: BigInt(baseAmount),
+          timestamp: BigInt(Date.now() * 1000000),
+          details,
+          note: [`Sent ${amount} ${tokenType} to ${destinationAddress.slice(0, 12)}...`] as [string],
+        };
+
+        await backend.create_transaction_history(transactionHistoryParams);
+      } catch (historyError) {
+        console.error("Failed to create transaction history:", historyError);
+        // Don't fail the send if history creation fails
+      }
+
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Error sending token:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  };
+
+  /**
+   * Validate address for different token types
+   */
+  const validateAddress = (address: string, tokenType?: string) => {
+    if (!address || typeof address !== "string") {
+      return { isValid: false, error: "Address is required" };
+    }
+
+    const detectedType = tokenType || detectTokenType(address);
+
+    if (detectedType === 'Unknown') {
+      return { isValid: false, error: "Unknown token type" };
+    }
+
+    return { isValid: true, tokenType: detectedType };
+  };
+
+  /**
+   * Check if amount exceeds balance
+   */
+  const isAmountExceedBalance = (tokenType: string, sendAmount: string, currentAmount: string): boolean => {
+    const amount = parseFloat(sendAmount);
+    const balance = parseFloat(currentAmount);
+    if (isNaN(amount) || isNaN(balance)) return false;
+    if (amount <= 0) return true;
+    
+    // For Bitcoin and Solana, we need to compare in base units
+    if (tokenType === 'Bitcoin' || tokenType === 'Solana') {
+      // This would need the amountToBaseUnit function
+      return amount > balance;
+    }
+    
+    return amount > balance;
+  };
+
+  /**
    * Delete existing wallet (for debugging/testing purposes)
    */
   const deleteWallet = async (): Promise<WalletApiResponse<boolean>> => {
@@ -359,7 +537,6 @@ export const useWalletApi = () => {
         return { success: false, error: "User not authenticated" };
       }
 
-      const { deleteUserWallet } = await import("@/icp/services/backend_service");
       const result = await deleteUserWallet(principal, identity);
 
       if ("Ok" in result) {
@@ -395,6 +572,10 @@ export const useWalletApi = () => {
     refreshWallet,
     refreshNetworkBalance,
     getSupportedNetworks,
+    sendToken,
+    validateAddress,
+    detectTokenType,
+    isAmountExceedBalance,
     deleteWallet
   };
 };

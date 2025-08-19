@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./authContext";
 import type { WalletAddress, UserWallet } from "@/icp/services/backend_service";
-
+import { getBalance, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, fetchFradiumBalance, TokenType } from "@/lib/balanceService";
 interface NetworkFilters {
   Bitcoin: boolean;
   Ethereum: boolean;
@@ -358,7 +358,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     try {
       // Import services
-      const { getBalance, TokenType } = await import('./balanceService');
       
       const supportedTokens = [TokenType.BITCOIN, TokenType.ETHEREUM, TokenType.SOLANA, TokenType.FRADIUM];
       const balances: Partial<NetworkValues> = {};
@@ -385,17 +384,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               if (totalBalance > 0) {
                 switch (tokenType) {
                   case TokenType.BITCOIN:
-                    const { fetchBitcoinBalance } = await import('./balanceService');
+
                     const btcResult = await fetchBitcoinBalance(addresses[0]);
                     usdValue = (btcResult.usdValue / btcResult.balance) * (totalBalance / 100000000); // Convert satoshi to BTC
                     break;
                   case TokenType.ETHEREUM:
-                    const { fetchEthereumBalance } = await import('./balanceService');
+
                     const ethResult = await fetchEthereumBalance(addresses[0]);
                     usdValue = (ethResult.usdValue / ethResult.balance) * (totalBalance / Math.pow(10, 18)); // Convert wei to ETH
                     break;
                   case TokenType.SOLANA:
-                    const { fetchSolanaBalance } = await import('./balanceService');
+
                     const solResult = await fetchSolanaBalance(addresses[0], identity);
                     usdValue = (solResult.usdValue / solResult.balance) * (totalBalance / Math.pow(10, 9)); // Convert lamports to SOL
                     break;
