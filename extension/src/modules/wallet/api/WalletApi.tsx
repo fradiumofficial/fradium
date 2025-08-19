@@ -5,7 +5,7 @@ import { bitcoin } from "@/../../src/declarations/bitcoin";
 import { solana } from "@/../../src/declarations/solana";
 import { backend } from "@/../../src/declarations/backend";
 import { deleteUserWallet } from "@/icp/services/backend_service";
-import { getBalance, TokenType, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance } from "@/lib/balanceService";
+import { getBalance, TokenType, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance } from "@/services/balanceService";
 import { amountToBaseUnit, detectTokenType } from "@/lib/utils/tokenUtils";
 export interface WalletApiResponse<T> {
   success: boolean;

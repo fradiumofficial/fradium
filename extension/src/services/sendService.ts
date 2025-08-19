@@ -29,7 +29,7 @@ export class SendService {
   ): Promise<SendTransactionResult> {
     try {
       // Validate address
-      const validation = validateAddress(destinationAddress, TokenType.BITCOIN);
+      const validation = validateAddress(destinationAddress, TokenType.UNKNOWN);
       if (!validation.isValid) {
         return { success: false, error: validation.error };
       }
@@ -200,7 +200,7 @@ export class SendService {
         break;
         
       case TokenType.ETHEREUM:
-      case TokenType.FRADIUM:
+      case TokenType.FUM:
         result = { success: false, error: "Ethereum/Fradium transactions not yet implemented" };
         break;
         

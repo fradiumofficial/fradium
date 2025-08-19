@@ -56,6 +56,7 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
     };
     
     console.log('BalanceService: Final Bitcoin balance result:', result);
+    await chrome.storage.local.set({ bitcoinBalance: result, lastUpdated: Date.now() });
     return result;
     
   } catch (error) {
@@ -93,6 +94,7 @@ export const fetchEthereumBalance = async (address: string): Promise<BalanceResu
     };
     
     console.log('BalanceService: Final Ethereum balance result:', result);
+    await chrome.storage.local.set({ ethereumBalance: result, lastUpdated: Date.now() });
     return result;
     
   } catch (error) {
@@ -174,6 +176,7 @@ export const fetchSolanaBalance = async (address: string, identity?: any): Promi
       };
       
       console.log('BalanceService: External API Solana balance result:', result);
+      await chrome.storage.local.set({ solanaBalance: result, lastUpdated: Date.now() });
       return result;
     }
     

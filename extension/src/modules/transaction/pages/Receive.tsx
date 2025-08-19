@@ -1,5 +1,5 @@
 import ProfileHeader from "@/components/ui/header";
-import { ChevronLeft, RefreshCw } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import QrCodeIcon from "../../../../public/assets/qr_code.svg";
 import CopyIcon from "../../../../public/assets/content_copy.svg";
 import NeoButton from "@/components/ui/custom-button";
@@ -19,7 +19,7 @@ interface NetworkAddress {
 function Receive() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { getAddressForNetwork, hasWallet, isLoading: walletLoading, refreshWallet, refreshNetworkBalance } = useWalletApi();
+  const { getAddressForNetwork, hasWallet, isLoading: walletLoading } = useWalletApi();
   const [addresses, setAddresses] = useState<NetworkAddress[]>([
     { network: 'Bitcoin', address: '', isLoading: true },
     { network: 'Ethereum', address: '', isLoading: true },
@@ -27,7 +27,6 @@ function Receive() {
     { network: 'Fradium', address: '', isLoading: true }
   ]);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Load addresses when component mounts
   useEffect(() => {
@@ -72,53 +71,9 @@ function Receive() {
     console.log(`Show QR code for ${network}: ${address}`);
   };
 
-  // Refresh balance for specific network
-  const handleRefreshBalance = async (network: string) => {
-    try {
-      setIsRefreshing(true);
-      console.log(`Refreshing balance for ${network}...`);
-      
-      const result = await refreshNetworkBalance(network);
-      if (result.success) {
-        console.log(`${network} balance refreshed:`, result.data);
-        // Optionally show a success message
-        setCopiedAddress(`${network}-refreshed`);
-        setTimeout(() => setCopiedAddress(null), 2000);
-      } else {
-        console.error(`Failed to refresh ${network} balance:`, result.error);
-      }
-    } catch (error) {
-      console.error(`Error refreshing ${network} balance:`, error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  // Refresh all balances
-  const handleRefreshAll = async () => {
-    try {
-      setIsRefreshing(true);
-      console.log('Refreshing all wallet data...');
-      
-      const result = await refreshWallet();
-      if (result.success) {
-        console.log('All balances refreshed successfully');
-        setCopiedAddress('all-refreshed');
-        setTimeout(() => setCopiedAddress(null), 2000);
-      } else {
-        console.error('Failed to refresh wallet:', result.error);
-      }
-    } catch (error) {
-      console.error('Error refreshing wallet:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   const renderAddressInput = (networkData: NetworkAddress) => {
     const { network, address, isLoading, error } = networkData;
     const isCopied = copiedAddress === `${network}-${address}`;
-    const isRefreshed = copiedAddress === `${network}-refreshed`;
 
     return (
       <div key={network} className="mb-4">
@@ -138,10 +93,6 @@ function Receive() {
               className={`w-5 h-5 cursor-pointer ${!address || isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
               onClick={() => address && !isLoading && handleShowQRCode(address, network)}
             />
-            <RefreshCw 
-              className={`w-5 h-5 cursor-pointer text-white ${isRefreshing ? 'animate-spin opacity-50' : 'hover:opacity-80'}`}
-              onClick={() => !isRefreshing && handleRefreshBalance(network)}
-            />
             <div className="relative">
               <img 
                 src={CopyIcon} 
@@ -152,11 +103,6 @@ function Receive() {
               {isCopied && (
                 <div className="absolute -top-8 -left-4 bg-green-600 text-white text-xs px-2 py-1 rounded">
                   Copied!
-                </div>
-              )}
-              {isRefreshed && (
-                <div className="absolute -top-8 -left-4 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                  Refreshed!
                 </div>
               )}
             </div>
@@ -201,17 +147,6 @@ function Receive() {
         <div className="flex flex-row items-center">
           <ChevronLeft className="w-6 h-6" />
           <h1 className="text-[20px] font-semibold text-white px-[12px]">Receive Coin</h1>
-        </div>
-        <div className="relative">
-          <RefreshCw 
-            className={`w-6 h-6 cursor-pointer text-white ${isRefreshing ? 'animate-spin opacity-50' : 'hover:opacity-80'}`}
-            onClick={handleRefreshAll}
-          />
-          {copiedAddress === 'all-refreshed' && (
-            <div className="absolute -top-8 -right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-              All Refreshed!
-            </div>
-          )}
         </div>
       </div>
 

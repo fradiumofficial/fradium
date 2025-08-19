@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./authContext";
 import type { WalletAddress, UserWallet } from "@/icp/services/backend_service";
-import { getBalance, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, fetchFradiumBalance, TokenType } from "@/lib/balanceService";
+import { getBalance, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, fetchFradiumBalance, TokenType } from "@/services/balanceService";
 interface NetworkFilters {
   Bitcoin: boolean;
   Ethereum: boolean;

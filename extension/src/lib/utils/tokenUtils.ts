@@ -171,3 +171,17 @@ export function getTokenImageURL(chain: string) {
       return unknownIcon;
   }
 }
+
+export const validateAddress = (address: string, tokenType: string) => {
+  if (!address || typeof address !== "string") {
+    return { isValid: false, error: "Address is required" };
+  }
+
+  const detectedType = tokenType || detectTokenType(address);
+
+  if (detectedType === TokenType.UNKNOWN) {
+    return { isValid: false, error: "Unknown token type" };
+  }
+
+  return { isValid: true, tokenType: detectedType };
+};
