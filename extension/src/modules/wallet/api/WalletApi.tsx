@@ -125,7 +125,7 @@ export const useWalletApi = () => {
       if (!address) {
         return { success: false, error: `No address found for network: ${network}` };
       }
-
+      
       return { success: true, data: address.address };
     } catch (error) {
       console.error('Error getting address for network:', error);

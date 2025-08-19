@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./authContext";
 import type { WalletAddress, UserWallet } from "@/icp/services/backend_service";
-import { getBalance, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, fetchFradiumBalance, TokenType } from "@/services/balanceService";
+import { getBalance, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, TokenType } from "@/services/balanceService";
+import { createWallet as backendCreateWallet, getUserWallet } from "@/icp/services/backend_service";
+import { getBitcoinAddress } from "@/icp/services/bitcoin_service";
+import { getSolanaAddress } from "@/icp/services/solana_service";
+import { getEthereumAddress } from "@/icp/services/ethereum_service";
+
 interface NetworkFilters {
   Bitcoin: boolean;
   Ethereum: boolean;
@@ -176,14 +181,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   // Function to get backend, bitcoin, solana, and ethereum services
-  const getServices = useCallback(async () => {
+  const getServices = useCallback(() => {
     try {
-      // Import services dynamically to avoid circular dependencies
-      const { createWallet: backendCreateWallet, getUserWallet } = await import("@/icp/services/backend_service");
-      const { getBitcoinAddress } = await import("@/icp/services/bitcoin_service");
-      const { getSolanaAddress } = await import("@/icp/services/solana_service");
-      const { getEthereumAddress } = await import("@/icp/services/ethereum_service");
-      
       return {
         createWallet: backendCreateWallet,
         getUserWallet,
@@ -195,7 +194,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.error("Error getting services:", error);
       throw error;
     }
-  }, []);
+  }, [identity, principal]);
 
   const createWallet = useCallback(async () => {
     if (!identity || !principal) {

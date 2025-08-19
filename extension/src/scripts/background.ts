@@ -3,7 +3,6 @@ import { detectTokenType, TokenType } from "@/lib/utils/tokenUtils";
 import { analyzeBtcAddress, analyzeEthAddress, analyzeSolAddress } from "@/icp/services/ai_service";
 import { extractFeatures as extractFeaturesBTC } from "../services/ai/bitcoinAnalyzeService";
 import { extractFeatures as extractFeaturesETH } from "../services/ai/ethereumAnalyzeService";
-import { fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance } from "@/services/balanceService";
 
 // Listener untuk saat ekstensi pertama kali di-install atau di-update
 chrome.runtime.onInstalled.addListener(() => {
@@ -12,23 +11,6 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "Open Fraudify Extension",
     contexts: ["all"],
   });
-});
-
-chrome.runtime.onStartup.addListener(async () => {
-  const btcAddress = await chrome.storage.local.get("bitcoinBalance");
-  const ethAddress = await chrome.storage.local.get("ethereumBalance");
-  const solAddress = await chrome.storage.local.get("solanaBalance");
-
-  if (!btcAddress) return;
-  if (!ethAddress) return;
-  if (!solAddress) return;
-  try {
-    const btcBalance = await fetchBitcoinBalance(btcAddress.address);
-    const ethBalance = await fetchEthereumBalance(ethAddress.address);
-    const solBalance = await fetchSolanaBalance(solAddress.address);
-  } catch (error) {
-    console.error("Error fetching balances:", error);
-  }
 });
 
 // Listener untuk saat item di context menu (klik kanan) diklik

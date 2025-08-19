@@ -1,5 +1,5 @@
 import { Clock, AlertTriangle, CheckCircle } from "lucide-react";
-import { useAuth } from "@/lib/authContext";
+import { useAuth } from "@/lib/contexts/authContext";
 import { useEffect, useState } from "react";
 
 const SessionStatus = () => {

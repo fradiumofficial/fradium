@@ -4,6 +4,11 @@ import type { _SERVICE } from "../../../../src/declarations/backend/backend.did"
 import { createAgent } from "./base_service";
 import { getCanisterId } from "@/lib/config";
 import type { CommunityAnalysisResponse } from "@/modules/analyze_address/model/AnalyzeAddressModel";
+import type { 
+  CreateWalletParams, 
+  WalletAddress, 
+  UserWallet 
+} from "../../../../src/declarations/backend/backend.did";
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
@@ -46,13 +51,6 @@ export const getBackendActor = async (identity?: Identity): Promise<ActorSubclas
 export const clearBackendActor = (): void => {
   actor = null;
 };
-
-// Import types from backend declarations
-import type { 
-  CreateWalletParams, 
-  WalletAddress, 
-  UserWallet 
-} from "../../../../src/declarations/backend/backend.did";
 
 // Helper functions for common backend operations
 export const analyzeAddressCommunity = async (address: string): Promise<CommunityAnalysisResponse>  => {

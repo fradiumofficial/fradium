@@ -18,7 +18,7 @@ const DEFAULT_ITEMS: NetworkItem[] = [
     { key: "all", name: "All Networks", amount: "$0.00" },
     { key: "btc", name: "Bitcoin", amount: "$0.00" },
     { key: "eth", name: "Ethereum", amount: "$0.00" },
-    { key: "fra", name: "Fradium", amount: "$0.00" },
+    { key: "fum", name: "Fradium", amount: "$0.00" },
 ];
 
 export default function AllNetworksDropdown({
@@ -44,7 +44,7 @@ export default function AllNetworksDropdown({
 
                     <div className="px-4">
                         <div className="rounded-sm border border-white/10 divide-y divide-white/5 bg-[#23252a]">
-                            {items.map((item, idx) => {
+                            {items.map((item, _) => {
                                 const isActive = item.key === selectedKey;
                                 return (
                                     <button

@@ -3,20 +3,20 @@ import ProfileHeader from "@/components/ui/header";
 import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
 import type { Root as AnalysisReport } from "../model/AnalyzeSmartContractModel";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { ROUTES } from "@/constants/routes";
 
-interface LocationState {
-  result: AnalysisReport;
-  address: string;
-  historyId: string;
-}
+// interface LocationState {
+//   result: AnalysisReport;
+//   address: string;
+//   historyId: string;
+// }
 
 function AnalyzeSmartContractResult() {
-  const location = useLocation();
+  // const location = useLocation();
   const navigate = useNavigate();
-  const [analysisData, setAnalysisData] = useState<{
+  const [analysisData ] = useState<{
     result: AnalysisReport;
     address: string;
   } | null>(null);

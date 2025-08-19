@@ -1,6 +1,6 @@
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { useWallet } from "@/lib/walletContext";
+import { useWallet } from "@/lib/contexts/walletContext";
 
 const BalanceRefreshButton = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
