@@ -1,7 +1,7 @@
 import { TokenType, validateAddress, amountToBaseUnit } from "@/lib/utils/tokenUtils";
-import { bitcoin } from "@/../../src/declarations/bitcoin";
-import { solana } from "@/../../src/declarations/solana";
-import { backend } from "@/../../src/declarations/backend";
+import { getBitcoinActor } from "@/icp/services/bitcoin_service";
+import { getSolanaActor } from "@/icp/services/solana_service";
+import { getBackendActor } from "@/icp/services/backend_service";
 
 export interface SendTransactionParams {
   tokenType: string;
@@ -28,6 +28,9 @@ export class SendService {
     amount: string
   ): Promise<SendTransactionResult> {
     try {
+      // Get Bitcoin actor using existing service
+      const bitcoin = await getBitcoinActor();
+
       // Validate address
       const validation = validateAddress(destinationAddress, TokenType.BITCOIN);
       if (!validation.isValid) {
@@ -68,6 +71,9 @@ export class SendService {
     identity: any
   ): Promise<SendTransactionResult> {
     try {
+      // Get Solana actor using existing service
+      const solana = await getSolanaActor(identity);
+
       // Validate address
       const validation = validateAddress(destinationAddress, TokenType.SOLANA);
       if (!validation.isValid) {
@@ -115,6 +121,8 @@ export class SendService {
     transactionId: string
   ): Promise<boolean> {
     try {
+      // Get Backend actor using existing service
+      const backend = await getBackendActor();
 
       const getTokenTypeVariant = (tokenType: string) => {
         switch (tokenType) {
