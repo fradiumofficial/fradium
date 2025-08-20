@@ -52,12 +52,6 @@ function WalletConfirmation() {
     }
   };
 
-  const handleSkip = () => {
-    // For now, we'll still navigate to home but user won't have wallet functionality
-    console.log("WalletConfirmation: User chose to skip wallet creation");
-    navigate(ROUTES.HOME, { replace: true });
-  };
-
   const handleDeleteAndRecreate = async () => {
     try {
       setIsDeleting(true);
