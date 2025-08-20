@@ -18,6 +18,8 @@ export interface ScanHistoryStorage {
 const HISTORY_STORAGE_KEY = 'fradium_analysis_history';
 const SCAN_HISTORY_STORAGE_KEY = 'fradium_scan_history';
 const MAX_SCAN_HISTORY_ITEMS = 100;
+const TX_HISTORY_STORAGE_KEY = 'fradium_tx_history';
+const MAX_TX_HISTORY_ITEMS = 200;
 
 // Fungsi untuk membersihkan semua history
 export function clearAnalysisHistory(): boolean {
@@ -235,5 +237,139 @@ function clearOldScanHistoryCache(): void {
     
     localStorage.setItem(SCAN_HISTORY_STORAGE_KEY, JSON.stringify(updatedScanHistory));
     console.log('Cleared old scan history cache, kept 50 most recent items');
+  }
+}
+
+// ============================
+// Transaction history helpers
+// ============================
+
+export type TxDirection = 'Send' | 'Receive';
+
+export interface TransactionHistoryItem {
+  id: string;
+  tokenType: string;
+  chain: string;
+  direction: TxDirection;
+  amount: string; // human-readable unit (BTC, SOL, etc.)
+  fromAddress?: string;
+  toAddress: string;
+  transactionId?: string;
+  status: 'Pending' | 'Completed';
+  timestamp: number;
+  usdValue?: number;
+  note?: string;
+}
+
+export interface TransactionHistoryStorage {
+  items: TransactionHistoryItem[];
+}
+
+export interface SaveTransactionParams {
+  tokenType: string;
+  direction: TxDirection;
+  amount: string;
+  toAddress: string;
+  fromAddress?: string;
+  transactionId?: string;
+  status?: 'Pending' | 'Completed';
+  usdValue?: number;
+  note?: string;
+}
+
+export function getTransactionHistory(): TransactionHistoryStorage {
+  try {
+    const stored = localStorage.getItem(TX_HISTORY_STORAGE_KEY);
+    if (!stored) return { items: [] };
+    const parsed = JSON.parse(stored) as TransactionHistoryStorage;
+    const validItems = (parsed.items || []).filter((item) => item && item.id && item.tokenType && item.direction && item.amount && item.toAddress && typeof item.timestamp === 'number');
+    return { items: validItems };
+  } catch (error) {
+    console.error('Error reading transaction history:', error);
+    return { items: [] };
+  }
+}
+
+export function getTransactionById(id: string): TransactionHistoryItem | null {
+  const txs = getTransactionHistory();
+  return txs.items.find((i) => i.id === id) || null;
+}
+
+export function clearTransactionHistory(): boolean {
+  try {
+    localStorage.removeItem(TX_HISTORY_STORAGE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Error clearing transaction history:', error);
+    return false;
+  }
+}
+
+export function deleteTransactionById(id: string): boolean {
+  try {
+    const txs = getTransactionHistory();
+    const filtered = txs.items.filter((i) => i.id !== id);
+    localStorage.setItem(TX_HISTORY_STORAGE_KEY, JSON.stringify({ items: filtered } satisfies TransactionHistoryStorage));
+    return true;
+  } catch (error) {
+    console.error('Error deleting transaction history item:', error);
+    return false;
+  }
+}
+
+export function saveTransaction(params: SaveTransactionParams): TransactionHistoryItem {
+  const timestamp = Date.now();
+  const shortAddr = (params.direction === 'Send' ? (params.toAddress || '') : params.toAddress || '').slice(-8);
+  const id = `${timestamp}_${params.tokenType}_${params.direction}_${shortAddr}`;
+  const item: TransactionHistoryItem = {
+    id,
+    tokenType: params.tokenType,
+    chain: params.tokenType,
+    direction: params.direction,
+    amount: params.amount,
+    fromAddress: params.fromAddress,
+    toAddress: params.toAddress,
+    transactionId: params.transactionId,
+    status: params.status || 'Completed',
+    timestamp,
+    usdValue: params.usdValue,
+    note: params.note,
+  };
+
+  try {
+    const existing = getTransactionHistory();
+    let updated = [item, ...existing.items];
+    if (updated.length > MAX_TX_HISTORY_ITEMS) {
+      updated = updated.slice(0, MAX_TX_HISTORY_ITEMS);
+    }
+    localStorage.setItem(TX_HISTORY_STORAGE_KEY, JSON.stringify({ items: updated } satisfies TransactionHistoryStorage));
+    return item;
+  } catch (error) {
+    console.error('Error saving transaction history item:', error);
+    throw error;
+  }
+}
+
+// Balance baselines to detect incoming funds
+function balanceBaselineKey(tokenType: string, address: string): string {
+  return `fradium_last_balance_${tokenType}_${address}`;
+}
+
+export function getLastKnownBalance(tokenType: string, address: string): number | null {
+  try {
+    const stored = localStorage.getItem(balanceBaselineKey(tokenType, address));
+    if (!stored) return null;
+    const value = parseFloat(stored);
+    return Number.isFinite(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setLastKnownBalance(tokenType: string, address: string, balance: number): void {
+  try {
+    localStorage.setItem(balanceBaselineKey(tokenType, address), String(balance));
+  } catch (error) {
+    console.warn('Failed to set last known balance:', error);
   }
 }

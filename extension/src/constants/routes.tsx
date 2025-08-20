@@ -8,6 +8,7 @@ export const ROUTES = {
   HISTORY: '/history',
   SCAN_HISTORY: '/scan-history',
   DETAIL_HISTORY: '/history/:id',
+  TX_DETAIL: '/tx/:id',
   ACCOUNT: '/account',
   ANALYZE_PROGRESS: '/analyze-progress',
   FAILED: '/failed',

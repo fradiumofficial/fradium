@@ -8,6 +8,7 @@ import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import { ROUTES } from "./constants/routes";
 import AnalyzeAdressResult from "./modules/analyze_address/pages/AnalyzeAddressResult";
 import DetailHistory from "./modules/history/pages/DetailHistory";
+import TransactionDetail from "./modules/history/pages/TransactionDetail";
 import History from "./modules/history/pages/History";
 import AnalysisProgress from "./modules/analyze_address/pages/AnalyzeProgress";
 import Failed from "./modules/SEO/Failed";
@@ -63,6 +64,7 @@ function App() {
               <Route path={ROUTES.HISTORY} element={<History />} />
               <Route path={ROUTES.SCAN_HISTORY} element={<ScanHistory />} />
               <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
+              <Route path={ROUTES.TX_DETAIL} element={<TransactionDetail />} />
               <Route path={ROUTES.ACCOUNT} element={<Account />} />
               <Route path={ROUTES.SETTING} element={<Setting />} />
               <Route path={ROUTES.ALL_NETWORK} element={<AllNetwork />} />

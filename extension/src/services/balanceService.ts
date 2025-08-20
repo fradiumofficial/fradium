@@ -4,6 +4,7 @@
 import { getBitcoinBalances, getBitcoinBalance } from '../icp/services/bitcoin_service';
 import { getSolanaBalance, getSolanaBalances } from '../icp/services/solana_service';
 import { getEthereumBalances, getEthereumBalance } from '../icp/services/ethereum_service';
+import { saveTransaction, getLastKnownBalance, setLastKnownBalance } from '../lib/localStorage';
 
 export interface BalanceResult {
   balance: number;
@@ -25,6 +26,29 @@ export const TokenType = {
 } as const;
 
 export type TokenType = typeof TokenType[keyof typeof TokenType];
+
+// Helper to record deltas for multi-address balances
+const recordReceiveDeltas = (tokenType: TokenType, balances: Record<string, number>, unitLabel: string) => {
+  try {
+    Object.entries(balances).forEach(([address, raw]) => {
+      const value = tokenType === TokenType.BITCOIN ? raw / 100000000 : tokenType === TokenType.ETHEREUM ? raw / Math.pow(10, 18) : tokenType === TokenType.SOLANA ? raw / Math.pow(10, 9) : raw;
+      const last = getLastKnownBalance(tokenType, address) || 0;
+      setLastKnownBalance(tokenType, address, value);
+      const delta = value - last;
+      if (delta > 0) {
+        saveTransaction({
+          tokenType,
+          direction: 'Receive',
+          amount: delta.toString(),
+          toAddress: address,
+          note: `Received ${delta} ${unitLabel}`
+        });
+      }
+    });
+  } catch (e) {
+    console.warn('Failed to record receive deltas:', e);
+  }
+};
 
 /**
  * Fetch Bitcoin balance for a given address
@@ -57,6 +81,26 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
     
     console.log('BalanceService: Final Bitcoin balance result:', result);
     await chrome.storage.local.set({ bitcoinBalance: result, lastUpdated: Date.now() });
+
+    // Detect incoming funds and record as Receive when increased
+    try {
+      const lastKnown = getLastKnownBalance(TokenType.BITCOIN, address);
+      setLastKnownBalance(TokenType.BITCOIN, address, balanceInBTC);
+      if (lastKnown !== null) {
+        const delta = balanceInBTC - lastKnown;
+        if (delta > 0) {
+          saveTransaction({
+            tokenType: TokenType.BITCOIN,
+            direction: 'Receive',
+            amount: delta.toString(),
+            toAddress: address,
+            note: `Received ${delta} BTC`
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to update/record BTC receive:', e);
+    }
     return result;
     
   } catch (error) {
@@ -95,6 +139,26 @@ export const fetchEthereumBalance = async (address: string): Promise<BalanceResu
     
     console.log('BalanceService: Final Ethereum balance result:', result);
     await chrome.storage.local.set({ ethereumBalance: result, lastUpdated: Date.now() });
+
+    // Detect incoming funds
+    try {
+      const lastKnown = getLastKnownBalance(TokenType.ETHEREUM, address);
+      setLastKnownBalance(TokenType.ETHEREUM, address, balanceInETH);
+      if (lastKnown !== null) {
+        const delta = balanceInETH - lastKnown;
+        if (delta > 0) {
+          saveTransaction({
+            tokenType: TokenType.ETHEREUM,
+            direction: 'Receive',
+            amount: delta.toString(),
+            toAddress: address,
+            note: `Received ${delta} ETH`
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to update/record ETH receive:', e);
+    }
     return result;
     
   } catch (error) {
@@ -136,6 +200,24 @@ export const fetchSolanaBalance = async (address: string, identity?: any): Promi
       };
       
       console.log('BalanceService: Final Solana balance result:', result);
+      try {
+        const lastKnown = getLastKnownBalance(TokenType.SOLANA, address);
+        setLastKnownBalance(TokenType.SOLANA, address, balanceInSOL);
+        if (lastKnown !== null) {
+          const delta = balanceInSOL - lastKnown;
+          if (delta > 0) {
+            saveTransaction({
+              tokenType: TokenType.SOLANA,
+              direction: 'Receive',
+              amount: delta.toString(),
+              toAddress: address,
+              note: `Received ${delta} SOL`
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to update/record SOL receive (canister):', e);
+      }
       return result;
       
     } catch (canisterError) {
@@ -177,6 +259,24 @@ export const fetchSolanaBalance = async (address: string, identity?: any): Promi
       
       console.log('BalanceService: External API Solana balance result:', result);
       await chrome.storage.local.set({ solanaBalance: result, lastUpdated: Date.now() });
+      try {
+        const lastKnown = getLastKnownBalance(TokenType.SOLANA, address);
+        setLastKnownBalance(TokenType.SOLANA, address, balanceInSOL);
+        if (lastKnown !== null) {
+          const delta = balanceInSOL - lastKnown;
+          if (delta > 0) {
+            saveTransaction({
+              tokenType: TokenType.SOLANA,
+              direction: 'Receive',
+              amount: delta.toString(),
+              toAddress: address,
+              note: `Received ${delta} SOL`
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to update/record SOL receive (fallback):', e);
+      }
       return result;
     }
     
@@ -228,6 +328,7 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
     case TokenType.BITCOIN:
       try {
         const result = await getBitcoinBalances(addresses);
+        recordReceiveDeltas(TokenType.BITCOIN, result.balances, 'BTC');
         return result;
       } catch (error) {
         console.error('Error getting Bitcoin balances:', error);
@@ -241,6 +342,7 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
     case TokenType.SOLANA:
       try {
         const result = await getSolanaBalances(addresses, identity);
+        recordReceiveDeltas(TokenType.SOLANA, result.balances, 'SOL');
         return result;
       } catch (error) {
         console.error('Error getting Solana balances:', error);
@@ -254,6 +356,7 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
     case TokenType.ETHEREUM:
       try {
         const result = await getEthereumBalances(addresses);
+        recordReceiveDeltas(TokenType.ETHEREUM, result.balances, 'ETH');
         return result;
       } catch (error) {
         console.error('Error getting Ethereum balances:', error);

@@ -2,6 +2,7 @@ import { TokenType, validateAddress, amountToBaseUnit } from "@/lib/utils/tokenU
 import { getBitcoinActor } from "@/icp/services/bitcoin_service";
 import { getSolanaActor } from "@/icp/services/solana_service";
 import { getBackendActor } from "@/icp/services/backend_service";
+import { saveTransaction } from "@/lib/localStorage";
 
 export interface SendTransactionParams {
   tokenType: string;
@@ -236,6 +237,24 @@ export class SendService {
       } catch (historyError) {
         console.error("Failed to create transaction history:", historyError);
         // Don't fail the transaction if history creation fails
+      }
+    }
+
+    // Always attempt to record locally when successful
+    if (result.success) {
+      try {
+        saveTransaction({
+          tokenType,
+          direction: 'Send',
+          amount,
+          toAddress: destinationAddress,
+          fromAddress: senderAddress,
+          transactionId: result.transactionId,
+          status: 'Completed',
+          note: `Sent ${amount} ${tokenType} to ${destinationAddress.slice(0, 12)}...`
+        });
+      } catch (localErr) {
+        console.warn('Failed to record local send transaction:', localErr);
       }
     }
 
