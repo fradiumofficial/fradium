@@ -3,7 +3,6 @@
 // Updated to use background balance loading for better performance
 import { getBitcoinBalances, getBitcoinBalance } from '../icp/services/bitcoin_service';
 import { getSolanaBalance, getSolanaBalances } from '../icp/services/solana_service';
-import { getEthereumBalances, getEthereumBalance } from '../icp/services/ethereum_service';
 import { saveTransaction, getLastKnownBalance, setLastKnownBalance } from '../lib/localStorage';
 
 export interface BalanceResult {
@@ -19,7 +18,6 @@ export interface TokenBalanceResult {
 // Token types enum similar to asset-page.jsx
 export const TokenType = {
   BITCOIN: 'Bitcoin',
-  ETHEREUM: 'Ethereum', 
   SOLANA: 'Solana',
   FRADIUM: 'Fradium',
   UNKNOWN: 'Unknown'
@@ -31,7 +29,7 @@ export type TokenType = typeof TokenType[keyof typeof TokenType];
 const recordReceiveDeltas = (tokenType: TokenType, balances: Record<string, number>, unitLabel: string) => {
   try {
     Object.entries(balances).forEach(([address, raw]) => {
-      const value = tokenType === TokenType.BITCOIN ? raw / 100000000 : tokenType === TokenType.ETHEREUM ? raw / Math.pow(10, 18) : tokenType === TokenType.SOLANA ? raw / Math.pow(10, 9) : raw;
+      const value = tokenType === TokenType.BITCOIN ? raw / 100000000 : tokenType === TokenType.SOLANA ? raw / Math.pow(10, 9) : raw;
       const last = getLastKnownBalance(tokenType, address) || 0;
       setLastKnownBalance(tokenType, address, value);
       const delta = value - last;
@@ -109,63 +107,7 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
   }
 };
 
-/**
- * Fetch Ethereum balance for a given address
- * @param address Ethereum address
- * @returns Promise with balance in ETH and USD value
- */
-export const fetchEthereumBalance = async (address: string): Promise<BalanceResult> => {
-  console.log('BalanceService: Fetching Ethereum balance for address:', address);
-  
-  try {
-    // Use canister service first
-    const balanceInWei = await getEthereumBalance(address);
-    const balanceInETH = Number(balanceInWei) / Math.pow(10, 18); // Convert wei to ETH
-    
-    console.log('BalanceService: Ethereum balance result:', {
-      wei: balanceInWei.toString(),
-      eth: balanceInETH
-    });
-    
-    // Get current ETH price
-    const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-    const priceData = await priceResponse.json();
-    const ethPrice = priceData.ethereum.usd;
-    
-    const result = {
-      balance: balanceInETH,
-      usdValue: balanceInETH * ethPrice
-    };
-    
-    console.log('BalanceService: Final Ethereum balance result:', result);
-    await chrome.storage.local.set({ ethereumBalance: result, lastUpdated: Date.now() });
 
-    // Detect incoming funds
-    try {
-      const lastKnown = getLastKnownBalance(TokenType.ETHEREUM, address);
-      setLastKnownBalance(TokenType.ETHEREUM, address, balanceInETH);
-      if (lastKnown !== null) {
-        const delta = balanceInETH - lastKnown;
-        if (delta > 0) {
-          saveTransaction({
-            tokenType: TokenType.ETHEREUM,
-            direction: 'Receive',
-            amount: delta.toString(),
-            toAddress: address,
-            note: `Received ${delta} ETH`
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to update/record ETH receive:', e);
-    }
-    return result;
-    
-  } catch (error) {
-    console.error('BalanceService: Error fetching Ethereum balance:', error);
-    return { balance: 0, usdValue: 0 };
-  }
-};
 
 /**
  * Fetch Solana balance for a given address
@@ -353,19 +295,7 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
       }
       break;
 
-    case TokenType.ETHEREUM:
-      try {
-        const result = await getEthereumBalances(addresses);
-        recordReceiveDeltas(TokenType.ETHEREUM, result.balances, 'ETH');
-        return result;
-      } catch (error) {
-        console.error('Error getting Ethereum balances:', error);
-        addresses.forEach(addr => {
-          balances[addr] = 0;
-          errors[addr] = error instanceof Error ? error.message : 'Unknown error';
-        });
-      }
-      break;
+
 
     case TokenType.FRADIUM:
       // Placeholder for Fradium - not implemented yet

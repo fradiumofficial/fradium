@@ -31,8 +31,6 @@ function History() {
     switch (tokenType) {
       case 'Bitcoin':
         return '/assets/images/bitcoin.png';
-      case 'Ethereum':
-        return '/assets/images/ethereum.png';
       case 'Solana':
         return '/assets/icon128.png';
       case 'Fradium':
@@ -45,7 +43,7 @@ function History() {
   const formatAmount = (tx: TransactionHistoryItem): { text: string; color: 'green' | 'red' } => {
     const sign = tx.direction === 'Receive' ? '+' : '-';
     const color = tx.direction === 'Receive' ? 'green' : 'red';
-    return { text: `${sign} ${tx.amount} ${tx.tokenType === 'Ethereum' ? 'ETH' : tx.tokenType === 'Bitcoin' ? 'BTC' : tx.tokenType === 'Solana' ? 'SOL' : tx.tokenType}`, color };
+    return { text: `${sign} ${tx.amount} ${tx.tokenType === 'Bitcoin' ? 'BTC' : tx.tokenType === 'Solana' ? 'SOL' : tx.tokenType}`, color };
   };
 
   const SHOW_EMPTY = filtered.length === 0;

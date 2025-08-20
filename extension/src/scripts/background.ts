@@ -1,6 +1,6 @@
 import { analyzeAddressCommunity } from "@/icp/services/backend_service";
 import { detectTokenType, TokenType } from "@/lib/utils/tokenUtils";
-import { analyzeBtcAddress, analyzeEthAddress, analyzeSolAddress } from "@/icp/services/ai_service";
+import { analyzeBtcAddress, analyzeEthAddress } from "@/icp/services/ai_service";
 import { extractFeatures as extractFeaturesBTC } from "../services/ai/bitcoinAnalyzeService";
 import { extractFeatures as extractFeaturesETH } from "../services/ai/ethereumAnalyzeService";
 
@@ -68,16 +68,9 @@ async function performAIAnalysis(address: string): Promise<{ isSafe: boolean; da
         throw new Error("Ethereum AI analysis failed");
 
       case TokenType.SOLANA:
-        // Solana AI Analysis
-        ransomwareReport = await analyzeSolAddress(address);
-        
-        if ("Ok" in ransomwareReport) {
-          return {
-            isSafe: !ransomwareReport.Ok.is_ransomware,
-            data: ransomwareReport.Ok,
-          };
-        }
-        throw new Error("Solana AI analysis failed");
+        // Solana AI analysis is temporarily disabled due to missing canister method
+        console.warn('AI analysis for Solana is disabled (no analyze_sol_address on canister).');
+        return null;
 
       case TokenType.FUM:
         // Fradium AI Analysis - NOT IMPLEMENTED YET
@@ -249,7 +242,7 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
         console.log(`Detected token type: ${tokenType}`);
         
         if (tokenType === TokenType.UNKNOWN) {
-          throw new Error("Unsupported address format. Please provide a valid Bitcoin, Ethereum, or Solana address.");
+          throw new Error("Unsupported address format. Please provide a valid Bitcoin or Solana address.");
         }
         
         // Use comprehensive analysis with timeout
@@ -291,7 +284,7 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
         console.log(`Detected token type: ${tokenType}`);
         
         if (tokenType === TokenType.UNKNOWN) {
-          throw new Error("Unsupported address format. Please provide a valid Bitcoin, Ethereum, or Solana address.");
+          throw new Error("Unsupported address format. Please provide a valid Bitcoin or Solana address.");
         }
         
         // Use comprehensive analysis with timeout

@@ -22,7 +22,6 @@ function Receive() {
   const { getAddressForNetwork, hasWallet, isLoading: walletLoading } = useWalletApi();
   const [addresses, setAddresses] = useState<NetworkAddress[]>([
     { network: 'Bitcoin', address: '', isLoading: true },
-    { network: 'Ethereum', address: '', isLoading: true },
     { network: 'Solana', address: '', isLoading: true },
     { network: 'Fradium', address: '', isLoading: true }
   ]);
@@ -35,7 +34,7 @@ function Receive() {
         return;
       }
 
-      const networks = ['Bitcoin', 'Ethereum', 'Solana', 'Fradium'];
+      const networks = ['Bitcoin', 'Solana', 'Fradium'];
       const updatedAddresses = await Promise.all(
         networks.map(async (network) => {
           const result = getAddressForNetwork(network);

@@ -56,9 +56,22 @@ export class SendService {
       };
     } catch (error) {
       console.error('Bitcoin send error:', error);
+      
+      // Provide more specific error messages for common Bitcoin errors
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        if (error.message.includes('Insufficient balance')) {
+          errorMessage = 'Insufficient Bitcoin balance. Please check your available balance and try again.';
+        } else if (error.message.includes('pattern failed')) {
+          errorMessage = 'Transaction failed due to insufficient balance or invalid parameters.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       return {
         success: false,
-        error: `Bitcoin send failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Bitcoin send failed: ${errorMessage}`
       };
     }
   }
@@ -104,9 +117,22 @@ export class SendService {
       };
     } catch (error) {
       console.error('Solana send error:', error);
+      
+      // Provide more specific error messages for common Solana errors
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        if (error.message.includes('Insufficient balance')) {
+          errorMessage = 'Insufficient Solana balance. Please check your available balance and try again.';
+        } else if (error.message.includes('pattern failed')) {
+          errorMessage = 'Transaction failed due to insufficient balance or invalid parameters.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       return {
         success: false,
-        error: `Solana send failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Solana send failed: ${errorMessage}`
       };
     }
   }
@@ -129,8 +155,6 @@ export class SendService {
         switch (tokenType) {
           case TokenType.BITCOIN:
             return { Bitcoin: null } as const;
-          case TokenType.ETHEREUM:
-            return { Ethereum: null } as const;
           case TokenType.SOLANA:
             return { Solana: null } as const;
           default:
@@ -203,6 +227,12 @@ export class SendService {
       return { success: false, error: validation.error };
     }
 
+    // Additional validation: Check if amount is reasonable (basic sanity check)
+    const numAmount = parseFloat(amount);
+    if (numAmount > 1000000) { // 1 million BTC/SOL would be unreasonable
+      return { success: false, error: "Amount seems unreasonably high. Please check and try again." };
+    }
+
     let result: SendTransactionResult;
 
     switch (tokenType) {
@@ -214,9 +244,8 @@ export class SendService {
         result = await this.sendSolana(destinationAddress, amount, identity);
         break;
         
-      case TokenType.ETHEREUM:
       case TokenType.FUM:
-        result = { success: false, error: "Ethereum/Fradium transactions not yet implemented" };
+        result = { success: false, error: "Fradium transactions not yet implemented" };
         break;
         
       default:

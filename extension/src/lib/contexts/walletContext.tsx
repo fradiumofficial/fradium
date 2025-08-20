@@ -1,15 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./authContext";
 import type { WalletAddress, UserWallet } from "@/icp/services/backend_service";
-import { getBalance, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, TokenType } from "@/services/balanceService";
+import { getBalance, fetchBitcoinBalance, fetchSolanaBalance, TokenType } from "@/services/balanceService";
 import { createWallet as backendCreateWallet, getUserWallet } from "@/icp/services/backend_service";
 import { getBitcoinAddress } from "@/icp/services/bitcoin_service";
 import { getSolanaAddress } from "@/icp/services/solana_service";
-import { getEthereumAddress } from "@/icp/services/ethereum_service";
 
 interface NetworkFilters {
   Bitcoin: boolean;
-  Ethereum: boolean;
   Solana: boolean;
   Fradium: boolean;
 }
@@ -17,7 +15,6 @@ interface NetworkFilters {
 interface NetworkValues {
   "All Networks": number;
   Bitcoin: number;
-  Ethereum: number;
   Solana: number;
   Fradium: number;
 }
@@ -74,13 +71,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [networkValues, setNetworkValues] = useState<NetworkValues>({
     "All Networks": 0,
     Bitcoin: 0,
-    Ethereum: 0,
     Solana: 0,
     Fradium: 0,
   });
   const [networkFilters, setNetworkFilters] = useState<NetworkFilters>({
     Bitcoin: true,
-    Ethereum: true,
     Solana: true,
     Fradium: true,
   });
@@ -132,7 +127,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Return default filters
     return {
       Bitcoin: true,
-      Ethereum: true,
       Solana: true,
       Fradium: true,
     };
@@ -187,8 +181,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         createWallet: backendCreateWallet,
         getUserWallet,
         getBitcoinAddress,
-        getSolanaAddress,
-        getEthereumAddress
+        getSolanaAddress
       };
     } catch (error) {
       console.error("Error getting services:", error);
@@ -204,17 +197,14 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsCreatingWallet(true);
     try {
       console.log("WalletProvider: Starting wallet creation...");
-      const { createWallet: backendCreateWallet, getUserWallet, getBitcoinAddress, getSolanaAddress, getEthereumAddress } = await getServices();
+      const { createWallet: backendCreateWallet, getUserWallet, getBitcoinAddress, getSolanaAddress } = await getServices();
 
       // Get bitcoin address
       console.log("WalletProvider: Getting Bitcoin address...");
       const bitcoinResponse = await getBitcoinAddress();
       console.log("WalletProvider: Bitcoin address:", bitcoinResponse);
 
-      // Get ethereum address
-      console.log("WalletProvider: Getting Ethereum address...");
-      const ethereumResponse = await getEthereumAddress();
-      console.log("WalletProvider: Ethereum address:", ethereumResponse);
+
 
       // Get solana address
       console.log("WalletProvider: Getting Solana address...");
@@ -230,11 +220,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             token_type: { Bitcoin: null },
             address: bitcoinResponse,
           },
-          {
-            network: { Ethereum: null },
-            token_type: { Ethereum: null },
-            address: ethereumResponse,
-          },
+
           {
             network: { Solana: null },
             token_type: { Solana: null },
@@ -314,7 +300,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!values["All Networks"]) {
         updated["All Networks"] = 
           (networkFilters.Bitcoin ? updated.Bitcoin : 0) + 
-          (networkFilters.Ethereum ? updated.Ethereum : 0) + 
           (networkFilters.Solana ? updated.Solana : 0) + 
           (networkFilters.Fradium ? updated.Fradium : 0);
       }
@@ -358,7 +343,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       // Import services
       
-      const supportedTokens = [TokenType.BITCOIN, TokenType.ETHEREUM, TokenType.SOLANA, TokenType.FRADIUM];
+      const supportedTokens = [TokenType.BITCOIN, TokenType.SOLANA, TokenType.FRADIUM];
       const balances: Partial<NetworkValues> = {};
 
       for (const tokenType of supportedTokens) {
@@ -387,11 +372,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     const btcResult = await fetchBitcoinBalance(addresses[0]);
                     usdValue = (btcResult.usdValue / btcResult.balance) * (totalBalance / 100000000); // Convert satoshi to BTC
                     break;
-                  case TokenType.ETHEREUM:
 
-                    const ethResult = await fetchEthereumBalance(addresses[0]);
-                    usdValue = (ethResult.usdValue / ethResult.balance) * (totalBalance / Math.pow(10, 18)); // Convert wei to ETH
-                    break;
                   case TokenType.SOLANA:
 
                     const solResult = await fetchSolanaBalance(addresses[0], identity);
@@ -446,12 +427,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const newAddress: WalletAddress = {
           network: 
             tokenType === "bitcoin" ? { Bitcoin: null } :
-            tokenType === "ethereum" ? { Ethereum: null } :
             tokenType === "solana" ? { Solana: null } :
             { ICP: null },
           token_type: 
             tokenType === "bitcoin" ? { Bitcoin: null } :
-            tokenType === "ethereum" ? { Ethereum: null } :
             tokenType === "solana" ? { Solana: null } :
             { Fradium: null },
           address: address,

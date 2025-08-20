@@ -163,7 +163,7 @@ function Home() {
         symbol = 'ETH';
         name = 'Ethereum';
         icon = ethIcon;
-        isEnabled = networkFilters?.Ethereum ?? true;
+        isEnabled = false;
       } else if ('Solana' in addr.token_type) {
         symbol = 'SOL';
         name = 'Solana';

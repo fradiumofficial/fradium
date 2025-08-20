@@ -1,4 +1,8 @@
 import { LogOut } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
+import { useAuth } from "@/lib/contexts/authContext";
 
 type LogoutButtonProps = {
     onClick?: () => void;
@@ -6,10 +10,32 @@ type LogoutButtonProps = {
 };
 
 function LogoutButton({ onClick, className = "" }: LogoutButtonProps) {
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleLogout = async () => {
+        if (onClick) {
+            onClick();
+            return;
+        }
+        if (isLoading) return;
+        setIsLoading(true);
+        try {
+            await logout();
+        } catch (e) {
+            // ignore and continue navigation
+        } finally {
+            setIsLoading(false);
+            navigate(ROUTES.WELCOME, { replace: true });
+        }
+    };
+
     return (
         <div className={`bg-white/30  ${className}`}>
             <button
-                onClick={onClick}
+                onClick={handleLogout}
+                disabled={isLoading}
                 className={`
           w-full
           flex items-center justify-center gap-2
@@ -21,10 +47,11 @@ function LogoutButton({ onClick, className = "" }: LogoutButtonProps) {
           hover:-translate-y-0 hover:translate-x-0
           active:translate-y-0 active:translate-x-0
           transition-transform duration-150 ease-in-out
+          ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}
         `}
             >
                 <LogOut className="w-5 h-5 text-white rotate-180" />
-                <span>Logout</span>
+                <span>{isLoading ? 'Logging out...' : 'Logout'}</span>
             </button>
         </div>
     );

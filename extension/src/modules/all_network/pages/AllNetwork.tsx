@@ -15,11 +15,11 @@ const BASE_NETWORKS = [
     name: "Bitcoin",
     icon: "/assets/bitcoin-dark.svg",
   },
-  {
-    key: "eth" as const,
-    name: "Ethereum",
-    icon: "/assets/ethereum-dark.svg",
-  },
+  // {
+  //   key: "eth" as const,
+  //   name: "Ethereum",
+  //   icon: "/assets/ethereum-dark.svg",
+  // },
   {
     key: "sol" as const,
     name: "Solana",
@@ -52,7 +52,7 @@ export default function AllNetwork({
     // Filter based on network filters
     switch (network.key) {
       case "btc": return networkFilters?.Bitcoin ?? true;
-      case "eth": return networkFilters?.Ethereum ?? true;
+      // case "eth": return networkFilters?.Ethereum ?? true;
       case "sol": return networkFilters?.Solana ?? true;
       case "fra": return networkFilters?.Fradium ?? true;
       default: return true;

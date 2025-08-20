@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ProfileHeader from "@/components/ui/header";
@@ -106,11 +106,15 @@ function Send() {
       try {
         switch (tokenType) {
           case TokenType.BITCOIN:
-            // This would need to be implemented based on your balance service
-            return 0; // Placeholder
+            // Use the balance service to get actual Bitcoin balance
+            const { fetchBitcoinBalance } = await import('@/services/balanceService');
+            const btcResult = await fetchBitcoinBalance(addresses[0]);
+            return btcResult.balance;
           case TokenType.SOLANA:
-            // This would need to be implemented based on your balance service
-            return 0; // Placeholder
+            // Use the balance service to get actual Solana balance
+            const { fetchSolanaBalance } = await import('@/services/balanceService');
+            const solResult = await fetchSolanaBalance(addresses[0], identity);
+            return solResult.balance;
           default:
             return 0;
         }
@@ -119,7 +123,7 @@ function Send() {
         return 0;
       }
     },
-    [userWallet?.addresses]
+    [userWallet?.addresses, identity]
   );
 
   // Validate form data
@@ -158,6 +162,29 @@ function Send() {
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
+  // Validate balance before sending
+  const validateBalance = useCallback(async (): Promise<boolean> => {
+    if (!formData.selectedToken || !formData.amount) return false;
+
+    try {
+      const balance = await getUserBalance(formData.selectedToken);
+      const amount = parseFloat(formData.amount);
+      
+      if (amount > balance) {
+        setErrors(prev => ({ ...prev, amount: `Insufficient balance. You have ${balance.toFixed(8)} ${formData.selectedToken}` }));
+        return false;
+      }
+      
+      // Clear any previous balance errors
+      setErrors(prev => ({ ...prev, amount: undefined }));
+      return true;
+    } catch (error) {
+      console.error('Error validating balance:', error);
+      setErrors(prev => ({ ...prev, amount: 'Failed to validate balance' }));
+      return false;
+    }
+  }, [formData.selectedToken, formData.amount, getUserBalance]);
+
   // Handle form input changes
   const handleInputChange = (field: keyof SendFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -194,13 +221,19 @@ function Send() {
   const handleAnalyzeAddress = async () => {
     if (!validateForm()) return;
 
+    // Validate balance before proceeding
+    const isBalanceValid = await validateBalance();
+    if (!isBalanceValid) {
+      return; // Error message already set by validateBalance
+    }
+
     setIsAnalyzing(true);
     try {
       const tokenType = detectTokenType(formData.destinationAddress);
 
       if (tokenType === TokenType.UNKNOWN) {
         throw new Error(
-          "Unsupported address format. Please provide a valid Bitcoin, Ethereum, or Solana address."
+          "Unsupported address format. Please provide a valid Bitcoin or Solana address."
         );
       }
 
@@ -229,11 +262,9 @@ function Send() {
     } catch (err) {
       console.error('A critical error occurred during analysis:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-
-      navigate(ROUTES.FAILED, {
-        state: { error: errorMessage, address: formData.destinationAddress },
-        replace: true
-      });
+      // Do not block sending if analysis fails; show confirmation with caution
+      toast.warn(`Analysis warning: ${errorMessage}`);
+      setShowConfirmation(true);
     } finally {
       setIsAnalyzing(false);
     }
@@ -285,6 +316,33 @@ function Send() {
   // Get available tokens
   const availableTokens = getAvailableTokens();
 
+  // State for displaying current balance
+  const [currentBalance, setCurrentBalance] = useState<number>(0);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+
+  // Fetch current balance when token is selected
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!formData.selectedToken) {
+        setCurrentBalance(0);
+        return;
+      }
+
+      setIsLoadingBalance(true);
+      try {
+        const balance = await getUserBalance(formData.selectedToken);
+        setCurrentBalance(balance);
+      } catch (error) {
+        console.error('Error fetching balance:', error);
+        setCurrentBalance(0);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    fetchBalance();
+  }, [formData.selectedToken, getUserBalance]);
+
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
       <ProfileHeader />
@@ -323,6 +381,34 @@ function Send() {
           </select>
           {errors.general && (
             <p className="text-red-400 text-xs mt-1">{errors.general}</p>
+          )}
+          
+          {/* Current Balance Display */}
+          {formData.selectedToken && (
+            <div className="mt-2 p-2 bg-white/5 rounded">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-[12px] text-white/60">Current Balance:</p>
+                  <p className="text-[14px] text-white font-medium">
+                    {isLoadingBalance ? (
+                      "Loading..."
+                    ) : (
+                      `${currentBalance.toFixed(8)} ${formData.selectedToken}`
+                    )}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev }));
+                    // This will trigger the useEffect to refetch balance
+                  }}
+                  disabled={isLoadingBalance}
+                  className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded disabled:opacity-50"
+                >
+                  ↻
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
@@ -379,6 +465,21 @@ function Send() {
           />
           {errors.amount && (
             <p className="text-red-400 text-xs mt-1">{errors.amount}</p>
+          )}
+          
+          {/* Balance Warning */}
+          {formData.selectedToken && formData.amount && currentBalance > 0 && (
+            <div className="mt-2 p-2 rounded text-xs">
+              {parseFloat(formData.amount) > currentBalance ? (
+                <p className="text-red-400">
+                  ⚠️ Amount exceeds your balance of {currentBalance.toFixed(8)} {formData.selectedToken}
+                </p>
+              ) : (
+                <p className="text-green-400">
+                  ✓ Sufficient balance available
+                </p>
+              )}
+            </div>
           )}
         </div>
 

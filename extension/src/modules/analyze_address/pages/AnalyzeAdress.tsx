@@ -26,11 +26,7 @@ const validateAddress = (addr: string): string | null => {
         return "Invalid Bitcoin address format";
       }
       break;
-    case TokenType.ETHEREUM:
-      if (!trimmedAddr.startsWith("0x") || trimmedAddr.length !== 42) {
-        return "Invalid Ethereum address format";
-      }
-      break;
+
     case TokenType.SOLANA:
       if (trimmedAddr.length < 36 || trimmedAddr.length > 44) {
         return "Invalid Solana address format";

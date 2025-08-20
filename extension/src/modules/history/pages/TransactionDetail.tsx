@@ -21,7 +21,7 @@ function TransactionDetail() {
     setLoading(false);
   }, [id]);
 
-  const labelForToken = (t: string) => (t === 'Bitcoin' ? 'BTC' : t === 'Ethereum' ? 'ETH' : t === 'Solana' ? 'SOL' : t);
+  const labelForToken = (t: string) => (t === 'Bitcoin' ? 'BTC' : t === 'Solana' ? 'SOL' : t);
 
   if (loading) {
     return (

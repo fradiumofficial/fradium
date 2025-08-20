@@ -5,7 +5,7 @@ import { bitcoin } from "@/../../src/declarations/bitcoin";
 import { solana } from "@/../../src/declarations/solana";
 import { backend } from "@/../../src/declarations/backend";
 import { deleteUserWallet } from "@/icp/services/backend_service";
-import { getBalance, TokenType, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance } from "@/services/balanceService";
+import { getBalance, TokenType, fetchBitcoinBalance, fetchSolanaBalance } from "@/services/balanceService";
 import { amountToBaseUnit, detectTokenType } from "@/lib/utils/tokenUtils";
 export interface WalletApiResponse<T> {
   success: boolean;
@@ -65,9 +65,6 @@ export const useWalletApi = () => {
         if ('Bitcoin' in address.token_type) {
           networkName = 'Bitcoin';
           usdValue = networkValues.Bitcoin || 0;
-        } else if ('Ethereum' in address.token_type) {
-          networkName = 'Ethereum';
-          usdValue = networkValues.Ethereum || 0;
         } else if ('Solana' in address.token_type) {
           networkName = 'Solana';
           usdValue = networkValues.Solana || 0;
@@ -116,7 +113,6 @@ export const useWalletApi = () => {
 
       const address = userWallet.addresses.find(addr => {
         if (network === 'Bitcoin' && 'Bitcoin' in addr.token_type) return true;
-        if (network === 'Ethereum' && 'Ethereum' in addr.token_type) return true;
         if (network === 'Solana' && 'Solana' in addr.token_type) return true;
         if (network === 'Fradium' && 'Fradium' in addr.token_type) return true;
         return false;
@@ -147,7 +143,7 @@ export const useWalletApi = () => {
 
       const address = userWallet.addresses.find(addr => {
         if (network === 'Bitcoin' && 'Bitcoin' in addr.token_type) return true;
-        if (network === 'Ethereum' && 'Ethereum' in addr.token_type) return true;
+
         if (network === 'Solana' && 'Solana' in addr.token_type) return true;
         if (network === 'Fradium' && 'Fradium' in addr.token_type) return true;
         return false;
@@ -260,9 +256,7 @@ export const useWalletApi = () => {
         case 'Bitcoin':
           tokenType = TokenType.BITCOIN;
           break;
-        case 'Ethereum':
-          tokenType = TokenType.ETHEREUM;
-          break;
+        
         case 'Solana':
           tokenType = TokenType.SOLANA;
           break;
@@ -291,13 +285,7 @@ export const useWalletApi = () => {
               usdValue: (btcResult.usdValue / btcResult.balance) * (totalBalance / 100000000)
             };
             break;
-          case 'Ethereum':
-            const ethResult = await fetchEthereumBalance(addresses[0]);
-            balanceData = {
-              balance: totalBalance / Math.pow(10, 18), // Convert wei to ETH
-              usdValue: (ethResult.usdValue / ethResult.balance) * (totalBalance / Math.pow(10, 18))
-            };
-            break;
+
           case 'Solana':
             const solResult = await fetchSolanaBalance(addresses[0], identity);
             balanceData = {
@@ -348,7 +336,7 @@ export const useWalletApi = () => {
    * Get all supported networks
    */
   const getSupportedNetworks = (): string[] => {
-    return ['Bitcoin', 'Ethereum', 'Solana', 'Fradium'];
+    return ['Bitcoin', 'Solana', 'Fradium'];
   };
 
   /**
@@ -413,9 +401,8 @@ export const useWalletApi = () => {
           }
           break;
 
-        case 'Ethereum':
         case 'Fradium':
-          return { success: false, error: "Ethereum/Fradium transactions not yet implemented" };
+          return { success: false, error: "Fradium transactions not yet implemented" };
 
         default:
           return { success: false, error: `Unsupported token type: ${tokenType}` };
@@ -428,8 +415,7 @@ export const useWalletApi = () => {
           switch (tokenType) {
             case 'Bitcoin':
               return { Bitcoin: null } as const;
-            case 'Ethereum':
-              return { Ethereum: null } as const;
+            
             case 'Solana':
               return { Solana: null } as const;
             default:
