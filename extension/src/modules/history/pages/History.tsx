@@ -1,6 +1,7 @@
 import ProfileHeader from "@/components/ui/header";
 import { Search, Settings2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import solanaIcon from "../../../../public/assets/tokens/solana.svg";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { getTransactionHistory, type TransactionHistoryItem } from "@/lib/localStorage";
@@ -32,7 +33,7 @@ function History() {
       case 'Bitcoin':
         return '/assets/images/bitcoin.png';
       case 'Solana':
-        return '/assets/icon128.png';
+        return solanaIcon;
       case 'Fradium':
         return '/assets/icon128.png';
       default:
