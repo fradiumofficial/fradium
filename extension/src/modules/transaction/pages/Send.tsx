@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ProfileHeader from "@/components/ui/header";
-import { ChevronLeft, Info, AlertCircle } from "lucide-react";
+import { ChevronLeft, Info } from "lucide-react";
 import NeoButton from "@/components/ui/custom-button";
 import { ROUTES } from "@/constants/routes";
 import { useWallet } from "@/lib/contexts/walletContext";
@@ -13,7 +13,6 @@ import {
   TOKENS_CONFIG,
   detectTokenType,
 } from "@/lib/utils/tokenUtils";
-import SendService from "@/services/sendService";
 import {
   performComprehensiveAnalysis,
 } from "@/lib/backgroundMessaging";
@@ -48,16 +47,9 @@ function Send() {
 
   // UI state
   const [errors, setErrors] = useState<SendErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading ] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-
-  // Analysis state
-  const [analysisResult ] = useState<{
-    isSafe: boolean;
-    data: any;
-    source: string;
-  } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   // Get available tokens for current network
   const getAvailableTokens = useCallback(() => {
@@ -167,11 +159,17 @@ function Send() {
     if (!formData.selectedToken || !formData.amount) return false;
 
     try {
+      setIsValidating(true);
+      setErrors(prev => ({ ...prev, amount: undefined })); // Clear previous errors
+      
       const balance = await getUserBalance(formData.selectedToken);
       const amount = parseFloat(formData.amount);
       
       if (amount > balance) {
-        setErrors(prev => ({ ...prev, amount: `Insufficient balance. You have ${balance.toFixed(8)} ${formData.selectedToken}` }));
+        setErrors(prev => ({ 
+          ...prev, 
+          amount: `Insufficient balance. You have ${balance.toFixed(8)} ${formData.selectedToken}` 
+        }));
         return false;
       }
       
@@ -180,8 +178,13 @@ function Send() {
       return true;
     } catch (error) {
       console.error('Error validating balance:', error);
-      setErrors(prev => ({ ...prev, amount: 'Failed to validate balance' }));
+      setErrors(prev => ({ 
+        ...prev, 
+        amount: 'Failed to validate balance. Please try again.' 
+      }));
       return false;
+    } finally {
+      setIsValidating(false);
     }
   }, [formData.selectedToken, formData.amount, getUserBalance]);
 
@@ -217,7 +220,7 @@ function Send() {
     }
   };
 
-  // Analyze address for security
+  // Analyze address for security and navigate to confirmation page
   const handleAnalyzeAddress = async () => {
     if (!validateForm()) return;
 
@@ -228,6 +231,8 @@ function Send() {
     }
 
     setIsAnalyzing(true);
+    setErrors(prev => ({ ...prev, general: undefined })); // Clear general errors
+    
     try {
       const tokenType = detectTokenType(formData.destinationAddress);
 
@@ -247,71 +252,40 @@ function Send() {
 
       const finalResult: AnalysisResult = response.data;
 
-      // 2. Save to scan history and navigate to result page
-      console.log(
-        "Analysis successful. Saving to scan history and navigating to result page."
-      );
+      // Save to scan history (non-blocking)
       try {
         saveComprehensiveAnalysisToScanHistory(finalResult);
       } catch (saveError) {
         console.warn("Failed to save to scan history:", saveError);
       }
 
-      setShowConfirmation(true);
+      // Navigate to confirmation page instead of modal
+      navigate(ROUTES.CONFIRMATION_BALANCE, {
+        state: {
+          amount: formData.amount,
+          destinationAddress: formData.destinationAddress,
+          selectedToken: formData.selectedToken,
+        }
+      });
 
     } catch (err) {
       console.error('A critical error occurred during analysis:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       // Do not block sending if analysis fails; show confirmation with caution
       toast.warn(`Analysis warning: ${errorMessage}`);
-      setShowConfirmation(true);
+      navigate(ROUTES.CONFIRMATION_BALANCE, {
+        state: {
+          amount: formData.amount,
+          destinationAddress: formData.destinationAddress,
+          selectedToken: formData.selectedToken,
+        }
+      });
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  // Confirm and send transaction
-  const handleConfirmSend = async () => {
-    if (!validateForm() || !identity) return;
-
-    setIsLoading(true);
-    try {
-      // Get sender address for the selected token
-      const senderAddress = userWallet?.addresses?.find((addr) => {
-        const addressTokenType = Object.keys(addr.token_type)[0];
-        return addressTokenType === formData.selectedToken;
-      })?.address;
-
-      if (!senderAddress) {
-        throw new Error("No sender address found for selected token");
-      }
-
-      // Send transaction using the service
-      const result = await SendService.sendTransaction(
-        {
-          tokenType: formData.selectedToken,
-          destinationAddress: formData.destinationAddress,
-          amount: formData.amount,
-          senderAddress,
-        },
-        identity
-      );
-
-      if (result.success) {
-        toast.success("Transaction sent successfully!");
-        navigate(ROUTES.WALLET_HOME); // Navigate back to wallet home page
-      } else {
-        throw new Error(result.error || "Transaction failed");
-      }
-    } catch (error) {
-      console.error("Error sending transaction:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to send transaction";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Confirm send handled in ConfirmationBalance page
 
   // Get available tokens
   const availableTokens = getAvailableTokens();
@@ -342,6 +316,27 @@ function Send() {
 
     fetchBalance();
   }, [formData.selectedToken, getUserBalance]);
+
+  // Helper function to get loading text for Continue button
+  const getContinueButtonText = () => {
+    if (isAnalyzing) return "Analyzing...";
+    if (isValidating) return "Validating...";
+    if (isLoadingBalance) return "Loading Balance...";
+    return "Continue";
+  };
+
+  // Helper function to check if Continue button should be disabled
+  const isContinueButtonDisabled = () => {
+    return (
+      !formData.selectedToken ||
+      !formData.destinationAddress ||
+      !formData.amount ||
+      isLoading ||
+      isAnalyzing ||
+      isValidating ||
+      isLoadingBalance
+    );
+  };
 
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
@@ -403,9 +398,13 @@ function Send() {
                     // This will trigger the useEffect to refetch balance
                   }}
                   disabled={isLoadingBalance}
-                  className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded disabled:opacity-50"
+                  className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded disabled:opacity-50 transition-all duration-200"
                 >
-                  ↻
+                  {isLoadingBalance ? (
+                    <div className="w-3 h-3 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "↻"
+                  )}
                 </button>
               </div>
             </div>
@@ -494,82 +493,32 @@ function Send() {
         {/* Continue Button */}
         <NeoButton
           onClick={handleAnalyzeAddress}
-          disabled={
-            !formData.selectedToken ||
-            !formData.destinationAddress ||
-            !formData.amount ||
-            isLoading ||
-            isAnalyzing
-          }
-          className="w-full"
+          disabled={isContinueButtonDisabled()}
+          className={`w-full transition-all duration-200 ${
+            isAnalyzing || isValidating || isLoadingBalance 
+              ? 'opacity-80 cursor-not-allowed' 
+              : 'hover:opacity-90'
+          }`}
         >
-          {isAnalyzing ? "Analyzing..." : "Continue"}
-        </NeoButton>
-      </div>
-
-      {/* Confirmation Modal */}
-      {showConfirmation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#23272F] px-6 py-8 w-full max-w-sm rounded-lg shadow-lg relative">
-            <button
-              className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
-              onClick={() => setShowConfirmation(false)}
-            >
-              ×
-            </button>
-
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-green-400" />
-              </div>
-              <h3 className="text-white text-lg font-semibold mb-2">
-                Address Analysis Complete
-              </h3>
-              <p className="text-[#B0B6BE] text-sm">
-                {analysisResult?.isSafe
-                  ? "The address appears to be safe. You can proceed with the transaction."
-                  : "The address has been flagged as potentially unsafe. Proceed with caution."}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="bg-[#1A1D23] p-3 rounded">
-                <p className="text-[#B0B6BE] text-xs">Amount</p>
-                <p className="text-white font-medium">
-                  {formData.amount} {formData.selectedToken}
-                </p>
-              </div>
-
-              <div className="bg-[#1A1D23] p-3 rounded">
-                <p className="text-[#B0B6BE] text-xs">To</p>
-                <p className="text-white font-medium text-sm break-all">
-                  {formData.destinationAddress}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowConfirmation(false)}
-                className="flex-1 py-3 rounded-lg bg-[#393E4B] text-[#B0B6BE] font-semibold hover:bg-[#4A4F58] transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmSend}
-                disabled={isLoading}
-                className={`flex-1 py-3 rounded-lg font-semibold transition ${
-                  analysisResult?.isSafe
-                    ? "bg-[#99E39E] text-black hover:bg-[#8BD88B]"
-                    : "bg-red-500 text-white hover:bg-red-600"
-                }`}
-              >
-                {isLoading ? "Sending..." : "Confirm Send"}
-              </button>
-            </div>
+          <div className="flex items-center justify-center space-x-2">
+            {(isAnalyzing || isValidating || isLoadingBalance) && (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            )}
+            <span>{getContinueButtonText()}</span>
           </div>
-        </div>
-      )}
+        </NeoButton>
+
+        {/* Loading State Info */}
+        {(isAnalyzing || isValidating || isLoadingBalance) && (
+          <div className="text-center">
+            <p className="text-[12px] text-white/60 font-normal">
+              {isAnalyzing && "Analyzing address security..."}
+              {isValidating && "Validating balance..."}
+              {isLoadingBalance && "Loading balance..."}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

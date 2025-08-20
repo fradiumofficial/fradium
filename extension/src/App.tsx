@@ -28,6 +28,7 @@ import AuthGuard from "./lib/AuthGuard";
 import ManageNetwork from "./modules/all_network/pages/ManageNetwork";
 import Receive from "./modules/transaction/pages/Receive";
 import Send from "./modules/transaction/pages/Send";
+import ConfirmationBalance from "./modules/transaction/pages/ConfirmationBalance";
 
 const MainLayout = () => {
   return (
@@ -95,6 +96,7 @@ function App() {
               <Route path={ROUTES.FAILED} element={<Failed />} />
               <Route path={ROUTES.RECEIVE} element={<Receive />} />
               <Route path={ROUTES.SEND} element={<Send />} />
+              <Route path={ROUTES.CONFIRMATION_BALANCE} element={<ConfirmationBalance />} />
             </Route>
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
