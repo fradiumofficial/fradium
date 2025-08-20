@@ -23,6 +23,7 @@ function Receive() {
   const [addresses, setAddresses] = useState<NetworkAddress[]>([
     { network: 'Bitcoin', address: '', isLoading: true },
     { network: 'Solana', address: '', isLoading: true },
+    { network: 'Ethereum', address: '0xf0000000', isLoading: true },
     { network: 'Fradium', address: '', isLoading: true }
   ]);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
@@ -34,7 +35,7 @@ function Receive() {
         return;
       }
 
-      const networks = ['Bitcoin', 'Solana', 'Fradium'];
+      const networks = ['Bitcoin', 'Solana', 'Ethereum', 'Fradium'];
       const updatedAddresses = await Promise.all(
         networks.map(async (network) => {
           const result = getAddressForNetwork(network);
@@ -142,10 +143,17 @@ function Receive() {
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
       <ProfileHeader />
 
-      <div className="flex flex-row items-center justify-between px-[24px]">
+      <div className="flex flex-col px-[24px]">
         <div className="flex flex-row items-center">
-          <ChevronLeft className="w-6 h-6" />
-          <h1 className="text-[20px] font-semibold text-white px-[12px]">Receive Coin</h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1 hover:bg-white/10 rounded"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-[20px] font-semibold text-white px-[12px]">
+            Receive
+          </h1>
         </div>
       </div>
 

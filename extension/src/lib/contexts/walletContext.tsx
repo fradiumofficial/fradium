@@ -204,8 +204,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const bitcoinResponse = await getBitcoinAddress();
       console.log("WalletProvider: Bitcoin address:", bitcoinResponse);
 
-
-
       // Get solana address
       console.log("WalletProvider: Getting Solana address...");
       const solanaResponse = await getSolanaAddress(identity);

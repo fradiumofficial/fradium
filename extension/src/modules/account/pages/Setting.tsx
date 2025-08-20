@@ -2,12 +2,25 @@ import ProfileHeader from "@/components/ui/header";
 import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/lib/contexts/authContext";
 import { shortenIcId } from "@/lib/utils/utils";
-import { Copy, RefreshCw } from "lucide-react";
+import CopyIcon from "../../../../public/assets/content_copy.svg";
+import { RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Setting() {
   const { principal, sessionInfo, refreshSessionInfo } = useAuth();
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const handleCopyAddress = async (principal: string) => {
+    try {
+      await navigator.clipboard.writeText(principal);
+      setCopiedAddress(principal);
+      setTimeout(() => setCopiedAddress(null), 2000); // Clear after 2 seconds
+    } catch (error) {
+      console.error("Failed to copy address:", error);
+    }
+  };
 
   return (
     <div className="w-[375px] h-[600px] bg-[#25262B] text-white overflow-y-auto pb-20">
@@ -41,9 +54,21 @@ function Setting() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[14px] font-normal">
-                  {shortenIcId(principal ?? 'error')}
+                  {shortenIcId(principal ?? "error")}
                 </span>
-                <Copy className="w-4 h-4 text-white/60 cursor-pointer hover:text-white" />
+                <div className="relative">
+                  <img
+                    src={CopyIcon}
+                    alt="Copy"
+                    className="w-5 h-5 cursor-pointer"
+                    onClick={() => principal && handleCopyAddress(principal)}
+                  />
+                  {copiedAddress === principal && (
+                    <div className="absolute -top-8 -left-4 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                      Copied!
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -61,25 +86,27 @@ function Setting() {
                   <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
-              
+
               {sessionInfo ? (
                 <div className="mt-2 space-y-1">
-                  <div className={`text-[14px] font-normal ${
-                    sessionInfo.isValid 
-                      ? sessionInfo.remainingTime < 10 * 60 * 1000 
-                        ? "text-orange-400" 
-                        : "text-green-400"
-                      : "text-red-400"
-                  }`}>
+                  <div
+                    className={`text-[14px] font-normal ${
+                      sessionInfo.isValid
+                        ? sessionInfo.remainingTime < 10 * 60 * 1000
+                          ? "text-orange-400"
+                          : "text-green-400"
+                        : "text-red-400"
+                    }`}
+                  >
                     {sessionInfo.remainingTimeFormatted}
                   </div>
-                  
+
                   {sessionInfo.createdAt && (
                     <div className="text-white/50 text-[12px]">
                       Started: {sessionInfo.createdAt.toLocaleTimeString()}
                     </div>
                   )}
-                  
+
                   {sessionInfo.expiresAt && (
                     <div className="text-white/50 text-[12px]">
                       Expires: {sessionInfo.expiresAt.toLocaleTimeString()}
@@ -90,7 +117,8 @@ function Setting() {
                 <div className="text-white/50 text-[14px] font-normal mt-2">
                   Loading session info...
                 </div>
-              )}</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
