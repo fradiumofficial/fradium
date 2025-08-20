@@ -205,14 +205,6 @@ function WalletConfirmation() {
               {isCreatingWallet ? "Creating Wallet..." : "Create Wallet Now"}
             </NeoButton>
           )}
-          
-          <button
-            onClick={handleSkip}
-            disabled={isCreatingWallet || isDeleting}
-            className="w-full py-3 text-white/70 text-sm hover:text-white transition-colors disabled:opacity-50"
-          >
-            Skip for now (Limited functionality)
-          </button>
         </div>
       </div>
     </div>
