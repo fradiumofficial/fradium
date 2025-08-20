@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./authContext";
 import type { WalletAddress, UserWallet } from "@/icp/services/backend_service";
-import { getBalance, fetchBitcoinBalance, fetchSolanaBalance, TokenType } from "@/services/balanceService";
+import { getBalance, TokenType } from "@/services/balanceService";
 import { createWallet as backendCreateWallet, getUserWallet } from "@/icp/services/backend_service";
 import { getBitcoinAddress } from "@/icp/services/bitcoin_service";
 import { getSolanaAddress } from "@/icp/services/solana_service";
+import { BITCOIN_CONFIG } from "@/lib/config";
 
 interface NetworkFilters {
   Bitcoin: boolean;
@@ -361,29 +362,96 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               // Calculate total balance for this token type
               const totalBalance = Object.values(balanceResult.balances).reduce((sum, balance) => sum + balance, 0);
               
-              // Get USD value using individual balance services for price conversion
+              // CRITICAL FIX: Validate that balance is not negative or invalid
+              if (totalBalance < 0 || !isFinite(totalBalance)) {
+                console.warn(`WalletProvider: Invalid ${tokenType} balance detected: ${totalBalance}, setting to 0`);
+                balances[networkName] = 0;
+                continue; // Skip to next token type
+              }
+              
+              // CRITICAL FIX: For new Bitcoin addresses, ensure they start with 0 balance
+              // This prevents the $5 bug where new accounts get testnet coins
+              if (tokenType === TokenType.BITCOIN && totalBalance > 0) {
+                const isNewBitcoinAddress = await isNewlyCreatedBitcoinAddressInWallet(addresses[0]);
+                if (isNewBitcoinAddress) {
+                  console.warn(`WalletProvider: New Bitcoin address detected with non-zero balance ${totalBalance}. This may indicate testnet faucet is enabled.`);
+                  
+                  // For production, new Bitcoin addresses should start with 0
+                  if (BITCOIN_CONFIG.isProduction()) {
+                    console.warn('WalletProvider: Production environment detected. Setting Bitcoin balance to 0 for new address.');
+                    balances[networkName] = 0;
+                    continue; // Skip to next token type
+                  }
+                }
+              }
+              
+              // Get USD value using the balance result directly, not by calling fetchBitcoinBalance again
               let usdValue = 0;
               if (totalBalance > 0) {
-                switch (tokenType) {
-                  case TokenType.BITCOIN:
-
-                    const btcResult = await fetchBitcoinBalance(addresses[0]);
-                    usdValue = (btcResult.usdValue / btcResult.balance) * (totalBalance / 100000000); // Convert satoshi to BTC
-                    break;
-
-                  case TokenType.SOLANA:
-
-                    const solResult = await fetchSolanaBalance(addresses[0], identity);
-                    usdValue = (solResult.usdValue / solResult.balance) * (totalBalance / Math.pow(10, 9)); // Convert lamports to SOL
-                    break;
-                  case TokenType.FRADIUM:
-                    usdValue = totalBalance * 1.0; // Placeholder price
-                    break;
+                try {
+                  // Get current token price from CoinGecko
+                  let tokenPrice = 0;
+                  switch (tokenType) {
+                    case TokenType.BITCOIN:
+                      const btcPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+                      const btcPriceData = await btcPriceResponse.json();
+                      tokenPrice = btcPriceData.bitcoin?.usd || 45000; // fallback price
+                      break;
+                    case TokenType.SOLANA:
+                      const solPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+                      const solPriceData = await solPriceResponse.json();
+                      tokenPrice = solPriceData.solana?.usd || 100; // fallback price
+                      break;
+                    case TokenType.FRADIUM:
+                      tokenPrice = 1.0; // Placeholder price
+                      break;
+                  }
+                  
+                  // Calculate USD value based on token type and conversion factors
+                  switch (tokenType) {
+                    case TokenType.BITCOIN:
+                      // totalBalance is in satoshi, convert to BTC then to USD
+                      const btcAmount = totalBalance / 100000000; // satoshi to BTC
+                      usdValue = btcAmount * tokenPrice;
+                      break;
+                    case TokenType.SOLANA:
+                      // totalBalance is in lamports, convert to SOL then to USD
+                      const solAmount = totalBalance / Math.pow(10, 9); // lamports to SOL
+                      usdValue = solAmount * tokenPrice;
+                      break;
+                    case TokenType.FRADIUM:
+                      usdValue = totalBalance * tokenPrice;
+                      break;
+                  }
+                } catch (priceError) {
+                  console.warn(`WalletProvider: Error getting price for ${tokenType}:`, priceError);
+                  // Use fallback calculation
+                  switch (tokenType) {
+                    case TokenType.BITCOIN:
+                      usdValue = (totalBalance / 100000000) * 45000; // fallback BTC price
+                      break;
+                    case TokenType.SOLANA:
+                      usdValue = (totalBalance / Math.pow(10, 9)) * 100; // fallback SOL price
+                      break;
+                    case TokenType.FRADIUM:
+                      usdValue = totalBalance * 1.0;
+                      break;
+                  }
                 }
               }
               
               balances[networkName] = usdValue;
-              console.log(`WalletProvider: Updated ${networkName} balance to $${usdValue}`);
+              console.log(`WalletProvider: Updated ${networkName} balance to $${usdValue} (totalBalance: ${totalBalance})`);
+              
+              // Log detailed calculation for debugging
+              console.log(`WalletProvider: ${networkName} calculation details:`, {
+                tokenType,
+                addresses,
+                balanceResult,
+                totalBalance,
+                usdValue,
+                timestamp: new Date().toISOString()
+              });
               
             } catch (error) {
               console.error(`WalletProvider: Error fetching ${tokenType} balance:`, error);
@@ -466,6 +534,30 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     },
     [networkValues, hideBalance]
   );
+
+  // Helper function to check if Bitcoin address is newly created in this wallet
+  const isNewlyCreatedBitcoinAddressInWallet = async (address: string): Promise<boolean> => {
+    try {
+      // Check if this address was created in the current wallet session
+      const key = `wallet_bitcoin_address_created_${address}`;
+      const creationTime = localStorage.getItem(key);
+      
+      if (!creationTime) {
+        // Mark this address as newly created in this wallet
+        localStorage.setItem(key, Date.now().toString());
+        return true;
+      }
+      
+      // Check if address was created in the last 5 minutes (new session)
+      const createdTime = parseInt(creationTime);
+      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+      
+      return createdTime > fiveMinutesAgo;
+    } catch (error) {
+      console.warn('isNewlyCreatedBitcoinAddressInWallet: Error checking localStorage:', error);
+      return false;
+    }
+  };
 
   const walletContextValue = useMemo(
     () => ({

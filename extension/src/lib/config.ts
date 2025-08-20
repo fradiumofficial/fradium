@@ -85,3 +85,25 @@ export const createAgentWithFallback = async (): Promise<string> => {
   console.warn('All IC hosts failed, using default host');
   return CANISTER_HOST;
 };
+
+// Bitcoin faucet configuration
+export const BITCOIN_CONFIG = {
+  // Enable/disable faucet for new addresses (should be false in production)
+  ENABLE_FAUCET: false,
+  
+  // Maximum balance allowed for new addresses (in satoshi)
+  MAX_NEW_ADDRESS_BALANCE: 0,
+  
+  // Environment detection
+  isDevelopment: () => {
+    return window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1' ||
+           window.location.hostname.includes('dev') ||
+           window.location.hostname.includes('test') ||
+           window.location.hostname.includes('staging');
+  },
+  
+  isProduction: () => {
+    return !BITCOIN_CONFIG.isDevelopment();
+  }
+};

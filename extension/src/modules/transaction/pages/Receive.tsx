@@ -35,20 +35,39 @@ function Receive() {
         return;
       }
 
-      const networks = ['Bitcoin', 'Solana', 'Ethereum', 'Fradium'];
-      const updatedAddresses = await Promise.all(
-        networks.map(async (network) => {
-          const result = getAddressForNetwork(network);
-          return {
-            network,
-            address: result.success ? result.data || '' : '',
-            isLoading: false,
-            error: result.success ? undefined : result.error
-          };
-        })
-      );
+      try {
+        const networks = ['Bitcoin', 'Solana', 'Ethereum', 'Fradium'];
+        const updatedAddresses = await Promise.all(
+          networks.map(async (network) => {
+            try {
+              const result = getAddressForNetwork(network);
+              return {
+                network,
+                address: result.success ? result.data || '' : '',
+                isLoading: false,
+                error: result.success ? undefined : result.error
+              };
+            } catch (error) {
+              console.error(`Error loading ${network} address:`, error);
+              return {
+                network,
+                address: '',
+                isLoading: false,
+                error: 'Failed to load address'
+              };
+            }
+          })
+        );
 
-      setAddresses(updatedAddresses);
+        setAddresses(updatedAddresses);
+      } catch (error) {
+        console.error('Error loading addresses:', error);
+        setAddresses(prev => prev.map(addr => ({
+          ...addr,
+          isLoading: false,
+          error: 'Failed to load addresses'
+        })));
+      }
     };
 
     loadAddresses();
@@ -146,7 +165,7 @@ function Receive() {
       <div className="flex flex-col px-[24px]">
         <div className="flex flex-row items-center">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(ROUTES.HOME, { replace: true })}
             className="p-1 hover:bg-white/10 rounded"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -155,6 +174,7 @@ function Receive() {
             Receive
           </h1>
         </div>
+        
       </div>
 
       <div className="flex flex-col px-[24px]">

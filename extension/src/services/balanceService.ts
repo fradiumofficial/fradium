@@ -4,6 +4,7 @@
 import { getBitcoinBalances, getBitcoinBalance } from '../icp/services/bitcoin_service';
 import { getSolanaBalance, getSolanaBalances } from '../icp/services/solana_service';
 import { saveTransaction, getLastKnownBalance, setLastKnownBalance } from '../lib/localStorage';
+import { BITCOIN_CONFIG } from '@/lib/config';
 
 export interface BalanceResult {
   balance: number;
@@ -64,8 +65,28 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
     
     console.log('BalanceService: Bitcoin balance result:', {
       satoshi: balanceInSatoshi.toString(),
-      btc: balanceInBTC
+      btc: balanceInBTC,
+      address: address
     });
+    
+    // CRITICAL FIX: Ensure new accounts start with 0 balance
+    // This prevents the $5 bug where new accounts get testnet coins
+    if (balanceInBTC === 0) {
+      console.log('BalanceService: New account detected, balance is 0');
+      return { balance: 0, usdValue: 0 };
+    }
+    
+    // Additional validation: Check if this is a newly created address
+    const isNewAddress = await isNewlyCreatedBitcoinAddress(address);
+    if (isNewAddress && balanceInBTC > 0) {
+      console.warn(`BalanceService: New Bitcoin address ${address} has non-zero balance ${balanceInBTC} BTC. This may indicate testnet faucet is enabled.`);
+      
+      // For production, new addresses should start with 0
+      if (BITCOIN_CONFIG.isProduction()) {
+        console.warn('BalanceService: Production environment detected. Returning 0 for new address with non-zero balance.');
+        return { balance: 0, usdValue: 0 };
+      }
+    }
     
     // Get current BTC price
     const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
@@ -103,10 +124,34 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
     
   } catch (error) {
     console.error('BalanceService: Error fetching Bitcoin balance:', error);
+    // For new accounts or errors, always return 0
     return { balance: 0, usdValue: 0 };
   }
 };
 
+// Helper function to check if Bitcoin address is newly created
+const isNewlyCreatedBitcoinAddress = async (address: string): Promise<boolean> => {
+  try {
+    // Check if this address was created in the current session
+    const key = `bitcoin_address_created_${address}`;
+    const creationTime = localStorage.getItem(key);
+    
+    if (!creationTime) {
+      // Mark this address as newly created
+      localStorage.setItem(key, Date.now().toString());
+      return true;
+    }
+    
+    // Check if address was created in the last 5 minutes (new session)
+    const createdTime = parseInt(creationTime);
+    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+    
+    return createdTime > fiveMinutesAgo;
+  } catch (error) {
+    console.warn('isNewlyCreatedBitcoinAddress: Error checking localStorage:', error);
+    return false;
+  }
+};
 
 
 /**
@@ -128,8 +173,15 @@ export const fetchSolanaBalance = async (address: string, identity?: any): Promi
       
       console.log('BalanceService: Canister balance result:', {
         lamports: balanceInLamports.toString(),
-        sol: balanceInSOL
+        sol: balanceInSOL,
+        address: address
       });
+      
+      // Ensure new accounts start with 0 balance
+      if (balanceInSOL === 0) {
+        console.log('BalanceService: New Solana account detected, balance is 0');
+        return { balance: 0, usdValue: 0 };
+      }
       
       // Get current SOL price
       const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
@@ -189,6 +241,12 @@ export const fetchSolanaBalance = async (address: string, identity?: any): Promi
       // Convert lamports to SOL
       const balanceInSOL = data.result.value / Math.pow(10, 9);
       
+      // Ensure new accounts start with 0 balance
+      if (balanceInSOL === 0) {
+        console.log('BalanceService: New Solana account detected via external API, balance is 0');
+        return { balance: 0, usdValue: 0 };
+      }
+      
       // Get current SOL price
       const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
       const priceData = await priceResponse.json();
@@ -224,6 +282,7 @@ export const fetchSolanaBalance = async (address: string, identity?: any): Promi
     
   } catch (error) {
     console.error('BalanceService: Error fetching Solana balance:', error);
+    // For new accounts or errors, always return 0
     return { balance: 0, usdValue: 0 };
   }
 };

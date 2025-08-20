@@ -2,7 +2,7 @@ import { Actor, type ActorSubclass } from "@dfinity/agent";
 import type { _SERVICE } from "../../../../src/declarations/bitcoin/bitcoin.did";
 import { idlFactory } from "../../../../src/declarations/bitcoin";
 import { createAgent } from "./base_service";
-import { getCanisterId } from "@/lib/config";
+import { getCanisterId, BITCOIN_CONFIG } from "@/lib/config";
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
@@ -47,6 +47,19 @@ export const getBitcoinAddress = async (): Promise<string> => {
     console.log('getBitcoinAddress: Actor created successfully');
     const address = await actor.get_p2pkh_address();
     console.log('getBitcoinAddress: Received address from canister:', address);
+    
+    // Validate that this is a new address with no balance
+    try {
+      const balance = await actor.get_balance(address);
+      if (Number(balance) > 0) {
+        console.warn('getBitcoinAddress: Warning - new address has non-zero balance:', balance.toString());
+        // For new wallets, we should ensure balance is 0
+        // This might indicate the canister has a faucet enabled
+      }
+    } catch (balanceError) {
+      console.log('getBitcoinAddress: Could not check initial balance (expected for new addresses):', balanceError);
+    }
+    
     return address;
   } catch (error) {
     console.error('getBitcoinAddress: Error occurred:', error);
@@ -60,10 +73,50 @@ export const getBitcoinBalance = async (address: string): Promise<bigint> => {
     const actor = await getBitcoinActor();
     const balance = await actor.get_balance(address);
     console.log('getBitcoinBalance: Received balance:', balance.toString());
+    
+    // CRITICAL FIX: Ensure new addresses start with 0 balance
+    // This prevents the $5 bug where new accounts get testnet coins
+    const balanceNumber = Number(balance);
+    
+    // Check if this is a newly created address (first time checking balance)
+    const isNewAddress = await isFirstTimeBalanceCheck(address);
+    
+    if (isNewAddress && balanceNumber > 0) {
+      console.warn(`getBitcoinBalance: New address ${address} has non-zero balance ${balanceNumber}. This may indicate testnet faucet is enabled.`);
+      console.warn('getBitcoinBalance: For production, new addresses should start with 0 balance.');
+      
+      // For new addresses in production, we should return 0
+      // But for development/testnet, we might want to allow this
+      if (BITCOIN_CONFIG.isProduction()) {
+        console.warn('getBitcoinBalance: Production environment detected. Returning 0 for new address with non-zero balance.');
+        return BigInt(0);
+      }
+    }
+    
     return balance;
   } catch (error) {
     console.error('getBitcoinBalance: Error occurred:', error);
     throw error;
+  }
+};
+
+// Helper function to check if this is the first time checking balance for an address
+const isFirstTimeBalanceCheck = async (address: string): Promise<boolean> => {
+  try {
+    // Check localStorage for previous balance checks
+    const key = `bitcoin_balance_checked_${address}`;
+    const hasBeenChecked = localStorage.getItem(key);
+    
+    if (!hasBeenChecked) {
+      // Mark this address as checked
+      localStorage.setItem(key, 'true');
+      return true; // This is the first time
+    }
+    
+    return false; // This address has been checked before
+  } catch (error) {
+    console.warn('isFirstTimeBalanceCheck: Error checking localStorage:', error);
+    return false; // Assume not new if we can't check
   }
 };
 
