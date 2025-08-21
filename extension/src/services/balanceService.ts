@@ -21,13 +21,14 @@ export const TokenType = {
   BITCOIN: 'Bitcoin',
   SOLANA: 'Solana',
   FRADIUM: 'Fradium',
+  ETHEREUM: 'Ethereum',
   UNKNOWN: 'Unknown'
 } as const;
 
 export type TokenType = typeof TokenType[keyof typeof TokenType];
 
 // Helper to record deltas for multi-address balances
-const recordReceiveDeltas = (tokenType: TokenType, balances: Record<string, number>, unitLabel: string) => {
+const recordReceiveDeltas = (tokenType: TokenType, balances: Record<string, number>, unitLabel: string, principal?: string) => {
   try {
     Object.entries(balances).forEach(([address, raw]) => {
       const value = tokenType === TokenType.BITCOIN ? raw / 100000000 : tokenType === TokenType.SOLANA ? raw / Math.pow(10, 9) : raw;
@@ -41,7 +42,7 @@ const recordReceiveDeltas = (tokenType: TokenType, balances: Record<string, numb
           amount: delta.toString(),
           toAddress: address,
           note: `Received ${delta} ${unitLabel}`
-        });
+        }, principal);
       }
     });
   } catch (e) {
@@ -54,13 +55,13 @@ const recordReceiveDeltas = (tokenType: TokenType, balances: Record<string, numb
  * @param address Bitcoin address
  * @returns Promise with balance in BTC and USD value
  */
-export const fetchBitcoinBalance = async (address: string): Promise<BalanceResult> => {
+export const fetchBitcoinBalance = async (address: string, identity?: any, principal?: string): Promise<BalanceResult> => {
   console.log('BalanceService: Fetching Bitcoin balance for address:', address);
   
   try {
     // Use canister service first
     
-    const balanceInSatoshi = await getBitcoinBalance(address);
+    const balanceInSatoshi = await getBitcoinBalance(address, identity);
     const balanceInBTC = Number(balanceInSatoshi) / 100000000; // Convert satoshi to BTC
     
     console.log('BalanceService: Bitcoin balance result:', {
@@ -69,10 +70,41 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
       address: address
     });
     
-    // CRITICAL FIX: Ensure new accounts start with 0 balance
-    // This prevents the $5 bug where new accounts get testnet coins
+    // If canister returns 0, attempt a lightweight external check to avoid stale 0
     if (balanceInBTC === 0) {
-      console.log('BalanceService: New account detected, balance is 0');
+      try {
+        const extResp = await fetch(`https://mempool.space/api/address/${address}`);
+        if (extResp.ok) {
+          const extData = await extResp.json();
+          const chainStats = extData.chain_stats || {};
+          const funded = Number(chainStats.funded_txo_sum || 0);
+          const spent = Number(chainStats.spent_txo_sum || 0);
+          const extSatoshi = Math.max(funded - spent, 0);
+          const extBTC = extSatoshi / 100000000;
+          if (extBTC > 0) {
+            console.log('BalanceService: External API indicates non-zero BTC balance, using fallback value');
+            const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+            const priceData = await priceResponse.json();
+            const btcPrice = priceData.bitcoin?.usd ?? 0;
+            const result = { balance: extBTC, usdValue: extBTC * btcPrice };
+            await chrome.storage.local.set({ bitcoinBalance: result, lastUpdated: Date.now() });
+            try {
+              const lastKnown = getLastKnownBalance(TokenType.BITCOIN, address);
+              setLastKnownBalance(TokenType.BITCOIN, address, extBTC);
+              if (lastKnown !== null) {
+                const delta = extBTC - lastKnown;
+                if (delta > 0) {
+                  saveTransaction({ tokenType: TokenType.BITCOIN, direction: 'Receive', amount: delta.toString(), toAddress: address, note: `Received ${delta} BTC` }, principal);
+                }
+              }
+            } catch {}
+            return result;
+          }
+        }
+      } catch (fallbackErr) {
+        console.log('BalanceService: External BTC balance fallback failed:', fallbackErr);
+      }
+      console.log('BalanceService: Canister and external both report 0');
       return { balance: 0, usdValue: 0 };
     }
     
@@ -114,7 +146,7 @@ export const fetchBitcoinBalance = async (address: string): Promise<BalanceResul
             amount: delta.toString(),
             toAddress: address,
             note: `Received ${delta} BTC`
-          });
+          }, principal);
         }
       }
     } catch (e) {
@@ -329,7 +361,7 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
     case TokenType.BITCOIN:
       try {
         const result = await getBitcoinBalances(addresses);
-        recordReceiveDeltas(TokenType.BITCOIN, result.balances, 'BTC');
+        recordReceiveDeltas(TokenType.BITCOIN, result.balances, 'BTC', identity?.getPrincipal?.()?.toText?.());
         return result;
       } catch (error) {
         console.error('Error getting Bitcoin balances:', error);
@@ -343,7 +375,7 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
     case TokenType.SOLANA:
       try {
         const result = await getSolanaBalances(addresses, identity);
-        recordReceiveDeltas(TokenType.SOLANA, result.balances, 'SOL');
+        recordReceiveDeltas(TokenType.SOLANA, result.balances, 'SOL', identity?.getPrincipal?.()?.toText?.());
         return result;
       } catch (error) {
         console.error('Error getting Solana balances:', error);
@@ -354,7 +386,12 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
       }
       break;
 
-
+    case TokenType.ETHEREUM:
+      // Placeholder for Ethereum - not implemented yet
+      addresses.forEach(addr => {
+        balances[addr] = 0;
+      });
+      break;
 
     case TokenType.FRADIUM:
       // Placeholder for Fradium - not implemented yet

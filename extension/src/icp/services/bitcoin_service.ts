@@ -1,4 +1,4 @@
-import { Actor, type ActorSubclass } from "@dfinity/agent";
+import { Actor, type ActorSubclass, type Identity } from "@dfinity/agent";
 import type { _SERVICE } from "../../../../src/declarations/bitcoin/bitcoin.did";
 import { idlFactory } from "../../../../src/declarations/bitcoin";
 import { createAgent } from "./base_service";
@@ -6,26 +6,37 @@ import { getCanisterId, BITCOIN_CONFIG } from "@/lib/config";
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
-export const getBitcoinActor = async (): Promise<ActorSubclass<_SERVICE>> => {
-  if (actor) {
+export const getBitcoinActor = async (identity?: Identity): Promise<ActorSubclass<_SERVICE>> => {
+  // Clear cached actor if an explicit identity is provided to ensure per-user actor
+  if (identity && actor) {
+    actor = null;
+  }
+
+  if (actor && !identity) {
     return actor;
   }
 
   try {
     console.log("Creating agent for Bitcoin...");
-    const agent = await createAgent();
+    console.log("Bitcoin: Using identity:", identity ? 'authenticated' : 'anonymous');
+    const agent = await createAgent(identity);
     const canisterId = getCanisterId("bitcoin");
 
     console.log("Bitcoin canister ID:", canisterId);
     console.log("Agent created successfully");
 
-    actor = Actor.createActor(idlFactory as any, {
+    const newActor = Actor.createActor(idlFactory as any, {
       agent,
       canisterId,
     }) as ActorSubclass<_SERVICE>;
 
+    // Cache only if no specific identity (anonymous)
+    if (!identity) {
+      actor = newActor;
+    }
+
     console.log("Bitcoin actor created successfully");
-    return actor;
+    return newActor;
   } catch (error) {
     console.error("Error creating Bitcoin actor:", error);
     throw new Error(
@@ -40,10 +51,10 @@ export const clearBitcoinActor = (): void => {
   actor = null;
 };
 
-export const getBitcoinAddress = async (): Promise<string> => {
+export const getBitcoinAddress = async (identity?: Identity): Promise<string> => {
   try {
     console.log('getBitcoinAddress: Starting...');
-    const actor = await getBitcoinActor();
+    const actor = await getBitcoinActor(identity);
     console.log('getBitcoinAddress: Actor created successfully');
     const address = await actor.get_p2pkh_address();
     console.log('getBitcoinAddress: Received address from canister:', address);
@@ -67,10 +78,10 @@ export const getBitcoinAddress = async (): Promise<string> => {
   }
 };
 
-export const getBitcoinBalance = async (address: string): Promise<bigint> => {
+export const getBitcoinBalance = async (address: string, identity?: Identity): Promise<bigint> => {
   try {
     console.log('getBitcoinBalance: Starting for address:', address);
-    const actor = await getBitcoinActor();
+    const actor = await getBitcoinActor(identity);
     const balance = await actor.get_balance(address);
     console.log('getBitcoinBalance: Received balance:', balance.toString());
     
@@ -90,6 +101,25 @@ export const getBitcoinBalance = async (address: string): Promise<bigint> => {
       if (BITCOIN_CONFIG.isProduction()) {
         console.warn('getBitcoinBalance: Production environment detected. Returning 0 for new address with non-zero balance.');
         return BigInt(0);
+      }
+    }
+
+    // If canister reports 0, attempt an external fallback to avoid stale 0 balances
+    if (balanceNumber === 0) {
+      try {
+        const resp = await fetch(`https://mempool.space/api/address/${address}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          const funded = Number((data?.chain_stats?.funded_txo_sum) || 0);
+          const spent = Number((data?.chain_stats?.spent_txo_sum) || 0);
+          const extSatoshi = Math.max(funded - spent, 0);
+          if (extSatoshi > 0) {
+            console.log('getBitcoinBalance: External API indicates non-zero satoshi balance, using fallback');
+            return BigInt(extSatoshi);
+          }
+        }
+      } catch (fallbackErr) {
+        console.log('getBitcoinBalance: External fallback failed:', fallbackErr);
       }
     }
     
@@ -121,13 +151,13 @@ const isFirstTimeBalanceCheck = async (address: string): Promise<boolean> => {
 };
 
 // Get balances for multiple Bitcoin addresses
-export const getBitcoinBalances = async (addresses: string[]): Promise<{ balances: Record<string, number>; errors: Record<string, string> }> => {
+export const getBitcoinBalances = async (addresses: string[], identity?: Identity): Promise<{ balances: Record<string, number>; errors: Record<string, string> }> => {
   const balances: Record<string, number> = {};
   const errors: Record<string, string> = {};
 
   for (const address of addresses) {
     try {
-      const balance = await getBitcoinBalance(address);
+      const balance = await getBitcoinBalance(address, identity);
       balances[address] = Number(balance);
       console.log(`Bitcoin balance for ${address}: ${balance}`);
     } catch (error) {

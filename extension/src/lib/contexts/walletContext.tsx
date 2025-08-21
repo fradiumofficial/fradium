@@ -11,6 +11,7 @@ interface NetworkFilters {
   Bitcoin: boolean;
   Solana: boolean;
   Fradium: boolean;
+  Ethereum: boolean;
 }
 
 interface NetworkValues {
@@ -18,6 +19,7 @@ interface NetworkValues {
   Bitcoin: number;
   Solana: number;
   Fradium: number;
+  Ethereum: number;
 }
 
 interface WalletContextType {
@@ -74,11 +76,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     Bitcoin: 0,
     Solana: 0,
     Fradium: 0,
+    Ethereum: 0,
   });
   const [networkFilters, setNetworkFilters] = useState<NetworkFilters>({
     Bitcoin: true,
     Solana: true,
     Fradium: true,
+    Ethereum: true,
   });
 
   // Memoize user principal string to prevent unnecessary re-renders
@@ -130,6 +134,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       Bitcoin: true,
       Solana: true,
       Fradium: true,
+      Ethereum: true,
     };
   }, [getNetworkFiltersKey]);
 
@@ -202,7 +207,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       // Get bitcoin address
       console.log("WalletProvider: Getting Bitcoin address...");
-      const bitcoinResponse = await getBitcoinAddress();
+      const bitcoinResponse = await getBitcoinAddress(identity);
       console.log("WalletProvider: Bitcoin address:", bitcoinResponse);
 
       // Get solana address

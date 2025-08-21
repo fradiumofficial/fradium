@@ -18,6 +18,7 @@ import {
 } from "@/lib/backgroundMessaging";
 import { saveComprehensiveAnalysisToScanHistory } from "@/lib/localStorage";
 import type { AnalysisResult } from "@/modules/analyze_address/model/AnalyzeAddressModel";
+import { fetchBitcoinBalance, fetchSolanaBalance } from "@/services/balanceService";
 
 interface SendFormData {
   destinationAddress: string;
@@ -99,12 +100,10 @@ function Send() {
         switch (tokenType) {
           case TokenType.BITCOIN:
             // Use the balance service to get actual Bitcoin balance
-            const { fetchBitcoinBalance } = await import('@/services/balanceService');
-            const btcResult = await fetchBitcoinBalance(addresses[0]);
+            const btcResult = await fetchBitcoinBalance(addresses[0], identity);
             return btcResult.balance;
           case TokenType.SOLANA:
             // Use the balance service to get actual Solana balance
-            const { fetchSolanaBalance } = await import('@/services/balanceService');
             const solResult = await fetchSolanaBalance(addresses[0], identity);
             return solResult.balance;
           default:

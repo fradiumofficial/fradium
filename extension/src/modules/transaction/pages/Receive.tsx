@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useWalletApi } from "@/modules/wallet/api/WalletApi";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/contexts/authContext";
+import QRCode from "qrcode";
 
 interface NetworkAddress {
   network: string;
@@ -27,6 +28,11 @@ function Receive() {
     { network: 'Fradium', address: '', isLoading: true }
   ]);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [qrMeta, setQrMeta] = useState<{ address: string; network: string } | null>(null);
 
   // Load addresses when component mounts
   useEffect(() => {
@@ -84,10 +90,35 @@ function Receive() {
     }
   };
 
-  // Generate QR code (placeholder - you might want to implement actual QR generation)
-  const handleShowQRCode = (address: string, network: string) => {
-    // TODO: Implement QR code modal
-    console.log(`Show QR code for ${network}: ${address}`);
+  // Generate and show QR code modal
+  const handleShowQRCode = async (address: string, network: string) => {
+    try {
+      setQrLoading(true);
+      setQrError(null);
+      setIsQrOpen(true);
+      setQrMeta({ address, network });
+
+      const url = await QRCode.toDataURL(address, {
+        errorCorrectionLevel: 'M',
+        width: 240,
+        margin: 1,
+        color: { dark: '#000000', light: '#FFFFFF' },
+      });
+      setQrDataUrl(url);
+    } catch (error) {
+      console.error('Failed to generate QR code:', error);
+      setQrError('Failed to generate QR code');
+      setQrDataUrl(null);
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const closeQrModal = () => {
+    setIsQrOpen(false);
+    setQrDataUrl(null);
+    setQrError(null);
+    setQrMeta(null);
   };
 
   const renderAddressInput = (networkData: NetworkAddress) => {
@@ -180,6 +211,46 @@ function Receive() {
       <div className="flex flex-col px-[24px]">
         {addresses.map(renderAddressInput)}
       </div>
+
+      {/* QR Code Modal */}
+      {isQrOpen && (
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center px-4">
+          <div className="w-full max-w-[320px] bg-[#1F2025] border border-white/10 rounded-lg p-4 text-white relative">
+            <button
+              aria-label="Close"
+              onClick={closeQrModal}
+              className="absolute top-2 right-2 text-white/70 hover:text-white"
+            >
+              ✕
+            </button>
+            <div className="text-center mb-3">
+              <div className="text-[14px] text-white/60">QR Code</div>
+              <div className="text-[16px] font-medium">{qrMeta?.network}</div>
+            </div>
+            <div className="flex items-center justify-center min-h-[260px]">
+              {qrLoading ? (
+                <div className="flex items-center gap-2 text-white/80">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Generating...</span>
+                </div>
+              ) : qrError ? (
+                <div className="text-red-400 text-sm">{qrError}</div>
+              ) : qrDataUrl ? (
+                <img src={qrDataUrl} alt="QR Code" className="w-[240px] h-[240px] bg-white p-2 rounded" />
+              ) : null}
+            </div>
+            <div className="mt-3">
+              <div className="text-[12px] text-white/60 mb-1">Address</div>
+              <div className="bg-white/5 border border-white/10 rounded p-2 text-xs break-all select-all">
+                {qrMeta?.address}
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button onClick={closeQrModal} className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded text-sm">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

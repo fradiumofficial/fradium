@@ -5,17 +5,19 @@ import solanaIcon from "../../../../public/assets/tokens/solana.svg";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { getTransactionHistory, type TransactionHistoryItem } from "@/lib/localStorage";
+import { useAuth } from "@/lib/contexts/authContext";
 
 function History() {
   const navigate = useNavigate();
+  const { principal } = useAuth();
   const [query, setQuery] = useState("");
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
 
   useEffect(() => {
-    const { items } = getTransactionHistory();
+    const { items } = getTransactionHistory(principal ?? undefined);
     const sorted = [...items].sort((a, b) => b.timestamp - a.timestamp);
     setTransactions(sorted);
-  }, []);
+  }, [principal]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -19,7 +19,6 @@ import { useNetwork } from "@/modules/all_network/networkContext";
 import type { WalletAddress } from "@/icp/services/backend_service";
 import { ROUTES } from "@/constants/routes";
 import { useNavigate } from "react-router-dom";
-import { BITCOIN_CONFIG } from "@/lib/config";
 
 interface TokenBalance {
   symbol: string;
@@ -164,7 +163,7 @@ function Home() {
         symbol = 'ETH';
         name = 'Ethereum';
         icon = ethIcon;
-        isEnabled = false;
+        isEnabled = networkFilters?.Ethereum ?? true;
       } else if ('Solana' in addr.token_type) {
         symbol = 'SOL';
         name = 'Solana';
@@ -183,21 +182,6 @@ function Home() {
         let usdValue = networkValues[networkKey] || 0;
         const tokenPrice = tokenPrices[name] || 0;
         
-        // CRITICAL FIX: For new Bitcoin addresses, ensure they start with 0 balance
-        // This prevents the $5 bug where new accounts get testnet coins
-        if (name === 'Bitcoin' && usdValue > 0) {
-          const isNewBitcoinAddress = isNewlyCreatedBitcoinAddressInHome(addr.address);
-          if (isNewBitcoinAddress) {
-            console.warn(`Home: New Bitcoin address detected with non-zero USD value $${usdValue}. This may indicate testnet faucet is enabled.`);
-            
-            // For production, new Bitcoin addresses should start with 0
-            if (BITCOIN_CONFIG.isProduction()) {
-              console.warn('Home: Production environment detected. Setting Bitcoin USD value to 0 for new address.');
-              usdValue = 0;
-            }
-          }
-        }
-        
         // Calculate actual token balance from USD value and current price
         const tokenBalance = calculateTokenBalance(usdValue, tokenPrice);
         
@@ -215,30 +199,6 @@ function Home() {
     
     setTokens(walletTokens);
   }, [userWallet, networkValues, networkFilters, tokenPrices, calculateTokenBalance]);
-
-  // Helper function to check if Bitcoin address is newly created in Home component
-  const isNewlyCreatedBitcoinAddressInHome = (address: string): boolean => {
-    try {
-      // Check if this address was created in the current session
-      const key = `home_bitcoin_address_created_${address}`;
-      const creationTime = localStorage.getItem(key);
-      
-      if (!creationTime) {
-        // Mark this address as newly created
-        localStorage.setItem(key, Date.now().toString());
-        return true;
-      }
-      
-      // Check if address was created in the last 5 minutes (new session)
-      const createdTime = parseInt(creationTime);
-      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-      
-      return createdTime > fiveMinutesAgo;
-    } catch (error) {
-      console.warn('isNewlyCreatedBitcoinAddressInHome: Error checking localStorage:', error);
-      return false;
-    }
-  };
 
   useEffect(() => {
     if (userWallet && !isLoading && Object.keys(tokenPrices).length > 0) {

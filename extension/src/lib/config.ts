@@ -96,7 +96,10 @@ export const BITCOIN_CONFIG = {
   
   // Environment detection
   isDevelopment: () => {
-    return window.location.hostname === 'localhost' || 
+    // Treat extension context as development to avoid overly strict production guards
+    const isExtension = typeof window !== 'undefined' && window.location && (window.location.protocol === 'chrome-extension:' || window.location.protocol === 'moz-extension:');
+    return isExtension ||
+           window.location.hostname === 'localhost' || 
            window.location.hostname === '127.0.0.1' ||
            window.location.hostname.includes('dev') ||
            window.location.hostname.includes('test') ||

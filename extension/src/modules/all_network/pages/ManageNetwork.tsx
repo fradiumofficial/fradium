@@ -10,7 +10,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
   const { networkFilters, updateNetworkFilters } = useWallet();
   
   const [btc, setBtc] = useState(true);
-  // const [eth, setEth] = useState(true);
+  const [eth, setEth] = useState(true);
   const [sol, setSol] = useState(true);
   const [fra, setFra] = useState(true);
 
@@ -18,7 +18,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
   useEffect(() => {
     if (networkFilters) {
       setBtc(networkFilters.Bitcoin);
-      // setEth(networkFilters.Ethereum);
+      setEth(networkFilters.Ethereum);
       setSol(networkFilters.Solana);
       setFra(networkFilters.Fradium);
     }
@@ -28,7 +28,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
     // Update network filters with selected networks
     updateNetworkFilters({
       Bitcoin: btc,
-      // Ethereum: eth,
+      Ethereum: eth,
       Solana: sol,
       Fradium: fra,
     });
@@ -99,7 +99,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
                 Ethereum
               </span>
             </div>
-            {/* <label className="inline-flex items-center cursor-pointer">
+            <label className="inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 className="sr-only"
@@ -117,7 +117,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
                   }`}
                 ></span>
               </span>
-            </label> */}
+            </label>
           </div>
           <div className="mt-2 h-px w-full bg-white/10" />
         </div>

@@ -277,9 +277,13 @@ export interface SaveTransactionParams {
   note?: string;
 }
 
-export function getTransactionHistory(): TransactionHistoryStorage {
+function txHistoryKey(principal?: string): string {
+  return principal ? `${TX_HISTORY_STORAGE_KEY}_${principal}` : TX_HISTORY_STORAGE_KEY;
+}
+
+export function getTransactionHistory(principal?: string): TransactionHistoryStorage {
   try {
-    const stored = localStorage.getItem(TX_HISTORY_STORAGE_KEY);
+    const stored = localStorage.getItem(txHistoryKey(principal));
     if (!stored) return { items: [] };
     const parsed = JSON.parse(stored) as TransactionHistoryStorage;
     const validItems = (parsed.items || []).filter((item) => item && item.id && item.tokenType && item.direction && item.amount && item.toAddress && typeof item.timestamp === 'number');
@@ -290,14 +294,14 @@ export function getTransactionHistory(): TransactionHistoryStorage {
   }
 }
 
-export function getTransactionById(id: string): TransactionHistoryItem | null {
-  const txs = getTransactionHistory();
+export function getTransactionById(id: string, principal?: string): TransactionHistoryItem | null {
+  const txs = getTransactionHistory(principal);
   return txs.items.find((i) => i.id === id) || null;
 }
 
-export function clearTransactionHistory(): boolean {
+export function clearTransactionHistory(principal?: string): boolean {
   try {
-    localStorage.removeItem(TX_HISTORY_STORAGE_KEY);
+    localStorage.removeItem(txHistoryKey(principal));
     return true;
   } catch (error) {
     console.error('Error clearing transaction history:', error);
@@ -305,11 +309,11 @@ export function clearTransactionHistory(): boolean {
   }
 }
 
-export function deleteTransactionById(id: string): boolean {
+export function deleteTransactionById(id: string, principal?: string): boolean {
   try {
-    const txs = getTransactionHistory();
+    const txs = getTransactionHistory(principal);
     const filtered = txs.items.filter((i) => i.id !== id);
-    localStorage.setItem(TX_HISTORY_STORAGE_KEY, JSON.stringify({ items: filtered } satisfies TransactionHistoryStorage));
+    localStorage.setItem(txHistoryKey(principal), JSON.stringify({ items: filtered } satisfies TransactionHistoryStorage));
     return true;
   } catch (error) {
     console.error('Error deleting transaction history item:', error);
@@ -317,7 +321,7 @@ export function deleteTransactionById(id: string): boolean {
   }
 }
 
-export function saveTransaction(params: SaveTransactionParams): TransactionHistoryItem {
+export function saveTransaction(params: SaveTransactionParams, principal?: string): TransactionHistoryItem {
   const timestamp = Date.now();
   const shortAddr = (params.direction === 'Send' ? (params.toAddress || '') : params.toAddress || '').slice(-8);
   const id = `${timestamp}_${params.tokenType}_${params.direction}_${shortAddr}`;
@@ -337,12 +341,12 @@ export function saveTransaction(params: SaveTransactionParams): TransactionHisto
   };
 
   try {
-    const existing = getTransactionHistory();
+    const existing = getTransactionHistory(principal);
     let updated = [item, ...existing.items];
     if (updated.length > MAX_TX_HISTORY_ITEMS) {
       updated = updated.slice(0, MAX_TX_HISTORY_ITEMS);
     }
-    localStorage.setItem(TX_HISTORY_STORAGE_KEY, JSON.stringify({ items: updated } satisfies TransactionHistoryStorage));
+    localStorage.setItem(txHistoryKey(principal), JSON.stringify({ items: updated } satisfies TransactionHistoryStorage));
     return item;
   } catch (error) {
     console.error('Error saving transaction history item:', error);

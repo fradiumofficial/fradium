@@ -71,6 +71,9 @@ export const useWalletApi = () => {
         } else if ('Fradium' in address.token_type) {
           networkName = 'Fradium';
           usdValue = networkValues.Fradium || 0;
+        } else if ('Ethereum' in address.token_type) {
+          networkName = 'Ethereum';
+          usdValue = networkValues.Ethereum || 0;
         }
 
         if (networkName) {
@@ -115,6 +118,7 @@ export const useWalletApi = () => {
         if (network === 'Bitcoin' && 'Bitcoin' in addr.token_type) return true;
         if (network === 'Solana' && 'Solana' in addr.token_type) return true;
         if (network === 'Fradium' && 'Fradium' in addr.token_type) return true;
+        if (network === 'Ethereum' && 'Ethereum' in addr.token_type) return true;
         return false;
       });
 
@@ -143,7 +147,7 @@ export const useWalletApi = () => {
 
       const address = userWallet.addresses.find(addr => {
         if (network === 'Bitcoin' && 'Bitcoin' in addr.token_type) return true;
-
+        if (network === 'Ethereum' && 'Ethereum' in addr.token_type) return true;
         if (network === 'Solana' && 'Solana' in addr.token_type) return true;
         if (network === 'Fradium' && 'Fradium' in addr.token_type) return true;
         return false;
@@ -263,6 +267,9 @@ export const useWalletApi = () => {
         case 'Fradium':
           tokenType = TokenType.FRADIUM;
           break;
+        case 'Ethereum':
+          tokenType = TokenType.ETHEREUM;
+          break;
         default:
           return { success: false, error: `Unsupported network: ${network}` };
       }
@@ -279,10 +286,16 @@ export const useWalletApi = () => {
       if (totalBalance > 0) {
         switch (network) {
           case 'Bitcoin':
-            const btcResult = await fetchBitcoinBalance(addresses[0]);
+            const btcResult = await fetchBitcoinBalance(addresses[0], identity, principal!);
             balanceData = {
               balance: totalBalance / 100000000, // Convert satoshi to BTC
               usdValue: (btcResult.usdValue / btcResult.balance) * (totalBalance / 100000000)
+            };
+            break;
+          case 'Ethereum':
+            balanceData = {
+              balance: totalBalance,
+              usdValue: totalBalance * 1.0 // Placeholder price
             };
             break;
 
@@ -336,7 +349,7 @@ export const useWalletApi = () => {
    * Get all supported networks
    */
   const getSupportedNetworks = (): string[] => {
-    return ['Bitcoin', 'Solana', 'Fradium'];
+    return ['Bitcoin', 'Solana', 'Fradium', 'Ethereum'];
   };
 
   /**
@@ -388,6 +401,9 @@ export const useWalletApi = () => {
             return { success: false, error: `Bitcoin send failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
           }
           break;
+        
+        case 'Ethereum':
+          return { success: false, error: "Ethereum transactions not yet implemented" };
 
         case 'Solana':
           try {
