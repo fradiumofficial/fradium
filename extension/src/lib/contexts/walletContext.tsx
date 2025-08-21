@@ -224,7 +224,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             token_type: { Bitcoin: null },
             address: bitcoinResponse,
           },
-
+          {
+            network: { Ethereum: null },
+            token_type: { Ethereum: null },
+            address: "0xf0000000",
+          },
           {
             network: { Solana: null },
             token_type: { Solana: null },
@@ -304,6 +308,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!values["All Networks"]) {
         updated["All Networks"] = 
           (networkFilters.Bitcoin ? updated.Bitcoin : 0) + 
+          (networkFilters.Ethereum ? updated.Ethereum : 0) + 
           (networkFilters.Solana ? updated.Solana : 0) + 
           (networkFilters.Fradium ? updated.Fradium : 0);
       }
@@ -347,7 +352,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       // Import services
       
-      const supportedTokens = [TokenType.BITCOIN, TokenType.SOLANA, TokenType.FRADIUM];
+      const supportedTokens = [TokenType.BITCOIN, TokenType.SOLANA, TokenType.FRADIUM, TokenType.ETHEREUM];
       const balances: Partial<NetworkValues> = {};
 
       for (const tokenType of supportedTokens) {
@@ -402,6 +407,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                       const btcPriceData = await btcPriceResponse.json();
                       tokenPrice = btcPriceData.bitcoin?.usd || 45000; // fallback price
                       break;
+                    case TokenType.ETHEREUM:
+                      tokenPrice = 1.0;
+                      break;
                     case TokenType.SOLANA:
                       const solPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
                       const solPriceData = await solPriceResponse.json();
@@ -424,6 +432,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                       const solAmount = totalBalance / Math.pow(10, 9); // lamports to SOL
                       usdValue = solAmount * tokenPrice;
                       break;
+                    case TokenType.ETHEREUM:
+                      usdValue = totalBalance * tokenPrice;
+                      break;
                     case TokenType.FRADIUM:
                       usdValue = totalBalance * tokenPrice;
                       break;
@@ -437,6 +448,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                       break;
                     case TokenType.SOLANA:
                       usdValue = (totalBalance / Math.pow(10, 9)) * 100; // fallback SOL price
+                      break;
+                    case TokenType.ETHEREUM:
+                      usdValue = totalBalance * 1.0;
                       break;
                     case TokenType.FRADIUM:
                       usdValue = totalBalance * 1.0;
@@ -470,7 +484,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       
       console.log('WalletProvider: Final balances to update:', balances);
+      
+      // Log the current state before updating
+      console.log('WalletProvider: Current network values before update:', networkValues);
+      console.log('WalletProvider: Network filters:', networkFilters);
+      
       updateNetworkValues(balances);
+      
+      // Log the updated state
+      console.log('WalletProvider: Network values after update:', networkValues);
       
     } catch (error) {
       console.error('WalletProvider: Error in fetchNetworkBalances:', error);
@@ -499,10 +521,12 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           network: 
             tokenType === "bitcoin" ? { Bitcoin: null } :
             tokenType === "solana" ? { Solana: null } :
+            tokenType === "ethereum" ? { Ethereum: null } :
             { ICP: null },
           token_type: 
             tokenType === "bitcoin" ? { Bitcoin: null } :
             tokenType === "solana" ? { Solana: null } :
+            tokenType === "ethereum" ? { Ethereum: null } :
             { Fradium: null },
           address: address,
         };

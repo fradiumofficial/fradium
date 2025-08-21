@@ -260,7 +260,6 @@ export const useWalletApi = () => {
         case 'Bitcoin':
           tokenType = TokenType.BITCOIN;
           break;
-        
         case 'Solana':
           tokenType = TokenType.SOLANA;
           break;

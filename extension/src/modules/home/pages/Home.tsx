@@ -26,6 +26,7 @@ interface TokenBalance {
   balance: string;
   usdValue: string;
   icon: string;
+  isLoading?: boolean; // Add loading state for individual tokens
 }
 
 interface TokenPrice {
@@ -42,6 +43,8 @@ function Home() {
   const [ filteredTokens, setFilteredTokens ] = useState<TokenBalance[]>([]);
   const [ currentNetworkValue, setCurrentNetworkValue ] = useState<string>("$0.00");
   const [ tokenPrices, setTokenPrices ] = useState<Record<string, number>>({});
+  const [ isBalancesLoading, setIsBalancesLoading ] = useState(true); // Add loading state for balances
+  const [ hasFetchedBalances, setHasFetchedBalances ] = useState(false); // Track if balances have been fetched
   const { 
     userWallet, 
     isLoading, 
@@ -131,10 +134,44 @@ function Home() {
     return formattedBalance;
   }, []);
 
+  // Check if balances are still loading
+  const checkBalancesLoading = useCallback(() => {
+
+    const hasWallet = !!userWallet;
+    const hasPrices = Object.keys(tokenPrices).length > 0;
+    const hasReceivedBalances = Object.values(networkValues).some(value => value !== 0);
+    
+    const shouldShowLoading = hasWallet && hasPrices && (!hasFetchedBalances || !hasReceivedBalances);
+    
+    console.log('Home: Balance loading check:', {
+      hasWallet,
+      hasPrices,
+      hasReceivedBalances,
+      hasFetchedBalances,
+      shouldShowLoading,
+      networkValues
+    });
+    
+    setIsBalancesLoading(shouldShowLoading);
+  }, [networkValues, tokenPrices, userWallet, hasFetchedBalances]);
+
   // Fetch token prices on component mount
   useEffect(() => {
     fetchTokenPrices();
   }, [fetchTokenPrices]);
+
+  // Check balance loading state when dependencies change
+  useEffect(() => {
+    checkBalancesLoading();
+  }, [checkBalancesLoading]);
+
+  // Detect when balances have been fetched
+  useEffect(() => {
+    if (Object.keys(networkValues).length > 0 && !hasFetchedBalances) {
+      console.log('Home: Detected that balances have been fetched, updating state');
+      setHasFetchedBalances(true);
+    }
+  }, [networkValues, hasFetchedBalances]);
 
   // Load wallet data from the wallet context
   const loadWalletData = useCallback(async () => {
@@ -182,23 +219,27 @@ function Home() {
         let usdValue = networkValues[networkKey] || 0;
         const tokenPrice = tokenPrices[name] || 0;
         
+        const isTokenLoading = Object.keys(tokenPrices).length > 0 && 
+                              (!hasFetchedBalances || (usdValue === 0 && !hasFetchedBalances));
+        
         // Calculate actual token balance from USD value and current price
         const tokenBalance = calculateTokenBalance(usdValue, tokenPrice);
         
-        console.log(`Home: ${name} - USD: $${usdValue}, Price: $${tokenPrice}, Balance: ${tokenBalance}`);
+        console.log(`Home: ${name} - USD: $${usdValue}, Price: $${tokenPrice}, Balance: ${tokenBalance}, Loading: ${isTokenLoading}`);
         
         walletTokens.push({
           symbol,
           name,
           balance: tokenBalance,
           usdValue: usdValue.toFixed(2),
-          icon
+          icon,
+          isLoading: isTokenLoading
         });
       }
     });
     
     setTokens(walletTokens);
-  }, [userWallet, networkValues, networkFilters, tokenPrices, calculateTokenBalance]);
+  }, [userWallet, networkValues, networkFilters, tokenPrices, calculateTokenBalance, hasFetchedBalances]);
 
   useEffect(() => {
     if (userWallet && !isLoading && Object.keys(tokenPrices).length > 0) {
@@ -261,6 +302,11 @@ function Home() {
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm text-[#9BE4A0]">Loading wallet...</span>
+                </div>
+              ) : isBalancesLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-[#9BE4A0]">Fetching balances...</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-center">
@@ -330,7 +376,7 @@ function Home() {
             <div className="flex flex-col-1">
               <h1 className="text-[16px] font-semibold">Tokens</h1>
             </div>
-            <div className="flex flex-col-2">
+            <div className="flex flex-col-2 items-center space-x-2">
               <Search />
               <Settings2 />
             </div>
@@ -338,25 +384,51 @@ function Home() {
 
           {/* Token List */}
           <div className="space-y-2 mt-[10px]">
-            {filteredTokens.map((token) => (
-              <div
-                key={token.symbol}
-                className="flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center space-x-3">
-                  <img src={token.icon} alt={token.name} className="w-8 h-8" />
-                  <div>
-                    <div className="text-white font-medium">{token.symbol}</div>
-                    <div className="text-white/50 text-sm">{token.name}</div>
+            {filteredTokens.length === 0 && isBalancesLoading ? (
+              // Show loading state when no tokens but balances are loading
+              <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                <div className="w-8 h-8 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-white/50 text-sm">Loading token balances...</span>
+              </div>
+            ) : filteredTokens.length === 0 ? (
+              // Show empty state when no tokens and not loading
+              <div className="flex flex-col items-center justify-center py-8">
+                <span className="text-white/50 text-sm">No tokens available</span>
+              </div>
+            ) : (
+              // Show token list
+              filteredTokens.map((token) => (
+                <div
+                  key={token.symbol}
+                  className="flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-3">
+                    <img src={token.icon} alt={token.name} className="w-8 h-8" />
+                    <div>
+                      <div className="text-white font-medium">{token.symbol}</div>
+                      <div className="text-white/50 text-sm">{token.name}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-white font-medium">
+                      {isBalancesLoading ? (
+                        <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        token.balance
+                      )}
+                    </div>
+                    <div className="text-white/50 text-sm">
+                      {isBalancesLoading ? (
+                        <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        `$${token.usdValue}`
+                      )}
+                    </div>
                   </div>
                 </div>
-                
-                <div className="text-right">
-                  <div className="text-white font-medium">{token.balance}</div>
-                  <div className="text-white/50 text-sm">${token.usdValue}</div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

@@ -324,21 +324,54 @@ export const fetchSolanaBalance = async (address: string, identity?: any): Promi
  * @param address ICP principal or address
  * @returns Promise with balance in FUM and USD value
  */
-export const fetchFradiumBalance = async (_address: string): Promise<BalanceResult> => {
+export const fetchFradiumBalance = async (address: string, identity?: any): Promise<BalanceResult> => {
   try {
-    // This would connect to your Fradium token canister
-    // You'll need to implement this based on your token's interface
+    console.log('BalanceService: Fetching Fradium balance for address:', address);
+    console.log('BalanceService: Using identity:', identity ? 'authenticated' : 'anonymous');
     
-    // Placeholder implementation
-    const balance = 0; // Get from your canister
+    // For now, Fradium balance is placeholder since no dedicated service exists
+    // In the future, this should connect to your Fradium token canister
+    
+    // Try to get balance from local storage first
+    try {
+      const stored = await chrome.storage.local.get(['fradiumBalance', 'lastUpdated']);
+      if (stored.fradiumBalance && stored.lastUpdated) {
+        const timeDiff = Date.now() - stored.lastUpdated;
+        // Use cached balance if less than 5 minutes old
+        if (timeDiff < 5 * 60 * 1000) {
+          console.log('BalanceService: Using cached Fradium balance:', stored.fradiumBalance);
+          return stored.fradiumBalance;
+        }
+      }
+    } catch (storageError) {
+      console.warn('BalanceService: Failed to get cached Fradium balance:', storageError);
+    }
+    
+    // Placeholder implementation - replace with actual canister call
+    const balance = 0; // TODO: Get from your Fradium token canister
     const fumPrice = 1.0; // Set your token price or fetch from an exchange
     
-    return {
+    const result = {
       balance: balance,
       usdValue: balance * fumPrice
     };
+    
+    console.log('BalanceService: Final Fradium balance result (placeholder):', result);
+    
+    // Cache the result
+    try {
+      await chrome.storage.local.set({ 
+        fradiumBalance: result, 
+        lastUpdated: Date.now() 
+      });
+    } catch (cacheError) {
+      console.warn('BalanceService: Failed to cache Fradium balance:', cacheError);
+    }
+    
+    return result;
+    
   } catch (error) {
-    console.error('Error fetching Fradium balance:', error);
+    console.error('BalanceService: Error fetching Fradium balance:', error);
     return { balance: 0, usdValue: 0 };
   }
 };
@@ -394,10 +427,31 @@ export const getBalance = async (tokenType: TokenType, addresses: string[], iden
       break;
 
     case TokenType.FRADIUM:
-      // Placeholder for Fradium - not implemented yet
-      addresses.forEach(addr => {
-        balances[addr] = 0;
-      });
+      try {
+        // For Fradium, we need to handle it differently since it's ICP-based
+        const balances: Record<string, number> = {};
+        const errors: Record<string, string> = {};
+        
+        for (const address of addresses) {
+          try {
+            const result = await fetchFradiumBalance(address, identity);
+            balances[address] = result.balance;
+            console.log(`Fradium balance for ${address}: ${result.balance}`);
+          } catch (error) {
+            console.error(`Error getting Fradium balance for ${address}:`, error);
+            errors[address] = error instanceof Error ? error.message : 'Unknown error';
+            balances[address] = 0;
+          }
+        }
+        
+        return { balances, errors };
+      } catch (error) {
+        console.error('Error getting Fradium balances:', error);
+        addresses.forEach(addr => {
+          balances[addr] = 0;
+          errors[addr] = error instanceof Error ? error.message : 'Unknown error';
+        });
+      }
       break;
 
     default:
