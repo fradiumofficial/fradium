@@ -69,7 +69,7 @@ function CreateWallet() {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 py-4">
             <div className="text-center space-y-4">
               <div className="w-20 h-20 mx-auto bg-[#9BE4A0] rounded-full flex items-center justify-center">
                 <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
@@ -132,7 +132,7 @@ function CreateWallet() {
 
       case 2:
         return (
-          <div className="text-center space-y-6">
+          <div className="text-center space-y-6 py-4">
             <div className="w-20 h-20 mx-auto border-4 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
             <h2 className="text-xl font-bold text-white">Creating Your Wallet</h2>
             <p className="text-white/70 text-sm">
@@ -143,7 +143,7 @@ function CreateWallet() {
 
       case 3:
         return (
-          <div className="text-center space-y-6">
+          <div className="text-center space-y-6 py-4">
             <div className="w-20 h-20 mx-auto bg-[#9BE4A0] rounded-full flex items-center justify-center">
               <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -162,8 +162,10 @@ function CreateWallet() {
   };
 
   return (
-    <div className="w-[375px] h-[600px] bg-[#25262B] text-white p-8 flex flex-col justify-center">
-      {renderStep()}
+    <div className="w-[375px] min-h-[600px] max-h-[600px] bg-[#25262B] text-white p-8 flex flex-col overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center">
+        {renderStep()}
+      </div>
     </div>
   );
 }
