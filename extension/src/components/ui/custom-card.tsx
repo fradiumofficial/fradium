@@ -1,5 +1,5 @@
-import Safe from '../../assets/safe.svg'
-import Danger from '../../assets/danger.svg';
+import Safe from '../../../public/assets/safe.svg'
+import Danger from '../../../public/assets/danger.svg';
 
 interface SafetyCardProps {
   confidence: number;

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// Hanya impor fungsi dan tipe yang relevan untuk analisis komunitas
-import { analyzeAddressCommunity } from "../../api/AnalyzeAddressApi";
-import type { CommunityAnalysisResult } from "../../model/AnalyzeAddressModel";
+import { performComprehensiveAnalysis } from "@/lib/backgroundMessaging";
+import { detectTokenType, TokenType } from "@/lib/utils/tokenUtils";
+import type { AnalysisResult, AnalysisOptions } from "../../model/AnalyzeAddressModel";
 import { ROUTES } from "@/constants/routes";
-import { saveAnalysisToHistory } from "@/lib/localStorage";
+import { saveComprehensiveAnalysisToScanHistory } from "@/lib/localStorage";
 
 /**
- * Hook untuk mengelola logika analisis alamat HANYA menggunakan canister Komunitas.
+ * Hook untuk mengelola logika analisis alamat menggunakan kombinasi Community dan AI.
  * Menangani state loading, error, dan alur navigasi.
  */
 export const useAddressAnalysis = () => {
@@ -15,30 +15,48 @@ export const useAddressAnalysis = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startAnalysis = async (address: string) => {
+  const startAnalysis = async (address: string, _options: AnalysisOptions = {}) => {
     setLoading(true);
     setError(null);
 
-    // 1. Langsung navigasi ke halaman progress untuk UX yang lebih baik
+    // 1. Navigate to progress page for better UX
     navigate(ROUTES.ANALYZE_PROGRESS, { state: { address, isAnalyzing: true } });
 
     try {
-      // 2. Jalankan analisis komunitas
-      console.log('Starting community analysis...');
-      const result: CommunityAnalysisResult = await analyzeAddressCommunity(address);
-
-      // 3. Jika berhasil, simpan riwayat dan navigasi ke halaman hasil
-      console.log('Analysis successful. Navigating to result page.');
-      saveAnalysisToHistory(address, result, 'community');
+      const tokenType = detectTokenType(address);
       
-      navigate(ROUTES.ANALYZE_ADDRESS_COMMUNITY_RESULT, {
-        state: { result, address },
+      // Validate token type
+      if (tokenType === TokenType.UNKNOWN) {
+        throw new Error("Unsupported address format. Please provide a valid Bitcoin, Ethereum, or Solana address.");
+      }
+
+      console.log('Starting comprehensive analysis via background script...');
+      
+      // Use background script for comprehensive analysis
+      const response = await performComprehensiveAnalysis(address);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Analysis failed');
+      }
+
+      const finalResult: AnalysisResult = response.data;
+
+      // 2. Save to scan history and navigate to result page
+      console.log('Analysis successful. Saving to scan history and navigating to result page.');
+      try {
+        saveComprehensiveAnalysisToScanHistory(finalResult);
+      } catch (saveError) {
+        console.warn('Failed to save to scan history:', saveError);
+      }
+      
+      navigate(ROUTES.ANALYZE_ADDRESS_RESULT, {
+        state: { result: finalResult, address },
         replace: true
       });
 
     } catch (err) {
-      // 4. Jika terjadi error, tangani dan navigasi ke halaman gagal
-      console.error('A critical error occurred during community analysis:', err);
+      // 3. Handle errors and navigate to failure page
+      console.error('A critical error occurred during analysis:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(errorMessage);
 
@@ -47,7 +65,7 @@ export const useAddressAnalysis = () => {
         replace: true
       });
     } finally {
-      // 5. Pastikan loading selalu diatur ke false setelah selesai
+      // 4. Ensure loading is always set to false after completion
       setLoading(false);
     }
   };

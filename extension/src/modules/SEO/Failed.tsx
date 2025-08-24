@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 export default function Failed() {
   const navigate = useNavigate();
   return (
-    <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
+    <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
       {/* Header Sections */}
       <ProfileHeader />
 
@@ -16,7 +16,7 @@ export default function Failed() {
         <p className="text-red-500 text-sm mt-2">An error occurred while analyzing the address. Please try again later.</p>
       </div>
       <div className="m-4 space-y-4">
-        <NeoButton onClick={() => {}}>Retry Analysis</NeoButton>
+        <NeoButton onClick={() => { }}>Retry Analysis</NeoButton>
         <NeoButton onClick={() => navigate(ROUTES.HOME)}>Go to Home</NeoButton>
       </div>
     </div>

@@ -3,23 +3,23 @@ import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { analyzeAddressSmartContract } from "../api/AnalyzeAddressSmartcontractApi";
-import { saveAnalysisToHistory } from "@/lib/localStorage";
+// import { saveAnalysisToHistory } from "@/lib/localStorage";
 import Search from "../../../../../src/frontend/public/assets/images/analisis-progres.png";
 
 export default function AnalyzeSmartContractProgress() {
   const location = useLocation();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   // Get data from navigation state
   const address = location.state?.address;
   const isAnalyzing = location.state?.isAnalyzing;
 
   const analysisSteps = [
-    "Connecting to Smart Contract Scanner...", 
-    "Analyzing Contract Bytecode...", 
-    "Checking for Known Vulnerabilities...", 
-    "Scanning Security Patterns...", 
+    "Connecting to Smart Contract Scanner...",
+    "Analyzing Contract Bytecode...",
+    "Checking for Known Vulnerabilities...",
+    "Scanning Security Patterns...",
     "Generating Security Report..."
   ];
 
@@ -34,25 +34,24 @@ export default function AnalyzeSmartContractProgress() {
     const performAnalysis = async () => {
       try {
         const result = await analyzeAddressSmartContract(address);
-        
+
         // Simpan ke localStorage
-        const historyItem = saveAnalysisToHistory(address, result, 'smartcontract');
-        console.log('Smart contract analysis saved to history:', historyItem);
-        
+        // const historyItem = saveAnalysisToHistory(address, result, 'smartcontract');
+        // console.log('Smart contract analysis saved to history:', historyItem);
+
         // Navigate ke halaman result dengan data
-        navigate(ROUTES.ANALYZE_SMART_CONTRACT_RESULT, { 
-          state: { 
-            result, 
+        navigate(ROUTES.ANALYZE_SMART_CONTRACT_RESULT, {
+          state: {
+            result,
             address,
-            historyId: historyItem.id 
-          } 
+          }
         });
       } catch (err) {
         console.error('Error analyzing smart contract:', err);
         navigate(ROUTES.ANALYZE_SMART_CONTRACT, {
-          state: { 
+          state: {
             error: (err as Error).message || 'Failed to analyze smart contract',
-            address 
+            address
           }
         });
       }
@@ -61,7 +60,7 @@ export default function AnalyzeSmartContractProgress() {
     const stepInterval = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev >= analysisSteps.length - 1) {
-          return 0; 
+          return 0;
         }
         return prev + 1;
       });
@@ -74,9 +73,9 @@ export default function AnalyzeSmartContractProgress() {
     const maxTimeout = setTimeout(() => {
       clearInterval(stepInterval);
       navigate(ROUTES.ANALYZE_SMART_CONTRACT, {
-        state: { 
+        state: {
           error: "Analysis timed out. Please try again.",
-          address 
+          address
         }
       });
     }, 120000); // 2 minutes timeout
@@ -88,7 +87,7 @@ export default function AnalyzeSmartContractProgress() {
   }, [isAnalyzing, address, navigate, analysisSteps.length]);
 
   return (
-    <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
+    <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-hidden">
       <div className="px-4 py-12 w-full h-full flex flex-col items-center shadow-lg relative overflow-hidden">
         {/* Animated circles background */}
         <div className="mb-8 flex items-center justify-center w-full h-48 z-10 mx-auto relative">
@@ -156,13 +155,12 @@ export default function AnalyzeSmartContractProgress() {
           {analysisSteps.map((step, index) => (
             <motion.div
               key={index}
-              className={`transition-all duration-500 relative ${
-                index === currentStep 
-                  ? "text-[#99E39E] font-medium opacity-100" 
-                  : index < currentStep 
-                    ? "text-[#B0B6BE] opacity-70" 
-                    : "text-[#B0B6BE] opacity-40"
-              }`}
+              className={`transition-all duration-500 relative ${index === currentStep
+                ? "text-[#99E39E] font-medium opacity-100"
+                : index < currentStep
+                  ? "text-[#B0B6BE] opacity-70"
+                  : "text-[#B0B6BE] opacity-40"
+                }`}
               animate={{ scale: index === currentStep ? 1.05 : 1 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >

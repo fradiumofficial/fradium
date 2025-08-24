@@ -1,133 +1,491 @@
-import { useState, useEffect } from "react";
-import topBarImage from "../../../assets/Illus.svg"
-import NeoButton from "../../../components/ui/custom-button";
-import AnalyzeAddress from "../../../assets/analyze_address.svg";
-import AnalyzeContract from "../../../assets/analyze_contract.svg";
-import Bitcoin from "../../../assets/bitcoin.svg";
+import { useState, useEffect, useCallback } from "react";
+import TopLeft from "../../../assets/top_left.svg";
+import TopRight from "../../../assets/top_right.svg";
 import ProfileHeader from "../../../components/ui/header";
-import { ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import bitoinIcon from "@/../public/assets/tokens/bitcoin.svg";
+import ethIcon from "@/../public/assets/tokens/eth.svg";
+import solanaIcon from "@/../public/assets/tokens/solana.svg";
+import fumIcon from "@/../public/assets/tokens/fum.svg";
+import {
+  EyeClosedIcon,
+  EyeIcon,
+  MoveUpRight,
+  MoveDownLeft,
+  Search,
+  Settings2,
+} from "lucide-react";
+import { useWallet } from "@/lib/contexts/walletContext";
+import { useNetwork } from "@/modules/all_network/networkContext";
+import type { WalletAddress } from "@/icp/services/backend_service";
 import { ROUTES } from "@/constants/routes";
-import HistoryCard from "@/components/ui/history-card";
-import { getAnalysisHistory, type HistoryItem } from "@/lib/localStorage";
+import { useNavigate } from "react-router-dom";
+
+interface TokenBalance {
+  symbol: string;
+  name: string;
+  balance: string;
+  usdValue: string;
+  icon: string;
+  isLoading?: boolean; // Add loading state for individual tokens
+}
+
+interface TokenPrice {
+  usd: number;
+}
+
+interface PriceResponse {
+  [key: string]: TokenPrice;
+}
 
 function Home() {
-  const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
+  const [tokens, setTokens] = useState<TokenBalance[]>([]);
+  const [filteredTokens, setFilteredTokens] = useState<TokenBalance[]>([]);
+  const [currentNetworkValue, setCurrentNetworkValue] =
+    useState<string>("$0.00");
+  const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
+  const [isBalancesLoading, setIsBalancesLoading] = useState(true); // Add loading state for balances
+  const [hasFetchedBalances, setHasFetchedBalances] = useState(false); // Track if balances have been fetched
+  const {
+    userWallet,
+    isLoading,
+    hideBalance,
+    setHideBalance,
+    getNetworkValue,
+    networkValues,
+    networkFilters,
+  } = useWallet();
+  const { selectedNetwork, getNetworkDisplayName, getNetworkTokenType } =
+    useNetwork();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Load recent history (maksimal 2 item terbaru)
-    const loadRecentHistory = () => {
-      const history = getAnalysisHistory();
-      setRecentHistory(history.items.slice(0, 2)); // Ambil 2 item terbaru
-    };
+  const toggleVisibility = () => setHideBalance(!hideBalance);
 
-    loadRecentHistory();
+  const handleWalletClick = () => {
+    // Navigate to wallet home page
+    // navigate(ROUTES.WALLET_HOME);
+  };
 
-    // Set up interval untuk refresh history setiap 5 detik (opsional)
-    const interval = setInterval(loadRecentHistory, 5000);
-    
-    return () => clearInterval(interval);
+  const handleSendClick = () => {
+    // Navigate to wallet home page for send functionality
+    navigate(ROUTES.SEND);
+  };
+
+  const handleReceiveClick = () => {
+    // Navigate to wallet home page for receive functionality
+    navigate(ROUTES.RECEIVE);
+  };
+
+  // Fetch current token prices from CoinGecko
+  const fetchTokenPrices = useCallback(async () => {
+    try {
+      console.log("Home: Fetching token prices...");
+      const response = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd"
+      );
+      const data: PriceResponse = await response.json();
+
+      const prices = {
+        Bitcoin: data.bitcoin?.usd || 0,
+        Ethereum: data.ethereum?.usd || 0,
+        Solana: data.solana?.usd || 0,
+        Fradium: 1.0, // Placeholder price for Fradium
+      };
+
+      console.log("Home: Token prices fetched:", prices);
+      setTokenPrices(prices);
+    } catch (error) {
+      console.error("Home: Error fetching token prices:", error);
+      // Set default prices if API fails
+      setTokenPrices({
+        Bitcoin: 45000,
+        Ethereum: 3000,
+        Solana: 100,
+        Fradium: 1.0,
+      });
+    }
   }, []);
 
-  const getCategoryText = (item: HistoryItem) => {
-    const typeText = item.analysisType === 'icp' ? 'AI Analysis' : 'Community';
-    const statusText = item.isSafe ? 'Safe' : 'Risky';
-    return `${statusText} - ${typeText}`;
-  };
+  // Calculate token balance from USD value and current price
+  const calculateTokenBalance = useCallback(
+    (usdValue: number, tokenPrice: number): string => {
+      // If token price is 0, return default format
+      if (tokenPrice === 0) return "0.00";
 
-  const handleTryWalletClick = () => {
-    // Open Fradium Wallet page in new tab
-    window.open('https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io/products-wallet', '_blank');
-  };
+      const balance = usdValue / tokenPrice;
 
+      // Format to 6 decimal places then remove trailing zeros
+      let formattedBalance = balance.toFixed(6);
+
+      // Remove trailing zeros and unnecessary decimal point
+      formattedBalance = formattedBalance.replace(/\.?0+$/, "");
+
+      // If the result is empty or just a dot, return 0.00
+      if (
+        !formattedBalance ||
+        formattedBalance === "0" ||
+        formattedBalance === "."
+      ) {
+        return "0.00";
+      }
+
+      // If no decimal point, add .00 for consistency
+      if (!formattedBalance.includes(".")) {
+        return formattedBalance + ".00";
+      }
+
+      // If only one decimal place, add one more zero
+      const parts = formattedBalance.split(".");
+      if (parts[1] && parts[1].length === 1) {
+        return formattedBalance + "0";
+      }
+
+      return formattedBalance;
+    },
+    []
+  );
+
+  // Check if balances are still loading
+  const checkBalancesLoading = useCallback(() => {
+    const hasWallet = !!userWallet;
+    const hasPrices = Object.keys(tokenPrices).length > 0;
+    const hasReceivedBalances = Object.values(networkValues).some(
+      (value) => value !== 0
+    );
+
+    const shouldShowLoading =
+      hasWallet && hasPrices && (!hasFetchedBalances || !hasReceivedBalances);
+
+    console.log("Home: Balance loading check:", {
+      hasWallet,
+      hasPrices,
+      hasReceivedBalances,
+      hasFetchedBalances,
+      shouldShowLoading,
+      networkValues,
+    });
+
+    setIsBalancesLoading(shouldShowLoading);
+  }, [networkValues, tokenPrices, userWallet, hasFetchedBalances]);
+
+  // Fetch token prices on component mount
+  useEffect(() => {
+    fetchTokenPrices();
+  }, [fetchTokenPrices]);
+
+  // Check balance loading state when dependencies change
+  useEffect(() => {
+    checkBalancesLoading();
+  }, [checkBalancesLoading]);
+
+  // Detect when balances have been fetched
+  useEffect(() => {
+    if (Object.keys(networkValues).length > 0 && !hasFetchedBalances) {
+      console.log(
+        "Home: Detected that balances have been fetched, updating state"
+      );
+      setHasFetchedBalances(true);
+    }
+  }, [networkValues, hasFetchedBalances]);
+
+  // Load wallet data from the wallet context
+  const loadWalletData = useCallback(async () => {
+    if (!userWallet || !userWallet.addresses) {
+      setTokens([]);
+      return;
+    }
+
+    console.log(
+      "Home: Loading wallet data for addresses:",
+      userWallet.addresses
+    );
+
+    // Create token balances based on wallet addresses
+    const walletTokens: TokenBalance[] = [];
+
+    userWallet.addresses.forEach((addr: WalletAddress) => {
+      let symbol = "";
+      let name = "";
+      let icon = "";
+      let isEnabled = false;
+
+      if ("Bitcoin" in addr.token_type) {
+        symbol = "BTC";
+        name = "Bitcoin";
+        icon = bitoinIcon;
+        isEnabled = networkFilters?.Bitcoin ?? true;
+      } else if ("Ethereum" in addr.token_type) {
+        symbol = "ETH";
+        name = "Ethereum";
+        icon = ethIcon;
+        isEnabled = networkFilters?.Ethereum ?? true;
+      } else if ("Solana" in addr.token_type) {
+        symbol = "SOL";
+        name = "Solana";
+        icon = solanaIcon;
+        isEnabled = networkFilters?.Solana ?? true;
+      } else if ("Fradium" in addr.token_type) {
+        symbol = "FUM";
+        name = "Fradium";
+        icon = fumIcon;
+        isEnabled = networkFilters?.Fradium ?? true;
+      }
+
+      // Only add token if the network is enabled
+      if (symbol && isEnabled) {
+        const networkKey = name as keyof typeof networkValues;
+        let usdValue = networkValues[networkKey] || 0;
+        const tokenPrice = tokenPrices[name] || 0;
+
+        const isTokenLoading =
+          Object.keys(tokenPrices).length > 0 &&
+          (!hasFetchedBalances || (usdValue === 0 && !hasFetchedBalances));
+
+        // Calculate actual token balance from USD value and current price
+        const tokenBalance = calculateTokenBalance(usdValue, tokenPrice);
+
+        console.log(
+          `Home: ${name} - USD: $${usdValue}, Price: $${tokenPrice}, Balance: ${tokenBalance}, Loading: ${isTokenLoading}`
+        );
+
+        walletTokens.push({
+          symbol,
+          name,
+          balance: tokenBalance,
+          usdValue: usdValue.toFixed(2),
+          icon,
+          isLoading: isTokenLoading,
+        });
+      }
+    });
+
+    setTokens(walletTokens);
+  }, [
+    userWallet,
+    networkValues,
+    networkFilters,
+    tokenPrices,
+    calculateTokenBalance,
+    hasFetchedBalances,
+  ]);
+
+  useEffect(() => {
+    if (userWallet && !isLoading && Object.keys(tokenPrices).length > 0) {
+      loadWalletData();
+    }
+  }, [userWallet, isLoading, tokenPrices, loadWalletData]);
+
+  // Filter tokens and calculate network value based on selected network
+  useEffect(() => {
+    const filterTokensAndCalculateValue = () => {
+      if (selectedNetwork === "all") {
+        setFilteredTokens(tokens);
+        setCurrentNetworkValue(getNetworkValue("All Networks"));
+      } else {
+        const networkType = getNetworkTokenType(selectedNetwork);
+        const filtered = tokens.filter((token) => token.name === networkType);
+        setFilteredTokens(filtered);
+
+        // Calculate value for specific network
+        const networkDisplayName = getNetworkDisplayName(selectedNetwork);
+        setCurrentNetworkValue(getNetworkValue(networkDisplayName));
+      }
+    };
+
+    filterTokensAndCalculateValue();
+  }, [
+    tokens,
+    selectedNetwork,
+    getNetworkValue,
+    getNetworkDisplayName,
+    getNetworkTokenType,
+  ]);
 
   return (
-     <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
-
-      { /* Header Sections */}
+    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
+      {/* Header Sections */}
       <ProfileHeader />
 
-      { /* Carousel Section */}
-      <div className="bg-[#1F2128] m-4 flex items-center justify-center">
-        <div className="flex flex-row w-full h-[194px] bg-radial-[at_100%_0%] from-[#96EA63]/10 via-[#0C101C] to-[#0C101C] to-90%">
-          <div className="flex">
-            <img src={topBarImage} alt="" className="w-auto h-[194px]" />
+      <div className="flex flex-col items-center space-y-4">
+        <div
+          className="w-[327px] h-[215px] bg-[#1F2025] cursor-pointer hover:bg-[#2A2B30] transition-colors"
+          onClick={handleWalletClick}
+        >
+          <div className="flex flex-row justify-between">
+            <img src={TopLeft} alt="Top Left" />
+            <img src={TopRight} alt="Top Right" />
           </div>
-          <div className="flex-2 flex items-center justify-left px-4">
-            <div className="flex flex-col">
-              <div className="bg-[#823EFD] w-[120px] mb-2">
-                <button 
-                onClick={handleTryWalletClick}
-                className="
-                w-full flex items-center 
-                justify-center gap-2
-                px-3 py-3
-                font-bold text-white
-                bg-[#99E39E]
-                border-2 border-gray-800
-                transform -translate-y-1 translate-x-1
-                hover:-translate-y-0 hover:translate-x-0
-                active:translate-y-0 active:translate-x-0
-                transition-transform duration-150 ease-in-out
-                ">
-                  <div className="flex flex-row text-[#000510]">
-                    Try Wallet
-                  </div>
-                  <div className="flex h-[16px] w-[16px] text-[#000510] text-center mb-2">
-                    <ArrowRight />
-                  </div>
+          <div className="flex justify-center items-center">
+            <div className="font-sans flex-col items-start">
+              <div className="flex items-center justify-center">
+                <span className="text-white text-4xl font-bold">
+                  {hideBalance ? "••••" : currentNetworkValue}
+                </span>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent wallet navigation when toggling visibility
+                    toggleVisibility();
+                  }}
+                  className="ml-1 text-gray-400 hover:text-white transition-colors"
+                  aria-label="Toggle balance visibility"
+                >
+                  {hideBalance ? <EyeClosedIcon /> : <EyeIcon />}
                 </button>
               </div>
-              <div className="flex flex-col mt-4">
-                <h1 className="text-white text-[16px]">Level up your Protection!</h1>
-                <h1 className="text-white/70 text-[12px]">Get full protection with Fradium Wallet!</h1>
+
+              {/* Wallet Status */}
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-[#9BE4A0]">
+                    Loading wallet...
+                  </span>
+                </div>
+              ) : isBalancesLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-[#9BE4A0]">
+                    Fetching balances...
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <span className="text-sm text-[#9BE4A0]">Wallet loaded</span>
+                </div>
+              )}
+
+              <div className="flex flex-row">
+                <div className="basis-64 m-1">
+                  <div className="flex flex-row w-[145px] h-[60px] bg-white/10 justify-center items-center gap-4">
+                    <div>
+                      <h1 className="text-white font-bold text-[16px]">Receive</h1>
+                    </div>
+                    <div className="w-[50px] bg-[#823EFD]">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReceiveClick();
+                        }}
+                        className="
+                        w-[50px] h-[45px] flex items-center 
+                        justify-center gap-2
+                        font-bold text-white
+                        bg-[#99E39E]
+                        border-2 border-gray-800
+                        transform -translate-y-1 translate-x-1
+                        hover:-translate-y-0 hover:translate-x-0
+                        active:translate-y-0 active:translate-x-0
+                        transition-transform duration-150 ease-in-out"
+                      >
+                        <MoveDownLeft className="text-black" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="basis-64 m-1">
+                  <div className="flex flex-row w-[145px] h-[60px] bg-white/10 justify-center items-center gap-4">
+                    <div>
+                      <h1 className="text-white font-bold text-[16px]">
+                        Send
+                      </h1>
+                    </div>
+                    <div className="w-[50px] bg-[#823EFD]">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSendClick();
+                        }}
+                        className="
+                        w-[50px] h-[45px] flex items-center 
+                        justify-center gap-2
+                        font-bold text-white
+                        bg-[#99E39E]
+                        border-2 border-gray-800
+                        transform -translate-y-1 translate-x-1
+                        hover:-translate-y-0 hover:translate-x-0
+                        active:translate-y-0 active:translate-x-0
+                        transition-transform duration-150 ease-in-out"
+                      >
+                        <MoveUpRight className="text-black" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      { /* Analyze and Scan Address Section */}
-      <div className="flex flex-row m-4">
-        <div className="basis-1/2 p-1">
-          <NeoButton icon={AnalyzeContract} onClick={() => navigate(ROUTES.ANALYZE_SMART_CONTRACT)}> Analyze Contract 
-          </NeoButton>
-        </div>
-        <div className="basis-1/2 p-1">
-          <NeoButton icon={AnalyzeAddress} onClick={() => navigate(ROUTES.ANALYZE_ADDRESS)}> Analyze Address 
-          </NeoButton>
-        </div>
-      </div>
-
-      { /* History Section */}
-      <div className="flex flex-row justify-between m-4">
-        <h1 className="text-[16px] font-semibold">History</h1>
-        <button className="text-[#99E39E] hover:text-white transition-transform duration-300 ease-in-out" onClick={() => navigate(ROUTES.HISTORY)}>View All</button>
-      </div>
-
-      <div className="flex flex-col items-center m-4">
-        {recentHistory.length === 0 ? (
-          <div className="text-center py-4">
-            <p className="text-white/50 text-sm">No analysis history yet</p>
-            <p className="text-white/30 text-xs mt-1">Analyze an address to see it here</p>
+          <div className="flex flex-row justify-between mt-[20px]">
+            <div className="flex flex-col-1">
+              <h1 className="text-[16px] font-semibold">Tokens</h1>
+            </div>
+            <div className="flex flex-col-2 items-center space-x-2">
+              <Search />
+              <Settings2 />
+            </div>
           </div>
-        ) : (
-          recentHistory.map((item) => (
-            <HistoryCard
-              key={item.id}
-              onClick={() => navigate(ROUTES.DETAIL_HISTORY.replace(':id', item.id))}
-              icon={Bitcoin}
-              address={item.address}
-              category={getCategoryText(item)}
-              date={item.date}
-            />
-          ))
-        )}
-      </div>
 
+          {/* Token List */}
+          <div className="space-y-2 mt-[10px]">
+            {filteredTokens.length === 0 && isBalancesLoading ? (
+              // Show loading state when no tokens but balances are loading
+              <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                <div className="w-8 h-8 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-white/50 text-sm">
+                  Loading token balances...
+                </span>
+              </div>
+            ) : filteredTokens.length === 0 ? (
+              // Show empty state when no tokens and not loading
+              <div className="flex flex-col items-center justify-center py-8">
+                <span className="text-white/50 text-sm">
+                  No tokens available
+                </span>
+              </div>
+            ) : (
+              // Show token list
+              filteredTokens.map((token) => (
+                <div
+                  key={token.symbol}
+                  className="flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src={token.icon}
+                      alt={token.name}
+                      className="w-8 h-8"
+                    />
+                    <div>
+                      <div className="text-white font-medium">
+                        {token.symbol}
+                      </div>
+                      <div className="text-white/50 text-sm">{token.name}</div>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-white font-medium">
+                      {isBalancesLoading ? (
+                        <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        token.balance
+                      )}
+                    </div>
+                    <div className="text-white/50 text-sm">
+                      {isBalancesLoading ? (
+                        <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        `$${token.usdValue}`
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-export default Home
+export default Home;

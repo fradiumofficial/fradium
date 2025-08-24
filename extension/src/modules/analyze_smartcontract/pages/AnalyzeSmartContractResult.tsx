@@ -3,54 +3,53 @@ import ProfileHeader from "@/components/ui/header";
 import Wallet from "../../../assets/Wallet.svg";
 import NeoButton from "@/components/ui/custom-button";
 import type { Root as AnalysisReport } from "../model/AnalyzeSmartContractModel";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { getHistoryItemById } from "@/lib/localStorage";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { ROUTES } from "@/constants/routes";
 
-interface LocationState {
-  result: AnalysisReport;
-  address: string;
-  historyId: string;
-}
+// interface LocationState {
+//   result: AnalysisReport;
+//   address: string;
+//   historyId: string;
+// }
 
 function AnalyzeSmartContractResult() {
-  const location = useLocation();
+  // const location = useLocation();
   const navigate = useNavigate();
-  const [analysisData, setAnalysisData] = useState<{
+  const [analysisData ] = useState<{
     result: AnalysisReport;
     address: string;
   } | null>(null);
 
-  useEffect(() => {
-    const state = location.state as LocationState;
-    
-    if (state && state.result && state.address) {
-      setAnalysisData({
-        result: state.result,
-        address: state.address
-      });
-    } else if (state && state.historyId) {
-      // Try to get from localStorage if direct state not available
-      const historyItem = getHistoryItemById(state.historyId);
-      if (historyItem && historyItem.analysisType === 'smartcontract') {
-        setAnalysisData({
-          result: historyItem.result as AnalysisReport,
-          address: historyItem.address
-        });
-      } else {
-        // Redirect back if no valid data available
-        navigate(ROUTES.ANALYZE_SMART_CONTRACT);
-      }
-    } else {
-      // Redirect back if no state available
-      navigate(ROUTES.ANALYZE_SMART_CONTRACT);
-    }
-  }, [location.state, navigate]);
+  // useEffect(() => {
+  //   const state = location.state as LocationState;
+
+  //   if (state && state.result && state.address) {
+  //     setAnalysisData({
+  //       result: state.result,
+  //       address: state.address
+  //     });
+  //   } else if (state && state.historyId) {
+  //     // Try to get from localStorage if direct state not available
+  //     const historyItem = getHistoryItemById(state.historyId);
+  //     if (historyItem && historyItem.analysisType === 'smartcontract') {
+  //       setAnalysisData({
+  //         result: historyItem.result as AnalysisReport,
+  //         address: historyItem.address
+  //       });
+  //     } else {
+  //       // Redirect back if no valid data available
+  //       navigate(ROUTES.ANALYZE_SMART_CONTRACT);
+  //     }
+  //   } else {
+  //     // Redirect back if no state available
+  //     navigate(ROUTES.ANALYZE_SMART_CONTRACT);
+  //   }
+  // }, [location.state, navigate]);
 
   if (!analysisData) {
     return (
-      <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md flex items-center justify-center">
+      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md flex items-center justify-center">
         <div className="text-center">
           <p>Loading analysis results...</p>
         </div>
@@ -112,7 +111,7 @@ function AnalyzeSmartContractResult() {
   );
 
   return (
-    <div className="w-[400px] h-auto max-h-[570px] overflow-y-auto space-y-4 bg-[#25262B] text-white shadow-md">
+    <div className="w-[375px] h-[600px] overflow-y-auto pb-20 bg-[#25262B] text-white">
 
       { /* Header Sections */}
       <ProfileHeader />
@@ -123,20 +122,20 @@ function AnalyzeSmartContractResult() {
         <div className="mb-4 mt-4">
           <p className="text-xs break-all bg-white/5 p-2 rounded">{address}</p>
         </div>
-        
-        <SafetyCard 
-          confidence={isSafe ? 95 : 25} 
-          title={"Smart Contract"} 
-          isSafe={isSafe} 
+
+        <SafetyCard
+          confidence={isSafe ? 95 : 25}
+          title={"Smart Contract"}
+          isSafe={isSafe}
         />
-        
+
         <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Contract Details</h1>
         <div className="grid grid-cols-2 gap-4">
           {contractDetails.map((detail, index) => (
             <div key={index} className="bg-white/5 flex-1 items-center gap-2 p-4">
               <p className="font-medium text-[18px] pb-2">{detail.value}</p>
               <div className="flex flex-row">
-                <img src={detail.icon} alt="Icon" className="w-5 h-5"/>
+                <img src={detail.icon} alt="Icon" className="w-5 h-5" />
                 <p className="font-normal text-[14px] text-white/60 ps-1">{detail.label}</p>
               </div>
             </div>
@@ -153,21 +152,19 @@ function AnalyzeSmartContractResult() {
               <div key={index} className="bg-white/5 p-4 rounded">
                 <div className="flex items-center mb-2">
                   <WarningIcon />
-                  <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
-                    issue.severity.toLowerCase() === 'high' ? 'bg-red-500/20 text-red-300' :
-                    issue.severity.toLowerCase() === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-                    'bg-blue-500/20 text-blue-300'
-                  }`}>
+                  <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${issue.severity.toLowerCase() === 'high' ? 'bg-red-500/20 text-red-300' :
+                      issue.severity.toLowerCase() === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-blue-500/20 text-blue-300'
+                    }`}>
                     {issue.severity}
                   </span>
                 </div>
                 <h3 className="font-semibold text-sm mb-1">{issue.title}</h3>
-                <p className="text-xs text-white/70 mb-2">{issue.description}</p>
-                <p className="text-xs text-white/50">Function: {issue.function}</p>
+                <p className="text-xs text-white/70 mb-2">Function: {issue.function}</p>
                 {issue['swc-url'] && (
-                  <a 
-                    href={issue['swc-url']} 
-                    target="_blank" 
+                  <a
+                    href={issue['swc-url']}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-400 hover:text-blue-300"
                   >
@@ -207,12 +204,12 @@ function AnalyzeSmartContractResult() {
 
       { /* Action Button */}
       <div className="p-4">
-        <NeoButton 
-          icon={Wallet} 
+        <NeoButton
+          icon={Wallet}
           onClick={() => navigate(ROUTES.HOME)}
         >
           Complete
-        </NeoButton>  
+        </NeoButton>
       </div>
     </div>
   );

@@ -50,8 +50,7 @@ export type RansomwareAnalysisResponse =
   | { Err: string };
 
 /**
- * Model untuk hasil analisis dari canister ransomware.
- * Asumsi strukturnya mirip, sesuaikan jika berbeda.
+ * Model untuk hasil analisis dari canister AI.
  */
 export interface ICPAnalysisResult {
   transactions_analyzed: number;
@@ -60,4 +59,25 @@ export interface ICPAnalysisResult {
   address: string;
   confidence_level: "HIGH" | "MEDIUM" | "LOW";
   ransomware_probability: number;
+}
+
+/**
+ * Combined analysis result that can contain both community and AI data
+ */
+export interface AnalysisResult {
+  isSafe: boolean;
+  source: "community" | "ai" | "smartcontract";
+  communityData?: CommunityAnalysisResult;
+  aiData?: ICPAnalysisResult;
+  tokenType: string;
+  address: string;
+}
+
+/**
+ * Analysis options for different token types
+ */
+export interface AnalysisOptions {
+  etherscanApiKey?: string;
+  cryptocompareApiKey?: string;
+  moralisApiKey?: string;
 }
