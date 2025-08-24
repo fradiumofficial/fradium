@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Fradium - Crypto Security Extension",
-  "version": "1.0.2",
+  "name": "Fradium - The Trust Layer for Web3 Transaction",
+  "version": "1.0.3",
   "description": "Advanced fraud detection and prevention for crypto transactions. Analyze addresses, smart contracts, and ransomware",
   "author": "Fradium Official",
   "homepage_url": "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
