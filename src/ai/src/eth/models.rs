@@ -2,7 +2,6 @@
 
 use candid::CandidType;
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::cell::RefCell;
 
 pub mod logs {
@@ -10,10 +9,12 @@ pub mod logs {
     thread_local! {
         static LOGS: RefCell<Vec<String>> = RefCell::new(Vec::new());
     }
+    #[allow(dead_code)]
     pub fn add_log(message: String) {
         ic_cdk::println!("{}", &message);
         LOGS.with(|logs| logs.borrow_mut().push(message));
     }
+    #[allow(dead_code)]
     pub fn drain_logs() -> Vec<String> {
         LOGS.with(|logs| logs.borrow_mut().drain(..).collect())
     }
@@ -27,6 +28,7 @@ pub struct TokenInfo {
     pub decimals: u32,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct SentTxInfo {
     pub value_btc: f64,
@@ -34,6 +36,7 @@ pub struct SentTxInfo {
     pub block: u64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ReceivedTxInfo {
     pub value_btc: f64,

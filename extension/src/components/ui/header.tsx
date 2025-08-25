@@ -24,16 +24,7 @@ const ProfileHeader = () => {
     setPrincipal(readStoredPrincipal());
   }, []);
 
-  const rightIconSrc =
-    selectedNetwork === "btc"
-      ? "/assets/bitcoin-dark.svg"
-      : selectedNetwork === "eth"
-      ? "/assets/ethereum-dark.svg"
-      : selectedNetwork === "sol"
-      ? "/assets/solana-dark.svg"
-      : selectedNetwork === "fra"
-      ? "/assets/fradium-dark.svg"
-      : "/assets/construction.svg";
+  const rightIconSrc = selectedNetwork === "btc" ? "/assets/bitcoin-dark.svg" : selectedNetwork === "eth" ? "/assets/ethereum-dark.svg" : selectedNetwork === "sol" ? "/assets/solana-dark.svg" : selectedNetwork === "fra" ? "/assets/fradium-dark.svg" : "/assets/construction.svg";
 
   const principalText = shortPrincipal(principal || undefined);
 
@@ -42,46 +33,22 @@ const ProfileHeader = () => {
       <div className="relative flex items-center justify-between">
         {/* Left: Fradium Logo */}
         <div className="flex items-center">
-          <img
-            src="/assets/icon128.png"
-            alt="Fradium Logo"
-            className="w-10 h-10"
-          />
+          <img src="/assets/icon128.png" alt="Fradium Logo" className="w-10 h-10" />
         </div>
 
         {/* Center: Wallet Information */}
         <div className="flex-1 flex flex-col items-center">
-          <h1 className="text-white text-sm font-medium mb-1">Neu's Wallet</h1>
+          <h1 className="text-white text-sm font-medium mb-1">Fradium Wallet</h1>
           <div className="flex items-center gap-2">
-            <span className="text-gray-400 font-medium text-xs">
-              {principalText}
-            </span>
-            {copiedAddress === principal ? (
-              <Check className="w-4 h-4 text-green-500" />
-            ) : (
-              <Copy
-                className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white transition-colors"
-                onClick={() => principal && handleCopyAddress(principal)}
-              />
-            )}
-
+            <span className="text-gray-400 font-medium text-xs">{principalText}</span>
+            {copiedAddress === principal ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => principal && handleCopyAddress(principal)} />}
           </div>
         </div>
 
         {/* Right: Context-aware Icon + trigger */}
         <div className="flex items-center">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="w-10 h-10 rounded-full flex items-center justify-center mr-1 transition-colors"
-          >
-            <img
-              src={rightIconSrc}
-              alt="Network"
-              className={`w-10 h-10 ${
-                selectedNetwork !== "all" ? "rounded-full" : ""
-              }`}
-            />
+          <button type="button" onClick={() => setOpen(true)} className="w-10 h-10 rounded-full flex items-center justify-center mr-1 transition-colors">
+            <img src={rightIconSrc} alt="Network" className={`w-10 h-10 ${selectedNetwork !== "all" ? "rounded-full" : ""}`} />
           </button>
           <ChevronDown className="w-5 h-5 text-gray-300" />
         </div>

@@ -29,13 +29,13 @@ format_cycles() {
 }
 
 # Array of canisters to check
-canisters=("backend" "token" "bitcoin" "ransomware_detector" "chatbot" "frontend" "solana" "ethereum")
+canisters=("backend" "token" "bitcoin" "ai" "chatbot" "frontend" "solana" "ethereum")
 
 for canister in "${canisters[@]}"; do
     echo -n "   📦 ${canister}: "
     
     # Get canister status and extract cycles
-    status_output=$(dfx canister status $canister 2>/dev/null)
+    status_output=$(dfx canister --ic status $canister 2>/dev/null)
     
     if [ $? -eq 0 ]; then
         # Extract cycles from status output
