@@ -1,7 +1,5 @@
 import ProfileHeader from "@/components/ui/header";
 import { ChevronLeft } from "lucide-react";
-import QrCodeIcon from "../../../../public/assets/qr_code.svg";
-import CopyIcon from "../../../../public/assets/content_copy.svg";
 import NeoButton from "@/components/ui/custom-button";
 import { ROUTES } from "@/constants/routes";
 import { useNavigate } from "react-router-dom";
@@ -21,45 +19,49 @@ function Receive() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { getAddressForNetwork, hasWallet, isLoading: walletLoading } = useWalletApi();
+
   const [addresses, setAddresses] = useState<NetworkAddress[]>([
-    { network: 'Bitcoin', address: '', isLoading: true },
-    { network: 'Solana', address: '', isLoading: true },
-    { network: 'Ethereum', address: '0xf0000000', isLoading: true },
-    { network: 'Fradium', address: '', isLoading: true }
+    { network: "Bitcoin", address: "", isLoading: true },
+    { network: "Solana", address: "", isLoading: true },
+    { network: "Ethereum", address: "0xf0000000", isLoading: true },
+    { network: "Fradium", address: "", isLoading: true },
   ]);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
   const [qrMeta, setQrMeta] = useState<{ address: string; network: string } | null>(null);
 
-  // Load addresses when component mounts
+  // Use chrome.runtime.getURL for icons (works in extensions)
+  const QrCodeIcon = chrome.runtime.getURL("assets/qr_code.svg");
+  const CopyIcon = chrome.runtime.getURL("assets/content_copy.svg");
+
+  // Load addresses on mount
   useEffect(() => {
     const loadAddresses = async () => {
-      if (!isAuthenticated || !hasWallet || walletLoading) {
-        return;
-      }
+      if (!isAuthenticated || !hasWallet || walletLoading) return;
 
       try {
-        const networks = ['Bitcoin', 'Solana', 'Ethereum', 'Fradium'];
+        const networks = ["Bitcoin", "Solana", "Ethereum", "Fradium"];
         const updatedAddresses = await Promise.all(
           networks.map(async (network) => {
             try {
-              const result = getAddressForNetwork(network);
+              const result = await getAddressForNetwork(network); // ensure it's awaited
               return {
                 network,
-                address: result.success ? result.data || '' : '',
+                address: result.success ? result.data || "" : "",
                 isLoading: false,
-                error: result.success ? undefined : result.error
+                error: result.success ? undefined : result.error,
               };
-            } catch (error) {
-              console.error(`Error loading ${network} address:`, error);
+            } catch (err) {
+              console.error(`Error loading ${network} address:`, err);
               return {
                 network,
-                address: '',
+                address: "",
                 isLoading: false,
-                error: 'Failed to load address'
+                error: "Failed to load address",
               };
             }
           })
@@ -67,30 +69,30 @@ function Receive() {
 
         setAddresses(updatedAddresses);
       } catch (error) {
-        console.error('Error loading addresses:', error);
-        setAddresses(prev => prev.map(addr => ({
-          ...addr,
-          isLoading: false,
-          error: 'Failed to load addresses'
-        })));
+        console.error("Error loading addresses:", error);
+        setAddresses((prev) =>
+          prev.map((addr) => ({
+            ...addr,
+            isLoading: false,
+            error: "Failed to load addresses",
+          }))
+        );
       }
     };
 
     loadAddresses();
   }, [isAuthenticated, hasWallet, walletLoading, getAddressForNetwork]);
 
-  // Copy address to clipboard
   const handleCopyAddress = async (address: string, network: string) => {
     try {
       await navigator.clipboard.writeText(address);
       setCopiedAddress(`${network}-${address}`);
-      setTimeout(() => setCopiedAddress(null), 2000); // Clear after 2 seconds
+      setTimeout(() => setCopiedAddress(null), 2000);
     } catch (error) {
-      console.error('Failed to copy address:', error);
+      console.error("Failed to copy address:", error);
     }
   };
 
-  // Generate and show QR code modal
   const handleShowQRCode = async (address: string, network: string) => {
     try {
       setQrLoading(true);
@@ -99,15 +101,16 @@ function Receive() {
       setQrMeta({ address, network });
 
       const url = await QRCode.toDataURL(address, {
-        errorCorrectionLevel: 'M',
+        errorCorrectionLevel: "M",
         width: 240,
         margin: 1,
-        color: { dark: '#000000', light: '#FFFFFF' },
+        color: { dark: "#000000", light: "#FFFFFF" },
       });
+
       setQrDataUrl(url);
     } catch (error) {
-      console.error('Failed to generate QR code:', error);
-      setQrError('Failed to generate QR code');
+      console.error("Failed to generate QR code:", error);
+      setQrError("Failed to generate QR code");
       setQrDataUrl(null);
     } finally {
       setQrLoading(false);
@@ -129,25 +132,25 @@ function Receive() {
       <div key={network} className="mb-4">
         <h1 className="text-[14px] font-medium text-white mb-[6px]">{network}:</h1>
         <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between">
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={isLoading ? "Loading..." : error ? `Error: ${error}` : address || "No address available"}
             placeholder={`${network} address...`}
             className="bg-transparent outline-none flex-1 text-xs"
             readOnly
           />
           <div className="flex flex-row gap-[12px]">
-            <img 
-              src={QrCodeIcon} 
-              alt="QR Code" 
-              className={`w-5 h-5 cursor-pointer ${!address || isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+            <img
+              src={QrCodeIcon}
+              alt="QR Code"
+              className={`w-5 h-5 ${!address || isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}
               onClick={() => address && !isLoading && handleShowQRCode(address, network)}
             />
             <div className="relative">
-              <img 
-                src={CopyIcon} 
-                alt="Copy" 
-                className={`w-5 h-5 cursor-pointer ${!address || isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+              <img
+                src={CopyIcon}
+                alt="Copy"
+                className={`w-5 h-5 ${!address || isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}
                 onClick={() => address && !isLoading && handleCopyAddress(address, network)}
               />
               {isCopied && (
@@ -162,15 +165,12 @@ function Receive() {
     );
   };
 
-  // Redirect if not authenticated or no wallet
   if (!isAuthenticated) {
     return (
-      <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md p-[24px] flex items-center justify-center">
+      <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex items-center justify-center p-[24px]">
         <div className="text-center">
           <p className="text-white/70 mb-4">Please authenticate to view your addresses</p>
-          <NeoButton onClick={() => navigate(ROUTES.WELCOME)}>
-            Go to Login
-          </NeoButton>
+          <NeoButton onClick={() => navigate(ROUTES.WELCOME)}>Go to Login</NeoButton>
         </div>
       </div>
     );
@@ -178,19 +178,17 @@ function Receive() {
 
   if (!hasWallet && !walletLoading) {
     return (
-      <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md p-[24px] flex items-center justify-center">
+      <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex items-center justify-center p-[24px]">
         <div className="text-center">
           <p className="text-white/70 mb-4">You need to create a wallet first</p>
-          <NeoButton onClick={() => navigate(ROUTES.WALLET_CONFIRMATION)}>
-            Create Wallet
-          </NeoButton>
+          <NeoButton onClick={() => navigate(ROUTES.WALLET_CONFIRMATION)}>Create Wallet</NeoButton>
         </div>
       </div>
     );
   }
-  
+
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
+    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto relative">
       <ProfileHeader />
 
       <div className="flex flex-col px-[24px]">
@@ -201,20 +199,15 @@ function Receive() {
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-[20px] font-semibold text-white px-[12px]">
-            Receive
-          </h1>
+          <h1 className="text-[20px] font-semibold text-white px-[12px]">Receive</h1>
         </div>
-        
       </div>
 
-      <div className="flex flex-col px-[24px]">
-        {addresses.map(renderAddressInput)}
-      </div>
+      <div className="flex flex-col px-[24px]">{addresses.map(renderAddressInput)}</div>
 
-      {/* QR Code Modal */}
+      {/* Fixed: QR Code Modal must be fixed positioning */}
       {isQrOpen && (
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center px-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
           <div className="w-full max-w-[320px] bg-[#1F2025] border border-white/10 rounded-lg p-4 text-white relative">
             <button
               aria-label="Close"
@@ -246,13 +239,18 @@ function Receive() {
               </div>
             </div>
             <div className="mt-4 flex justify-end">
-              <button onClick={closeQrModal} className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded text-sm">Close</button>
+              <button
+                onClick={closeQrModal}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded text-sm"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default Receive;

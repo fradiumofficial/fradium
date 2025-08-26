@@ -7,18 +7,19 @@ import { getCanisterId } from "@/lib/config";
 let actor: ActorSubclass<_SERVICE> | null = null;
 
 export const getSolanaActor = async (identity?: Identity): Promise<ActorSubclass<_SERVICE>> => {
-  // Clear cached actor if identity changes
-  if (identity && actor) {
-    actor = null;
+  // Solana canister requires authenticated identity
+  if (!identity) {
+    throw new Error('Solana actor creation requires authenticated identity - anonymous calls not allowed');
   }
-  
-  if (actor && !identity) {
-    return actor;
+
+  // Clear cached actor if identity changes
+  if (actor) {
+    actor = null;
   }
 
   try {
     console.log("Creating agent for Solana...");
-    console.log("Solana: Using identity:", identity ? 'authenticated' : 'anonymous');
+    console.log("Solana: Using authenticated identity:", identity.getPrincipal().toText());
     const agent = await createAgent(identity);
     const canisterId = getCanisterId("solana");
 
@@ -29,11 +30,6 @@ export const getSolanaActor = async (identity?: Identity): Promise<ActorSubclass
       agent,
       canisterId,
     }) as ActorSubclass<_SERVICE>;
-
-    // Only cache if no specific identity (for anonymous calls)
-    if (!identity) {
-      actor = newActor;
-    }
 
     console.log("Solana actor created successfully");
     return newActor;
@@ -53,6 +49,10 @@ export const clearSolanaActor = (): void => {
 
 export const getSolanaAddress = async (identity: Identity): Promise<string> => {
   try {
+    if (!identity) {
+      throw new Error('Solana address fetch requires authenticated identity');
+    }
+    
     console.log('getSolanaAddress: Starting with identity:', identity.getPrincipal().toText());
     const actor = await getSolanaActor(identity);
     console.log('getSolanaAddress: Actor created successfully');
@@ -68,7 +68,13 @@ export const getSolanaAddress = async (identity: Identity): Promise<string> => {
 export const getSolanaBalance = async (address: string, identity?: Identity): Promise<bigint> => {
   try {
     console.log('getSolanaBalance: Starting for address:', address);
-    console.log('getSolanaBalance: Using identity:', identity ? 'authenticated' : 'anonymous');
+    
+    // Solana canister requires authenticated identity
+    if (!identity) {
+      throw new Error('Solana balance fetch requires authenticated identity - anonymous calls not allowed');
+    }
+    
+    console.log('getSolanaBalance: Using authenticated identity:', identity.getPrincipal().toText());
     const actor = await getSolanaActor(identity);
     const balance = await actor.get_balance([address]);
     console.log('getSolanaBalance: Received balance:', balance.toString());
@@ -83,6 +89,18 @@ export const getSolanaBalance = async (address: string, identity?: Identity): Pr
 export const getSolanaBalances = async (addresses: string[], identity?: Identity): Promise<{ balances: Record<string, number>; errors: Record<string, string> }> => {
   const balances: Record<string, number> = {};
   const errors: Record<string, string> = {};
+
+  // Solana canister requires authenticated identity
+  if (!identity) {
+    console.error('getSolanaBalances: No identity provided - Solana requires authentication');
+    for (const address of addresses) {
+      errors[address] = 'Solana balance fetch requires authenticated identity';
+      balances[address] = 0;
+    }
+    return { balances, errors };
+  }
+
+  console.log('getSolanaBalances: Using authenticated identity:', identity.getPrincipal().toText());
 
   for (const address of addresses) {
     try {

@@ -12,7 +12,7 @@ const CANISTER_IDS = {
     token: ''
   },
   ic: {
-    ransomware_detector: 'zkoni-faaaa-aaaar-qbsaa-cai', // This is actually the AI canister
+    ransomware_detector: 'zkoni-faaaa-aaaar-qbsaa-cai', // Mainnet canister ID
     backend: 'oqcob-6iaaa-aaaar-qbr7q-cai', // Mainnet canister ID
     ai: 'zkoni-faaaa-aaaar-qbsaa-cai', // Use the actual AI canister ID
     bitcoin: 'sr4wk-4qaaa-aaaae-qfdta-cai',
@@ -85,7 +85,6 @@ export const createAgentWithFallback = async (): Promise<string> => {
   console.warn('All IC hosts failed, using default host');
   return CANISTER_HOST;
 };
-
 // Bitcoin faucet configuration
 export const BITCOIN_CONFIG = {
   // Enable/disable faucet for new addresses (should be false in production)

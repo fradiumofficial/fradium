@@ -15,10 +15,16 @@ import {
   Settings2,
 } from "lucide-react";
 import { useWallet } from "@/lib/contexts/walletContext";
+import { useAuth } from "@/lib/contexts/authContext";
 import { useNetwork } from "@/modules/all_network/networkContext";
 import type { WalletAddress } from "@/icp/services/backend_service";
 import { ROUTES } from "@/constants/routes";
 import { useNavigate } from "react-router-dom";
+
+// Service imports - using existing service files
+import { getBitcoinBalances } from "@/icp/services/bitcoin_service";
+import { getSolanaBalances } from "@/icp/services/solana_service";
+import { getEthereumBalances } from "@/icp/services/ethereum_service";
 
 interface TokenBalance {
   symbol: string;
@@ -26,7 +32,8 @@ interface TokenBalance {
   balance: string;
   usdValue: string;
   icon: string;
-  isLoading?: boolean; // Add loading state for individual tokens
+  isLoading?: boolean;
+  hasError?: boolean;
 }
 
 interface TokenPrice {
@@ -37,26 +44,49 @@ interface PriceResponse {
   [key: string]: TokenPrice;
 }
 
+// Token types - using const instead of enum to avoid syntax error
+const TokenType = {
+  BITCOIN: "Bitcoin",
+  ETHEREUM: "Ethereum", 
+  SOLANA: "Solana",
+  FUM: "Fradium",
+  UNKNOWN: "Unknown"
+} as const;
+
 function Home() {
   const [tokens, setTokens] = useState<TokenBalance[]>([]);
   const [filteredTokens, setFilteredTokens] = useState<TokenBalance[]>([]);
-  const [currentNetworkValue, setCurrentNetworkValue] =
-    useState<string>("$0.00");
+  const [currentNetworkValue, setCurrentNetworkValue] = useState<string>("$0.00");
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
-  const [isBalancesLoading, setIsBalancesLoading] = useState(true); // Add loading state for balances
-  const [hasFetchedBalances, setHasFetchedBalances] = useState(false); // Track if balances have been fetched
+  const [isBalancesLoading, setIsBalancesLoading] = useState(true);
+  
+  // New state for balance management - similar to asset-page.jsx
+  const [tokenBalances, setTokenBalances] = useState<Record<string, { balances: Record<string, number>, errors: Record<string, string> }>>({});
+  const [tokenAmountValues, setTokenAmountValues] = useState<Record<string, { amount: string, value: string, isLoading: boolean }>>({});
+  
   const {
     userWallet,
     isLoading,
     hideBalance,
     setHideBalance,
     getNetworkValue,
-    networkValues,
     networkFilters,
+    updateNetworkValues,
   } = useWallet();
-  const { selectedNetwork, getNetworkDisplayName, getNetworkTokenType } =
-    useNetwork();
+  
+  // Get identity from auth context for authenticated balance fetching
+  const { identity } = useAuth();
+  const { selectedNetwork, getNetworkDisplayName, getNetworkTokenType } = useNetwork();
   const navigate = useNavigate();
+
+  // Validate identity availability
+  useEffect(() => {
+    if (!identity) {
+      console.warn("Home: No authenticated identity available - balance fetching will be limited");
+    } else {
+      console.log("Home: Authenticated identity available:", identity.getPrincipal().toText());
+    }
+  }, [identity]);
 
   const toggleVisibility = () => setHideBalance(!hideBalance);
 
@@ -74,6 +104,236 @@ function Home() {
     // Navigate to wallet home page for receive functionality
     navigate(ROUTES.RECEIVE);
   };
+
+  // ================= BALANCE MANAGEMENT FUNCTIONS - Similar to asset-page.jsx =================
+
+  // Get addresses for specific token type
+  const getAddressesForToken = useCallback((tokenType: string): string[] => {
+    if (!userWallet?.addresses) return [];
+
+    return userWallet.addresses
+      .filter((addressObj) => {
+        const addressTokenType = Object.keys(addressObj.token_type)[0];
+        return addressTokenType === tokenType;
+      })
+      .map((addressObj) => addressObj.address);
+  }, [userWallet?.addresses]);
+
+  // Get balances for specific token type - using existing service functions with identity
+  const getBalance = useCallback(async (tokenType: string, addresses: string[]) => {
+    const balances: Record<string, number> = {};
+    const errors: Record<string, string> = {};
+
+    try {
+      switch (tokenType) {
+        case TokenType.BITCOIN:
+          const bitcoinResult = await getBitcoinBalances(addresses, identity);
+          return bitcoinResult;
+
+        case TokenType.SOLANA:
+          const solanaResult = await getSolanaBalances(addresses, identity);
+          return solanaResult;
+
+        case TokenType.ETHEREUM:
+          const ethereumResult = await getEthereumBalances(addresses);
+          return ethereumResult;
+
+        case TokenType.FUM:
+          // Placeholder for FUM - not implemented yet
+          for (const address of addresses) {
+            balances[address] = 0;
+          }
+          return { balances, errors };
+
+        default:
+          for (const address of addresses) {
+            balances[address] = 0;
+          }
+          return { balances, errors };
+      }
+    } catch (error) {
+      console.error(`Error getting ${tokenType} balances:`, error);
+      for (const address of addresses) {
+        balances[address] = 0;
+        errors[address] = error instanceof Error ? error.message : 'Unknown error';
+      }
+      return { balances, errors };
+    }
+  }, [identity]);
+
+  // Helper function to convert base units to readable amounts
+  const getAmountToken = useCallback((tokenType: string, baseAmount: number): string => {
+    switch (tokenType) {
+      case TokenType.BITCOIN:
+        return (baseAmount / 100000000).toFixed(8).replace(/\.?0+$/, '');
+      case TokenType.SOLANA:
+        return (baseAmount / 1000000000).toFixed(9).replace(/\.?0+$/, '');
+      case TokenType.ETHEREUM:
+      case TokenType.FUM:
+        return (baseAmount / 1e18).toFixed(18).replace(/\.?0+$/, '');
+      default:
+        return baseAmount.toString();
+    }
+  }, []);
+
+  // Helper function to get USD price for token amount
+  const getPriceUSD = useCallback(async (tokenType: string, baseAmount: number): Promise<string> => {
+    try {
+      const amount = getAmountToken(tokenType, baseAmount);
+      const numericAmount = parseFloat(amount) || 0;
+      
+      let price = 0;
+      switch (tokenType) {
+        case TokenType.BITCOIN:
+          price = tokenPrices.Bitcoin || 0;
+          break;
+        case TokenType.ETHEREUM:
+          price = tokenPrices.Ethereum || 0;
+          break;
+        case TokenType.SOLANA:
+          price = tokenPrices.Solana || 0;
+          break;
+        case TokenType.FUM:
+          price = tokenPrices.Fradium || 0;
+          break;
+        default:
+          price = 0;
+      }
+      
+      const usdValue = numericAmount * price;
+      return `$${usdValue.toFixed(2)}`;
+    } catch (error) {
+      console.error(`Error calculating USD price for ${tokenType}:`, error);
+      return "$0.00";
+    }
+  }, [tokenPrices, getAmountToken]);
+
+  // Fetch all balances - similar to asset-page.jsx
+  const fetchAllBalances = useCallback(async () => {
+    if (!userWallet?.addresses) return;
+
+    // Validate identity is available for authenticated calls
+    if (!identity) {
+      console.error("Home: No identity available - cannot fetch authenticated balances");
+      setIsBalancesLoading(false);
+      return;
+    }
+
+    console.log("Home: Starting to fetch all balances...");
+    console.log("Home: Using identity:", `Authenticated (${identity.getPrincipal().toText()})`);
+    setIsBalancesLoading(true);
+    
+    const supportedTokens = [TokenType.BITCOIN, TokenType.ETHEREUM, TokenType.SOLANA, TokenType.FUM];
+
+    try {
+      for (const tokenType of supportedTokens) {
+        if (networkFilters[tokenType as keyof typeof networkFilters]) {
+          const addresses = getAddressesForToken(tokenType);
+
+          if (addresses.length > 0) {
+            try {
+              console.log(`Home: Fetching ${tokenType} balances for addresses:`, addresses);
+              console.log(`Home: ${tokenType} - Using identity: Authenticated (${identity.getPrincipal().toText()})`);
+              
+              // Special handling for Solana to ensure authenticated calls
+              if (tokenType === TokenType.SOLANA) {
+                console.log(`Home: Solana - Ensuring authenticated identity for canister calls`);
+              }
+              
+              const balanceResult = await getBalance(tokenType, addresses);
+
+              setTokenBalances((prev) => ({
+                ...prev,
+                [tokenType]: balanceResult,
+              }));
+
+              const totalAmountInToken = Object.values(balanceResult.balances).reduce((sum, v) => sum + v, 0);
+
+              // Get readable amount and USD value
+              const amount = getAmountToken(tokenType, totalAmountInToken);
+              const value = await getPriceUSD(tokenType, totalAmountInToken);
+
+              // Validate amount and value before saving
+              const finalAmount = amount && amount !== "0" ? amount : "0";
+              const finalValue = value && value !== "$NaN" && value !== "$0.00" ? value : "$0.00";
+
+              const amountValueResult = {
+                amount: finalAmount,
+                value: finalValue,
+                isLoading: false,
+              };
+
+              setTokenAmountValues((prev) => ({
+                ...prev,
+                [tokenType]: amountValueResult,
+              }));
+
+              console.log(`Home: ${tokenType} - Amount: ${finalAmount}, Value: ${finalValue}`);
+            } catch (error) {
+              console.error(`Error fetching ${tokenType} data:`, error);
+              
+              // Special error handling for Solana authentication issues
+              if (tokenType === TokenType.SOLANA && error instanceof Error) {
+                if (error.message.includes('anonymous principal is not allowed') || 
+                    error.message.includes('requires authenticated identity')) {
+                  console.error(`Home: Solana authentication error - this should not happen with proper identity`);
+                }
+              }
+            }
+          } else {
+            // No addresses for this token type
+            setTokenBalances((prev) => ({
+              ...prev,
+              [tokenType]: { balances: {}, errors: {} },
+            }));
+            setTokenAmountValues((prev) => ({
+              ...prev,
+              [tokenType]: { amount: "0", value: "$0.00", isLoading: false },
+            }));
+          }
+        }
+      }
+    } finally {
+      setIsBalancesLoading(false);
+      console.log("Home: Finished fetching all balances");
+    }
+  }, [userWallet?.addresses, networkFilters, getAddressesForToken, getBalance, getAmountToken, getPriceUSD, identity]);
+
+  // Get total portfolio value
+  const getTotalPortfolioValue = useCallback((): number => {
+    let total = 0;
+
+    for (const tokenType in tokenAmountValues) {
+      const amountValue = tokenAmountValues[tokenType];
+      if (amountValue?.value && typeof amountValue.value === "string") {
+        const numericValue = parseFloat(amountValue.value.replace("$", "").replace(",", "")) || 0;
+        total += numericValue;
+      }
+    }
+
+    return total;
+  }, [tokenAmountValues]);
+
+  // Update network values when token amounts change
+  useEffect(() => {
+    const networkValues = {
+      "All Networks": getTotalPortfolioValue(),
+      Bitcoin: 0,
+      Ethereum: 0,
+      Solana: 0,
+      Fradium: 0,
+    };
+
+    for (const [tokenType, amountValue] of Object.entries(tokenAmountValues)) {
+      if (amountValue?.value && typeof amountValue.value === "string") {
+        const numericValue = parseFloat(amountValue.value.replace("$", "").replace(",", "")) || 0;
+        networkValues[tokenType as keyof typeof networkValues] = numericValue;
+      }
+    }
+
+    console.log("Home: Updating network values:", networkValues);
+    updateNetworkValues(networkValues);
+  }, [tokenAmountValues, updateNetworkValues, getTotalPortfolioValue]);
 
   // Fetch current token prices from CoinGecko
   const fetchTokenPrices = useCallback(async () => {
@@ -105,99 +365,14 @@ function Home() {
     }
   }, []);
 
-  // Calculate token balance from USD value and current price
-  const calculateTokenBalance = useCallback(
-    (usdValue: number, tokenPrice: number): string => {
-      // If token price is 0, return default format
-      if (tokenPrice === 0) return "0.00";
-
-      const balance = usdValue / tokenPrice;
-
-      // Format to 6 decimal places then remove trailing zeros
-      let formattedBalance = balance.toFixed(6);
-
-      // Remove trailing zeros and unnecessary decimal point
-      formattedBalance = formattedBalance.replace(/\.?0+$/, "");
-
-      // If the result is empty or just a dot, return 0.00
-      if (
-        !formattedBalance ||
-        formattedBalance === "0" ||
-        formattedBalance === "."
-      ) {
-        return "0.00";
-      }
-
-      // If no decimal point, add .00 for consistency
-      if (!formattedBalance.includes(".")) {
-        return formattedBalance + ".00";
-      }
-
-      // If only one decimal place, add one more zero
-      const parts = formattedBalance.split(".");
-      if (parts[1] && parts[1].length === 1) {
-        return formattedBalance + "0";
-      }
-
-      return formattedBalance;
-    },
-    []
-  );
-
-  // Check if balances are still loading
-  const checkBalancesLoading = useCallback(() => {
-    const hasWallet = !!userWallet;
-    const hasPrices = Object.keys(tokenPrices).length > 0;
-    const hasReceivedBalances = Object.values(networkValues).some(
-      (value) => value !== 0
-    );
-
-    const shouldShowLoading =
-      hasWallet && hasPrices && (!hasFetchedBalances || !hasReceivedBalances);
-
-    console.log("Home: Balance loading check:", {
-      hasWallet,
-      hasPrices,
-      hasReceivedBalances,
-      hasFetchedBalances,
-      shouldShowLoading,
-      networkValues,
-    });
-
-    setIsBalancesLoading(shouldShowLoading);
-  }, [networkValues, tokenPrices, userWallet, hasFetchedBalances]);
-
-  // Fetch token prices on component mount
-  useEffect(() => {
-    fetchTokenPrices();
-  }, [fetchTokenPrices]);
-
-  // Check balance loading state when dependencies change
-  useEffect(() => {
-    checkBalancesLoading();
-  }, [checkBalancesLoading]);
-
-  // Detect when balances have been fetched
-  useEffect(() => {
-    if (Object.keys(networkValues).length > 0 && !hasFetchedBalances) {
-      console.log(
-        "Home: Detected that balances have been fetched, updating state"
-      );
-      setHasFetchedBalances(true);
-    }
-  }, [networkValues, hasFetchedBalances]);
-
-  // Load wallet data from the wallet context
+  // Load wallet data from the wallet context - Updated to use new balance system
   const loadWalletData = useCallback(async () => {
     if (!userWallet || !userWallet.addresses) {
       setTokens([]);
       return;
     }
 
-    console.log(
-      "Home: Loading wallet data for addresses:",
-      userWallet.addresses
-    );
+    console.log("Home: Loading wallet data for addresses:", userWallet.addresses);
 
     // Create token balances based on wallet addresses
     const walletTokens: TokenBalance[] = [];
@@ -232,28 +407,24 @@ function Home() {
 
       // Only add token if the network is enabled
       if (symbol && isEnabled) {
-        const networkKey = name as keyof typeof networkValues;
-        let usdValue = networkValues[networkKey] || 0;
-        const tokenPrice = tokenPrices[name] || 0;
-
-        const isTokenLoading =
-          Object.keys(tokenPrices).length > 0 &&
-          (!hasFetchedBalances || (usdValue === 0 && !hasFetchedBalances));
-
-        // Calculate actual token balance from USD value and current price
-        const tokenBalance = calculateTokenBalance(usdValue, tokenPrice);
+        const amountValueResult = tokenAmountValues[name] || { amount: "0", value: "$0.00", isLoading: false };
+        const balanceResult = tokenBalances[name] || { balances: {}, errors: {} };
+        
+        const isTokenLoading = amountValueResult.isLoading || isBalancesLoading;
+        const hasError = Object.keys(balanceResult.errors || {}).length > 0;
 
         console.log(
-          `Home: ${name} - USD: $${usdValue}, Price: $${tokenPrice}, Balance: ${tokenBalance}, Loading: ${isTokenLoading}`
+          `Home: ${name} - Amount: ${amountValueResult.amount}, Value: ${amountValueResult.value}, Loading: ${isTokenLoading}, HasError: ${hasError}`
         );
 
         walletTokens.push({
           symbol,
           name,
-          balance: tokenBalance,
-          usdValue: usdValue.toFixed(2),
+          balance: amountValueResult.amount || "0",
+          usdValue: amountValueResult.value || "$0.00",
           icon,
           isLoading: isTokenLoading,
+          hasError,
         });
       }
     });
@@ -261,18 +432,31 @@ function Home() {
     setTokens(walletTokens);
   }, [
     userWallet,
-    networkValues,
+    tokenAmountValues,
+    tokenBalances,
     networkFilters,
-    tokenPrices,
-    calculateTokenBalance,
-    hasFetchedBalances,
+    isBalancesLoading,
   ]);
 
+  // Fetch token prices on component mount
   useEffect(() => {
-    if (userWallet && !isLoading && Object.keys(tokenPrices).length > 0) {
+    fetchTokenPrices();
+  }, [fetchTokenPrices]);
+
+  // Fetch balances when wallet is available and prices are loaded
+  useEffect(() => {
+    if (userWallet && !isLoading && Object.keys(tokenPrices).length > 0 && identity) {
+      console.log("Home: Starting balance fetch with authenticated identity...");
+      fetchAllBalances();
+    }
+  }, [userWallet, isLoading, tokenPrices, fetchAllBalances, identity]);
+
+  // Load wallet data when balances change
+  useEffect(() => {
+    if (userWallet && Object.keys(tokenAmountValues).length > 0) {
       loadWalletData();
     }
-  }, [userWallet, isLoading, tokenPrices, loadWalletData]);
+  }, [userWallet, tokenAmountValues, loadWalletData]);
 
   // Filter tokens and calculate network value based on selected network
   useEffect(() => {
@@ -349,8 +533,12 @@ function Home() {
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center justify-center">
-                  <span className="text-sm text-[#9BE4A0]">Wallet loaded</span>
+                <div className="flex flex-col items-center justify-center gap-1">
+                  {identity && (
+                    <span className="text-xs text-[#9BE4A0]/70">
+                      Authenticated as : {identity.getPrincipal().toText().slice(0, 8)}...
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -399,7 +587,7 @@ function Home() {
                         w-[50px] h-[45px] flex items-center 
                         justify-center gap-2
                         font-bold text-white
-                        bg-[#99E39E]
+                        bg-[#99E4A0]
                         border-2 border-gray-800
                         transform -translate-y-1 translate-x-1
                         hover:-translate-y-0 hover:translate-x-0
@@ -455,26 +643,31 @@ function Home() {
                       className="w-8 h-8"
                     />
                     <div>
-                      <div className="text-white font-medium">
+                      <div className="text-white font-medium flex flex-row">
                         {token.symbol}
+                        {token.hasError && (
+                          <div className="text-red-400 text-xs px-2">- Error fetching balance</div>
+                        )}
                       </div>
+                      
                       <div className="text-white/50 text-sm">{token.name}</div>
+                      
                     </div>
                   </div>
 
                   <div className="text-right">
                     <div className="text-white font-medium">
-                      {isBalancesLoading ? (
+                      {token.isLoading ? (
                         <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
                       ) : (
                         token.balance
                       )}
                     </div>
                     <div className="text-white/50 text-sm">
-                      {isBalancesLoading ? (
+                      {token.isLoading ? (
                         <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
                       ) : (
-                        `$${token.usdValue}`
+                        token.usdValue
                       )}
                     </div>
                   </div>
