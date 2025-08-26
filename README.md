@@ -43,18 +43,6 @@ A lightweight, on-chain security wallet that runs directly in your browser. **Sc
 - Cross-chain token support: Look up and analyze multiple supported coins seamlessly from a single UI.
 - On-chain evidence links for every flagged entity
 
-**Browser Extension Preview**
-
-| Dashboard                                                                                                                   | History                                                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| ![Dashboard](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-dashboard.png) | ![History](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-history.png) |
-
-| Address Threat Analyzer                                                                                                                        | Analyze Menu                                                                                                                      |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| ![Address Threat Analyzer](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-result.png) | ![Analyze Menu](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-page.png) |
-
----
-
 ### ⚙️ Quickstart (Extension)
 
 ```bash
@@ -70,6 +58,18 @@ npm run build
 # Chrome/Edge: chrome://extensions → Enable Developer Mode → Load unpacked → dist/
 # Firefox: about:debugging#/runtime/this-firefox → Load Temporary Add-on → dist/manifest.json
 ```
+
+**Browser Extension Preview**
+
+| Dashboard                                                                                                                   | History                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| ![Dashboard](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-dashboard.png) | ![History](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-history.png) |
+
+| Address Threat Analyzer                                                                                                                        | Analyze Menu                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| ![Address Threat Analyzer](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-result.png) | ![Analyze Menu](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-page.png) |
+
+---
 
 ## 🌟 Features of Fradium
 
