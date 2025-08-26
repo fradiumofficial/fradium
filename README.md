@@ -20,6 +20,31 @@ The platform provides a complete set of tools including a decentralized wallet a
 
 In the growing world of decentralized finance, users interact with thousands of blockchain addresses and smart contracts every day, many of which may be unverified, anonymous, or even malicious. Traditional wallets and explorers offer limited protection or context, putting users at risk of fraud, scams, and security breaches. Fradium addresses this challenge by providing a secure, AI-powered platform with community-backed reports to detect threats in real time. Supporting multiple blockchains, Fradium enables users to analyze, report, and transact safely across networks with confidence. Every transaction is checked before execution, giving users full protection and peace of mind as they navigate Web3.
 
+## 🤖 AI-Powered Threat Detection
+
+Fradium's core security layer is powered by advanced machine learning models that analyze blockchain addresses in real-time to detect potential threats, scams, and malicious activity.
+
+### Multi-Chain AI Models
+- **Bitcoin Detection**: Analyzes UTXO patterns, transaction clustering, and spending behaviors
+- **Ethereum Detection**: Examines smart contract interactions, ERC-20 token flows, and gas usage patterns  
+- **Solana Detection**: Evaluates program interactions, token account behaviors, and validator patterns
+
+### Key AI Features
+- **On-Chain Inference**: ML models run directly on Internet Computer canisters for trustless predictions
+- **Hybrid Processing**: Optimized architectures for each blockchain's unique characteristics
+- **Real-Time Analysis**: Instant threat assessment before transaction execution
+- **Continuous Learning**: Models improve through community feedback and new threat data
+
+### Technical Highlights
+| Component | Technology |
+|-----------|------------|
+| **ML Framework** | Neural Networks (MLP) via ONNX |
+| **Inference Engine** | tract-onnx on Internet Computer |
+| **Model Training** | Python (scikit-learn) |
+| **Deployment** | Embedded ONNX models in Wasm canisters |
+
+The AI system processes thousands of behavioral features per address, including transaction patterns, timing analysis, amount distributions, and network relationships to provide accurate threat assessments with minimal false positives.
+
 ## 📚 Complete Resources
 
 - Mainnet: https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io
