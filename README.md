@@ -45,13 +45,13 @@ A lightweight, on-chain security wallet that runs directly in your browser. **Sc
 
 **Browser Extension Preview**
 
-| Dashboard                                                                                                          | History                                                                                                          |
-| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| ![Dashboard](https://lh3.google.com/u/0/d/1UmlLvJznYVZ43K3qBtVkVtMwpHjUbfYU=w2244-h1720-iv1?auditContext=prefetch) | ![History](https://lh3.google.com/u/0/d/1SjWFvPJ38c9RvI0Evk16yF2-diXxrkRO=w2244-h1720-iv1?auditContext=prefetch) |
+| Dashboard                                                                                                                   | History                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| ![Dashboard](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-dashboard.png) | ![History](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-history.png) |
 
-| Address Threat Analyzer                                                                                                          | Analyze Menu                                                                                                          |
-| -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| ![Address Threat Analyzer](https://lh3.google.com/u/0/d/1mKHnkNnR0g_moIbUDDzYOASM6JN3lLsl=w2244-h1720-iv1?auditContext=prefetch) | ![Analyze Menu](https://lh3.google.com/u/0/d/1aA-eA9E80y1kq9_Hr_xFwfLENR2LN6wg=w2244-h1720-iv1?auditContext=prefetch) |
+| Address Threat Analyzer                                                                                                                        | Analyze Menu                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| ![Address Threat Analyzer](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-result.png) | ![Analyze Menu](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-page.png) |
 
 ---
 
@@ -113,21 +113,21 @@ npm run build
 
 ## 📎 Demo App
 
-| Landing Page                                                                                                     | Extension Section                                                                                                |
-| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://lh3.google.com/u/0/d/1o3YGtX8SsOvvMq8XRtX9t1jSd4aWYBBh=w2244-h1720-iv1?auditContext=prefetch) | ![Image 2](https://lh3.google.com/u/0/d/18-o7YyUpvtMUdUIHswlWPIop3U36-64v=w2244-h1720-iv1?auditContext=prefetch) |
+| Landing Page                                                                                                       | Extension Section                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/landing-page.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/landing-extension.png) |
 
-| Wallet App                                                                                                         | AI Address Threat Detection                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://lh3.google.com/u/0/d/1QSvD3TGCM4MbrYMjxfxrelepeTs6tkbs=w2244-h1720-iv2?auditContext=forDisplay) | ![Image 2](https://lh3.google.com/u/0/d/1gtoIkWnR1C1hiR2SXd-RrrWpIv28sehu=w2244-h1720-iv1?auditContext=prefetch) |
+| Wallet App                                                                                                       | AI Address Threat Detection                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/wallet-app.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/analyze-address.png) |
 
-| Transaction History                                                                                              | Community Create Report                                                                                          |
-| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://lh3.google.com/u/0/d/1Xk-zaz7U1cnqt2HL_U1euNmwcXMnIMz6=w2244-h1720-iv1?auditContext=prefetch) | ![Image 2](https://lh3.google.com/u/0/d/1KA6AgUDr1nicNTB3iTPBMNo2c0_Dvu40=w2244-h1720-iv1?auditContext=prefetch) |
+| Transaction History                                                                                                       | Community Create Report                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/transaction-history.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/create-report.png) |
 
-| Unstake $FUM Token                                                                                                    | Fradium LLM Assistant                                                                                            |
-| --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| ![Unstake FUM1](https://lh3.google.com/u/0/d/1f7XJjIpRkh0vBjegbBkSqADh4ra_3dYQ=w2244-h1720-iv1?auditContext=prefetch) | ![Image 2](https://lh3.google.com/u/0/d/1BPRPprvDF8dUXEY_xxwcSHP1D_9w8Qol=w2244-h1720-iv1?auditContext=prefetch) |
+| Unstake $FUM Token                                                                                                       | Fradium LLM Assistant                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| ![Unstake FUM1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/unstake-token.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/assistant.png) |
 
 ## 🤖 How the Fradium AI Threat Detection Works
 
