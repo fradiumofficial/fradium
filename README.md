@@ -121,9 +121,9 @@ npm run build
 | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/wallet-app.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/create-report.png) |
 
-| Transaction History                                                                                                       | AI Address Threat Detection Report                                                                                   |
-| ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/transaction-history.png) | ![Image 2]https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/analyze-address.png) |
+| Transaction History                                                                                                       | AI Address Threat Detection Report                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/transaction-history.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/analyze-address.png) |
 
 | Unstake $FUM Token                                                                                                       | Fradium LLM Assistant                                                                                           |
 | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
