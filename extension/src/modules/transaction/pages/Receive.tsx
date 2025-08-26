@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useWalletApi } from "@/modules/wallet/api/WalletApi";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/contexts/authContext";
+import QrCodeIcon from "../../../../public/assets/qr_code.svg";
 
 interface NetworkAddress {
   network: string;
@@ -163,12 +164,7 @@ function Receive() {
               disabled={!address || isLoading}
               aria-label={`Show details for ${network} address`}
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                <path d="M3 9h6a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1z"/>
-                <path d="M3 21h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1z"/>
-                <path d="M15 3h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
-                <path d="M15 15h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z"/>
-              </svg>
+              <img src={QrCodeIcon} alt="QR code" className="w-full h-full" />
             </button>
             
             {/* Copy Button */}

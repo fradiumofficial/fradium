@@ -80,7 +80,7 @@ function WalletConfirmation() {
 
   if (authLoading || walletLoading) {
     return (
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white p-8 flex items-center justify-center">
+      <div className="w-[375px] h-[600px] pb-[150px] bg-[#25262B] text-white p-8 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-white/70">Loading...</p>
@@ -145,16 +145,6 @@ function WalletConfirmation() {
               <div>
                 <h3 className="text-white text-sm font-medium">Real-Time Protection</h3>
                 <p className="text-white/60 text-xs">AI-powered scam and fraud detection</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-[#9BE4A0] rounded-full mt-2"></div>
-              <div>
-                <h3 className="text-white text-sm font-medium">Smart Contract Analysis</h3>
-                <p className="text-white/60 text-xs">Deep analysis of contracts before interaction</p>
               </div>
             </div>
           </div>

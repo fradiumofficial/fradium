@@ -23,7 +23,6 @@ import AllNetwork from "./modules/all_network/pages/AllNetwork";
 import { NetworkProvider } from "./modules/all_network/networkContext";
 import { AuthProvider } from "./lib/contexts/authContext";
 import { WalletProvider } from "./lib/contexts/walletContext";
-import CreateWallet from "./modules/wallet/pages/CreateWallet";
 import AuthGuard from "./lib/AuthGuard";
 import ManageNetwork from "./modules/all_network/pages/ManageNetwork";
 import Receive from "./modules/transaction/pages/Receive";
@@ -59,7 +58,6 @@ function App() {
             
             {/* Wallet Routes */}
             <Route path={ROUTES.WALLET_CONFIRMATION} element={<AuthGuard><WalletConfirmation /></AuthGuard>} />
-            <Route path={ROUTES.CREATE_WALLET} element={<AuthGuard><CreateWallet /></AuthGuard>} />
             
             <Route element={<MainLayout />}>
               <Route path={ROUTES.HOME} element={<AuthGuard><Home /></AuthGuard>} />
