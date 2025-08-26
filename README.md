@@ -1,49 +1,26 @@
-# 🌟 Fradium
+# 🌟 Fradium - The Trust Layer for Web3 Transactions
 
-<br />
-<div align="center">
-  <a href="https://github.com/fradiumofficial/fradium">
-    <img src="docs/images/cover.png" alt="Fradium Cover">
-  </a>
+![Fradium Cover](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/cover.png)
 
-  <h3 align="center">Fradium – The Trust Layer for Web3 Transactions</h3>
-<p align="center">
-   Fradium is a security and analytics platform built fully onchain and designed to work seamlessly across multiple blockchain networks including Bitcoin, Ethereum, Solana, Internet Computer, and others network., Fradium enables real-time address analysis, transaction insights, and threat detection across different ecosystems.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Internet Computer](https://img.shields.io/badge/Internet%20Computer-Protocol-blue?logo=internet-computer&logoColor=white)](https://internetcomputer.org/)
+[![Motoko](https://img.shields.io/badge/Motoko-Agent-red)](https://internetcomputer.org/docs/current/motoko/main/motoko)
+
+Fradium is a security and analytics platform built fully onchain and designed to work seamlessly across multiple blockchain networks including Bitcoin, Ethereum, Solana, Internet Computer, and others network., Fradium enables real-time address analysis, transaction insights, and threat detection across different ecosystems.
 
 The platform provides a complete set of tools including a decentralized wallet app, browser extension, and community-driven reporting system. Users can analyze, report, and transact with greater confidence. Suspicious addresses are identified through AI models trained on high-quality datasets, and results are continuously improved through community contributions and verified reports. With token incentives and transparent voting, Fradium empowers users to actively participate in securing the Web3 space.
 
-</p>
+🌟 **Built for WCHL 2025 Hackathon** - [View on DoraHacks](https://dorahacks.io/buidl/28746)
 
-</div>
+## 🎯 Why Fradium?
 
-## 📌 Why Fradium?
+Fradium addresses urgent challenges in Web3 security and adoption:
 
-In the growing world of decentralized finance, users interact with thousands of blockchain addresses and smart contracts every day, many of which may be unverified, anonymous, or even malicious. Traditional wallets and explorers offer limited protection or context, putting users at risk of fraud, scams, and security breaches. Fradium addresses this challenge by providing a secure, AI-powered platform with community-backed reports to detect threats in real time. Supporting multiple blockchains, Fradium enables users to analyze, report, and transact safely across networks with confidence. Every transaction is checked before execution, giving users full protection and peace of mind as they navigate Web3.
+- Despite ranking **#3 globally in crypto adoption** with **356% YoY growth**, Indonesia lost **$2.5B to scams**, saw **332K wallet drainer victims**, and over **$40.9B** was sent to illicit addresses.
+- These risks are driven by **low blockchain literacy** and lack of awareness around smart contract and wallet vulnerabilities.
+- Traditional wallets and explorers provide **limited protection or context**, leaving users exposed to phishing, scams, and malicious addresses.
 
-## 🤖 AI-Powered Threat Detection
-
-Fradium's core security layer is powered by advanced machine learning models that analyze blockchain addresses in real-time to detect potential threats, scams, and malicious activity.
-
-### Multi-Chain AI Models
-- **Bitcoin Detection**: Analyzes UTXO patterns, transaction clustering, and spending behaviors
-- **Ethereum Detection**: Examines smart contract interactions, ERC-20 token flows, and gas usage patterns  
-- **Solana Detection**: Evaluates program interactions, token account behaviors, and validator patterns
-
-### Key AI Features
-- **On-Chain Inference**: ML models run directly on Internet Computer canisters for trustless predictions
-- **Hybrid Processing**: Optimized architectures for each blockchain's unique characteristics
-- **Real-Time Analysis**: Instant threat assessment before transaction execution
-- **Continuous Learning**: Models improve through community feedback and new threat data
-
-### Technical Highlights
-| Component | Technology |
-|-----------|------------|
-| **ML Framework** | Neural Networks (MLP) via ONNX |
-| **Inference Engine** | tract-onnx on Internet Computer |
-| **Model Training** | Python (scikit-learn) |
-| **Deployment** | Embedded ONNX models in Wasm canisters |
-
-The AI system processes thousands of behavioral features per address, including transaction patterns, timing analysis, amount distributions, and network relationships to provide accurate threat assessments with minimal false positives.
+Our solution introduces **Fradium**, a fully on-chain security and analytics platform that provides real-time address analysis, transaction insights, and AI-powered threat detection across multiple blockchains. With decentralized reporting, tokenized incentives, and transparent governance, Fradium empowers users to transact with confidence while actively contributing to securing the Web3 ecosystem.
 
 ## 📚 Complete Resources
 
@@ -51,6 +28,48 @@ The AI system processes thousands of behavioral features per address, including 
 - Video Demo: https://youtu.be/ojrI1sVdQl0
 - Pitch Deck: https://drive.google.com/file/d/1WuzlsoFHoZEb9zIQQohGaBz3mQPe8f2B/view?usp=sharing
 - Docs: https://fradium.gitbook.io/docs
+- Extension Chrome store: https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc
+
+## 🎉 Whats New in the National Round
+
+### Fradium Wallet - Browser Extension
+
+A lightweight, on-chain security wallet that runs directly in your browser. **Scan, Explain, and Protect before you sign.**
+
+**Why it matters**
+
+- One-click **pre-send safety check** on any recipient address
+- Inline risk explanation with reason codes (drainer proximity, mixer exposure, scam clusters)
+- Cross-chain token support: Look up and analyze multiple supported coins seamlessly from a single UI.
+- On-chain evidence links for every flagged entity
+
+**Browser Extension Preview**
+
+| Dashboard                                                                                                          | History                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| ![Dashboard](https://lh3.google.com/u/0/d/1UmlLvJznYVZ43K3qBtVkVtMwpHjUbfYU=w2244-h1720-iv1?auditContext=prefetch) | ![History](https://lh3.google.com/u/0/d/1SjWFvPJ38c9RvI0Evk16yF2-diXxrkRO=w2244-h1720-iv1?auditContext=prefetch) |
+
+| Address Threat Analyzer                                                                                                          | Analyze Menu                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| ![Address Threat Analyzer](https://lh3.google.com/u/0/d/1mKHnkNnR0g_moIbUDDzYOASM6JN3lLsl=w2244-h1720-iv1?auditContext=prefetch) | ![Analyze Menu](https://lh3.google.com/u/0/d/1aA-eA9E80y1kq9_Hr_xFwfLENR2LN6wg=w2244-h1720-iv1?auditContext=prefetch) |
+
+---
+
+### ⚙️ Quickstart (Extension)
+
+```bash
+# 1) Clone
+git clone https://github.com/FradiumOfficial/fradium
+cd fradium/extension
+
+# 2) Install & build
+npm install
+npm run build
+
+# 3) Load in browser
+# Chrome/Edge: chrome://extensions → Enable Developer Mode → Load unpacked → dist/
+# Firefox: about:debugging#/runtime/this-firefox → Load Temporary Add-on → dist/manifest.json
+```
 
 ## 🌟 Features of Fradium
 
@@ -63,11 +82,13 @@ The AI system processes thousands of behavioral features per address, including 
 - Each recipient address is analyzed in real time before sending.
 - Transaction History & Scan Logs
 
-### Fradium Browser Extension
+### Fradium Wallet Extension
 
-- Companion tool for secure interaction on Web3 platforms.
-- Analyze addresses and/or ethereum smart contract directly from your browser before confirming transactions.
-- Works seamlessly with dApps, wallets, and explorers.
+- Simple browser tool to keep your Web3 activity safe
+- Automatically checks recipient addresses before you send
+- Gives clear risk explanations with reasons and evidence
+- Supports many coins with cross-chain token support in one place
+- Keeps scan history logs that you can review anytime in the web app
 
 ### Multi-Chain Analytics Engine (AI onchain detection)
 
@@ -90,16 +111,53 @@ The AI system processes thousands of behavioral features per address, including 
 - Used for staking, voting, and rewarding credible reports.
 - All token actions are handled securely on-chain.
 
-## 🏆 What We Are Proud Of
+## 📎 Demo App
 
-- Successfully developed Chain Fusion engine enabling seamless cross-chain transactions across Bitcoin, Ethereum, Solana, ICP, and more.
-- ONNX AI model runs fully on-chain for real-time threat detection.
-- LLM successfully deployed in canister for on-chain AI interaction.
-- Secure login with Internet Identity integration.
-- Fully on-chain community reporting and voting system.
-- Developed custom $FUM token supporting ICRC-1 and ICRC-2 for staking, voting, and contributor rewards.
+| Landing Page                                                                                                     | Extension Section                                                                                                |
+| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://lh3.google.com/u/0/d/1o3YGtX8SsOvvMq8XRtX9t1jSd4aWYBBh=w2244-h1720-iv1?auditContext=prefetch) | ![Image 2](https://lh3.google.com/u/0/d/18-o7YyUpvtMUdUIHswlWPIop3U36-64v=w2244-h1720-iv1?auditContext=prefetch) |
 
-## Buiild and Run Yourself
+| Wallet App                                                                                                         | AI Address Threat Detection                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://lh3.google.com/u/0/d/1QSvD3TGCM4MbrYMjxfxrelepeTs6tkbs=w2244-h1720-iv2?auditContext=forDisplay) | ![Image 2](https://lh3.google.com/u/0/d/1gtoIkWnR1C1hiR2SXd-RrrWpIv28sehu=w2244-h1720-iv1?auditContext=prefetch) |
+
+| Transaction History                                                                                              | Community Create Report                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://lh3.google.com/u/0/d/1Xk-zaz7U1cnqt2HL_U1euNmwcXMnIMz6=w2244-h1720-iv1?auditContext=prefetch) | ![Image 2](https://lh3.google.com/u/0/d/1KA6AgUDr1nicNTB3iTPBMNo2c0_Dvu40=w2244-h1720-iv1?auditContext=prefetch) |
+
+| Unstake $FUM Token                                                                                                    | Fradium LLM Assistant                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ![Unstake FUM1](https://lh3.google.com/u/0/d/1f7XJjIpRkh0vBjegbBkSqADh4ra_3dYQ=w2244-h1720-iv1?auditContext=prefetch) | ![Image 2](https://lh3.google.com/u/0/d/1BPRPprvDF8dUXEY_xxwcSHP1D_9w8Qol=w2244-h1720-iv1?auditContext=prefetch) |
+
+## 🤖 How the Fradium AI Threat Detection Works
+
+Fradium's core security layer is powered by advanced machine learning models that analyze blockchain addresses in real-time to detect potential threats, scams, and malicious activity.
+
+### Multi-Chain AI Models
+
+- **Bitcoin Detection**: Analyzes UTXO patterns, transaction clustering, and spending behaviors
+- **Ethereum Detection**: Examines smart contract interactions, ERC-20 token flows, and gas usage patterns
+- **Solana Detection**: Evaluates program interactions, token account behaviors, and validator patterns
+
+### Key AI Features
+
+- **On-Chain Inference**: ML models run directly on Internet Computer canisters for trustless predictions
+- **Hybrid Processing**: Optimized architectures for each blockchain's unique characteristics
+- **Real-Time Analysis**: Instant threat assessment before transaction execution
+- **Continuous Learning**: Models improve through community feedback and new threat data
+
+### Technical Highlights
+
+| Component            | Technology                             |
+| -------------------- | -------------------------------------- |
+| **ML Framework**     | Neural Networks (MLP) via ONNX         |
+| **Inference Engine** | tract-onnx on Internet Computer        |
+| **Model Training**   | Python (scikit-learn)                  |
+| **Deployment**       | Embedded ONNX models in Wasm canisters |
+
+The AI system processes thousands of behavioral features per address, including transaction patterns, timing analysis, amount distributions, and network relationships to provide accurate threat assessments with minimal false positives.
+
+## 🚀 Build and Deployment Instructions
 
 ### Prerequisites
 
@@ -162,13 +220,35 @@ Once bitcoind is running successfully on your local machine, you can proceed to 
    ./script/build.fradium_token.sh
   ```
 
-## Architecture Diagram
+## 🏗️ Architecture Overview
 
-![Fradium Architecture Diagram](docs/images/architecture.png)
+Fradium is built fully on-chain, combining multi-chain analytics, AI inference, and community governance into a seamless security layer for Web3. The architecture ensures every transaction is checked before execution, supported by AI models running inside Internet Computer canisters.
 
-## User Flow Diagram
+### 🔹 System Architecture
 
-![Fradium UserFlow Diagram](docs/images/userflow.png)
+The high-level design of Fradium, showing how cross-chain data flows into the analytics engine, how AI models run on-chain, and how users interact via wallet, extension, and reporting modules.
+
+![Fradium Architecture Diagram](https://github.com/FradiumOfficial/fradium/blob/main/docs/images/architecture.png?raw=true)
+
+### 🔹 User Flow
+
+Illustrates the journey of a user interacting with Fradium — from scanning an address, receiving an AI-powered risk score, to community-driven reporting and DAO voting for validation.
+
+![User Flow Diagram](https://github.com/FradiumOfficial/fradium/blob/main/docs/images/userflow.png?raw=true)
+
+## 🔥 Complex Features Implemented
+
+💳 **Cross-Chain Ledger Support**: Unified integration with multiple blockchain networks, allowing address lookups, transaction insights, and security checks across different ecosystems from a single platform.
+
+🧠 **AI On-Chain Address Analyzer**: Advanced machine learning models trained on complex datasets of blockchain activity, converted into **ONNX format** and deployed directly on Internet Computer canisters for real-time, trustless threat detection.
+
+🌐 **Fradium Wallet Extension**: A browser-based companion tool that adds pre-send safety checks, risk explanations, and cross-chain token support, helping users stay safe while interacting with dApps, wallets, and explorers.
+
+🤖 **LLM On-Chain Interaction**: Large Language Model successfully deployed inside an ICP canister, enabling intelligent on-chain AI interaction without relying on off-chain servers.
+
+👥 **DAO-Driven Community Reporting & Voting**: A fully on-chain governance system where users can report suspicious addresses, validate evidence, and participate in decentralized voting—forming a security-focused DAO that strengthens collective trust in Web3.
+
+💎 **Custom $FUM Token**: Native utility and governance token built with **ICRC-1 and ICRC-2 standards**, powering staking, voting, and rewarding credible community contributions.
 
 ## 🛣️ Fradium Roadmap
 
@@ -183,20 +263,24 @@ Once bitcoind is running successfully on your local machine, you can proceed to 
 
 ### 🌍 Phase 2 – Expanding Accessibility
 
-- Develop **cross-platform mobile wallet** using Flutter (**Android & iOS**)
+- Develop **cross-platform browser extension wallet**
 - Enable **Ethereum transaction support** and **ERC20 token** management
-- Add **SPL token** support for Solana (e.g., **USDC**, **USDT**)
 - Expand **AI detection** to support **Solana** address analysis
 
 ### 🔗 Phase 3 – Full Multi-Chain Experience
 
 - Launch **integrated browser extension wallet** for unified user experience
 - Enable full support for **ICP native tokens** including `ckBTC`, `ckETH`, `ckUSDC`, and other **chain-key assets**
+- Add **SPL token** support for Solana (e.g., **USDC**, **USDT**)
 
 ### 🏛️ Phase 4 – Decentralized Governance & Advanced Integration
 
 - Integrate Fradium into the **SNS (Service Nervous System)** for decentralized protocol ownership and governance
 - Begin research and prototyping for **Fradium SDK/API** to allow third-party apps to access our **AI** and **security tools**
+
+## 📃 License
+
+Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 ## Created by Fradium Team
 
