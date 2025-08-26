@@ -117,13 +117,13 @@ npm run build
 | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/landing-page.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/landing-extension.png) |
 
-| Wallet App                                                                                                       | AI Address Threat Detection                                                                                           |
-| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/wallet-app.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/analyze-address.png) |
+| Wallet App                                                                                                       | Community Create                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/wallet-app.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/create-report.png) |
 
-| Transaction History                                                                                                       | Community Create Report                                                                                             |
-| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/transaction-history.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/create-report.png) |
+| Transaction History                                                                                                       | AI Address Threat Detection Report                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/transaction-history.png) | ![Image 2]https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/analyze-address.png) |
 
 | Unstake $FUM Token                                                                                                       | Fradium LLM Assistant                                                                                           |
 | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
