@@ -28,7 +28,7 @@ Our solution introduces **Fradium**, a fully on-chain security and analytics pla
 - Video Demo: https://youtu.be/ojrI1sVdQl0
 - Pitch Deck: https://drive.google.com/file/d/1WuzlsoFHoZEb9zIQQohGaBz3mQPe8f2B/view?usp=sharing
 - Docs: https://fradium.gitbook.io/docs
-- Extension Chrome store: https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc
+- Extension Chrome store: https://chromewebstore.google.com/detail/fradium-crypto-security-e/jjjgmhagdcpbccnpgafnopdbfnfelffb
 
 ## 🎉 Whats New in the National Round
 
