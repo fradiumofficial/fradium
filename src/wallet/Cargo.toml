@@ -1,0 +1,57 @@
+[package]
+name = "wallet"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+candid = "0.10.13"
+ic-cdk = "0.17.2"
+ic-ledger-types = "0.11.0"
+serde = "1.0.132"
+serde_bytes = "0.11.15"
+serde_json = "1.0.140"
+serde_with = "3.12.0"
+getrandom = { version = "0.2", default-features = false, features = ["custom"] }
+
+# Bitcoin
+hex = "0.4.3"
+bitcoin = "0.32.5"
+leb128 = "0.2.5"
+num = "0.4.3"
+ic-ed25519 = "0.2.0"
+bs58 = "0.5.0"
+
+# Ethereum
+alloy = { git = "https://github.com/ic-alloy/ic-alloy.git", tag = "v0.3.5-icp.1", default-features = false, features = [
+  "icp",
+  "sol-types",
+  "json",
+  "contract",
+] }
+
+# Solana
+sol_rpc_client = { path = "src/solana/rpc/libs/client", features = ["ed25519"] }
+sol_rpc_types = { path = "src/solana/rpc/libs/types" }
+solana-hash = { version = "=2.3.0", default-features = false }
+solana-instruction = "=2.3.0"
+solana-keypair = "=2.2.3"
+solana-message = { version = "=2.4.0", default-features = false }
+solana-program = { version = "=2.3.0", default-features = false }
+solana-pubkey = { version = "=2.4.0", default-features = false }
+solana-signature = "=2.3.0"
+solana-system-interface = "1.0.0"
+solana-transaction = "=2.2.3"
+
+[dev-dependencies]
+solana-client = "=2.3.3"
+solana-commitment-config = "=2.2.1"
+solana-keypair = "=2.2.3"
+solana-rpc-client-nonce-utils = "=2.3.3"
+solana-signer = "=2.2.1"
+
+

@@ -1,5 +1,7 @@
+BITCOIND=$(shell command -v bitcoind || command -v bitcoin-core.daemon)
+
 bitcoin-start:
-	bitcoind -conf=$(CURDIR)/bitcoin.conf -datadir=$(CURDIR)/bitcoin_data --port=18444
+	$(BITCOIND) -conf="$(CURDIR)/bitcoin.conf" -datadir="$(CURDIR)/bitcoin_data" --port=18444
 
 bitcoin-mining:
 	chmod +x $(CURDIR)/scripts/bitcoin.mining_block.sh

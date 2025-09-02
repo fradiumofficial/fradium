@@ -1,6 +1,0 @@
-type Result = variant { Ok : text; Err : text };
-service : {
-  get_address : () -> (Result);
-  get_balance : (text) -> (Result);
-  send_eth : (text, nat) -> (Result);
-}

@@ -1,85 +1,37 @@
 [workspace]
 resolver = "2"
 members = [
-    "src/ai",
-    "src/solana",
-    "src/ethereum",
+    "src/wallet"
 ]
 
 [workspace.package]
-authors = ["Fradium Team"]
+authors = ["Fradium Team <fradiumofficial@gmail.com>"]
 edition = "2021"
-repository = "https://github.com/fradium/fradium"
-homepage = "https://fradium.com"
+repository = "https://github.com/fradiumofficial/fradium"
+homepage = "https://fradium.io"
 license = "MIT"
 readme = "README.md"
 
 [workspace.dependencies]
-assert_matches = "1.5.0"
-async-trait = "0.1.88"
+async-trait = "0.1.83"
 base64 = "0.22.1"
 bincode = "1.3.3"
 bs58 = "0.5.0"
 candid = "0.10.13"
-candid_parser = "0.1.4"
-canhttp = { version = "0.2.0" }
-canlog = { version = "0.1.0", features = ["derive"] }
-ciborium = "0.2.2"
-const_format = "0.2.34"
-derive_more = { version = "2.0.1", features = ["from", "into"] }
-futures = "0.3.31"
-# Transitive dependency
-# See https://forum.dfinity.org/t/module-imports-function-wbindgen-describe-from-wbindgen-placeholder-that-is-not-exported-by-the-runtime/11545/8
-getrandom = { version = "*", default-features = false, features = ["custom"] }
-hex = "0.4.3"
-http = "1.2.0"
-ic-agent = "0.40.0"
-ic-canister-log = "0.2.0"
+canlog = "0.2.0"
+derive_more = "0.99.18"
 ic-cdk = "0.17.2"
 ic-ed25519 = "0.2.0"
-ic-error-types = "0.2"
-ic-http-types = "0.1.0"
-ic-management-canister-types = "0.3"
-ic-metrics-assert = "0.1.0"
-ic-metrics-encoder = "1.1"
-ic-stable-structures = "0.6.7"
-ic-test-utilities-load-wasm = { git = "https://github.com/dfinity/ic", tag = "release-2025-01-23_03-04-base" }
-maplit = "1.0.2"
-minicbor = { version = "1.0.0", features = ["alloc", "derive"] }
-num = "0.4.3"
-num-traits = "0.2.19"
-pocket-ic = "9.0.0"
-proptest = "1.6.0"
-rand = { version = "0.9.1", default-features = false }
-rand_chacha = { version = "0.9.0", default-features = false }
-regex = "1.11.1"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_bytes = "0.11.17"
+proptest = "1.4.0"
+regex = "1.10.6"
+serde = { version = "1.0.132", features = ["derive"] }
 serde_json = "1.0.140"
-serde_with = "3.12.0"
- 
-strum = { version = "0.27.0", features = ["derive"] }
-thiserror = "2.0.12"
-tokio = "1.44.1"
-tower = "0.5.2"
-tower-http = "0.6.2"
-url = "2.5"
-zeroize = { version = "1.8", features = ["zeroize_derive"] }
+strum = { version = "0.26.3", features = ["derive"] }
+thiserror = "1.0.63"
+assert_matches = "1.5.0"
+tokio = { version = "1.39.2", features = ["full"] }
+url = "2.5.2"
 
-[profile.release]
-debug = false
-lto = true
-strip = true
-opt-level = 's'
-
-# Required by `ic-test-utilities-load-wasm`
-[profile.canister-release]
-inherits = "release"
-
-# TODO XC-297: Currently, the solana-* crates have a dependency on wasm-bindgen
-#   when they are built for wasm32-unknown-unknown target. For this reason, we
-#   are using forked version of the relevant repositories.
-#   see [solana-sdk#117](https://github.com/anza-xyz/solana-sdk/issues/117)
 [patch.crates-io]
 solana-account = { git = "https://github.com/dfinity/solana-sdk", tag = "46ca4e2-js-feature-flag" }
 solana-clock = { git = "https://github.com/dfinity/solana-sdk", tag = "46ca4e2-js-feature-flag" }

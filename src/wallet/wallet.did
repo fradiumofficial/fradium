@@ -1,0 +1,58 @@
+type BitcoinNetwork = variant { mainnet; regtest; testnet };
+type CommitmentLevel = variant { finalized; confirmed; processed };
+type Ed25519KeyName = variant {
+  MainnetTestKey1;
+  LocalDevelopment;
+  MainnetProdKey1;
+};
+type GetUtxosResponse = record {
+  next_page : opt blob;
+  tip_height : nat32;
+  tip_block_hash : blob;
+  utxos : vec Utxo;
+};
+type HttpHeader = record { value : text; name : text };
+type InitArg = record {
+  solana_commitment_level : opt CommitmentLevel;
+  ed25519_key_name : opt Ed25519KeyName;
+  solana_network : opt SolanaNetwork;
+  sol_rpc_canister_id : opt principal;
+};
+type NetworksInfo = record {
+  icp : text;
+  solana : text;
+  ethereum : text;
+  bitcoin : text;
+};
+type Outpoint = record { txid : blob; vout : nat32 };
+type RpcEndpoint = record { url : text; headers : opt vec HttpHeader };
+type SendRequest = record {
+  destination_address : text;
+  amount_in_satoshi : nat64;
+};
+type SolanaNetwork = variant { Mainnet; Custom : RpcEndpoint; Devnet };
+type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
+service : (BitcoinNetwork, opt InitArg) -> {
+  // Returns a legacy P2PKH (Pay-to-PubKey-Hash) address for this smart contract.
+  // 
+  // This address uses an ECDSA public key and encodes it in the legacy Base58 format.
+  // It is supported by all bitcoin wallets and full nodes.
+  bitcoin_address : () -> (text);
+  // Returns the balance of the given bitcoin address.
+  bitcoin_balance : (text) -> (nat64);
+  // Returns the 100 fee percentiles measured in millisatoshi/byte.
+  // Percentiles are computed from the last 10,000 transactions (if available).
+  bitcoin_current_fee_percentiles : () -> (vec nat64);
+  // Sends the given amount of bitcoin from this smart contract's P2PKH address to the given address.
+  // Returns the transaction ID.
+  bitcoin_send : (SendRequest) -> (text);
+  // Returns the UTXOs of the given Bitcoin address.
+  bitcoin_utxos : (text) -> (GetUtxosResponse);
+  coin_network : () -> (NetworksInfo);
+  ethereum_address : () -> (text);
+  ethereum_balance : (text) -> (text);
+  ethereum_send : (text, nat) -> (text);
+  solana_address : () -> (text);
+  solana_balance : (text) -> (nat);
+  solana_send : (text, nat) -> (text);
+}
