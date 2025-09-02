@@ -1216,17 +1216,5 @@ persistent actor Fradium {
       };
     };
   };
-
-  public func admin_delete_wallet(principal : Principal) : async Types.Result<Text, Text> {
-    switch (userWalletsStore.get(principal)) {
-      case (?_) {
-        userWalletsStore.delete(principal);
-        return #Ok("Wallet deleted successfully");
-      };
-      case null {
-        return #Err("Wallet not found");
-      };
-    };
-  };
   
 }

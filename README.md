@@ -281,11 +281,3 @@ Illustrates the journey of a user interacting with Fradium — from scanning an 
 ## 📃 License
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
-
-## Created by Fradium Team
-
-- Wildan Syukri Niam (Frontend Developer)
-- Gavin Indra Alinski (Blockchain Developer)
-- Ghina Rosvita Maharani (UI/UX Designer)
-- Arga Adolf Lumunon (AI Engineer)
-- Yazid Al Ghozali (Extension Developer)

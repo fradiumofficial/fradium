@@ -1,9 +1,0 @@
-version: "3.9"
-
-services:
-  fradium-analyzer:
-    build: .
-    ports:
-      - "5000:5000"
-    env_file:
-      - .env
