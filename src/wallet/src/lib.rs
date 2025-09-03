@@ -10,23 +10,79 @@ pub mod shared;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, GetUtxosResponse, MillisatoshiPerByte};
 use crate::bitcoin::SendRequest;
 use candid::Nat;
-use candid::{CandidType, Deserialize};
+use candid::{CandidType, Deserialize, Principal};
+use sol_rpc_types::RpcEndpoint;
 
+#[derive(CandidType, Deserialize, Debug)]
+pub enum NetworkChoice {
+    Local,
+    Mainnet,
+}
 
 #[ic_cdk::init]
-pub fn init(bitcoin_network: BitcoinNetwork, solana_init: Option<solana::InitArg>) {
-	bitcoin::bitcoin_init(bitcoin_network);
-	if let Some(arg) = solana_init {
-		solana::solana_init(arg);
-	}
+pub fn init(network_choice: NetworkChoice) {
+    // Set Bitcoin network and Solana init args based on network choice
+    let (bitcoin_network, solana_init) = match network_choice {
+        NetworkChoice::Local => {
+            let bitcoin_network = BitcoinNetwork::Regtest;
+            let solana_init = solana::InitArg {
+                solana_network: Some(solana::SolanaNetwork::Custom(RpcEndpoint {
+                    url: "https://api.devnet.solana.com".to_string(),
+                    headers: None,
+                })),
+                ed25519_key_name: Some(solana::Ed25519KeyName::LocalDevelopment),
+                sol_rpc_canister_id: Some(Principal::from_text("tghme-zyaaa-aaaar-qarca-cai").unwrap()),
+                solana_commitment_level: None,
+            };
+            (bitcoin_network, solana_init)
+        },
+        NetworkChoice::Mainnet => {
+            let bitcoin_network = BitcoinNetwork::Testnet;
+            let solana_init = solana::InitArg {
+                solana_network: Some(solana::SolanaNetwork::Devnet),
+                ed25519_key_name: Some(solana::Ed25519KeyName::MainnetTestKey1),
+                sol_rpc_canister_id: Some(Principal::from_text("tghme-zyaaa-aaaar-qarca-cai").unwrap()),
+                solana_commitment_level: None,
+            };
+            (bitcoin_network, solana_init)
+        },
+    };
+
+    bitcoin::bitcoin_init(bitcoin_network);
+    solana::solana_init(solana_init);
 }
 
 #[ic_cdk::post_upgrade]
-fn post_upgrade(bitcoin_network: BitcoinNetwork, solana_init: Option<solana::InitArg>) {
-	bitcoin::bitcoin_post_upgrade(bitcoin_network);
-	if let Some(arg) = solana_init {
-		solana::solana_post_upgrade(Some(arg));
-	}
+fn post_upgrade(network_choice: NetworkChoice) {
+    // Set Bitcoin network and Solana init args based on network choice
+    let (bitcoin_network, solana_init) = match network_choice {
+        NetworkChoice::Local => {
+            let bitcoin_network = BitcoinNetwork::Regtest;
+            let solana_init = solana::InitArg {
+                solana_network: Some(solana::SolanaNetwork::Custom(RpcEndpoint {
+                    url: "https://api.devnet.solana.com".to_string(),
+                    headers: None,
+                })),
+                ed25519_key_name: Some(solana::Ed25519KeyName::LocalDevelopment),
+                sol_rpc_canister_id: Some(Principal::from_text("tghme-zyaaa-aaaar-qarca-cai").unwrap()),
+                solana_commitment_level: None,
+            };
+            (bitcoin_network, solana_init)
+        },
+        NetworkChoice::Mainnet => {
+            let bitcoin_network = BitcoinNetwork::Testnet;
+            let solana_init = solana::InitArg {
+                solana_network: Some(solana::SolanaNetwork::Devnet),
+                ed25519_key_name: Some(solana::Ed25519KeyName::MainnetTestKey1),
+                sol_rpc_canister_id: Some(Principal::from_text("tghme-zyaaa-aaaar-qarca-cai").unwrap()),
+                solana_commitment_level: None,
+            };
+            (bitcoin_network, solana_init)
+        },
+    };
+
+    bitcoin::bitcoin_post_upgrade(bitcoin_network);
+    solana::solana_post_upgrade(Some(solana_init));
 }
 
 #[derive(CandidType, Deserialize)]

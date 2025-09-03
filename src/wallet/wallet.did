@@ -1,23 +1,10 @@
-type BitcoinNetwork = variant { mainnet; regtest; testnet };
-type CommitmentLevel = variant { finalized; confirmed; processed };
-type Ed25519KeyName = variant {
-  MainnetTestKey1;
-  LocalDevelopment;
-  MainnetProdKey1;
-};
 type GetUtxosResponse = record {
   next_page : opt blob;
   tip_height : nat32;
   tip_block_hash : blob;
   utxos : vec Utxo;
 };
-type HttpHeader = record { value : text; name : text };
-type InitArg = record {
-  solana_commitment_level : opt CommitmentLevel;
-  ed25519_key_name : opt Ed25519KeyName;
-  solana_network : opt SolanaNetwork;
-  sol_rpc_canister_id : opt principal;
-};
+type NetworkChoice = variant { Mainnet; Local };
 type NetworksInfo = record {
   icp : text;
   solana : text;
@@ -25,14 +12,12 @@ type NetworksInfo = record {
   bitcoin : text;
 };
 type Outpoint = record { txid : blob; vout : nat32 };
-type RpcEndpoint = record { url : text; headers : opt vec HttpHeader };
 type SendRequest = record {
   destination_address : text;
   amount_in_satoshi : nat64;
 };
-type SolanaNetwork = variant { Mainnet; Custom : RpcEndpoint; Devnet };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
-service : (BitcoinNetwork, opt InitArg) -> {
+service : (NetworkChoice) -> {
   // Returns a legacy P2PKH (Pay-to-PubKey-Hash) address for this smart contract.
   // 
   // This address uses an ECDSA public key and encodes it in the legacy Base58 format.
