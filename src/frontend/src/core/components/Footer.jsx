@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import styles from "./footer.module.css";
 import { useNavigate } from "react-router";
-import { useAuth } from "@/core/providers/auth-provider";
-import { useWallet } from "@/core/providers/wallet-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
+import { useWallet } from "@/core/providers/WalletProvider";
 import { backend } from "declarations/backend";
 import ConfirmCreateWalletModal from "./modals/ConfirmCreateWalletModal";
 import SidebarButton from "./SidebarButton";
-import { LoadingState } from "./ui/loading-state";
+import { LoadingState } from "./ui/LoadingState";
 
 const Footer = () => {
   const navigate = useNavigate();

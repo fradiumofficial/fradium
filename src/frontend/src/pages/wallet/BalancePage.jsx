@@ -8,7 +8,7 @@ import { fradium_token as token } from "declarations/fradium_token";
 
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
-import { useAuth } from "@/core/providers/auth-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 
 import Card from "@/core/components/Card";

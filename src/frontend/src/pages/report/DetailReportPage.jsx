@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/core/components/ui/input";
 import Card from "../../core/components/Card";
 import { toast } from "react-toastify";
-import { useAuth } from "@/core/providers/auth-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
 import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/chainExplorers";
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { Principal } from "@dfinity/principal";
@@ -251,61 +251,6 @@ export default function DetailReportPage() {
       setIsSubmitting(true);
 
       throw new Error("Not implemented");
-      const approveResult = await token.icrc2_approve({
-        from_subaccount: [],
-        spender: Principal.fromText(backendCanisterId),
-        amount: BigInt(stakeAmount) * BigInt(10 ** 8),
-        expires_at: [],
-        fee: [],
-        memo: [new TextEncoder().encode(`Approve for staking report creation`)],
-        created_at_time: [],
-      });
-
-      // Check if approve failed
-      if (!approveResult || approveResult.Err) {
-        if (approveResult.Err?.InsufficientFunds) {
-          toast.error("Insufficient funds. Please top up your balance.");
-        } else {
-          toast.error("Failed to approve tokens. Please try again.");
-        }
-        return;
-      }
-
-      const response = await backend.vote_report({
-        stake_amount: BigInt(stakeAmount) * BigInt(10 ** 8),
-        vote_type: voteType === "yes",
-        report_id: uiData.id,
-      });
-      setIsSubmitting(false);
-      console.log("response", response);
-
-      if (response.Err) {
-        toast.error(response.Err);
-      } else {
-        toast.success("Vote submitted successfully");
-        setUserVote(voteType);
-        setShowVoteModal(false);
-        setShowSuccessModal(true);
-
-        // Trigger balance update event for navbar
-        window.dispatchEvent(new Event("balance-updated"));
-
-        // Reload report data
-        const fetchReport = async () => {
-          try {
-            const response = await backend.get_report(parseInt(id));
-            if (response.Err) {
-              toast.error(response.Err);
-            } else {
-              setReportData(response.Ok);
-            }
-          } catch (error) {
-            toast.error("Failed to fetch report");
-            console.error("Error fetching report:", error);
-          }
-        };
-        fetchReport();
-      }
     } catch (error) {
       console.log("error", error);
       toast.error("Failed to submit vote");

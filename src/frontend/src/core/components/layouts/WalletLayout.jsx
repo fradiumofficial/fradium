@@ -1,10 +1,10 @@
 import React from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { WalletProvider, useWallet } from "@/core/providers/wallet-provider";
+import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import SidebarButton from "../SidebarButton";
-import { useAuth } from "@/core/providers/auth-provider";
-import { Dialog, DialogContent } from "../ui/dialog";
-import { LoadingState } from "@/core/components/ui/loading-state";
+import { useAuth } from "@/core/providers/AuthProvider";
+import { Dialog, DialogContent } from "../ui/Dialog";
+import { LoadingState } from "@/core/components/ui/LoadingState";
 
 // Clean Architecture Imports
 import { NETWORK_CONFIG, getSupportedNetworks } from "../../config/tokens.config";

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { useAuth } from "./auth-provider";
+import { useAuth } from "./AuthProvider";
 
 // Create context for wallet data
 const WalletContext = createContext();

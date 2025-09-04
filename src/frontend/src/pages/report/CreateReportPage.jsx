@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 
 // Auth
-import { useAuth } from "@/core/providers/auth-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
 
 // Canister & Backend
 import { Principal } from "@dfinity/principal";

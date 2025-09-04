@@ -4,10 +4,10 @@ import { ChevronDown, FileText, LogOut, Coins } from "lucide-react";
 
 import { fradium_token as token } from "declarations/fradium_token";
 
-import { useAuth } from "@/core/providers/auth-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
 import { Button as ButtonShad } from "@/core/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/core/components/ui/dropdown-menu";
-import { LoadingState } from "@/core/components/ui/loading-state";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
+import { LoadingState } from "@/core/components/ui/LoadingState";
 import SidebarButton from "@/core/components/SidebarButton";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { cn } from "@/core/lib/utils";
@@ -39,7 +39,7 @@ const Navbar = () => {
           subaccount: [],
         });
         setBalance(response);
-      } catch (error) {}
+      } catch (error) { }
     }
 
     fetchBalance();

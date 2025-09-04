@@ -6,13 +6,13 @@ import { toast } from "react-toastify";
 import QRCode from "qrcode";
 
 // Providers & Context
-import { useWallet } from "@/core/providers/wallet-provider";
-import { useAuth } from "@/core/providers/auth-provider";
+import { useWallet } from "@/core/providers/WalletProvider";
+import { useAuth } from "@/core/providers/AuthProvider";
 
 // UI Components
 import TransactionButton from "@/core/components/TransactionButton";
 import NeoButton from "@/core/components/SidebarButton";
-import CustomButton from "@/core/components/custom-button-a";
+import CustomButton from "@/core/components/CustomButtonA";
 
 // Modal Components
 import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal";

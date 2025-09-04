@@ -3,12 +3,12 @@ import Button from "@/core/components/Button";
 import ButtonBullet from "@/core/components/ButtonBullet";
 import styles from "./home-page.module.css";
 import { useNavigate } from "react-router";
-import { useAuth } from "@/core/providers/auth-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
 import { useState } from "react";
 import SidebarButton from "@/core/components/SidebarButton";
 import { backend } from "declarations/backend";
-import { LoadingState } from "@/core/components/ui/loading-state";
-import { useWallet } from "@/core/providers/wallet-provider";
+import { LoadingState } from "@/core/components/ui/LoadingState";
+import { useWallet } from "@/core/providers/WalletProvider";
 import ConfirmCreateWalletModal from "@/core/components/modals/ConfirmCreateWalletModal";
 
 // Custom hook untuk deteksi mobile

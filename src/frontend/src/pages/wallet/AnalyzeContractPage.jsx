@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import CustomButton from "../../core/components/custom-button-a";
+import CustomButton from "../../core/components/CustomButtonA";
 import AnalyzeProgressModal from "../../core/components/modals/AnalyzeProgressModal";
 
 export default function AnalyseContractPage() {

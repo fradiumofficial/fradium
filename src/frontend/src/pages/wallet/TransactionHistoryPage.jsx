@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../core/providers/auth-provider";
+import { useAuth } from "../../core/providers/AuthProvider";
 import { backend } from "declarations/backend";
 
 // Utilities

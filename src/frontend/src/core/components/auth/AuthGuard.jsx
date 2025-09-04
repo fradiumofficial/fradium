@@ -1,5 +1,5 @@
-import { useAuth } from "@/core/providers/auth-provider";
-import UnauthorizedPage from "@/pages/SEO/unauthorize-page";
+import { useAuth } from "@/core/providers/AuthProvider";
+import UnauthorizedPage from "@/pages/SEO/UnauthorizePage";
 
 export default function AuthGuard({ children, isRedirectToLogin = false }) {
   const { isAuthenticated, handleLogin } = useAuth();
