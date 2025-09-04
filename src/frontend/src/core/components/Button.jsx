@@ -7,8 +7,8 @@ const buttonVariants = cva(
   {
     variants: {
       size: {
-        sm: "text-sm px-4 py-2 shadow-[-3px_3px_0_0_#a259ff] active:shadow-[-2px_2px_0_0_#a259ff] min-h-[36px]",
-        md: "text-base px-6 py-3 shadow-[-5px_5px_0_0_#a259ff] active:shadow-[-3px_3px_0_0_#a259ff] sm:active:shadow-[-4px_4px_0_0_#a259ff] min-h-[44px]",
+        sm: "text-[14px] px-6 py-[10px] shadow-[-3px_3px_0_0_#a259ff] active:shadow-[-2px_2px_0_0_#a259ff] min-h-[36px]",
+        md: "text-[14px] sm:text-[16px] px-6 py-[10px] sm:py-[13px] shadow-[-3px_3px_0_0_#a259ff] sm:shadow-[-5px_5px_0_0_#a259ff] active:shadow-[-2px_2px_0_0_#a259ff] sm:active:shadow-[-3px_3px_0_0_#a259ff] min-h-[44px]",
         lg: "text-lg px-8 py-4 shadow-[-6px_6px_0_0_#a259ff] active:shadow-[-4px_4px_0_0_#a259ff] sm:active:shadow-[-5px_5px_0_0_#a259ff] min-h-[52px]",
       },
     },
