@@ -14,10 +14,10 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tract-core = { version = "0.21.13", default-features = false }
 tract-onnx = { version = "0.21.13", default-features = false }
-getrandom = { workspace = true, default-features = false, features = ["custom"] }
+getrandom = { version = "*", default-features = false, features = ["custom"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
-hex = { workspace = true }
-num-traits = { workspace = true }
+hex = "0.4.3"
+num-traits = "0.2.19"
 thiserror = "1.0.61"
 
 [profile.release]

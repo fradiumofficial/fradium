@@ -7,15 +7,12 @@ import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Declarations
+import { fradium_token as token } from "declarations/fradium_token";
+import { backend as backend } from "declarations/backend";
+
 // Global Style
 import "@/core/style/global.css";
-
-// Canister Declarations
-import { backend } from "declarations/backend";
-import { token } from "declarations/token";
-import { bitcoin } from "declarations/bitcoin";
-import { solana } from "declarations/solana";
-import { ethereum } from "declarations/ethereum";
 
 // Provider
 import { AuthProvider } from "@/core/providers/auth-provider.jsx";
@@ -96,7 +93,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider canisters={{ backend, token, bitcoin, solana, ethereum }}>
+      <AuthProvider canisters={{ token, backend }}>
         <Routes>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />

@@ -9,10 +9,10 @@ import Nat "mo:base/Nat";
 import Int "mo:base/Int";
 import Text "mo:base/Text";
 import Bool "mo:base/Bool";
-import Blob "mo:base/Blob";
+
 import Nat64 "mo:base/Nat64";
 
-import TokenCanister "canister:token";
+import TokenCanister "canister:fradium_token";
 import Types "types";
 
 persistent actor Fradium {
@@ -34,17 +34,13 @@ persistent actor Fradium {
   var reportsStorage : [(Principal, [Types.Report])] = [];
   var faucetClaimsStorage : [(Principal, Time.Time)] = [];
   var stakeRecordsStorage : [(Principal, Types.StakeRecord)] = [];
-  var userWalletsStorage : [(Principal, Types.UserWallet)] = [];
   var analyzeAddressStorage : [(Principal, [Types.AnalyzeHistory])] = [];
-  var transactionHistoryStorage : [(Principal, [Types.TransactionEntry])] = [];
   var analyzeHistoryStorage : [(Principal, [Types.AnalyzeHistory])] = [];
 
   transient var reportStore = Map.HashMap<Principal, [Types.Report]>(0, Principal.equal, Principal.hash);
   transient var faucetClaimsStore = Map.HashMap<Principal, Time.Time>(0, Principal.equal, Principal.hash);
   transient var stakeRecordsStore = Map.HashMap<Principal, Types.StakeRecord>(0, Principal.equal, Principal.hash);
-  transient var userWalletsStore = Map.HashMap<Principal, Types.UserWallet>(0, Principal.equal, Principal.hash);
   transient var analyzeAddressStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
-  transient var transactionHistoryStore = Map.HashMap<Principal, [Types.TransactionEntry]>(0, Principal.equal, Principal.hash);
   transient var analyzeHistoryStore = Map.HashMap<Principal, [Types.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
 
   private var next_report_id : Types.ReportId = 0;
@@ -55,9 +51,9 @@ persistent actor Fradium {
     reportsStorage := Iter.toArray(reportStore.entries());
     faucetClaimsStorage := Iter.toArray(faucetClaimsStore.entries());
     stakeRecordsStorage := Iter.toArray(stakeRecordsStore.entries());
-    userWalletsStorage := Iter.toArray(userWalletsStore.entries());
+
     analyzeAddressStorage := Iter.toArray(analyzeAddressStore.entries());
-    transactionHistoryStorage := Iter.toArray(transactionHistoryStore.entries());
+
     analyzeHistoryStorage := Iter.toArray(analyzeHistoryStore.entries());
   };
 
@@ -78,20 +74,14 @@ persistent actor Fradium {
         stakeRecordsStore.put(key, value);
     };
 
-    userWalletsStore := Map.HashMap<Principal, Types.UserWallet>(userWalletsStorage.size(), Principal.equal, Principal.hash);
-    for ((key, value) in userWalletsStorage.vals()) {
-        userWalletsStore.put(key, value);
-    };
+
 
     analyzeAddressStore := Map.HashMap<Principal, [Types.AnalyzeHistory]>(analyzeAddressStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in analyzeAddressStorage.vals()) {
         analyzeAddressStore.put(key, value);
     };
 
-    transactionHistoryStore := Map.HashMap<Principal, [Types.TransactionEntry]>(transactionHistoryStorage.size(), Principal.equal, Principal.hash);
-    for ((key, value) in transactionHistoryStorage.vals()) {
-        transactionHistoryStore.put(key, value);
-    };
+
 
     analyzeHistoryStore := Map.HashMap<Principal, [Types.AnalyzeHistory]>(analyzeHistoryStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in analyzeHistoryStorage.vals()) {
@@ -144,7 +134,7 @@ persistent actor Fradium {
     let transferArgs = {
       from_subaccount = null;
       to = { owner = caller; subaccount = null };
-      amount = 10 * (10 ** Nat8.toNat(await TokenCanister.get_decimals()));
+      amount = 10 * (10 ** Nat8.toNat(await TokenCanister.icrc1_decimals()));
       fee = null;
       memo = ?Text.encodeUtf8("Faucet Claim");
       created_at_time = null;
@@ -348,7 +338,7 @@ persistent actor Fradium {
       };
     };
 
-    let minimum_stake_amount = 5 * (10 ** Nat8.toNat(await TokenCanister.get_decimals()));
+    let minimum_stake_amount = 5 * (10 ** Nat8.toNat(await TokenCanister.icrc1_decimals()));
 
     if (params.stake_amount < minimum_stake_amount) {
       return #Err("Minimum stake is 5 FUM tokens");
@@ -357,16 +347,16 @@ persistent actor Fradium {
     let transferArgs = {
         spender_subaccount = null;
         from = {
-            owner = caller; 
+            owner = caller;
             subaccount = null;
         };
         to = {
-            owner = Principal.fromActor(Fradium); 
+            owner = Principal.fromActor(Fradium);
             subaccount = null;
         };
         amount = params.stake_amount;
         fee = null;
-        memo = ?Blob.toArray(Text.encodeUtf8("Report Stake"));
+        memo = ?Text.encodeUtf8("Report Stake");
         created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
     };
 
@@ -461,7 +451,7 @@ persistent actor Fradium {
         };
 
         // Validate minimum stake amount
-        let minimum_stake_amount = 1 * (10 ** Nat8.toNat(await TokenCanister.get_decimals()));
+        let minimum_stake_amount = 1 * (10 ** Nat8.toNat(await TokenCanister.icrc1_decimals()));
         if (params.stake_amount < minimum_stake_amount) {
           return #Err("Minimum stake is 1 FUM token");
         };
@@ -470,16 +460,16 @@ persistent actor Fradium {
         let transferArgs = {
           spender_subaccount = null;
           from = {
-            owner = caller; 
+            owner = caller;
             subaccount = null;
           };
           to = {
-            owner = Principal.fromActor(Fradium); 
+            owner = Principal.fromActor(Fradium);
             subaccount = null;
           };
           amount = params.stake_amount;
           fee = null;
-          memo = ?Blob.toArray(Text.encodeUtf8("Vote Stake"));
+          memo = ?Text.encodeUtf8("Vote Stake");
           created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
         };
 
@@ -922,48 +912,7 @@ persistent actor Fradium {
     return activity_factor;
   };
 
-  // ===== WALLET APP =====
-  public shared({ caller }) func create_wallet(params : Types.CreateWalletParams) : async Types.Result<Text, Text> {
-    if(Principal.isAnonymous(caller)) {
-      return #Err("Anonymous users can't perform this action.");
-    };
 
-    // Check if user already has a wallet
-    switch (userWalletsStore.get(caller)) {
-      case (?_) {
-        return #Err("You already have a wallet created");
-      };
-      case null { };
-    };
-
-    // Create new wallet
-    let newWallet : Types.UserWallet = {
-      principal = caller;
-      addresses = params.addresses;
-      created_at = Time.now();
-    };
-
-    // Store the wallet
-    userWalletsStore.put(caller, newWallet);
-
-    return #Ok("Wallet created successfully with " # Nat.toText(params.addresses.size()) # " addresses");
-  };
-
-  public shared({ caller }) func get_wallet() : async Types.Result<Types.UserWallet, Text> {
-    if(Principal.isAnonymous(caller)) {
-      return #Err("Anonymous users can't perform this action.");
-    };
-
-    // Get user's wallet
-    switch (userWalletsStore.get(caller)) {
-      case (?wallet) {
-        return #Ok(wallet);
-      };
-      case null {
-        return #Err("Wallet not found. Please create a wallet first.");
-      };
-    };
-  };
 
   // ===== ANALYZE ADDRESS =====
   public shared({ caller }) func analyze_address(address : Text) : async Types.Result<Types.GetAnalyzeAddressResult, Text> {
@@ -1062,35 +1011,7 @@ persistent actor Fradium {
     };
   };
 
-  // ===== TRANSACTION HISTORY =====
-  public shared({ caller }) func create_transaction_history(params : Types.CreateTransactionHistoryParams) : async Types.Result<Text, Text> {
-    if(Principal.isAnonymous(caller)) {
-      return #Err("Anonymous users can't perform this action.");
-    };
 
-    // Create new transaction entry
-    let newTransaction : Types.TransactionEntry = {
-      chain = params.chain;
-      direction = params.direction;
-      amount = params.amount;
-      timestamp = params.timestamp;
-      details = params.details;
-      note = params.note;
-      status = #Pending;
-    };
-
-    // Get existing transaction history for the user
-    let existingHistory = switch (transactionHistoryStore.get(caller)) {
-      case (?history) { history };
-      case null { [] };
-    };
-
-    // Add new transaction to history
-    let updatedHistory = Array.append(existingHistory, [newTransaction]);
-    transactionHistoryStore.put(caller, updatedHistory);
-
-    return #Ok("Transaction history created successfully");
-  };
 
   // ADMIN - DEBUG ONLY - DELETE LATER
   public func admin_change_report_deadline(report_id : Types.ReportId, new_deadline : Time.Time) : async Types.Result<Text, Text> {

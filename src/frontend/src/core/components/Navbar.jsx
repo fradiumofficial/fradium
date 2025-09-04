@@ -1,16 +1,16 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Button as ButtonShad } from "@/core/components/ui/button";
-import { convertE8sToToken } from "@/core/lib/canisterUtils";
+import { ChevronDown, FileText, LogOut, Coins } from "lucide-react";
+
+import { fradium_token as token } from "declarations/fradium_token";
+
 import { useAuth } from "@/core/providers/auth-provider";
+import { Button as ButtonShad } from "@/core/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/core/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { LoadingState } from "@/core/components/ui/loading-state";
+import SidebarButton from "@/core/components/SidebarButton";
+import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { cn } from "@/core/lib/utils";
-import { FileText, LogOut } from "lucide-react";
-import { token } from "declarations/token";
-import { formatAddress } from "../lib/canisterUtils";
-import SidebarButton from "./SidebarButton";
-import { LoadingState } from "./ui/loading-state";
 
 const navigationItems = [
   { label: "Home", href: "/" },
@@ -65,7 +65,7 @@ const Navbar = () => {
     try {
       await handleLogin();
     } catch (error) {
-      console.log("Login cancelled or failed");
+      console.log("handleSignIn error", error);
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +137,7 @@ const Navbar = () => {
 
             navigate("/balance");
           }}>
-          <span className="text-sm font-medium h-5">{isAuthenticated ? convertE8sToToken(balance) : 0} FUM</span>
+          <span className="text-sm font-medium h-5">{isAuthenticated ? convertE8sToToken(balance) : 0} FADM</span>
         </ButtonShad>
         {/* User Profile Desktop */}
         {isAuthenticated ? (
@@ -165,6 +165,10 @@ const Navbar = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/balance")}>
+                  <Coins className="mr-2 h-4 w-4" />
+                  <span>Balance</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-report")}>
                   <FileText className="mr-2 h-4 w-4" />
                   <span>My Reports</span>

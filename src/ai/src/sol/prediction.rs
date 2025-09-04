@@ -4,7 +4,7 @@ use crate::shared_models::{RansomwareResult, PredictionError};
 use super::config::{MODEL_BYTES, SCALER_PARAMS_JSON, MODEL_METADATA_JSON};
 use super::data_extractor::SolanaDataExtractor;
 use super::feature_calculator::SolanaFeatureCalculator;
-use super::models::{is_valid_solana_address, HeliusTransaction}; // Import HeliusTransaction
+use super::models::{is_valid_solana_address};
 use tract_onnx::prelude::*;
 use serde::{Deserialize, Serialize};
 

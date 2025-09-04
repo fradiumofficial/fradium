@@ -1,8 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { backend } from "declarations/backend";
-import { bitcoin } from "declarations/bitcoin";
-import { solana } from "declarations/solana";
-import { ethereum } from "declarations/ethereum";
 import { useAuth } from "./auth-provider";
 
 // Create context for wallet data
@@ -136,53 +132,8 @@ export const WalletProvider = ({ children }) => {
   const createWallet = useCallback(async () => {
     setIsCreatingWallet(true);
 
-    console.log("identity", identity);
     try {
-      // Get bitcoin address
-      const bitcoinResponse = await bitcoin.get_p2pkh_address();
-
-      // Get solana address
-      const solanaResponse = await solana.solana_account([identity?.getPrincipal()]);
-
-      // Get Ethereum address
-      const ethereumResponse = await ethereum.get_address();
-
-      console.log("ethereumResponse", ethereumResponse);
-
-      let ethereumAddress = "-";
-
-      if ("Err" in ethereumResponse) {
-        console.error("Failed to get Ethereum address:", ethereumResponse);
-        throw new Error("Failed to get Ethereum address");
-      } else {
-        ethereumAddress = ethereumResponse.Ok;
-      }
-
-      // Create wallet with new structure
-      const response = await backend.create_wallet({
-        addresses: [
-          {
-            network: { Bitcoin: null },
-            token_type: { Bitcoin: null },
-            address: bitcoinResponse,
-          },
-          {
-            network: { Ethereum: null },
-            token_type: { Ethereum: null },
-            address: ethereumAddress,
-          },
-          {
-            network: { Solana: null },
-            token_type: { Solana: null },
-            address: solanaResponse,
-          },
-          {
-            network: { ICP: null },
-            token_type: { Fradium: null },
-            address: identity?.getPrincipal()?.toString(),
-          },
-        ],
-      });
+      throw new Error("Not implemented");
 
       if ("Ok" in response) {
         // Fetch wallet data immediately after creation

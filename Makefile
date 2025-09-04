@@ -29,6 +29,10 @@ bitcoin-send:
 bitcoin-mine:
 	bitcoin-cli -conf="$(CURDIR)/bitcoin.conf" generatetoaddress 1 mtbZzVBwLnDmhH4pE9QynWAgh6H3aC1E6M
 
+setup:
+	chmod +x "$(CURDIR)/scripts/setup.sh"
+	"$(CURDIR)/scripts/setup.sh"
+
 deploy-backend:
 	dfx deploy backend
 
@@ -36,10 +40,10 @@ deploy-token:
 	chmod +x "$(CURDIR)/scripts/deploy.fradium_token.sh"
 	"$(CURDIR)/scripts/deploy.fradium_token.sh"
 
-build-ai:
+deploy-ai:
 	cargo build --release --target wasm32-unknown-unknown --package ransomware_detector
 	candid-extractor "target/wasm32-unknown-unknown/release/ransomware_detector.wasm" > "src/ai/detector_service/src/ransomware_detector.did"
 
-build-solana:
+deploy-solana:
 	cd "src/solana" && ./build.sh
 	candid-extractor "target/wasm32-unknown-unknown/release/solana.wasm" > "src/solana/solana.did"

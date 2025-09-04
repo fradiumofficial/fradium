@@ -1,16 +1,25 @@
+// UI Components
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
 import { Textarea } from "@/core/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Plus, X, CheckCircle, Upload, FileText, Wallet } from "lucide-react";
+import PrimaryButton from "@/core/components/Button";
+
+// Icon
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle, FileText, Plus, Upload, Wallet, X } from "lucide-react";
+
+// React & Router
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
+
+// Auth
 import { useAuth } from "@/core/providers/auth-provider";
-import { token } from "declarations/token";
-import { convertE8sToToken, optValue } from "../../core/lib/canisterUtils";
-import { backend, canisterId as backendCanisterId } from "declarations/backend";
+
+// Canister & Backend
 import { Principal } from "@dfinity/principal";
-import PrimaryButton from "@/core/components/Button";
+
+// Utils (local)
+import { convertE8sToToken, optValue } from "@/core/lib/canisterUtils";
 
 import { uploadMultipleFilesToPinataWithFallback } from "@/core/services/pinata";
 import { validateFiles, formatFileSize, FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from "@/core/services/fileValidation";

@@ -1,7 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-    "src/wallet"
+    "src/wallet",
+    "src/ai"
 ]
 
 [workspace.package]

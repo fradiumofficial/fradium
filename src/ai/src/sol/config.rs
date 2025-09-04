@@ -1,12 +1,12 @@
 // src/solana/config.rs
 
-pub const SOL_MAX_TRANSACTIONS: usize = 500;
-pub const LAMPORTS_TO_SOL: f64 = 1_000_000_000.0;
-pub const API_DELAY_MS: u64 = 500;
+
+
+
 pub const MAX_RETRIES: u32 = 3;
 pub const HELIUS_MAX_RECORDS: usize = 1000;
 pub const MAX_TRANSACTIONS_PER_ADDRESS: usize = 50000;
-pub const JUPITER_API_DELAY_MS: u64 = 1000;
+
 
 pub const MODEL_BYTES: &[u8] = include_bytes!("../../models/sol_risk_model_mlp.onnx");
 
@@ -456,30 +456,13 @@ pub const COMPREHENSIVE_PROGRAM_ADDRESSES: &[&str] = &[
     "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw",     // Realms Governance
 ];
 
-// Stablecoin addresses for validation
-pub const STABLECOIN_ADDRESSES: &[(&str, &str)] = &[
-    ("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "USDC"),
-    ("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "USDT"), 
-    ("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", "USDC"),  // USDC on other markets
-    ("mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So", "mSOL"),   // Marinade SOL
-    ("So11111111111111111111111111111111111111112", "WSOL"),   // Wrapped SOL
-];
 
-// Known token info for common tokens
-pub const KNOWN_TOKEN_INFO: &[(&str, &str, u8)] = &[
-    ("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "USDC", 6),
-    ("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "USDT", 6),
-    ("So11111111111111111111111111111111111111112", "WSOL", 9),
-    ("9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E", "BTC", 6),
-    ("mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So", "mSOL", 9),
-    ("J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn", "jitoSOL", 9),
-    ("bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1", "bSOL", 9),
-];
+
+
 
 // API configurations - REPLACE WITH YOUR API KEYS
 pub const HELIUS_API_KEY: &str = "2924b86e-5cf9-4952-b335-fb4efea7eb6d";
-pub const CRYPTOCOMPARE_API_KEY: &str = "05c9ed12474c1681807b9948d95d4b3a55e0842ae70bb6091d65c15ad3393296";
-pub const MORALIS_API_KEY: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijg3MmU4OGMyLTVmMTMtNDFhNC1hODk3LThmMTk0ZDY2NGFlNyIsIm9yZ0lkIjoiNDYwMDAzIiwidXNlcklkIjoiNDczMjU4IiwidHlwZUlkIjoiZjIyNmM1M2MtM2U3Ni00Y2Y1LThjOWEtZDY1NzAxOWI5YWUyIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTI4MzkzNjksImV4cCI6NDkwODU5OTM2OX0.Eh_iVFjeJH11aNFMFPxQjWJdR_Hxs0dOg3gnzYX-eiA";
+
 
 // DEX, Lending, and Staking program sets for transaction classification
 pub const DEX_PROGRAMS: &[&str] = &[

@@ -63,27 +63,15 @@ function HowItWorksMobileCarousel() {
   return (
     <div className="w-full flex flex-col items-center">
       <div className="w-full flex justify-center mb-6">
-        <div
-          className="w-full max-w-xs relative"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
+        <div className="w-full max-w-xs relative" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
           <img src={steps[active].img} className="w-full h-auto object-contain" draggable="false" />
           {/* Overlay text di atas gambar */}
-
         </div>
       </div>
       {/* Dot indicator */}
       <div className="flex items-center justify-center gap-2 mt-2 mb-2">
         {steps.map((_, idx) => (
-          <button
-            key={idx}
-            className={`w-3 h-3 rounded-full transition-all duration-200 ${active === idx ? "bg-[#7be495]" : "bg-[#23272F]"}`}
-            onClick={() => setActive(idx)}
-            aria-label={`Go to step ${idx + 1}`}
-            style={{ outline: "none", border: "none" }}
-          />
+          <button key={idx} className={`w-3 h-3 rounded-full transition-all duration-200 ${active === idx ? "bg-[#7be495]" : "bg-[#23272F]"}`} onClick={() => setActive(idx)} aria-label={`Go to step ${idx + 1}`} style={{ outline: "none", border: "none" }} />
         ))}
       </div>
     </div>
@@ -119,7 +107,7 @@ const HomePage = () => {
         };
         await handleLogin(customLoginHandler);
       } catch (error) {
-        console.log("Login cancelled or failed");
+        console.log("handleLaunchWallet error", error);
         setIsLoading(false);
       }
     } else {
@@ -152,7 +140,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="mt-10 bg-transparent" style={{ background: 'transparent' }}>
+    <div className="mt-10 bg-transparent" style={{ background: "transparent" }}>
       <section className={styles.heroAboutSection}>
         {/* Hero Content */}
         <div className={styles.heroContentWrapper}>
@@ -210,7 +198,7 @@ const HomePage = () => {
       {/* How it works section */}
       {useIsMobile() ? (
         // MOBILE LAYOUT
-        <section className="w-full flex flex-col items-center mt-16 px-4 bg-transparent" style={{ background: 'transparent' }}>
+        <section className="w-full flex flex-col items-center mt-16 px-4 bg-transparent" style={{ background: "transparent" }}>
           <div className="text-center mb-6">
             <div className="text-[#7be495] font-semibold tracking-[0.18em] text-[13px] mb-2 uppercase">HOW IT WORKS</div>
             <h2 className="text-white text-[22px] font-semibold mb-3 leading-tight">Simple Protection for Every Transaction</h2>
@@ -306,7 +294,11 @@ const HomePage = () => {
           // MOBILE LAYOUT
           <div className="w-full flex flex-col items-center px-4 py-10 bg-transparent">
             <span className="text-[#7be495] text-[13px] font-medium tracking-[0.18em] uppercase mb-2">KEY FEATURE</span>
-            <h2 className="text-white text-[20px] font-semibold text-center mb-4 leading-tight">Secure your digital assets<br />with confidence</h2>
+            <h2 className="text-white text-[20px] font-semibold text-center mb-4 leading-tight">
+              Secure your digital assets
+              <br />
+              with confidence
+            </h2>
             <img src="/assets/images/fradium-wallet.png" alt="Fradium Wallet" className="w-[220px] max-w-full mx-auto mb-6 rounded-2xl shadow-lg" draggable="false" />
             <div className="flex flex-col gap-4 w-full max-w-xs mx-auto">
               {/* Fraud Detection */}

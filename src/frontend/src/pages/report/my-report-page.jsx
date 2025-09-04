@@ -1,13 +1,28 @@
+// UI Components
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
-import { Search, AlertTriangle, CheckCircle, Clock, Eye, FileText, Vote, Coins, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
 import PrimaryButton from "@/core/components/Button";
-import { backend } from "declarations/backend";
-import { token } from "declarations/token";
+
+// Declarations
+import { fradium_token as token } from "declarations/fradium_token";
+import { backend as backend } from "declarations/backend";
+
+// Icon
+import { AlertTriangle, CheckCircle, Clock, Coins, Eye, FileText, Search, Vote, X } from "lucide-react";
+
+// React Hooks
+import { useEffect, useState } from "react";
+
+// Router
+import { Link, useNavigate } from "react-router";
+
+// Toast
 import { toast } from "react-toastify";
+
+// Auth
 import { useAuth } from "@/core/providers/auth-provider";
+
+// Utils
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 
 export default function MyReportPage() {
@@ -237,6 +252,7 @@ export default function MyReportPage() {
     setIsUnstaking(true);
 
     try {
+      throw new Error("Not implemented");
       let response;
 
       // Call different backend functions based on type

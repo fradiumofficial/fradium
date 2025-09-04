@@ -8,8 +8,7 @@ use ic_cdk::api::management_canister::http_request::{
 };
 use candid::{CandidType, Deserialize};
 
-const LAMPORTS_TO_SOL: f64 = 1_000_000_000.0;
-const API_DELAY_MS: u64 = 500;
+
 
 // Simple token info struct
 #[derive(Debug, Clone, CandidType, Deserialize)]
@@ -77,10 +76,7 @@ impl SolanaPriceConverter {
         }
     }
 
-    pub fn normalize_token_amount(&self, raw_amount: u64, decimals: u32) -> f64 {
-        let decimals = if decimals > 18 { 9 } else { decimals };
-        raw_amount as f64 / (10_u64.pow(decimals) as f64)
-    }
+
 
     pub async fn get_token_info(&mut self, mint_address: &str) -> TokenInfo {
         let mint_address = mint_address.trim();

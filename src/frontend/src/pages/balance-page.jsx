@@ -1,12 +1,17 @@
+import { useState, useEffect } from "react";
+
+import { Link } from "react-router";
+
+import { Search, ArrowUpRight, ArrowDownLeft, Coins, Calendar } from "lucide-react";
+
+import { fradium_token as token } from "declarations/fradium_token";
+
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
-import { Search, ArrowUpRight, ArrowDownLeft, Coins, Calendar } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Link } from "react-router";
 import { useAuth } from "@/core/providers/auth-provider";
-import { token } from "declarations/token";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
-import Card from "../core/components/Card";
+
+import Card from "@/core/components/Card";
 
 export default function BalancePage() {
   const { isAuthenticated: isConnected, identity } = useAuth();

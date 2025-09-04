@@ -174,7 +174,7 @@ impl SolanaDataExtractor {
                 mint_address: "So11111111111111111111111111111111111111112".to_string(),
                 decimals: 9,
                 price_fetch_success: true,
-                token_symbol: "SOL".to_string(),
+
                 sol_ratio: None,
             };
             parsed_transactions.push(parsed_tx);
@@ -255,7 +255,7 @@ impl SolanaDataExtractor {
                 mint_address: "So11111111111111111111111111111111111111112".to_string(),
                 decimals: 9,
                 price_fetch_success: true,
-                token_symbol: "SOL".to_string(),
+
                 sol_ratio: None,
             };
             parsed_transactions.push(parsed_tx);
@@ -282,7 +282,7 @@ impl SolanaDataExtractor {
                     value_normalized: sol_amount,
                     mint_address: "So11111111111111111111111111111111111111112".to_string(),
                     decimals: 9,
-                    token_symbol: "SOL".to_string(),
+    
                     ..Default::default()
                 };
                 transfers.push(parsed_tx);
@@ -316,7 +316,7 @@ impl SolanaDataExtractor {
                     value_normalized: amount,
                     mint_address: "So11111111111111111111111111111111111111112".to_string(),
                     decimals: 9,
-                    token_symbol: "WSOL".to_string(),
+    
                     ..Default::default()
                 };
                 transfers.push(parsed_tx);
@@ -360,7 +360,7 @@ impl SolanaDataExtractor {
                     value_normalized: raw_amount,
                     mint_address: mint,
                     decimals: token_info.decimals as u8,
-                    token_symbol: token_info.symbol,
+
                     ..Default::default()
                 };
                 transfers.push(parsed_tx);
@@ -465,10 +465,7 @@ impl TransactionClassifier {
         !program_ids.is_disjoint(&self.comprehensive_programs)
     }
     
-    // Helper method for feature calculator to use
-    pub fn is_known_program(&self, address: &str) -> bool {
-        self.comprehensive_programs.contains(address)
-    }
+
 }
 
 // Helper Functions
@@ -481,13 +478,7 @@ fn transform_helius_response(raw: TransformArgs) -> HttpResponse {
     }
 }
 
-fn is_valid_solana_address(address: &str) -> bool {
-    if address.is_empty() || address.len() < 32 || address.len() > 44 {
-        return false;
-    }
-    
-    address.chars().all(|c| "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".contains(c))
-}
+
 
 #[cfg(test)]
 mod tests {
@@ -502,12 +493,7 @@ mod tests {
         assert!(!classifier.comprehensive_programs.is_empty());
     }
 
-    #[test]
-    fn test_address_validation() {
-        assert!(is_valid_solana_address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"));
-        assert!(!is_valid_solana_address("invalid_address"));
-        assert!(!is_valid_solana_address(""));
-    }
+
     
     #[test]
     fn test_wsol_detection() {

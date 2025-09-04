@@ -1,12 +1,14 @@
+import { useState, useEffect } from "react";
+
+import { Shield, Clock, Zap } from "lucide-react";
+
+import { fradium_token as token } from "declarations/fradium_token";
+import { backend as backend } from "declarations/backend";
+
 import { Button } from "@/core/components/ui/button";
 import PrimaryButton from "@/core/components/Button";
-import { Shield, Clock, CheckCircle, Zap } from "lucide-react";
-import { Link } from "react-router";
-import { useState, useEffect } from "react";
 import { useAuth } from "@/core/providers/auth-provider";
 import { useToast } from "@/core/hooks/use-toast";
-import { backend } from "declarations/backend";
-import { token } from "declarations/token";
 import { formatAddress, convertE8sToToken } from "@/core/lib/canisterUtils";
 
 export default function FaucetPage() {

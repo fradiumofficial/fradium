@@ -1,8 +1,10 @@
+
 # =========================
 # Set up minter identity and get minter account ID
 # =========================
 dfx identity use minter
-export MINTER_ACCOUNT_ID=$(dfx canister id backend)
+# export MINTER_ACCOUNT_ID=$(dfx canister id backend)
+export MINTER_ACCOUNT_ID=$(dfx identity get-principal)
 
 # =========================
 # Token information
@@ -59,3 +61,18 @@ record {
 })"
 
 echo "Token initialized successfully" 
+
+# =========================
+# Deploy fradium_token_index canister with initialization arguments
+# =========================
+export LEDGER_ID=$(dfx canister id fradium_token)
+dfx deploy fradium_token_index --argument "(
+    opt variant { 
+        Init = record { 
+            ledger_id = principal \"${LEDGER_ID}\";
+            retrieve_blocks_from_ledger_interval_seconds = opt 10; 
+        } 
+    }
+)"
+
+echo "Token index deployed successfully" 

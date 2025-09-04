@@ -16,9 +16,7 @@ struct ProcessedTx {
     value_sol: f64,
     fee_btc: f64,
     slot: i64,
-    tx_type: String,
     tx_context: String,
-    is_programmatic: bool,
 }
 
 impl SolanaFeatureCalculator {
@@ -144,9 +142,7 @@ impl SolanaFeatureCalculator {
                     value_sol: transfer.value_sol,
                     fee_btc,
                     slot: transfer.slot as i64,
-                    tx_type: format!("{:?}", transfer.tx_type),
                     tx_context: context_str.to_string(),
-                    is_programmatic: transfer.is_programmatic,
                 });
 
                 all_fees_btc.push(fee_btc);
@@ -166,9 +162,7 @@ impl SolanaFeatureCalculator {
                     value_sol: transfer.value_sol,
                     fee_btc: 0.0, // Don't double-count fees for received transactions
                     slot: transfer.slot as i64,
-                    tx_type: format!("{:?}", transfer.tx_type),
                     tx_context: context_str.to_string(),
-                    is_programmatic: transfer.is_programmatic,
                 });
 
                 // Add counterparty if not a known program
@@ -382,61 +376,9 @@ impl SolanaFeatureCalculator {
         Some(features)
     }
 
-    fn classify_transaction_context(&self, tx: &HeliusTransaction) -> String {
-        let dex_programs = [
-            "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8", // Raydium
-            "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM", // Orca
-            "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4", // Jupiter
-            "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc", // Orca Whirlpools
-            "CAMMCzo5YL8w4VFF8KVHrK22GGUQpMDdHwMBSPBy4kD", // Raydium CLMM
-        ];
 
-        let lending_programs = [
-            "So1endDq2YkqhipRh3WViPa8hdiSpxWy6z3Z6tMCpAo", // Solend
-            "4MangoMjqJ2firMokCjjGgoK8d4MXcrgL7XJaL3w6fVg", // Mango
-            "LendZqTs7gn5CTSJU1jWKhKuVpjg9avMpS7FgG7V4CJ", // Port Finance
-        ];
 
-        let staking_programs = [
-            "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD", // Marinade
-            "StakeSSzfxn391k3LvdKbZP5WVwWd6AsY39qcgwy7f3J", // Native Staking
-            "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn", // JitoSOL
-        ];
 
-        for instruction in &tx.transaction.message.instructions {
-            let program_id = &instruction.program_id;
-            if dex_programs.contains(&program_id.as_str()) {
-                return "DEX_SWAP".to_string();
-            }
-            if lending_programs.contains(&program_id.as_str()) {
-                return "LENDING".to_string();
-            }
-            if staking_programs.contains(&program_id.as_str()) {
-                return "STAKING".to_string();
-            }
-        }
-
-        // FIXED: Match Python logic exactly
-        if (!tx.token_transfers.is_empty() || !tx.native_transfers.is_empty()) 
-            && tx.transaction.message.instructions.len() <= 1 {  // Changed from is_empty() to <= 1
-            return "PURE_TRANSFER".to_string();
-        }
-
-        "OTHER_PROGRAM".to_string()
-    }
-
-    fn is_programmatic_transaction(&self, tx: &HeliusTransaction) -> bool {
-        if tx.transaction.message.instructions.len() > 10 || tx.token_transfers.len() > 5 {
-            return true;
-        }
-        // Add this missing check from the Python script
-        for instruction in &tx.transaction.message.instructions {
-            if self.is_known_program(&instruction.program_id) {
-                return true;
-            }
-        }
-        false
-    }
 
     fn calculate_tx_complexity(&self, all_txs: &[&ProcessedTx]) -> f64 {
         if all_txs.is_empty() {

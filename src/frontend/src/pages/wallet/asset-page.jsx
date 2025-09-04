@@ -9,13 +9,6 @@ import QRCode from "qrcode";
 import { useWallet } from "@/core/providers/wallet-provider";
 import { useAuth } from "@/core/providers/auth-provider";
 
-// Canister Declarations
-import { backend } from "declarations/backend";
-import { bitcoin } from "declarations/bitcoin";
-import { solana } from "declarations/solana";
-import { ai } from "declarations/ai";
-import { ethereum } from "declarations/ethereum";
-
 // UI Components
 import TransactionButton from "@/core/components/TransactionButton";
 import NeoButton from "@/core/components/SidebarButton";

@@ -57,7 +57,8 @@
     },
     "backend": {
       "main": "src/backend/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "dependencies": ["fradium_token"]
     },
     "frontend": {
       "source": ["src/frontend/dist"],
@@ -87,6 +88,7 @@
       "wasm": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.wasm"
     },
     "fradium_token": {
+      "specified_id": "mxzaz-hqaaa-aaaar-qaada-cai",
       "type": "custom",
       "candid": "src/token/token_ledger.did",
       "wasm": "src/token/token-ledger.wasm.gz"

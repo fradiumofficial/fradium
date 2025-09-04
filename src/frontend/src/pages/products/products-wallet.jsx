@@ -48,7 +48,7 @@ const ProductsWallet = () => {
         };
         await handleLogin(customLoginHandler);
       } catch (error) {
-        console.log("Login cancelled or failed");
+        console.log("handleLaunchWallet error", error);
         setIsLoading(false);
       }
     } else {
@@ -150,7 +150,6 @@ const ProductsWallet = () => {
               </div>
             </div>
           </div>
-
         </section>
         {/* Confirm Create Wallet Modal */}
         <ConfirmCreateWalletModal isOpen={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal} onConfirm={handleConfirmCreateWallet} isLoading={isLoading} />

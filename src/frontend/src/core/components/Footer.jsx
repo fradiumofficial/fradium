@@ -37,7 +37,7 @@ const Footer = () => {
         };
         await handleLogin(customLoginHandler);
       } catch (error) {
-        console.log("Login cancelled or failed");
+        console.log("handleLaunchWallet error", error);
         setIsLoading(false);
       }
     } else {

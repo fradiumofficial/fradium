@@ -1,0 +1,26 @@
+type HttpHeader = record { value : text; name : text };
+type HttpResponse = record {
+  status : nat;
+  body : blob;
+  headers : vec HttpHeader;
+};
+type RansomwareResult = record {
+  transactions_analyzed : nat32;
+  threshold_used : float64;
+  data_source : text;
+  is_ransomware : bool;
+  address : text;
+  chain_type : text;
+  confidence : float64;
+  confidence_level : text;
+  ransomware_probability : float64;
+};
+type Result = variant { Ok : RansomwareResult; Err : text };
+type TransformArgs = record { context : blob; response : HttpResponse };
+service : () -> {
+  analyze_btc_address : (vec float32, text, nat32) -> (Result);
+  analyze_eth_address : (vec record { text; float64 }, text, nat32) -> (Result);
+  analyze_sol_address : (text) -> (Result);
+  transform : (TransformArgs) -> (HttpResponse) query;
+  transform_helius_response : (TransformArgs) -> (HttpResponse) query;
+}

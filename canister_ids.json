@@ -6,8 +6,11 @@
   "backend": {
     "ic": "oqcob-6iaaa-aaaar-qbr7q-cai"
   },
-  "bitcoin": {
+  "fradium_token": {
     "ic": "sr4wk-4qaaa-aaaae-qfdta-cai"
+  },
+  "fradium_token_index": {
+    "ic": "vjrnc-hiaaa-aaaam-aejza-cai"
   },
   "chatbot": {
     "ic": "x5piw-ciaaa-aaaam-aejxa-cai"
@@ -21,10 +24,7 @@
   "ai": {
     "ic": "zkoni-faaaa-aaaar-qbsaa-cai"
   },
-  "token": {
+  "wallet": {
     "ic": "v3x23-lyaaa-aaaam-aej2a-cai"
-  },
-  "solana": {
-    "ic": "vjrnc-hiaaa-aaaam-aejza-cai"
   }
 }

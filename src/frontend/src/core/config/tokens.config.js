@@ -9,7 +9,6 @@ export const TOKENS_CONFIG = {
     network: "Bitcoin",
     decimals: 8,
     addressFormats: ["bc1", "1", "3"],
-    canisterImport: () => import("declarations/bitcoin"),
     serviceClass: "BitcoinService",
     supportedOperations: ["balance", "send", "receive", "analyze", "history"],
     priceApiUrls: ["https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD"],
@@ -32,7 +31,6 @@ export const TOKENS_CONFIG = {
     network: "Ethereum",
     decimals: 18,
     addressFormats: ["0x"],
-    canisterImport: () => import("declarations/bitcoin"),
     serviceClass: "EthereumService",
     supportedOperations: ["balance", "send", "receive", "analyze", "history"],
     priceApiUrls: ["https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd", "https://min-api.cryptocompare.com/data/price?fsym=SOL&tsyms=USD"],
@@ -55,7 +53,6 @@ export const TOKENS_CONFIG = {
     network: "Solana",
     decimals: 9,
     addressFormats: [44], // Base58 length
-    canisterImport: () => import("declarations/solana"),
     serviceClass: "SolanaService",
     supportedOperations: ["balance", "send", "receive", "analyze", "history"],
     priceApiUrls: ["https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd", "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=SOL", "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT", "https://min-api.cryptocompare.com/data/price?fsym=SOL&tsyms=USD", "https://api.coinbase.com/v2/exchange-rates?currency=SOL", "https://api.kraken.com/0/public/Ticker?pair=SOLUSD", "https://api.bitfinex.com/v1/pubticker/solusd"],
@@ -78,7 +75,6 @@ export const TOKENS_CONFIG = {
     network: "Fradium",
     decimals: 8,
     addressFormats: ["fum"],
-    canisterImport: () => import("declarations/token"),
     serviceClass: "FradiumService",
     supportedOperations: ["balance", "send", "receive", "analyze", "history"],
     priceApiUrls: [], // Custom token, no external price API

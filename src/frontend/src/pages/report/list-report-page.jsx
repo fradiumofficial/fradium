@@ -1,12 +1,14 @@
-import { Button } from "@/core/components/ui/button";
-import { Input } from "@/core/components/ui/input";
-import { Search, AlertTriangle, CheckCircle, Clock, Eye, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Car } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
-import Card from "../../core/components/Card";
+
+import { Button } from "@/core/components/ui/button";
+import { Input } from "@/core/components/ui/input";
+import { Search, AlertTriangle, CheckCircle, Clock, Eye, Filter, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { backend } from "declarations/backend";
 import { toast } from "react-toastify";
+
+import Card from "@/core/components/Card";
 import SidebarButton from "@/core/components/SidebarButton";
 
 export default function ReportPage() {
