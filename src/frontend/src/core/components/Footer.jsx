@@ -1,73 +1,16 @@
-import React, { useState } from "react";
+import React from "react";
 import styles from "./footer.module.css";
 import { useNavigate } from "react-router";
-import { useAuth } from "@/core/providers/auth-provider";
-import { useWallet } from "@/core/providers/wallet-provider";
-import { backend } from "declarations/backend";
-import ConfirmCreateWalletModal from "./modals/ConfirmCreateWalletModal";
 import SidebarButton from "./SidebarButton";
-import { LoadingState } from "./ui/loading-state";
 
 const Footer = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, handleLogin } = useAuth();
-  const { hasConfirmedWallet, setHasConfirmedWallet } = useWallet();
-  const [showConfirmWalletModal, setShowConfirmWalletModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Fungsi untuk handle launch wallet
-  const handleLaunchWallet = async () => {
-    setIsLoading(true);
-    if (!isAuthenticated) {
-      try {
-        const customLoginHandler = async () => {
-          // Setelah login, cek wallet
-          const walletResult = await backend.get_wallet();
-          if ("Ok" in walletResult) {
-            // Wallet sudah ada, langsung redirect
-            navigate("/wallet");
-          } else if (!hasConfirmedWallet) {
-            // Wallet belum ada dan belum konfirmasi, tampilkan modal konfirmasi
-            setShowConfirmWalletModal(true);
-          } else {
-            // Sudah konfirmasi tapi belum ada wallet, langsung ke wallet page
-            navigate("/wallet");
-          }
-          setIsLoading(false);
-        };
-        await handleLogin(customLoginHandler);
-      } catch (error) {
-        console.log("handleLaunchWallet error", error);
-        setIsLoading(false);
-      }
-    } else {
-      // User sudah login, cek wallet
-      try {
-        const walletResult = await backend.get_wallet();
-        if ("Ok" in walletResult) {
-          // Wallet sudah ada, langsung redirect
-          navigate("/wallet");
-        } else if (!hasConfirmedWallet) {
-          // Wallet belum ada dan belum konfirmasi, tampilkan modal konfirmasi
-          setShowConfirmWalletModal(true);
-        } else {
-          // Sudah konfirmasi tapi belum ada wallet, langsung ke wallet page
-          navigate("/wallet");
-        }
-      } catch (error) {
-        console.error("Error checking wallet:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  // Fungsi untuk handle launch wallet - langsung redirect ke /wallet
+  const handleLaunchWallet = () => {
+    navigate("/wallet");
   };
 
-  // Fungsi untuk handle konfirmasi create wallet
-  const handleConfirmCreateWallet = () => {
-    setShowConfirmWalletModal(false);
-    setHasConfirmedWallet(true);
-    navigate("/wallet"); // Redirect ke wallet page untuk proses pembuatan wallet
-  };
 
   return (
     <footer className={`relative w-full flex h-auto  flex-col items-center`}>
@@ -156,23 +99,14 @@ const Footer = () => {
                   </a>
                 </li>
               </ul>
-              <SidebarButton onClick={handleLaunchWallet} disabled={isLoading}>
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <LoadingState type="spinner" size="sm" color="primary" />
-                    <span>Checking Wallet...</span>
-                  </div>
-                ) : (
-                  "Launch Wallet →"
-                )}
+              <SidebarButton onClick={handleLaunchWallet}>
+                Launch Wallet →
               </SidebarButton>
             </div>
           </div>
         </div>
         <div className={styles.copyright}>Copyright &copy;2025 Fradium. All rights reserved</div>
       </div>
-      {/* Confirm Create Wallet Modal */}
-      <ConfirmCreateWalletModal isOpen={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal} onConfirm={handleConfirmCreateWallet} isLoading={isLoading} />
     </footer>
   );
 };

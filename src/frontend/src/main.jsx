@@ -2,6 +2,7 @@
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
+import { AnimatePresence, motion } from "framer-motion";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
@@ -58,6 +59,29 @@ const customStyles = `
   #nprogress .peg {
     box-shadow: 0 0 10px #10b981, 0 0 5px #10b981 !important;
   }
+  
+  /* Pixelate Immersive Transition Styles */
+  .route-fade-enter {
+    opacity: 0;
+    filter: blur(25px) saturate(0%) contrast(300%) brightness(0.5);
+  }
+  
+  .route-fade-enter-active {
+    opacity: 1;
+    filter: blur(0px) saturate(100%) contrast(100%) brightness(1);
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  .route-fade-exit {
+    opacity: 1;
+    filter: blur(0px) saturate(100%) contrast(100%) brightness(1);
+  }
+  
+  .route-fade-exit-active {
+    opacity: 0;
+    filter: blur(20px) saturate(30%) contrast(200%) brightness(1.2);
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
 `;
 
 const styleSheet = document.createElement("style");
@@ -89,12 +113,31 @@ function NProgressRouter() {
   return null;
 }
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <BrowserRouter>
-      <NProgressRouter />
-      <AuthProvider canisters={{ token, backend }}>
-        <Routes>
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{
+          opacity: 0,
+          filter: "blur(25px) saturate(0%) contrast(300%) brightness(0.5)",
+        }}
+        animate={{
+          opacity: 1,
+          filter: "blur(0px) saturate(100%) contrast(100%) brightness(1)",
+        }}
+        exit={{
+          opacity: 0,
+          filter: "blur(20px) saturate(30%) contrast(200%) brightness(1.2)",
+        }}
+        transition={{
+          duration: 0.8,
+          ease: [0.25, 0.46, 0.45, 0.94],
+          filter: { duration: 1.0 },
+        }}>
+        <Routes location={location}>
           <Route path="/" element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/balance" element={<BalancePage />} />
@@ -130,6 +173,17 @@ createRoot(document.getElementById("root")).render(
             <Route path="setting" element={<SettingPage />} />
           </Route>
         </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <BrowserRouter>
+      <NProgressRouter />
+      <AuthProvider canisters={{ token, backend }}>
+        <AnimatedRoutes />
       </AuthProvider>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
     </BrowserRouter>

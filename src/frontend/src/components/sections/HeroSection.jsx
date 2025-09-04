@@ -1,8 +1,16 @@
 import React from 'react';
 import Container from '@/components/ui/Container';
 import Button from '@/components/ui/Button';
+import { useNavigate } from 'react-router';
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
+  // Fungsi untuk handle launch wallet - langsung redirect ke /wallet
+  const handleLaunchWallet = () => {
+    navigate("/wallet");
+  };
+
   return (
     <section className="relative min-h-screen bg-gray-900 overflow-hidden">
       {/* Background dengan gradients dan pattern */}
@@ -79,6 +87,7 @@ const HeroSection = () => {
           <div className="mb-16">
             <Button 
               size="lg"
+              onClick={handleLaunchWallet}
               className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               Launch Wallet →
