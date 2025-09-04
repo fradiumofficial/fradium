@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent } from "@/core/components/ui/dialog";
 import SidebarButton from "@/core/components/SidebarButton";
-import { LoadingState } from "@/core/components/ui/loading-state";
+import { LoadingState } from "@/core/components/ui/LoadingState";
 
 export default function ConfirmCreateWalletModal({ isOpen, onOpenChange, onConfirm, isLoading }) {
   return (

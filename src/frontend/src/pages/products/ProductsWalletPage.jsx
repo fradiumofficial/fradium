@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "@/core/providers/auth-provider";
-import { useWallet } from "@/core/providers/wallet-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
+import { useWallet } from "@/core/providers/WalletProvider";
 import { backend } from "declarations/backend";
 import SidebarButton from "@/core/components/SidebarButton";
 import ConfirmCreateWalletModal from "@/core/components/modals/ConfirmCreateWalletModal";

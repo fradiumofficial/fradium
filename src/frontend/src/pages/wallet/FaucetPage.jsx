@@ -7,7 +7,7 @@ import { backend as backend } from "declarations/backend";
 
 import { Button } from "@/core/components/ui/button";
 import PrimaryButton from "@/core/components/Button";
-import { useAuth } from "@/core/providers/auth-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
 import { useToast } from "@/core/hooks/use-toast";
 import { formatAddress, convertE8sToToken } from "@/core/lib/canisterUtils";
 

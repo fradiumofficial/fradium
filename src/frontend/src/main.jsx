@@ -16,33 +16,33 @@ import { backend as backend } from "declarations/backend";
 import "@/core/style/global.css";
 
 // Provider
-import { AuthProvider } from "@/core/providers/auth-provider.jsx";
+import { AuthProvider } from "@/core/providers/AuthProvider.jsx";
 
 // Layouts
-import HomeLayout from "@/core/components/layouts/home-layout.jsx";
-import WalletLayout from "@/core/components/layouts/wallet-layout.jsx";
+import HomeLayout from "@/core/components/layouts/HomeLayout.jsx";
+import WalletLayout from "@/core/components/layouts/WalletLayout.jsx";
 
 // Auth
-import AuthGuard from "@/core/components/auth/auth-guard.jsx";
+import AuthGuard from "@/core/components/auth/AuthGuard.jsx";
 
 // Pages
-import HomePage from "@/pages/home/home-page.jsx";
-import NotFoundPage from "@/pages/SEO/not-found-page";
-import ListReportPage from "@/pages/report/list-report-page.jsx";
-import ReportPage from "@/pages/report/detail-report-page.jsx";
-import CreateReportPage from "@/pages/report/create-report-page.jsx";
-import FaucetPage from "@/pages/faucet-page.jsx";
-import BalancePage from "@/pages/balance-page.jsx";
-import MyReportPage from "@/pages/report/my-report-page.jsx";
-import AssetsPage from "@/pages/wallet/asset-page.jsx";
-import AnalyseAddressPage from "@/pages/wallet/analyze-address-page.jsx";
-import AnalyseContractPage from "@/pages/wallet/analyze-contract-page.jsx";
-import TransactionHistoryPage from "@/pages/wallet/transaction-history-page.jsx";
-import ScanHistoryPage from "@/pages/wallet/scan-history-page.jsx";
-import SettingPage from "@/pages/wallet/setting-page.jsx";
-import ProductsExtension from "@/pages/products/products-extension.jsx";
-import ProductsWallet from "@/pages/products/products-wallet.jsx";
-import AssistantPage from "@/pages/assistant-page.jsx";
+import HomePage from "@/pages/home/HomePage.jsx";
+import NotFoundPage from "@/pages/SEO/NotFoundPage.jsx";
+import ListReportPage from "@/pages/report/ListReportPage.jsx";
+import ReportPage from "@/pages/report/DetailReportPage.jsx";
+import CreateReportPage from "@/pages/report/CreateReportPage.jsx";
+import FaucetPage from "@/pages/wallet/FaucetPage.jsx";
+import BalancePage from "@/pages/wallet/BalancePage.jsx";
+import MyReportPage from "@/pages/report/MyReportPage.jsx";
+import AssetsPage from "@/pages/wallet/AssetPage.jsx";
+import AnalyzeAddressPage from "@/pages/wallet/AnalyzeAddressPage.jsx";
+import AnalyzeContractPage from "@/pages/wallet/AnalyzeContractPage.jsx";
+import TransactionHistoryPage from "@/pages/wallet/TransactionHistoryPage.jsx";
+import ScanHistoryPage from "@/pages/wallet/ScanHistoryPage.jsx";
+import SettingPage from "@/pages/wallet/SettingPage.jsx";
+import ProductsExtension from "@/pages/products/ProductsExtensionPage.jsx";
+import ProductsWallet from "@/pages/products/ProductsWalletPage.jsx";
+import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
 
 NProgress.configure({
   minimum: 0.3,
@@ -166,8 +166,8 @@ function AnimatedRoutes() {
               </AuthGuard>
             }>
             <Route index element={<AssetsPage />} />
-            <Route path="analyze-address" element={<AnalyseAddressPage />} />
-            <Route path="analyze-contract" element={<AnalyseContractPage />} />
+            <Route path="analyze-address" element={<AnalyzeAddressPage />} />
+            <Route path="analyze-contract" element={<AnalyzeContractPage />} />
             <Route path="transaction-history" element={<TransactionHistoryPage />} />
             <Route path="scan-history" element={<ScanHistoryPage />} />
             <Route path="setting" element={<SettingPage />} />

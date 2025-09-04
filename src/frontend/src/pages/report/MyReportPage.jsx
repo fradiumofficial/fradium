@@ -20,7 +20,7 @@ import { Link, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
 // Auth
-import { useAuth } from "@/core/providers/auth-provider";
+import { useAuth } from "@/core/providers/AuthProvider";
 
 // Utils
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
@@ -253,51 +253,7 @@ export default function MyReportPage() {
 
     try {
       throw new Error("Not implemented");
-      let response;
 
-      // Call different backend functions based on type
-      if (unstakeReport.type === "voted") {
-        response = await backend.unstake_voted_report(unstakeReport.id);
-      } else if (unstakeReport.type === "created") {
-        response = await backend.unstake_created_report(unstakeReport.id);
-      } else {
-        throw new Error("Invalid unstake type");
-      }
-
-      if (response.Err) {
-        toast.error(response.Err);
-        return;
-      }
-
-      toast.success("Unstaked successfully");
-
-      // Refresh user balance
-      const fetchBalance = async () => {
-        if (!isConnected || !identity) return;
-
-        try {
-          const balance = await token.icrc1_balance_of({
-            owner: identity.getPrincipal(),
-            subaccount: [],
-          });
-          setUserBalance(convertE8sToToken(balance));
-        } catch (error) {
-          console.error("Error fetching balance:", error);
-        }
-      };
-
-      // Trigger balance update event for navbar
-      window.dispatchEvent(new Event("balance-updated"));
-
-      // Refresh balance
-      await fetchBalance();
-
-      // Close modal
-      setShowUnstakeModal(false);
-
-      // Refresh page data
-      await fetchMyReports();
-      await fetchMyVotedReports();
     } catch (error) {
       console.error("Error during unstake:", error);
       toast.error("Failed to unstake tokens");

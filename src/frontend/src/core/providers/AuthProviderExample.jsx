@@ -1,5 +1,5 @@
 import React from "react";
-import { AuthProvider } from "./auth-provider";
+import { AuthProvider } from "./AuthProvider";
 import { backend } from "declarations/backend";
 import { bitcoin } from "declarations/bitcoin";
 
