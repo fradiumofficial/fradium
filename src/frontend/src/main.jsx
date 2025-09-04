@@ -116,10 +116,13 @@ function NProgressRouter() {
 function AnimatedRoutes() {
   const location = useLocation();
 
+  // Determine layout key - only animate when switching between different layouts
+  const layoutKey = location.pathname.startsWith("/wallet") ? "wallet" : "home";
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={location.pathname}
+        key={layoutKey}
         initial={{
           opacity: 0,
           filter: "blur(25px) saturate(0%) contrast(300%) brightness(0.5)",
