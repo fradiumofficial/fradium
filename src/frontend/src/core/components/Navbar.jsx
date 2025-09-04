@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import { ChevronDown, FileText, LogOut, Coins } from "lucide-react";
 
 import { fradium_token as token } from "declarations/fradium_token";
@@ -23,11 +23,31 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated, handleLogin, logout, identity } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [balance, setBalance] = useState(0);
   const [productsDropdown, setProductsDropdown] = useState(false);
   const productsDropdownTimeout = useRef();
   const [isLoading, setIsLoading] = useState(false);
+
+  const pathname = location.pathname || "/";
+
+  const isItemActive = (item) => {
+    if (item.external) return false;
+    if (item.href === "/") return pathname === "/";
+    return pathname.startsWith(item.href);
+  };
+
+  const desktopItemClass = (active) =>
+    `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 text-center ${active ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"
+    }`;
+
+  const mobileItemClass = (active) =>
+    `font-[General Sans, sans-serif] text-lg ${active ? "text-white font-semibold" : "text-white/70 font-medium"} no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95`;
+
+  const isProductsActive = pathname.startsWith("/products");
+  const productsBtnClass = `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 flex items-center gap-1 ${isProductsActive ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"
+    }`;
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -77,23 +97,24 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center gap-2 sm:gap-3 select-none min-w-fit cursor-pointer" onClick={() => navigate("/")}>
           <img src="/logo.svg" alt="Crypgo Logo" className="h-8 sm:h-9 w-auto" draggable="false" />
-          <span className="font-semibold text-[22px] sm:text-[28px] text-white tracking-wider font-[General Sans, sans-serif]">
+          <span className="font-medium text-[22px] sm:text-[28px] text-white tracking-wider font-[General Sans, sans-serif]">
             Fradi<span className="text-[#9BEB83]">um</span>
           </span>
         </div>
         {/* Menu Desktop */}
-        <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-16 relative">
-          {navigationItems.map((item) =>
-            item.external ? (
-              <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] text-center">
+        <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-12 relative">
+          {navigationItems.map((item) => {
+            const active = isItemActive(item);
+            return item.external ? (
+              <a key={item.label} href={item.href} target="_blank" className={desktopItemClass(false)}>
                 {item.label}
               </a>
             ) : (
-              <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] text-center">
+              <Link key={item.label} to={item.href} className={desktopItemClass(active)}>
                 {item.label}
               </Link>
-            )
-          )}
+            );
+          })}
           {/* Products Dropdown */}
           <div
             className="relative"
@@ -104,7 +125,7 @@ const Navbar = () => {
             onMouseLeave={() => {
               productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
             }}>
-            <button className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] flex items-center gap-1" onClick={() => setProductsDropdown((v) => !v)} type="button">
+            <button className={productsBtnClass} onClick={() => setProductsDropdown((v) => !v)} type="button">
               Products <ChevronDown className="w-4 h-4" />
             </button>
             {productsDropdown && (
@@ -117,10 +138,10 @@ const Navbar = () => {
                 onMouseLeave={() => {
                   productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
                 }}>
-                <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
                   Fradium Extension
                 </Link>
-                <Link to="/products-wallet" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                <Link to="/products-wallet" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
                   Fradium Wallet
                 </Link>
               </div>
