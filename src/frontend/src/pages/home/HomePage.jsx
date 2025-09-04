@@ -1,7 +1,6 @@
 import React from "react";
 import Button from "@/core/components/Button";
 import ButtonBullet from "@/core/components/ButtonBullet";
-import styles from "./home-page.module.css";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { useState } from "react";
@@ -141,25 +140,25 @@ const HomePage = () => {
 
   return (
     <div className="mt-10 bg-transparent" style={{ background: "transparent" }}>
-      <section className={styles.heroAboutSection}>
+      <section className="w-screen min-h-screen relative flex flex-col items-center justify-start bg-[#0C0D14] overflow-x-hidden m-0 p-0">
         {/* Hero Content */}
-        <div className={styles.heroContentWrapper}>
+        <div className="w-screen relative flex items-center justify-center min-h-[600px] pt-[72px] pb-0">
           {/* Ilustrasi kiri */}
-          <img src="/assets/images/hero_kiri.png" alt="Blockchain Security Illustration" className={styles.heroIllustrationLeft} draggable="false" />
+          <img src="/assets/images/hero_kiri.png" alt="Blockchain Security Illustration" className="hidden lg:block absolute top-1/2 -translate-y-1/2 max-w-[33vw] w-full min-w-0 z-[1] pointer-events-none select-none left-0" draggable="false" />
           {/* Ilustrasi kanan */}
-          <img src="/assets/images/hero_kanan.png" alt="Digital Assets Security" className={styles.heroIllustrationRight} draggable="false" />
-          <div className={styles.heroContent}>
+          <img src="/assets/images/hero_kanan.png" alt="Digital Assets Security" className="hidden lg:block absolute top-1/2 -translate-y-1/2 max-w-[33vw] w-full min-w-0 z-[1] pointer-events-none select-none right-0" draggable="false" />
+          <div className="relative z-10 flex flex-col items-center justify-center text-center pt-16 pb-16">
             {/* Badge */}
-            <span className={styles.heroBadge}>REINVENTED BLOCKCHAIN SECURITY</span>
+            <span className="text-[#9BEB83] text-[16px] font-medium mb-[22px]">REINVENTED BLOCKCHAIN SECURITY</span>
             {/* Main Heading */}
-            <h1 className={styles.heroTitle}>
+            <h1 className="text-white text-center font-medium leading-[120%] text-[28px] sm:text-[40px] lg:text-[64px]">
               Protect every <span className="block" />
               transaction.
               <br />
-              <span className={styles.heroTitleAccent}>Stay ahead of fraud.</span>
+              <span className="text-[#9BEB83]">Stay ahead of fraud.</span>
             </h1>
             {/* Subtitle */}
-            <p className={styles.heroSubtitle}>
+            <p className="text-white text-center font-normal leading-[150%] mt-8 mb-12 max-w-[600px] text-[14px] sm:text-[16px]">
               Here is Your Digital Asset Guardian to <br /> Analyse. Protect. Transact with Confidence.
             </p>
             {/* CTA Button */}
@@ -176,22 +175,22 @@ const HomePage = () => {
               </SidebarButton>
             </div>
             {/* Efek Glow di bawah button */}
-            <div className={styles.aboutGlowBg}>
-              <img src="/assets/images/glow.png" alt="Glow" className={styles.glowImg} />
+            <div className="relative w-screen max-w-[1600px] h-[220px] z-[1] pointer-events-none flex items-start justify-center mx-auto -mb-20">
+              <img src="/assets/images/glow.png" alt="Glow" className="w-screen max-w-[1600px] h-auto opacity-85 select-none pointer-events-none block" />
             </div>
           </div>
         </div>
         {/* Konten About: label, judul besar, deskripsi, ilustrasi */}
-        <div className={styles.aboutContent}>
-          <div className={styles.aboutLabel}>ABOUT FRADIUM</div>
-          <h2 className={styles.aboutTitle}>Built to Secure Every Transaction</h2>
-          <p className={styles.aboutDesc}>
+        <div className="relative z-30 flex flex-col items-center justify-center mt-6 pt-6 mb-8 w-screen">
+          <div className="relative z-40 text-[#9BEB83] text-[18px] font-semibold tracking-[0.12em] uppercase mb-[18px] text-center pointer-events-auto">ABOUT FRADIUM</div>
+          <h2 className="text-white text-[44px] font-medium text-center mb-[18px] leading-[1.15] md:text-[28px] lg:text-[44px]">Built to Secure Every Transaction</h2>
+          <p className="text-[#B0B6BE] text-[20px] font-normal text-center max-w-[850px] mx-auto leading-[1.5] sm:text-[16px]">
             Fradium is a Web3 security platform dedicated to safeguarding digital asset transactions. We enable users to analyse wallet addresses and audit smart contracts before interacting with them.
             <br />
             Our mission: help you detect risks, avoid fraud, and engage with confidence across the blockchain ecosystem.
           </p>
-          <div className={styles.aboutIllus}>
-            <img src="/assets/images/illus.png" alt="Fradium About Illustration" />
+          <div className="relative z-20 w-screen flex justify-center items-end mt-8">
+            <img src="/assets/images/illus.png" alt="Fradium About Illustration" className="w-screen h-auto block" />
           </div>
         </div>
       </section>
@@ -336,19 +335,19 @@ const HomePage = () => {
             </div>
           </div>
         ) : (
-          // DESKTOP LAYOUT (tetap pakai className lama)
-          <section className={styles.keyFeatureSection}>
-            <div className={styles.keyFeatureHeader}>
-              <span className={styles.keyFeatureLabel}>KEY FEATURE</span>
-              <h2 className={styles.keyFeatureTitle}>Secure your digital assets with confidence</h2>
+          // DESKTOP LAYOUT dengan Tailwind
+          <section className="w-screen max-w-[1500px] mx-auto my-[164px] pb-[96px] relative">
+            <div className="text-center mb-8">
+              <span className="text-[#7be495] text-[16px] tracking-[2px] font-medium uppercase mb-3 block">KEY FEATURE</span>
+              <h2 className="text-white text-[40px] font-medium mb-6 leading-[1.1]">Secure your digital assets with confidence</h2>
             </div>
-            <div className={styles.keyFeatureContentWrapper}>
+            <div className="relative w-full max-w-[900px] mx-auto min-h-[690px] flex items-center justify-center">
               {/* Fitur kiri atas */}
-              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemLeftTop}`}>
-                <img src="/assets/images/icon-detecion.png" alt="Fraud Detection" className={styles.keyFeatureIcon} />
+              <div className="absolute left-[-60px] top-[15%] flex items-center gap-[18px] max-w-[300px] z-[3] flex-row-reverse text-right">
+                <img src="/assets/images/icon-detecion.png" alt="Fraud Detection" className="w-14 h-14 rounded-full bg-[#181c22] p-3 shadow-[0_2px_16px_0_rgba(0,0,0,0.10)]" />
                 <div>
-                  <div className={styles.keyFeatureItemTitle}>Fraud Detection</div>
-                  <div className={styles.keyFeatureItemDesc}>
+                  <div className="text-white text-[18px] font-semibold mb-0.5">Fraud Detection</div>
+                  <div className="text-[#b0b6be] text-[15px] leading-[1.4]">
                     Map the crypto projects
                     <br />
                     Identify wallet risks before any transaction
@@ -356,11 +355,11 @@ const HomePage = () => {
                 </div>
               </div>
               {/* Fitur kiri bawah */}
-              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemLeftBottom}`}>
-                <img src="/assets/images/icon-wallet.png" alt="Fradium Wallet" className={styles.keyFeatureIcon} />
+              <div className="absolute left-[-60px] bottom-[15%] flex items-center gap-[18px] max-w-[300px] z-[3] flex-row-reverse text-right">
+                <img src="/assets/images/icon-wallet.png" alt="Fradium Wallet" className="w-14 h-14 rounded-full bg-[#181c22] p-3 shadow-[0_2px_16px_0_rgba(0,0,0,0.10)]" />
                 <div>
-                  <div className={styles.keyFeatureItemTitle}>Fradium Wallet</div>
-                  <div className={styles.keyFeatureItemDesc}>
+                  <div className="text-white text-[18px] font-semibold mb-0.5">Fradium Wallet</div>
+                  <div className="text-[#b0b6be] text-[15px] leading-[1.4]">
                     Prevent high-risk transactions
                     <br />
                     with real-time alerts
@@ -368,11 +367,11 @@ const HomePage = () => {
                 </div>
               </div>
               {/* Fitur kanan atas */}
-              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemRightTop}`}>
-                <img src="/assets/images/icon-audit.png" alt="Smart Contract Audit" className={styles.keyFeatureIcon} />
+              <div className="absolute right-[-60px] top-[15%] flex items-center gap-[18px] max-w-[300px] z-[3] text-left">
+                <img src="/assets/images/icon-audit.png" alt="Smart Contract Audit" className="w-14 h-14 rounded-full bg-[#181c22] p-3 shadow-[0_2px_16px_0_rgba(0,0,0,0.10)]" />
                 <div>
-                  <div className={styles.keyFeatureItemTitle}>Smart Contract Audit</div>
-                  <div className={styles.keyFeatureItemDesc}>
+                  <div className="text-white text-[18px] font-semibold mb-0.5">Smart Contract Audit</div>
+                  <div className="text-[#b0b6be] text-[15px] leading-[1.4]">
                     Scan contracts for
                     <br />
                     vulnerabilities automatically
@@ -380,11 +379,11 @@ const HomePage = () => {
                 </div>
               </div>
               {/* Fitur kanan bawah */}
-              <div className={`${styles.keyFeatureItem} ${styles.keyFeatureItemRightBottom}`}>
-                <img src="/assets/images/icon-community.png" alt="Community Reporting" className={styles.keyFeatureIcon} />
+              <div className="absolute right-[-60px] bottom-[15%] flex items-center gap-[18px] max-w-[300px] z-[3] text-left">
+                <img src="/assets/images/icon-community.png" alt="Community Reporting" className="w-14 h-14 rounded-full bg-[#181c22] p-3 shadow-[0_2px_16px_0_rgba(0,0,0,0.10)]" />
                 <div>
-                  <div className={styles.keyFeatureItemTitle}>Community Reporting</div>
-                  <div className={styles.keyFeatureItemDesc}>
+                  <div className="text-white text-[18px] font-semibold mb-0.5">Community Reporting</div>
+                  <div className="text-[#b0b6be] text-[15px] leading-[1.4]">
                     Submit and validate fraud
                     <br />
                     cases collaboratively
@@ -392,8 +391,8 @@ const HomePage = () => {
                 </div>
               </div>
               {/* Gambar utama wallet */}
-              <div className={styles.keyFeatureImageWrapper}>
-                <img src="/assets/images/fradium-wallet.png" alt="Fradium Wallet" className={styles.keyFeatureImage} draggable="false" />
+              <div className="relative z-10 flex items-center justify-center w-[690px] h-[690px] mx-auto">
+                <img src="/assets/images/fradium-wallet.png" alt="Fradium Wallet" className="w-[690px] h-auto max-w-full rounded-[32px] shadow-[0_8px_32px_0_rgba(0,0,0,0.25)] relative z-10 transform rotate-[-8deg]" draggable="false" />
               </div>
             </div>
           </section>
