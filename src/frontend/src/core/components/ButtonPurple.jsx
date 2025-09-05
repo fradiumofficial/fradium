@@ -29,7 +29,7 @@ const ButtonPurple = ({
 }) => {
   const sizeMap = {
     sm: {
-      padding: "px-4 py-2",
+      padding: "px-3 py-2",
       text: "text-[13px]",
       icon: "w-[16px] h-[16px]",
     },
@@ -112,7 +112,7 @@ const ButtonPurple = ({
       <span className="pointer-events-none absolute -inset-2 rounded-full bg-[radial-gradient(120%_120%_at_50%_120%,rgba(126,103,255,0.25)_0%,rgba(126,103,255,0)_60%)] blur-md" />
       {/* Gloss highlight */}
       <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(120%_60%_at_50%_-30%,rgba(255,255,255,0.45)_0%,rgba(255,255,255,0)_60%)]" />
-      <span className="relative z-[1] flex items-center gap-3">
+      <span className="relative z-[1] flex items-center gap-2">
         {loading ? (
           <span className={cn("flex items-center gap-2", s.text)}>
             <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

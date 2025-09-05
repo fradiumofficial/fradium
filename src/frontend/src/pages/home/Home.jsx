@@ -1,4 +1,5 @@
 import React from "react";
+import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 
 const Home = () => {
     const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
@@ -6,7 +7,7 @@ const Home = () => {
 
     return (
         <section className="relative w-full overflow-hidden">
-            {/* Tagline di atas background (tanpa panel) */}
+            {/* Tagline di atas background */}
             <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-16 text-center sm:pt-24">
                 <p className="text-[16px] font-medium tracking-[0.28em] text-[#C1FFC5]">
                     REINVENTED BLOCKCHAIN SECURITY
@@ -35,7 +36,42 @@ const Home = () => {
                         Here is Your Digital Asset Guardian to Analyse, Protect, Transact with Confidence.
                     </p>
                 </div>
+                {/* Row pertama: dua card */}
+                <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-20">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
+                        {/* Card kiri: About Fradium Web3 Security */}
+                        <div className="group relative h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+                            <div className="flex items-start justify-between">
+                                <h3 className="text-[40px] leading-[1.1] font-medium text-white">
+                                    About <span className="text-[#99E39E]">Fradium</span>
+                                    <br /> Web3 Security
+                                </h3>
+                                <ButtonGreen
+                                    size="now"
+                                    icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg"
+                                    iconSize="w-[23px] h-[23px]"
+                                    fontWeight="medium"
+                                >
+                                    Try it free
+                                </ButtonGreen>
+                            </div>
+                            <p className="mt-6 max-w-md text-sm text-white/75">
+                                With Fradium, you can easily analyse wallet addresses before making any interaction. Our mission is simple: to help you identify risks, prevent fraud, and navigate the blockchain ecosystem with confidence.
+                            </p>
+                            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(520px_220px_at_60%_-40px,rgba(16,185,129,0.18),rgba(34,197,94,0.12)_55%,transparent_80%)]" />
+                        </div>
 
+                        {/* Card kanan: Fraud Detection */}
+                        <div className="group relative h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+                            <h3 className="text-[32px] leading-[1.1] font-medium text-white">Fraud Detection</h3>
+                            <p className="mt-3 max-w-xl text-sm text-white/75">
+                                Discover and map crypto projects while identifying potential wallet risks early, before making any transaction.
+                            </p>
+                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(560px_260px_at_70%_-40px,rgba(139,92,246,0.18),rgba(59,130,246,0.10)_55%,transparent_80%)] opacity-60" />
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 to-transparent" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Background kedua di bawah background pertama, dengan jarak margin-8 */}
