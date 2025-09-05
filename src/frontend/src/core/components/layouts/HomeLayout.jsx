@@ -8,8 +8,10 @@ const HomeLayout = () => {
   return (
     <WalletProvider>
       <Navbar />
-      <Outlet />
-      <Footer />
+      <main>
+        <Outlet />
+      </main>
+      {/* <Footer /> */}
     </WalletProvider>
   );
 };
