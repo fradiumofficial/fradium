@@ -9,6 +9,7 @@ import { Button as ButtonShad } from "@/core/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import SidebarButton from "@/core/components/SidebarButton";
+import ButtonPurple from "@/core/components/ButtonPurple";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { cn } from "@/core/lib/utils";
 
@@ -204,16 +205,16 @@ const Navbar = () => {
           </div>
         ) : (
           <div className="hidden lg:flex relative items-center flex-shrink-0 min-w-fit">
-            <SidebarButton buttonClassName="py-2" className="translate-y-0" onClick={handleSignIn} disabled={isLoading}>
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <LoadingState type="spinner" size="sm" color="primary" />
-                  <span>Signing In...</span>
-                </div>
-              ) : (
-                "Sign In →"
-              )}
-            </SidebarButton>
+            <ButtonPurple
+              size="sm"
+              onClick={handleSignIn}
+              loading={isLoading}
+              fontWeight="medium"
+              iconSize="w-5 h-5"
+              icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg"
+            >
+              Sign in
+            </ButtonPurple>
           </div>
         )}
         {/* Hamburger Mobile */}
@@ -277,16 +278,17 @@ const Navbar = () => {
               )}
             </div>
             {/* Sign In Button Mobile - Neon Style */}
-            <SidebarButton buttonClassName="py-1" onClick={handleSignIn} disabled={isLoading} className="w-11/12 max-w-xs mt-2">
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <LoadingState type="spinner" size="sm" color="primary" />
-                  <span>Signing In...</span>
-                </div>
-              ) : (
-                "Sign In →"
-              )}
-            </SidebarButton>
+            <ButtonPurple
+              size="sm"
+              onClick={handleSignIn}
+              loading={isLoading}
+              className="w-11/12 max-w-xs mt-2"
+              fontWeight="medium"
+              iconSize="w-5 h-5"
+              icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg"
+            >
+              Sign in
+            </ButtonPurple>
           </div>
         </div>
       )}
