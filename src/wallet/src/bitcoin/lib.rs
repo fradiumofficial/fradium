@@ -31,7 +31,7 @@ thread_local! {
         Cell::new(BitcoinContext {
             network: BitcoinNetwork::Testnet,
             bitcoin_network: bitcoin::Network::Testnet,
-            key_name: "test_key_1",
+            key_name: "key_1",
         })
     };
 }
@@ -40,7 +40,7 @@ thread_local! {
 fn init_upgrade(network: BitcoinNetwork) {
     let key_name = match network {
         BitcoinNetwork::Regtest => "dfx_test_key",
-        BitcoinNetwork::Mainnet | BitcoinNetwork::Testnet => "test_key_1",
+        BitcoinNetwork::Mainnet | BitcoinNetwork::Testnet => "key_1",
     };
 
     let bitcoin_network = match network {

@@ -4,6 +4,9 @@ import { useAuth } from "./AuthProvider";
 // Wallet declarations
 import { wallet } from "declarations/wallet";
 
+// Token utilities
+import { TOKENS_CONFIG, getBalance } from "@/core/lib/coinUtils";
+
 // Create context for wallet data
 const WalletContext = createContext();
 
@@ -49,6 +52,12 @@ export const WalletProvider = ({ children }) => {
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [addressesLoaded, setAddressesLoaded] = useState(false);
   const [hasLoadedAddressesOnce, setHasLoadedAddressesOnce] = useState(false);
+
+  // Balance states
+  const [balances, setBalances] = useState({});
+  const [balanceLoading, setBalanceLoading] = useState({});
+  const [balanceErrors, setBalanceErrors] = useState({});
+  const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
 
   // Memoize user principal string to prevent unnecessary re-renders
   const userPrincipalString = useMemo(() => {
@@ -144,15 +153,6 @@ export const WalletProvider = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  useEffect(() => {
-    if (identity) {
-      fetchAddresses();
-    } else {
-      setIsLoading(false);
-      setUserWallet(null);
-    }
-  }, [identity]);
-
   // Helper function to add new address to existing wallet
   const addAddressToWallet = useCallback(
     async (network, tokenType, address) => {
@@ -226,6 +226,75 @@ export const WalletProvider = ({ children }) => {
     return addressesLoading && !hasLoadedAddressesOnce;
   }, [addressesLoading, hasLoadedAddressesOnce]);
 
+  // Function to fetch balance for a specific token
+  const fetchTokenBalance = useCallback(async (token) => {
+    if (token.type !== "native") return; // Skip non-native tokens for now
+
+    setBalanceLoading((prev) => ({ ...prev, [token.id]: true }));
+    setBalanceErrors((prev) => ({ ...prev, [token.id]: null }));
+
+    try {
+      const balance = await getBalance(token.id);
+      const formattedBalance = (Number(balance) / Math.pow(10, token.decimals)).toFixed(6);
+
+      setBalances((prev) => ({ ...prev, [token.id]: formattedBalance }));
+    } catch (error) {
+      console.error(`Error fetching balance for ${token.symbol}:`, error);
+      setBalanceErrors((prev) => ({ ...prev, [token.id]: error.message }));
+      setBalances((prev) => ({ ...prev, [token.id]: "0.000000" }));
+    } finally {
+      setBalanceLoading((prev) => ({ ...prev, [token.id]: false }));
+    }
+  }, []);
+
+  // Function to fetch all balances
+  const fetchAllBalances = useCallback(async () => {
+    const nativeTokens = TOKENS_CONFIG.filter((token) => token.type === "native");
+
+    // Load all balances in parallel
+    await Promise.all(nativeTokens.map((token) => fetchTokenBalance(token)));
+  }, [fetchTokenBalance]);
+
+  // Function to refresh all balances
+  const refreshAllBalances = useCallback(async () => {
+    if (isRefreshingBalances) return; // Prevent multiple refresh calls
+
+    setIsRefreshingBalances(true);
+    const nativeTokens = TOKENS_CONFIG.filter((token) => token.type === "native");
+
+    // Set all native tokens to loading state
+    const loadingState = {};
+    nativeTokens.forEach((token) => {
+      loadingState[token.id] = true;
+    });
+    setBalanceLoading((prev) => ({ ...prev, ...loadingState }));
+
+    try {
+      // Load all balances in parallel
+      await Promise.all(nativeTokens.map((token) => fetchTokenBalance(token)));
+    } finally {
+      setIsRefreshingBalances(false);
+    }
+  }, [fetchTokenBalance, isRefreshingBalances]);
+
+  // useEffect for balance fetching - placed after function definitions
+  useEffect(() => {
+    if (identity) {
+      fetchAddresses();
+      fetchAllBalances();
+    } else {
+      setIsLoading(false);
+      setUserWallet(null);
+      // Reset balance states when user logs out
+      setBalances({});
+      setBalanceLoading({});
+      setBalanceErrors({});
+      setIsRefreshingBalances(false);
+    }
+  }, [identity, fetchAllBalances, fetchAddresses]);
+
+  // Helper function to add new address to existing wallet
+
   // Function to get formatted network value
   const getNetworkValue = useCallback(
     (networkName) => {
@@ -262,8 +331,15 @@ export const WalletProvider = ({ children }) => {
       hasLoadedAddressesOnce,
       fetchAddresses,
       getAddressesLoadingState,
+      // Balance related
+      balances,
+      balanceLoading,
+      balanceErrors,
+      isRefreshingBalances,
+      fetchAllBalances,
+      refreshAllBalances,
     }),
-    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState]
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;

@@ -1,13 +1,33 @@
 // React
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+// Framer Motion
+import { motion, AnimatePresence } from "framer-motion";
+
+// Token Configuration
+import { TOKENS_CONFIG, NETWORK_CONFIG } from "@/core/lib/coinUtils";
+
+// Wallet Provider
+import { useWallet } from "@/core/providers/WalletProvider";
 
 // Modal Components
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
 
+// Token Item Card Component
+import TokenItemCard from "@/core/components/cards/TokenItemCard";
+
 export default function AssetsPage() {
+  // Wallet Provider - Get balance state and functions
+  const { balances, balanceLoading, balanceErrors, isRefreshingBalances, refreshAllBalances, network, networkFilters } = useWallet();
+
   // Modal States
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
+  const [selectedToken, setSelectedToken] = useState(null);
+
+  // Search States
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Event Handlers
   const handleSendClick = () => {
@@ -25,6 +45,45 @@ export default function AssetsPage() {
   const handleCloseReceive = () => {
     setShowReceive(false);
   };
+
+  const handleTokenClick = (token) => {
+    setSelectedToken(token);
+    // For now, just log the selected token
+    console.log("Selected token:", token);
+  };
+
+  const handleSearchToggle = () => {
+    setShowSearch(!showSearch);
+    if (showSearch) {
+      // Clear search when closing
+      setSearchQuery("");
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Filter tokens based on network selection and search query
+  const filteredTokens = TOKENS_CONFIG.filter((token) => {
+    // First, filter by network selection
+    let networkMatch = true;
+    if (network !== "All Networks") {
+      // Find the network in NETWORK_CONFIG to get the correct name
+      const selectedNetwork = NETWORK_CONFIG.find((net) => net.name.toLowerCase() === network.toLowerCase());
+      if (selectedNetwork) {
+        networkMatch = token.chain.toLowerCase() === selectedNetwork.name.toLowerCase();
+      }
+    }
+
+    // Then, filter by search query if provided
+    let searchMatch = true;
+    if (searchQuery.trim()) {
+      searchMatch = token.name.toLowerCase().includes(searchQuery.toLowerCase()) || token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || token.chain.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+
+    return networkMatch && searchMatch;
+  });
 
   return (
     <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219] md:p-0 p-2">
@@ -75,21 +134,63 @@ export default function AssetsPage() {
 
       {/* Token List - Static */}
       <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="md:text-lg text-base font-semibold text-white">Tokens (All Networks)</h2>
-          <div className="flex md:gap-4 gap-2">
-            <img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4" />
-            <img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4" />
+        <div className="mb-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="md:text-lg text-base font-semibold text-white">Tokens (All Networks)</h2>
+            <div className="flex md:gap-4 gap-2">
+              <motion.img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onClick={handleSearchToggle} animate={{ rotate: showSearch ? 45 : 0 }} transition={{ duration: 0.2 }} />
+              <motion.img src="/assets/icons/refresh.svg" alt="Refresh" className={`md:w-5 md:h-5 w-4 h-4 ${isRefreshingBalances ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : { rotate: 0 }} transition={isRefreshingBalances ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0.3 }} />
+              <img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4" />
+            </div>
           </div>
+
+          {/* Search Input with Animation */}
+          <AnimatePresence>
+            {showSearch && (
+              <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: "auto", marginTop: 12 }} exit={{ opacity: 0, height: 0, marginTop: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden">
+                <div className="relative">
+                  <input type="text" placeholder="Search tokens..." value={searchQuery} onChange={handleSearchChange} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-2 text-white text-sm placeholder-[#B0B6BE] outline-none focus:border-[#9BE4A0] transition-colors" autoFocus />
+                  {searchQuery && (
+                    <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#B0B6BE] hover:text-white transition-colors" onClick={() => setSearchQuery("")}>
+                      ×
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="flex flex-col divide-y divide-[#23272F]">
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="text-[#B0B6BE] text-sm mb-2">No tokens found</div>
-              <div className="text-[#9BEB83] text-xs">Add addresses to see your tokens here</div>
-            </div>
-          </div>
+          <AnimatePresence mode="wait">
+            {filteredTokens.length > 0 ? (
+              <motion.div key="token-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <AnimatePresence>
+                  {filteredTokens.map((token, index) => (
+                    <motion.div
+                      key={token.id || index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: index * 0.05,
+                        ease: "easeOut",
+                      }}>
+                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={balanceErrors[token.id]} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            ) : (
+              <motion.div key="no-results" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-[#B0B6BE] text-sm mb-2">{searchQuery ? `No tokens found for "${searchQuery}"${network !== "All Networks" ? ` in ${network}` : ""}` : network !== "All Networks" ? `No tokens available in ${network}` : "No tokens found"}</div>
+                  <div className="text-[#9BEB83] text-xs">{searchQuery ? "Try a different search term" : network !== "All Networks" ? `Switch to "All Networks" to see all tokens` : "Add addresses to see your tokens here"}</div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -109,9 +210,11 @@ export default function AssetsPage() {
                 <div className="text-[#B0B6BE] text-sm mb-1">Select Token</div>
                 <select className="w-full bg-[#23272F] border border-[#393E4B] rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none">
                   <option value="">Select a token</option>
-                  <option value="bitcoin">Bitcoin (BTC)</option>
-                  <option value="ethereum">Ethereum (ETH)</option>
-                  <option value="solana">Solana (SOL)</option>
+                  {TOKENS_CONFIG.map((token) => (
+                    <option key={token.id} value={token.symbol}>
+                      {token.name} ({token.symbol})
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

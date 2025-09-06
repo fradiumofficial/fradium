@@ -29,7 +29,7 @@ export interface Utxo {
 }
 export interface _SERVICE {
   'bitcoin_address' : ActorMethod<[], string>,
-  'bitcoin_balance' : ActorMethod<[string], bigint>,
+  'bitcoin_balance' : ActorMethod<[], bigint>,
   'bitcoin_current_fee_percentiles' : ActorMethod<
     [],
     BigUint64Array | bigint[]
@@ -37,10 +37,10 @@ export interface _SERVICE {
   'bitcoin_send' : ActorMethod<[SendRequest], string>,
   'bitcoin_utxos' : ActorMethod<[string], GetUtxosResponse>,
   'ethereum_address' : ActorMethod<[], string>,
-  'ethereum_balance' : ActorMethod<[string], string>,
+  'ethereum_balance' : ActorMethod<[], string>,
   'ethereum_send' : ActorMethod<[string, bigint], string>,
   'solana_address' : ActorMethod<[], string>,
-  'solana_balance' : ActorMethod<[string], bigint>,
+  'solana_balance' : ActorMethod<[], bigint>,
   'solana_send' : ActorMethod<[string, bigint], string>,
   'wallet_addresses' : ActorMethod<[], Addresses>,
 }

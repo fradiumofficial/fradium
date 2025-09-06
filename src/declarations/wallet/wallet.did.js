@@ -31,15 +31,15 @@ export const idlFactory = ({ IDL }) => {
   });
   return IDL.Service({
     'bitcoin_address' : IDL.Func([], [IDL.Text], []),
-    'bitcoin_balance' : IDL.Func([IDL.Text], [IDL.Nat64], []),
+    'bitcoin_balance' : IDL.Func([], [IDL.Nat64], []),
     'bitcoin_current_fee_percentiles' : IDL.Func([], [IDL.Vec(IDL.Nat64)], []),
     'bitcoin_send' : IDL.Func([SendRequest], [IDL.Text], []),
     'bitcoin_utxos' : IDL.Func([IDL.Text], [GetUtxosResponse], []),
     'ethereum_address' : IDL.Func([], [IDL.Text], []),
-    'ethereum_balance' : IDL.Func([IDL.Text], [IDL.Text], []),
+    'ethereum_balance' : IDL.Func([], [IDL.Text], []),
     'ethereum_send' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Text], []),
     'solana_address' : IDL.Func([], [IDL.Text], []),
-    'solana_balance' : IDL.Func([IDL.Text], [IDL.Nat], []),
+    'solana_balance' : IDL.Func([], [IDL.Nat], []),
     'solana_send' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Text], []),
     'wallet_addresses' : IDL.Func([], [Addresses], []),
   });

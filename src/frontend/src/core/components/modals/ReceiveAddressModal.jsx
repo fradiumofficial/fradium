@@ -14,9 +14,6 @@ import { useWallet } from "@/core/providers/WalletProvider";
 // Skeleton Component
 import SkeletonReceiveModal from "@/pages/wallet/SkeletonReceiveModal";
 
-// Token Configuration
-import { TOKENS_CONFIG } from "@/core/lib/coinUtils";
-
 const ReceiveAddressModal = ({ isOpen, onClose }) => {
   // Use Wallet Provider for addresses
   const { addresses, fetchAddresses, getAddressesLoadingState } = useWallet();

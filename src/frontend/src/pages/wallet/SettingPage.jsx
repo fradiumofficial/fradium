@@ -23,12 +23,12 @@ export default function SettingPage() {
     {
       key: "bitcoin",
       name: "Bitcoin",
-      icon: "/assets/icons/bitcoin-grey.svg",
+      icon: "/assets/images/networks/bitcoin.webp",
     },
     {
       key: "ethereum",
       name: "Ethereum",
-      icon: "/assets/icons/eth-grey.svg",
+      icon: "/assets/images/networks/ethereum.webp",
     },
     {
       key: "fradium",
