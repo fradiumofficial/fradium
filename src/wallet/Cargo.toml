@@ -25,6 +25,8 @@ leb128 = "0.2.5"
 num = "0.4.3"
 ic-ed25519 = "0.2.0"
 bs58 = "0.5.0"
+sha2 = "0.10.8"
+crc32fast = "1.4.2"
 
 # Ethereum
 alloy = { git = "https://github.com/ic-alloy/ic-alloy.git", tag = "v0.3.5-icp.1", default-features = false, features = [

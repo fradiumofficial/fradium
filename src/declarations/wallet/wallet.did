@@ -1,3 +1,10 @@
+type Addresses = record {
+  solana : text;
+  icp_account : text;
+  ethereum : text;
+  icp_principal : text;
+  bitcoin : text;
+};
 type GetUtxosResponse = record {
   next_page : opt blob;
   tip_height : nat32;
@@ -5,12 +12,6 @@ type GetUtxosResponse = record {
   utxos : vec Utxo;
 };
 type NetworkChoice = variant { Mainnet; Local };
-type NetworksInfo = record {
-  icp : text;
-  solana : text;
-  ethereum : text;
-  bitcoin : text;
-};
 type Outpoint = record { txid : blob; vout : nat32 };
 type SendRequest = record {
   destination_address : text;
@@ -23,8 +24,8 @@ service : (NetworkChoice) -> {
   // This address uses an ECDSA public key and encodes it in the legacy Base58 format.
   // It is supported by all bitcoin wallets and full nodes.
   bitcoin_address : () -> (text);
-  // Returns the balance of the given bitcoin address.
-  bitcoin_balance : (text) -> (nat64);
+  // Returns the balance of the caller's bitcoin address.
+  bitcoin_balance : () -> (nat64);
   // Returns the 100 fee percentiles measured in millisatoshi/byte.
   // Percentiles are computed from the last 10,000 transactions (if available).
   bitcoin_current_fee_percentiles : () -> (vec nat64);
@@ -33,11 +34,11 @@ service : (NetworkChoice) -> {
   bitcoin_send : (SendRequest) -> (text);
   // Returns the UTXOs of the given Bitcoin address.
   bitcoin_utxos : (text) -> (GetUtxosResponse);
-  coin_network : () -> (NetworksInfo);
   ethereum_address : () -> (text);
-  ethereum_balance : (text) -> (text);
+  ethereum_balance : () -> (text);
   ethereum_send : (text, nat) -> (text);
   solana_address : () -> (text);
-  solana_balance : (text) -> (nat);
+  solana_balance : () -> (nat);
   solana_send : (text, nat) -> (text);
+  wallet_addresses : () -> (Addresses);
 }

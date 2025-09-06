@@ -90,36 +90,63 @@ pub struct Addresses {
 	pub bitcoin: String,
 	pub ethereum: String,
 	pub solana: String,
-	pub icp: String,
+	pub icp_principal: String,
+	pub icp_account: String,
 }
 
-#[derive(CandidType, Deserialize)]
-pub struct NetworksInfo {
-    pub bitcoin: String,
-    pub ethereum: String,
-    pub solana: String,
-    pub icp: String,
+// Convert principal to account identifier (for exchanges)
+fn principal_to_account_id(principal: &Principal) -> String {
+    use sha2::{Digest, Sha224};
+    use crc32fast::Hasher as Crc32;
+
+    // Create the account identifier according to the ICP standard
+    let mut hasher = Sha224::new();
+    hasher.update(b"\x0Aaccount-id");
+    hasher.update(principal.as_slice());
+    hasher.update(&[0u8; 32]); // subaccount (32 bytes of zeros)
+    let hash = hasher.finalize();
+
+    // Calculate CRC32 of the hash
+    let mut crc32 = Crc32::new();
+    crc32.update(&hash);
+    let crc = crc32.finalize();
+
+    // Combine CRC32 + hash and encode as hex
+    let mut result = Vec::with_capacity(32);
+    result.extend_from_slice(&crc.to_be_bytes());
+    result.extend_from_slice(&hash);
+
+    // Convert to hex string
+    hex::encode(result).to_uppercase()
 }
 
 #[ic_cdk::update]
-pub async fn coin_network() -> NetworksInfo {
-    // Bitcoin network comes from bitcoin::BitcoinContext set at init/post-upgrade
-    let btc = crate::bitcoin::current_network_name().to_string();
+pub async fn wallet_addresses() -> Addresses {
+    // Get Bitcoin address
+    let btc = crate::bitcoin::service::bitcoin_address::bitcoin_address().await;
 
-    // Ethereum network inferred from configured RPC service
-    let eth = crate::ethereum::current_network_name();
+    // Get Ethereum address
+    let eth = crate::ethereum::service::ethereum_address::ethereum_address().await;
 
-    // Solana network read from state initialized via InitArg
-    let sol = crate::solana::current_network_name();
-
-    // ICP network: infer from build environment; default to "ic" vs "local"
-    let icp = match option_env!("DFX_NETWORK") {
-        Some("local") => "local".to_string(),
-        Some(_) => "ic".to_string(),
-        None => "ic".to_string(),
+    // Get Solana address
+    let sol = {
+        use crate::solana::solana_wallet::SolanaWallet;
+        let owner_principal = ic_cdk::caller();
+        let wallet = SolanaWallet::new(owner_principal).await;
+        wallet.solana_account().to_string()
     };
 
-    NetworksInfo { bitcoin: btc, ethereum: eth, solana: sol, icp }
+    // Get ICP Principal for ICRC transfers
+    let icp_principal = ic_cdk::caller();
+    let icp_account = principal_to_account_id(&icp_principal);
+
+    Addresses {
+        bitcoin: btc,
+        ethereum: eth,
+        solana: sol,
+        icp_principal: icp_principal.to_string(),
+        icp_account,
+    }
 }
 
 // Export Candid so candid-extractor can generate the .did

@@ -16,6 +16,10 @@
     "src/frontend"
   ],
   "dependencies": {
-    "@radix-ui/react-dialog": "^1.1.14"
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@squoosh/cli": "^0.7.1"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.3"
   }
 }

@@ -1,71 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "@/core/providers/AuthProvider";
-import { useWallet } from "@/core/providers/WalletProvider";
-import { backend } from "declarations/backend";
-import ConfirmCreateWalletModal from "./modals/ConfirmCreateWalletModal";
 import SidebarButton from "./SidebarButton";
-import { LoadingState } from "./ui/LoadingState";
 
 const Footer = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, handleLogin } = useAuth();
-  const { hasConfirmedWallet, setHasConfirmedWallet } = useWallet();
-  const [showConfirmWalletModal, setShowConfirmWalletModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Fungsi untuk handle launch wallet
-  const handleLaunchWallet = async () => {
-    setIsLoading(true);
-    if (!isAuthenticated) {
-      try {
-        const customLoginHandler = async () => {
-          // Setelah login, cek wallet
-          const walletResult = await backend.get_wallet();
-          if ("Ok" in walletResult) {
-            // Wallet sudah ada, langsung redirect
-            navigate("/wallet");
-          } else if (!hasConfirmedWallet) {
-            // Wallet belum ada dan belum konfirmasi, tampilkan modal konfirmasi
-            setShowConfirmWalletModal(true);
-          } else {
-            // Sudah konfirmasi tapi belum ada wallet, langsung ke wallet page
-            navigate("/wallet");
-          }
-          setIsLoading(false);
-        };
-        await handleLogin(customLoginHandler);
-      } catch (error) {
-        console.log("handleLaunchWallet error", error);
-        setIsLoading(false);
-      }
-    } else {
-      // User sudah login, cek wallet
-      try {
-        const walletResult = await backend.get_wallet();
-        if ("Ok" in walletResult) {
-          // Wallet sudah ada, langsung redirect
-          navigate("/wallet");
-        } else if (!hasConfirmedWallet) {
-          // Wallet belum ada dan belum konfirmasi, tampilkan modal konfirmasi
-          setShowConfirmWalletModal(true);
-        } else {
-          // Sudah konfirmasi tapi belum ada wallet, langsung ke wallet page
-          navigate("/wallet");
-        }
-      } catch (error) {
-        console.error("Error checking wallet:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  // Fungsi untuk handle konfirmasi create wallet
-  const handleConfirmCreateWallet = () => {
-    setShowConfirmWalletModal(false);
-    setHasConfirmedWallet(true);
-    navigate("/wallet"); // Redirect ke wallet page untuk proses pembuatan wallet
+  // Fungsi untuk handle launch wallet - langsung redirect ke /wallet
+  const handleLaunchWallet = () => {
+    navigate("/wallet");
   };
 
   return (
@@ -116,8 +58,7 @@ const Footer = () => {
                       e.preventDefault();
                       navigate("/reports");
                     }}
-                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors"
-                  >
+                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors">
                     View Reports
                   </a>
                 </li>
@@ -128,8 +69,7 @@ const Footer = () => {
                       e.preventDefault();
                       navigate("/assistant");
                     }}
-                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors"
-                  >
+                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors">
                     Assistant
                   </a>
                 </li>
@@ -145,8 +85,7 @@ const Footer = () => {
                       e.preventDefault();
                       navigate("/products");
                     }}
-                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors"
-                  >
+                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors">
                     Fradium Extension
                   </a>
                 </li>
@@ -157,29 +96,17 @@ const Footer = () => {
                       e.preventDefault();
                       navigate("/products-wallet");
                     }}
-                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors"
-                  >
+                    className="text-[#B0B6BE] text-[1.02rem] hover:text-[#9BEB83] transition-colors">
                     Fradium Wallet
                   </a>
                 </li>
               </ul>
-              <SidebarButton onClick={handleLaunchWallet} disabled={isLoading}>
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <LoadingState type="spinner" size="sm" color="primary" />
-                    <span>Checking Wallet...</span>
-                  </div>
-                ) : (
-                  "Launch Wallet →"
-                )}
-              </SidebarButton>
+              <SidebarButton onClick={handleLaunchWallet}>Launch Wallet →</SidebarButton>
             </div>
           </div>
         </div>
         <div className="relative z-[3] text-[#B0B6BE] text-[0.97rem] text-center my-7">Copyright &copy;2025 Fradium. All rights reserved</div>
       </div>
-      {/* Confirm Create Wallet Modal */}
-      <ConfirmCreateWalletModal isOpen={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal} onConfirm={handleConfirmCreateWallet} isLoading={isLoading} />
     </footer>
   );
 };

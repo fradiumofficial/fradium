@@ -3,14 +3,13 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
-import { Dialog, DialogContent } from "../ui/Dialog";
+import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
+import { NETWORK_CONFIG } from "@/core/lib/coinUtils";
 
-// Clean Architecture Imports
-import { NETWORK_CONFIG, getSupportedNetworks } from "../../config/tokens.config";
+// Remove duplicate NETWORK_CONFIG import since we import from coinUtils
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
-import { backend } from "declarations/backend";
 
 export default function WalletLayout() {
   return (
@@ -31,20 +30,16 @@ function WalletLayoutContent() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const { isLoading, userWallet, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters, createWallet, hasConfirmedWallet } = useWallet();
+  const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
-  const [showConfirmWalletModal, setShowConfirmWalletModal] = React.useState(false);
 
-  // Get networks from configuration
-  const NETWORKS = getSupportedNetworks().map((networkName) => {
-    const config = NETWORK_CONFIG[networkName];
-    return {
-      key: networkName.toLowerCase(),
-      name: config.name,
-      icon: config.icon,
-    };
-  });
+  // Get networks from coinUtils configuration
+  const NETWORKS = NETWORK_CONFIG.map((network) => ({
+    key: network.id,
+    name: network.name,
+    icon: network.icon,
+  }));
 
   // Function to get localStorage key for user's hide balance setting
   const getHideBalanceKey = () => {
@@ -82,30 +77,19 @@ function WalletLayoutContent() {
 
   // Helper function to get network filter status
   const getNetworkFilterStatus = (networkKey) => {
-    const networkMapping = {
-      bitcoin: "Bitcoin",
-      ethereum: "Ethereum",
-      solana: "Solana",
-      fradium: "Fradium",
-    };
-
-    const filterKey = networkMapping[networkKey];
-    return networkFilters[filterKey] || false;
+    // Find network from NETWORK_CONFIG
+    const network = NETWORK_CONFIG.find((net) => net.id === networkKey);
+    return network ? networkFilters[network.name] || false : false;
   };
 
   const handleToggleNetwork = (key) => {
-    // Map network keys to match networkFilters format
-    const networkMapping = {
-      bitcoin: "Bitcoin",
-      ethereum: "Ethereum",
-      solana: "Solana",
-      fradium: "Fradium",
-    };
+    // Find network from NETWORK_CONFIG
+    const network = NETWORK_CONFIG.find((net) => net.id === key);
+    if (!network) return;
 
-    const networkName = networkMapping[key] || key;
     const newFilters = {
       ...networkFilters,
-      [networkName]: !networkFilters[networkName],
+      [network.name]: !networkFilters[network.name],
     };
     updateNetworkFilters(newFilters);
   };
@@ -114,19 +98,12 @@ function WalletLayoutContent() {
     // No need to explicitly save since updateNetworkFilters already saves to localStorage
 
     // Check if current selected network is disabled, if so switch to "All Networks"
-    const networkMapping = {
-      bitcoin: "Bitcoin",
-      ethereum: "Ethereum",
-      solana: "Solana",
-      fradium: "Fradium",
-    };
-
     const currentNetworkKey = network.toLowerCase();
     if (currentNetworkKey !== "all networks") {
-      // Find the corresponding filter key
-      const filterKey = Object.entries(networkMapping).find(([key, value]) => value.toLowerCase() === currentNetworkKey)?.[1];
+      // Find the network from NETWORK_CONFIG
+      const currentNetwork = NETWORK_CONFIG.find((net) => net.name.toLowerCase() === currentNetworkKey);
 
-      if (filterKey && !networkFilters[filterKey]) {
+      if (currentNetwork && !networkFilters[currentNetwork.name]) {
         setNetwork("All Networks");
       }
     }
@@ -230,25 +207,11 @@ function WalletLayoutContent() {
 
   // Filter available networks based on active networks
   const getAvailableNetworks = () => {
-    const availableNetworks = [];
-
-    if (networkFilters.Bitcoin) {
-      availableNetworks.push({ key: "bitcoin", name: "Bitcoin", value: getNetworkValue("Bitcoin") });
-    }
-
-    if (networkFilters.Ethereum) {
-      availableNetworks.push({ key: "ethereum", name: "Ethereum", value: getNetworkValue("Ethereum") });
-    }
-
-    if (networkFilters.Solana) {
-      availableNetworks.push({ key: "solana", name: "Solana", value: getNetworkValue("Solana") });
-    }
-
-    if (networkFilters.Fradium) {
-      availableNetworks.push({ key: "fradium", name: "Fradium", value: getNetworkValue("Fradium") });
-    }
-
-    return availableNetworks;
+    return NETWORK_CONFIG.filter((network) => networkFilters[network.name]).map((network) => ({
+      key: network.id,
+      name: network.name,
+      value: getNetworkValue(network.name),
+    }));
   };
 
   if (isLoading) {
@@ -279,6 +242,7 @@ function WalletLayoutContent() {
             setShowManageNetworks(open);
           }}>
           <DialogContent className="bg-[#23242A] border-none max-w-xl p-0 rounded-xl">
+            <DialogTitle className="sr-only">Manage Networks</DialogTitle>
             <div className="px-8 pt-8 pb-4">
               <div className="text-white text-2xl font-bold mb-8">Active networks</div>
               <div className="divide-y divide-white/10">

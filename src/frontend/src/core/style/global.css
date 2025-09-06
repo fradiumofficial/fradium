@@ -58,6 +58,26 @@ body {
   }
 }
 
+/* Route transition (fade + slight slide) */
+.route-fade-enter {
+  opacity: 0.01;
+  transform: translateY(6px);
+}
+.route-fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+.route-fade-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.route-fade-exit-active {
+  opacity: 0.01;
+  transform: translateY(-6px);
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
 @layer base {
   * {
     @apply border-border;
