@@ -5,12 +5,9 @@ import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { Dialog, DialogContent } from "../ui/Dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
-
-// Clean Architecture Imports
-import { NETWORK_CONFIG, getSupportedNetworks } from "../../config/tokens.config";
+import { getSupportedNetworks, NETWORK_CONFIG } from "@/core/lib/coinUtils";
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
-import { backend } from "declarations/backend";
 
 export default function WalletLayout() {
   return (

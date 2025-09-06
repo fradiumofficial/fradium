@@ -3,6 +3,7 @@ import Button from "@/core/components/Button";
 import ButtonBullet from "@/core/components/ButtonBullet";
 import { useNavigate } from "react-router";
 import SidebarButton from "@/core/components/SidebarButton";
+import { useAuth } from "@/core/providers/AuthProvider";
 
 // Custom hook untuk deteksi mobile
 function useIsMobile() {
@@ -73,10 +74,20 @@ function HowItWorksMobileCarousel() {
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, handleLogin } = useAuth();
 
-  // Fungsi untuk handle launch wallet - langsung redirect ke /wallet
-  const handleLaunchWallet = () => {
-    navigate("/wallet");
+  // Fungsi untuk handle launch wallet - cek login dulu
+  const handleLaunchWallet = async () => {
+    if (!isAuthenticated) {
+      // Jika belum login, lakukan login dulu
+      await handleLogin(({ user, isAuthenticated: authStatus }) => {
+        // Callback setelah login berhasil - redirect ke wallet
+        navigate("/wallet");
+      });
+    } else {
+      // Jika sudah login, langsung redirect ke wallet
+      navigate("/wallet");
+    }
   };
 
   return (

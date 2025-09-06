@@ -7,10 +7,12 @@ import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Toaster } from "react-hot-toast";
 
 // Declarations
 import { fradium_token as token } from "declarations/fradium_token";
 import { backend as backend } from "declarations/backend";
+import { wallet as wallet } from "declarations/wallet";
 
 // Global Style
 import "@/core/style/global.css";
@@ -121,62 +123,42 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
-        key={layoutKey}
-        initial={{
-          opacity: 0,
-          filter: "blur(25px) saturate(0%) contrast(300%) brightness(0.5)",
-        }}
-        animate={{
-          opacity: 1,
-          filter: "blur(0px) saturate(100%) contrast(100%) brightness(1)",
-        }}
-        exit={{
-          opacity: 0,
-          filter: "blur(20px) saturate(30%) contrast(200%) brightness(1.2)",
-        }}
-        transition={{
-          duration: 0.8,
-          ease: [0.25, 0.46, 0.45, 0.94],
-          filter: { duration: 1.0 },
-        }}>
-        <Routes location={location}>
-          <Route path="/" element={<HomeLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/balance" element={<BalancePage />} />
-            <Route path="/reports" element={<ListReportPage />} />
-            <Route path="/reports/create" element={<CreateReportPage />} />
-            <Route path="/reports/:id" element={<ReportPage />} />
-            <Route
-              path="/my-report"
-              element={
-                <AuthGuard>
-                  <MyReportPage />
-                </AuthGuard>
-              }
-            />
-            <Route path="/faucet" element={<FaucetPage />} />
-            <Route path="/products" element={<ProductsExtension />} />
-            <Route path="/products-wallet" element={<ProductsWallet />} />
-            <Route path="/assistant" element={<AssistantPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
+      <Routes location={location}>
+        <Route path="/" element={<HomeLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/balance" element={<BalancePage />} />
+          <Route path="/reports" element={<ListReportPage />} />
+          <Route path="/reports/create" element={<CreateReportPage />} />
+          <Route path="/reports/:id" element={<ReportPage />} />
           <Route
-            path="/wallet"
+            path="/my-report"
             element={
-              <AuthGuard isRedirectToLogin>
-                <WalletLayout />
+              <AuthGuard>
+                <MyReportPage />
               </AuthGuard>
-            }>
-            <Route index element={<AssetsPage />} />
-            <Route path="analyze-address" element={<AnalyzeAddressPage />} />
-            <Route path="analyze-contract" element={<AnalyzeContractPage />} />
-            <Route path="transaction-history" element={<TransactionHistoryPage />} />
-            <Route path="scan-history" element={<ScanHistoryPage />} />
-            <Route path="setting" element={<SettingPage />} />
-          </Route>
-        </Routes>
-      </motion.div>
+            }
+          />
+          <Route path="/faucet" element={<FaucetPage />} />
+          <Route path="/products" element={<ProductsExtension />} />
+          <Route path="/products-wallet" element={<ProductsWallet />} />
+          <Route path="/assistant" element={<AssistantPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        <Route
+          path="/wallet"
+          element={
+            <AuthGuard isRedirectToLogin>
+              <WalletLayout />
+            </AuthGuard>
+          }>
+          <Route index element={<AssetsPage />} />
+          <Route path="analyze-address" element={<AnalyzeAddressPage />} />
+          <Route path="analyze-contract" element={<AnalyzeContractPage />} />
+          <Route path="transaction-history" element={<TransactionHistoryPage />} />
+          <Route path="scan-history" element={<ScanHistoryPage />} />
+          <Route path="setting" element={<SettingPage />} />
+        </Route>
+      </Routes>
     </AnimatePresence>
   );
 }
@@ -185,8 +167,20 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider canisters={{ token, backend }}>
+      <AuthProvider canisters={{ token, backend, wallet }}>
         <AnimatedRoutes />
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#23272F",
+              color: "#B0B6BE",
+              border: "1px solid #393E4B",
+              borderRadius: "8px",
+            },
+          }}
+        />
       </AuthProvider>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
     </BrowserRouter>

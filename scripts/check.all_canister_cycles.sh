@@ -29,7 +29,7 @@ format_cycles() {
 }
 
 # Array of canisters to check
-canisters=("backend" "token" "bitcoin" "ai" "chatbot" "frontend" "solana" "ethereum")
+canisters=("wallet" "backend" "fradium_token" "ai" "chatbot" "frontend")
 
 for canister in "${canisters[@]}"; do
     echo -n "   📦 ${canister}: "

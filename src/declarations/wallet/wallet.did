@@ -1,3 +1,10 @@
+type Addresses = record {
+  solana : text;
+  icp_account : text;
+  ethereum : text;
+  icp_principal : text;
+  bitcoin : text;
+};
 type GetUtxosResponse = record {
   next_page : opt blob;
   tip_height : nat32;
@@ -5,12 +12,6 @@ type GetUtxosResponse = record {
   utxos : vec Utxo;
 };
 type NetworkChoice = variant { Mainnet; Local };
-type NetworksInfo = record {
-  icp : text;
-  solana : text;
-  ethereum : text;
-  bitcoin : text;
-};
 type Outpoint = record { txid : blob; vout : nat32 };
 type SendRequest = record {
   destination_address : text;
@@ -33,11 +34,11 @@ service : (NetworkChoice) -> {
   bitcoin_send : (SendRequest) -> (text);
   // Returns the UTXOs of the given Bitcoin address.
   bitcoin_utxos : (text) -> (GetUtxosResponse);
-  coin_network : () -> (NetworksInfo);
   ethereum_address : () -> (text);
   ethereum_balance : (text) -> (text);
   ethereum_send : (text, nat) -> (text);
   solana_address : () -> (text);
   solana_balance : (text) -> (nat);
   solana_send : (text, nat) -> (text);
+  wallet_addresses : () -> (Addresses);
 }

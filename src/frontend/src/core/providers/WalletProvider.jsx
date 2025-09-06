@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./AuthProvider";
 
+// Wallet declarations
+import { wallet } from "declarations/wallet";
+
 // Create context for wallet data
 const WalletContext = createContext();
 
@@ -15,7 +18,7 @@ export const useWallet = () => {
 
 export const WalletProvider = ({ children }) => {
   const { identity, user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [userWallet, setUserWallet] = useState(null);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [network, setNetwork] = useState("All Networks");
@@ -34,6 +37,18 @@ export const WalletProvider = ({ children }) => {
     Solana: true,
     Fradium: true,
   });
+
+  // Address states for receive modal
+  const [addresses, setAddresses] = useState({
+    bitcoin: "",
+    ethereum: "",
+    solana: "",
+    icp_principal: "",
+    icp_account: "",
+  });
+  const [addressesLoading, setAddressesLoading] = useState(false);
+  const [addressesLoaded, setAddressesLoaded] = useState(false);
+  const [hasLoadedAddressesOnce, setHasLoadedAddressesOnce] = useState(false);
 
   // Memoize user principal string to prevent unnecessary re-renders
   const userPrincipalString = useMemo(() => {
@@ -129,49 +144,9 @@ export const WalletProvider = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const createWallet = useCallback(async () => {
-    setIsCreatingWallet(true);
-
-    try {
-      throw new Error("Not implemented");
-
-      if ("Ok" in response) {
-        // Fetch wallet data immediately after creation
-        const walletData = await backend.get_wallet();
-        if ("Ok" in walletData) {
-          setUserWallet(walletData.Ok);
-          setHasConfirmedWallet(true); // Set state bahwa user sudah konfirmasi
-        }
-      } else {
-        console.error("Failed to create wallet:", response);
-        throw new Error("Failed to create wallet");
-      }
-    } catch (error) {
-      console.error("Error creating wallet:", error);
-      throw error;
-    } finally {
-      setIsCreatingWallet(false);
-      setIsLoading(false);
-    }
-  }, [identity]);
-
-  const fetchUserWallet = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await backend.get_wallet();
-      if ("Ok" in response) {
-        setUserWallet(response.Ok);
-      }
-    } catch (error) {
-      setUserWallet(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     if (identity) {
-      fetchUserWallet();
+      fetchAddresses();
     } else {
       setIsLoading(false);
       setUserWallet(null);
@@ -220,6 +195,37 @@ export const WalletProvider = ({ children }) => {
     setNetworkValues((prev) => ({ ...prev, ...values }));
   }, []);
 
+  // Function to fetch wallet addresses
+  const fetchAddresses = useCallback(async () => {
+    if (!wallet || addressesLoaded) return;
+
+    try {
+      setAddressesLoading(true);
+      const result = await wallet.wallet_addresses();
+
+      const newAddresses = {
+        bitcoin: result.bitcoin,
+        ethereum: result.ethereum,
+        solana: result.solana,
+        icp_principal: result.icp_principal,
+        icp_account: result.icp_account,
+      };
+
+      setAddresses(newAddresses);
+      setAddressesLoaded(true);
+      setHasLoadedAddressesOnce(true);
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+    } finally {
+      setAddressesLoading(false);
+    }
+  }, [addressesLoaded]);
+
+  // Function to get loading state for addresses
+  const getAddressesLoadingState = useCallback(() => {
+    return addressesLoading && !hasLoadedAddressesOnce;
+  }, [addressesLoading, hasLoadedAddressesOnce]);
+
   // Function to get formatted network value
   const getNetworkValue = useCallback(
     (networkName) => {
@@ -237,8 +243,6 @@ export const WalletProvider = ({ children }) => {
       setUserWallet,
       isCreatingWallet,
       setIsCreatingWallet,
-      createWallet,
-      fetchUserWallet,
       addAddressToWallet,
       network,
       setNetwork,
@@ -251,8 +255,15 @@ export const WalletProvider = ({ children }) => {
       updateNetworkFilters,
       hasConfirmedWallet,
       setHasConfirmedWallet,
+      // Address related
+      addresses,
+      addressesLoading,
+      addressesLoaded,
+      hasLoadedAddressesOnce,
+      fetchAddresses,
+      getAddressesLoadingState,
     }),
-    [isLoading, userWallet, isCreatingWallet, createWallet, fetchUserWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet]
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;
