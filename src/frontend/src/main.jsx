@@ -26,7 +26,7 @@ import WalletLayout from "@/core/components/layouts/WalletLayout.jsx";
 import AuthGuard from "@/core/components/auth/AuthGuard.jsx";
 
 // Pages
-import HomePage from "@/pages/home/HomePage.jsx";
+import Home from "@/pages/home/Home.jsx";
 import NotFoundPage from "@/pages/SEO/NotFoundPage.jsx";
 import ListReportPage from "@/pages/report/ListReportPage.jsx";
 import ReportPage from "@/pages/report/DetailReportPage.jsx";
@@ -142,7 +142,7 @@ function AnimatedRoutes() {
         }}>
         <Routes location={location}>
           <Route path="/" element={<HomeLayout />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Home />} />
             <Route path="/balance" element={<BalancePage />} />
             <Route path="/reports" element={<ListReportPage />} />
             <Route path="/reports/create" element={<CreateReportPage />} />
