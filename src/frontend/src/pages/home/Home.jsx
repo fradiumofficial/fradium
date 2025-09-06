@@ -1,5 +1,7 @@
 import React from "react";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/core/providers/AuthProvider.jsx";
 
 const Home = () => {
     const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
