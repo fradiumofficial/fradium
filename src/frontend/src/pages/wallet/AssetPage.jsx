@@ -29,6 +29,12 @@ export default function AssetsPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Hover/interaction states
+  const [isCardHover, setIsCardHover] = useState(false);
+  const [cardMouse, setCardMouse] = useState({ x: 0, y: 0 });
+  const [hoverSearch, setHoverSearch] = useState(false);
+  const [hoverFilter, setHoverFilter] = useState(false);
+
   // Event Handlers
   const handleSendClick = () => {
     setShowSendModal(true);
@@ -151,61 +157,82 @@ export default function AssetsPage() {
   }, [totalPortfolioValue, isPortfolioLoading, hideBalance]);
 
   return (
-    <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219] md:p-0 p-2">
-      {/* Card Wallet - Static */}
-      <div className="relative w-full bg-white bg-opacity-5 pb-4 overflow-hidden border border-[#393E4B] md:p-0 p-2">
-        {/* Pattern Background */}
-        <img src="/assets/images/pattern-topside.png" alt="Pattern" className="absolute top-0 right-0 md:w-80 md:h-80 w-40 h-40 z-0 pointer-events-none select-none object-cover object-right-top" />
+    <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4">
+      <div className="relative z-10">
+        {/* Card Wallet - Redesigned to match mockup with interaction */}
+        <motion.div
+          className="group relative w-full overflow-hidden rounded-[28px] p-6 bg-gradient-to-b from-[#7C72FE] via-[#5A52C6] to-[#433BA6] ring-1 ring-white/15"
+          style={{ boxShadow: "0 5px 18px -4px rgba(74,66,170,0.6), 0 0 0 1px #7C77C4" }}
+          initial={{ y: 0, scale: 1 }}
+          whileHover={{ boxShadow: "0 12px 28px -6px rgba(74,66,170,0.15), 0 0 0 1px #7C77C4" }}
+          transition={{ type: "spring", stiffness: 220, damping: 20, mass: 0.6 }}
+          onMouseEnter={() => setIsCardHover(true)}
+          onMouseLeave={() => setIsCardHover(false)}
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setCardMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+          }}>
+          {/* Inner soft highlight */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_-10%,rgba(255,255,255,0.24),transparent_60%)]" />
+          {/* Cursor-follow gradient */}
+          <div
+            className="pointer-events-none absolute inset-0 transition-opacity duration-200"
+            style={{
+              opacity: isCardHover ? 1 : 0,
+              background: `radial-gradient(240px 240px at ${cardMouse.x}px ${cardMouse.y}px, rgba(255,255,255,0.05), rgba(255,255,255,0) 90%)`,
+            }}
+          />
 
-        {/* Character Illustration - Positioned at top center */}
-        <div className="relative z-10 flex justify-center mb-2">
-          <img src="/assets/images/illus-wallet.png" alt="Wallet Character" className="w-full object-contain object-center" />
-        </div>
+          {/* Header */}
+          <div className="relative z-10 text-center">
+            <div className="text-white text-[2.5rem] font-semibold my-2">{formattedPortfolioValue}</div>
+            <div className="text-white/95 text-base font-medium">Total Portfolio Value</div>
+          </div>
 
-        {/* Content */}
-        <div className="relative z-20 text-center">
-          <div className="text-white text-sm font-normal mb-1">Total Portfolio Value</div>
-          <div className="text-white md:text-3xl text-2xl font-semibold mb-1">{formattedPortfolioValue}</div>
-          <div className="text-[#9BE4A0] md:text-base text-sm font-medium md:mb-6 mb-3">{totalPortfolioValue > 0 ? "Your portfolio is growing! 🚀" : "Top up your wallet to start using it!"}</div>
-
-          {/* Action Buttons */}
-          <div className="flex md:gap-4 gap-2 w-full max-w-lg mx-auto">
-            {/* Receive Button */}
-            <div className="flex-1">
-              <div className="relative bg-white bg-opacity-10 md:h-32 h-20 w-full md:p-4 p-2 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={handleReceiveClick}>
-                <div className="absolute md:top-4 top-2 md:right-4 right-2">
-                  <img src="/assets/icons/received.svg" alt="Receive" className="md:w-6 md:h-6 w-5 h-5" />
-                </div>
-                <div className="absolute md:bottom-4 bottom-2 md:left-4 left-2">
-                  <div className="text-white md:text-xl text-base font-semibold">Receive</div>
-                </div>
-              </div>
+          {/* Actions */}
+          <div className="relative z-10 mt-6 md:mt-7 flex items-center justify-center gap-3 md:gap-4">
+            {/* Receive */}
+            <div
+              onClick={handleReceiveClick}
+              className="group relative flex-1 flex items-center justify-center gap-3 md:gap-3.5 py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              style={{
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(20px)",
+                transition: "all 200ms ease-in-out",
+              }}>
+              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/qr-icon.svg" alt="Receive" className="w-5 h-5 md:w-5 md:h-5" />
+              <span className="text-white text-sm font-medium">Receive</span>
+              <svg className="ml-1.5 w-5 h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
-
-            {/* Send Button */}
-            <div className="flex-1">
-              <div className="relative bg-white bg-opacity-10 md:h-32 h-20 w-full md:p-4 p-2 hover:bg-opacity-15 transition-all cursor-pointer group border border-[#4A4F58]" onClick={handleSendClick}>
-                <div className="absolute md:top-4 top-2 md:right-4 right-2">
-                  <img src="/assets/icons/send.svg" alt="Send" className="md:w-6 md:h-6 w-5 h-5" />
-                </div>
-                <div className="absolute md:bottom-4 bottom-2 md:left-4 left-2">
-                  <div className="text-white md:text-xl text-base font-semibold">Send</div>
-                </div>
-              </div>
+            {/* Send */}
+            <div
+              onClick={handleSendClick}
+              className="group relative flex-1 flex items-center justify-center gap-3 md:gap-3.5 py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              style={{
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(20px)",
+                transition: "all 200ms ease-in-out",
+              }}>
+              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/send-icon.svg" alt="Send" className="w-5 h-5 md:w-5 md:h-5" />
+              <span className="text-white text-sm font-medium">Send</span>
+              <svg className="ml-1.5 w-5 h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Token List - Static */}
       <div>
         <div className="mb-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="md:text-lg text-base font-semibold text-white">Tokens (All Networks)</h2>
-            <div className="flex md:gap-4 gap-2">
-              <motion.img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onClick={handleSearchToggle} animate={{ rotate: showSearch ? 45 : 0 }} transition={{ duration: 0.2 }} />
-              <motion.img src="/assets/icons/refresh.svg" alt="Refresh" className={`md:w-5 md:h-5 w-4 h-4 ${isRefreshingBalances ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : { rotate: 0 }} transition={isRefreshingBalances ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0.3 }} />
-              <img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4" />
+            <h2 className="md:text-base text-sm font-semibold text-white">Tokens</h2>
+            <div className="flex md:gap-4 gap-2 ml-auto">
+              <motion.img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverSearch(true)} onMouseLeave={() => setHoverSearch(false)} onClick={handleSearchToggle} animate={hoverSearch ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
+              <motion.img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} animate={hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
             </div>
           </div>
 
@@ -281,10 +308,6 @@ export default function AssetsPage() {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <div className="text-[#B0B6BE] text-sm mb-1">Recipient Address</div>
-                <input type="text" className="w-full bg-[#23272F] border rounded px-3 py-2 text-[#B0B6BE] text-sm outline-none border-[#393E4B]" placeholder="Input your address" />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">

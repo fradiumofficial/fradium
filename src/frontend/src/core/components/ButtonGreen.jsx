@@ -43,8 +43,8 @@ const ButtonGreen = ({
             text: "text-[18px]",
             icon: "w-[20px] h-[20px]",
         }, now: {
-            padding: "px-3 py-3",
-            text: "text-[16px]",
+            padding: "px-3 py-2",
+            text: "text-[14px]",
             icon: "w-[16px] h-[16px]",
         }
     };

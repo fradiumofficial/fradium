@@ -94,7 +94,7 @@ const Navbar = () => {
       <div className="w-full max-w-[1440px] flex items-center justify-between lg:px-12 md:px-8 sm:px-4 px-2 min-h-[72px]">
         {/* Logo */}
         <div className="flex items-center gap-2 sm:gap-3 select-none min-w-fit cursor-pointer" onClick={() => navigate("/")}>
-          <img src="/logo.svg" alt="Crypgo Logo" className="h-8 sm:h-9 w-auto" draggable="false" />
+          <img src="/logo.svg" alt="Crypgo Logo" className="h-8 sm:h-8 w-auto" draggable="false" />
           <span className="font-medium text-[22px] sm:text-[28px] text-white tracking-wider font-[General Sans, sans-serif]">
             Fradi<span className="text-[#9BEB83]">um</span>
           </span>
@@ -264,7 +264,7 @@ const Navbar = () => {
             {/* Menu items */}
             {navigationItems.map((item) =>
               item.external ? (
-                <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-sm font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
                   {item.label}
                 </a>
               ) : (
