@@ -25,13 +25,13 @@ const TokenItemCard = ({ token, onClick, balance, isLoading, hasError }) => {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center md:gap-2 gap-1">
-          <span className="text-white md:font-semibold font-medium md:text-base text-sm">{token.name}</span>
+          <span className="text-white font-medium md:text-base text-sm">{token.name}</span>
           <span className="text-[#B0B6BE] md:text-base text-xs">• {token.symbol}</span>
         </div>
         <div className="text-[#B0B6BE] md:text-sm text-xs truncate">{token.chain}</div>
       </div>
       <div className="flex flex-col items-end gap-2">
-        {isLoading ? <BalanceSkeleton /> : hasError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-white md:font-semibold font-medium md:text-base text-sm">{formatAmount(balance)}</span>}
+        {isLoading ? <BalanceSkeleton /> : hasError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-white font-medium md:text-base text-sm">{formatAmount(balance)}</span>}
         <span className="text-[#B0B6BE] md:text-sm text-xs">$0.00</span>
       </div>
     </div>

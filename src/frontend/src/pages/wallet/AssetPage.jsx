@@ -180,10 +180,10 @@ export default function AssetsPage() {
       <div>
         <div className="mb-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="md:text-lg text-base font-semibold text-white">Tokens (All Networks)</h2>
+            <h2 className="md:text-base text-sm font-semibold text-white">Tokens</h2>
             <div className="flex md:gap-4 gap-2">
               <motion.img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onClick={handleSearchToggle} animate={{ rotate: showSearch ? 45 : 0 }} transition={{ duration: 0.2 }} />
-              <motion.img src="/assets/icons/refresh.svg" alt="Refresh" className={`md:w-5 md:h-5 w-4 h-4 ${isRefreshingBalances ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : { rotate: 0 }} transition={{ duration: 1, repeat: isRefreshingBalances ? Infinity : 0, ease: "linear" }} />
+              {/* <motion.img src="/assets/icons/refresh.svg" alt="Refresh" className={`md:w-5 md:h-5 w-4 h-4 ${isRefreshingBalances ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : { rotate: 0 }} transition={{ duration: 1, repeat: isRefreshingBalances ? Infinity : 0, ease: "linear" }} /> */}
               <img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4" />
             </div>
           </div>

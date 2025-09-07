@@ -41,6 +41,29 @@ function WalletLayoutContent() {
     icon: network.icon,
   }));
 
+  // Helper: map sidebar label to icon URL (active/inactive)
+  const getSidebarIconUrl = (label, active) => {
+    const ACTIVE = {
+      "Analyze Address": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/analyse-address-active.svg",
+      "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-active.svg",
+      "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-active.svg",
+      Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-active.svg",
+    };
+    const INACTIVE = {
+      "Analyze Address": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/analyse-address-inactive.svg",
+      "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-inactive.svg",
+      "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-inactive.svg",
+      Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-inactive.svg",
+    };
+
+    const src = active ? ACTIVE[label] : INACTIVE[label];
+    if (src) return src;
+
+    // fallback to existing local assets
+    const key = label === "Analyze Address" ? "analyze-address" : label === "Analyze Contract" ? "analyze-contract" : label === "Transaction History" ? "transaction-history" : label === "Scan History" ? "history" : "wallet";
+    return `/assets/icons/${key}-${active ? "dark" : "light"}.svg`;
+  };
+
   // Function to get localStorage key for user's hide balance setting
   const getHideBalanceKey = () => {
     return user?.identity?.getPrincipal()?.toString() ? `hideBalance_${user.identity.getPrincipal().toString()}` : "hideBalance_default";
@@ -124,11 +147,6 @@ function WalletLayoutContent() {
       label: "Analyze Address",
       icon: "analyze-address",
       path: "/wallet/analyze-address",
-    },
-    {
-      label: "Analyze Contract",
-      icon: "analyze-contract",
-      path: "/wallet/analyze-contract",
     },
     {
       label: "Transaction History",
@@ -229,7 +247,7 @@ function WalletLayoutContent() {
     <>
       <WelcomingWalletModal isOpen={isCreatingWallet} />
 
-      <div className="relative overflow-hidden block md:flex min-h-screen bg-[000510] w-full max-w-full">
+      <div className="relative overflow-hidden block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
         {/* Global background spanning all wallet sections */}
         <img
           src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png"
@@ -289,23 +307,21 @@ function WalletLayoutContent() {
             <nav className="flex flex-col gap-2">
               {menu.map((item, idx) => {
                 const isActive = normalize(location.pathname) === normalize(item.path);
-                const iconSrc = `/assets/icons/${item.icon}-${isActive ? "dark" : "light"}.svg`;
+                const iconSrc = getSidebarIconUrl(item.label, isActive);
                 return isActive ? (
-                  <Link key={item.label} to={item.path} className="relative flex w-full items-center gap-3 pl-5 pr-10 py-3 font-medium text-base text-white transition-all">
-                    {/* active inner gradient from right (white) to left (transparent) */}
+                  <Link key={item.label} to={item.path} className="relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all">
                     <span className="pointer-events-none absolute inset-0 bg-gradient-to-l from-white/20 via-white/10 to-transparent" />
-                    {/* green toggle bar on the right, full height */}
                     <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-[#9BE4A0] shadow-[0_0_12px_rgba(155,228,160,0.5)]" />
                     <img src={iconSrc} alt={item.label} className="w-5 h-5 relative z-10" />
-                    <span className="relative z-10">{item.label}</span>
+                    <span className="relative z-10 text-white font-medium">{item.label}</span>
                   </Link>
                 ) : item.onClick ? (
-                  <button key={item.label} onClick={item.onClick} className={`relative flex w-full items-center gap-3 px-5 py-3 font-medium text-base transition-all text-white hover:bg-[#181C22] hover:text-[#9BEB83]`}>
+                  <button key={item.label} onClick={item.onClick} className={`relative flex w-full items-center gap-3 px-5 py-3 text-base transition-all text-white/70 hover:bg-[#181C22] hover:text-white font-normal`}>
                     <img src={iconSrc} alt={item.label} className="w-5 h-5" />
                     <span>{item.label}</span>
                   </button>
                 ) : (
-                  <Link key={item.label} to={item.path} className={`relative flex w-full items-center gap-3 px-5 py-3 font-medium text-base transition-all text-white hover:bg-[#181C22] hover:text-[#9BEB83]`}>
+                  <Link key={item.label} to={item.path} className={`relative flex w-full items-center gap-3 px-5 py-3 text-base transition-all text-white/70 hover:bg-[#181C22] hover:text-white font-normal`}>
                     <img src={iconSrc} alt={item.label} className="w-5 h-5" />
                     <span>{item.label}</span>
                   </Link>
@@ -462,57 +478,50 @@ function WalletLayoutContent() {
                       </svg>
                       <span className="text-white">Documentation</span>
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="text-white">Source Code</span>
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                        <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="text-white">X Account</span>
-                    </button>
                     <button
-                      className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]"
+                      className="w-full text-sm transition-colors group"
                       onClick={() => {
                         navigate("/wallet/setting");
                         setIsProfileDropdownOpen(false);
                       }}>
-                      <img src="/assets/icons/setting-green.svg" alt="Settings" className="w-5 h-5" />
-                      <span className="text-white">Settings</span>
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <img src="/assets/icons/setting-green.svg" alt="Settings" />
+                        <span className="text-white">Settings</span>
+                      </div>
                     </button>
-                    <div className="flex-1"></div>
-                    <button
-                      className="w-full bg-[#9BEB83] text-[#23272F] font-semibold text-base py-3 rounded-lg mb-6 mt-2"
-                      onClick={() => {
-                        navigate("/");
-                        logout();
-                        setIsProfileDropdownOpen(false);
-                      }}>
-                      <span className="flex items-center justify-center gap-2">
-                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+                    <div className="h-px bg-white/5 mx-4"></div>
+                    {/* Source Code */}
+                    <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
+                        <span className="text-white">Source Code</span>
+                      </div>
+                    </button>
+
+                    {/* X Account */}
+                    <button className="w-full mb-2 text-sm transition-colors group" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-white">X Account</span>
+                      </div>
+                    </button>
+
+                    {/* Logout Button using SidebarButton */}
+                    <div className="mx-4 mt-2">
+                      <SidebarButton
+                        icon="/assets/icons/logout-dark.svg"
+                        onClick={() => {
+                          navigate("/");
+                          logout();
+                        }}>
                         Logout
-                      </span>
-                    </button>
-                  </div>
-                  {/* Logout button sticky di bawah */}
-                  <div className="sticky bottom-0 left-0 right-0 bg-[#23242A] px-4 pb-6 pt-2 z-10">
-                    <button
-                      className="w-full bg-[#9BEB83] text-[#23272F] font-semibold text-base py-3 rounded-lg flex items-center justify-center gap-2 shadow-md"
-                      onClick={() => {
-                        navigate("/");
-                        logout();
-                        setIsProfileDropdownOpen(false);
-                      }}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                        <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      Logout
-                    </button>
+                      </SidebarButton>
+                    </div>
                   </div>
                 </div>
               )}
@@ -524,14 +533,17 @@ function WalletLayoutContent() {
         </main>
         {/* ===== START: SIDEBAR KANAN (Desktop) ===== */}
         <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 overflow-hidden hidden md:flex">
+          {/* Overlay for readability on right sidebar */}
+          <div className="pointer-events-none absolute inset-0 bg-[#0F1219]/30" />
+
           {/* Top action buttons */}
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-end">
               {/* Network Dropdown */}
               <div className="relative network-dropdown">
-                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-3 bg-[#23272F] px-4 py-2.5 text-white font-medium text-sm w-[190px] hover:bg-[#2A2F36] transition-all">
-                  <img src="/assets/icons/construction.svg" alt="All Networks" className="w-6 h-6" />
-                  <span className="text-white pr-2 capitalize text-sm">{network}</span>
+                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="relative flex items-center gap-3 h-12 px-5 rounded-full text-white font-medium bg-white/5 text-base hover:opacity-95 transition-colors border border-white/10">
+                  <img src="/assets/icons/construction.svg" alt="All Networks" className="w-5 h-5" />
+                  <span className="text-white pr-2 capitalize">{network}</span>
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}>
                     <path d="M7 10l5 5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -539,59 +551,52 @@ function WalletLayoutContent() {
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute top-full mt-2 w-64 bg-[#3A3F47] shadow-lg border border-[#4A4F57] z-50 overflow-hidden" style={{ left: "-10px" }}>
+                  <div className="absolute top-full mt-3 w-[250px] rounded-2xl border border-white/10 z-50 overflow-hidden" style={{ left: "0px", background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))", boxShadow: "0 12px 40px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)" }}>
                     <div className="py-2">
-                      {/* All Networks - always shown */}
-                      <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-sm transition-colors group">
-                        <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === "All Networks" ? "bg-[#4A4F57]" : ""}`}>
+                      {/* All Networks - selected row */}
+                      <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-base">
+                        <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === "All Networks" ? "bg-white/8" : "hover:bg-white/5"}`}>
                           <div className="flex items-center gap-3">
-                            {network === "All Networks" && (
-                              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                                <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
+                            {network === "All Networks" ? (
+                              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            ) : (
+                              <div className="w-4 h-4" />
                             )}
-                            {network !== "All Networks" && <div className="w-4 h-4"></div>}
-                            <span className="text-white font-medium">All Networks</span>
+                            <span className="text-white">All Networks</span>
                           </div>
-                          <span className="text-[#9CA3AF] text-sm font-medium">{getNetworkValue("All Networks")}</span>
+                          <span className="text-[#9CA3AF]">{getNetworkValue("All Networks")}</span>
                         </div>
                       </button>
 
+                      {/* Divider */}
+                      <div className="h-px bg-white/10 mx-4 my-1" />
+
                       {/* Dynamic network list based on active networks */}
-                      {getAvailableNetworks().length > 0 && (
-                        <>
-                          {/* Divider */}
-                          <div className="h-px bg-[#5A5F67] mx-4"></div>
+                      {getAvailableNetworks().map((net, index) => (
+                        <div key={net.key}>
+                          <button onClick={() => handleNetworkChange(net.name)} className="w-full text-base">
+                            <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === net.name ? "bg-white/8" : "hover:bg-white/5"}`}>
+                              <div className="flex items-center gap-3">
+                                {network === net.name ? (
+                                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]"><path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                ) : (
+                                  <div className="w-4 h-4" />
+                                )}
+                                <span className="text-white">{net.name}</span>
+                              </div>
+                              <span className="text-[#9CA3AF]">{net.value}</span>
+                            </div>
+                          </button>
+                          {index < getAvailableNetworks().length - 1 && <div className="h-px bg-white/10 mx-4" />}
+                        </div>
+                      ))}
 
-                          {getAvailableNetworks().map((net, index) => (
-                            <React.Fragment key={net.key}>
-                              <button onClick={() => handleNetworkChange(net.name)} className="w-full text-sm transition-colors group">
-                                <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === net.name ? "bg-[#4A4F57]" : ""}`}>
-                                  <div className="flex items-center gap-3">
-                                    {network === net.name && (
-                                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                                        <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                      </svg>
-                                    )}
-                                    {network !== net.name && <div className="w-4 h-4"></div>}
-                                    <span className="text-white">{net.name}</span>
-                                  </div>
-                                  <span className="text-[#9CA3AF] text-sm font-medium">{net.value}</span>
-                                </div>
-                              </button>
-                              {/* Add divider between networks except for the last one */}
-                              {index < getAvailableNetworks().length - 1 && <div className="h-px bg-[#5A5F67] mx-4"></div>}
-                            </React.Fragment>
-                          ))}
-
-                          {/* Divider before manage networks */}
-                          <div className="h-px bg-[#5A5F67] mx-4"></div>
-                        </>
-                      )}
+                      {/* Divider */}
+                      <div className="h-px bg-white/10 mx-4 my-2" />
 
                       {/* Manage Networks */}
-                      <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#9BEB83] hover:bg-[#4A4F57] transition-colors" onClick={() => setShowManageNetworks(true)}>
-                        <img src="/assets/icons/construction.svg" alt="Manage Networks" />
+                      <button className="w-full flex items-center gap-3 px-6 py-3 text-[#9BEB83] hover:bg-white/5 transition-colors">
+                        <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
                         <span className="font-medium">Manage Networks</span>
                       </button>
                     </div>
@@ -601,17 +606,17 @@ function WalletLayoutContent() {
 
               {/* User Button */}
               <div className="relative profile-dropdown">
-                <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="flex items-center justify-center bg-[#23272F] w-11 h-11 hover:bg-[#2A2F36] transition-all">
+                <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="flex items-center justify-center bg-[#161B22] w-11 h-11 rounded-full border border-white/10 hover:bg-[#1C2330] transition-all">
                   <img src="/assets/icons/person.svg" alt="User" className="w-6 h-6" />
                 </button>
 
                 {/* Profile Dropdown Menu */}
                 {isProfileDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-[#3A3F47] shadow-lg border border-[#4A4F57] z-50 overflow-hidden" style={{ left: "-210px" }}>
-                    <div className="py-2">
-                      {/* Hide Balance */}
+                  <div className="absolute top-full right-0 mt-3 w-[230px] rounded-3xl font-normal border border-white/10 z-50 overflow-hidden">
+                    <div className="py-4">
+                      {/* Hide Balance - pill */}
                       <button className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <div className="mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5">
                           {contextHideBalance ? (
                             // Eye with slash (hidden state)
                             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
@@ -626,30 +631,39 @@ function WalletLayoutContent() {
                               <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
                             </svg>
                           )}
-                          <span className="text-white">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
+                          <span className="text-white font-normal">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
                         </div>
                       </button>
 
                       {/* Your Addresses */}
                       <button className="w-full text-sm transition-colors group">
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                           <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
                           <span className="text-white">Your addresses</span>
                         </div>
                       </button>
 
-                      {/* Refer Your Friends */}
+                      {/* Contact */}
+                      <button className="w-full text-sm transition-colors group">
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                          <img src="/assets/icons/contact.svg" alt="Contact" />
+                          <span className="text-white">Contact</span>
+                        </div>
+                      </button>
+
+                      {/* Refer your friends */}
                       {/* <button className="w-full text-sm transition-colors group">
-                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                        <img src="/assets/icons/share-green.svg" alt="Refer your friends" />
-                        <span className="text-white">Refer your friends</span>
-                      </div>
-                    </button> */}
-                      <div className="h-px bg-white/5 mx-4"></div>
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                          <img src="/assets/icons/share-green.svg" alt="Refer your friends" />
+                          <span className="text-white">Refer your friends</span>
+                        </div>
+                      </button> */}
+
+                      <div className="h-px bg-white/10 mx-5 my-3"></div>
 
                       {/* Why Fradium */}
                       <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                             <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
                             <line x1="12" y1="8" x2="12" y2="12" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
@@ -661,7 +675,7 @@ function WalletLayoutContent() {
 
                       {/* Documentation */}
                       <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             <polyline points="14,2 14,8 20,8" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -673,22 +687,24 @@ function WalletLayoutContent() {
                         </div>
                       </button>
 
+                      {/* Settings */}
                       <button
                         className="w-full text-sm transition-colors group"
                         onClick={() => {
                           navigate("/wallet/setting");
                           setIsProfileDropdownOpen(false);
                         }}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                           <img src="/assets/icons/setting-green.svg" alt="Settings" />
                           <span className="text-white">Settings</span>
                         </div>
                       </button>
 
-                      <div className="h-px bg-white/5 mx-4"></div>
+                      <div className="h-px bg-white/10 mx-5 my-3"></div>
+
                       {/* Source Code */}
                       <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                             <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -698,7 +714,7 @@ function WalletLayoutContent() {
 
                       {/* X Account */}
                       <button className="w-full mb-2 text-sm transition-colors group" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                             <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -706,16 +722,19 @@ function WalletLayoutContent() {
                         </div>
                       </button>
 
-                      {/* Logout Button using SidebarButton */}
-                      <div className="mx-4 mt-2">
-                        <SidebarButton
-                          icon="/assets/icons/logout-dark.svg"
-                          onClick={() => {
-                            navigate("/");
-                            logout();
-                          }}>
-                          Logout
-                        </SidebarButton>
+                      {/* Logout - gradient border pill */}
+                      <div className="mx-5 mt-2 mb-2">
+                        <div className="rounded-full p-[1px]">
+                          <button
+                            className="w-full h-12 rounded-full text-[#9BEB83] font-medium border border-white/10"
+
+                            onClick={() => {
+                              navigate("/");
+                              logout();
+                            }}>
+                            Log Out
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -754,3 +773,4 @@ function WalletLayoutContent() {
     </>
   );
 }
+
