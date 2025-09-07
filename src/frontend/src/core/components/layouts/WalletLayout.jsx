@@ -6,6 +6,7 @@ import { useAuth } from "@/core/providers/AuthProvider";
 import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import { NETWORK_CONFIG } from "@/core/lib/coinUtils";
+import toast from "react-hot-toast";
 
 // Remove duplicate NETWORK_CONFIG import since we import from coinUtils
 
@@ -30,7 +31,7 @@ function WalletLayoutContent() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters } = useWallet();
+  const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters, addresses } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
 
@@ -115,6 +116,43 @@ function WalletLayoutContent() {
     const newHideBalance = !contextHideBalance;
     setContextHideBalance(newHideBalance);
     saveHideBalance(newHideBalance); // Save the new hide balance
+  };
+
+  // Function to copy ICP Principal to clipboard
+  const copyICPPrincipal = async () => {
+    const icpPrincipal = addresses.icp_principal || "Not available";
+
+    try {
+      await navigator.clipboard.writeText(icpPrincipal);
+      toast.success("ICP Principal copied to clipboard!", {
+        position: "bottom-center",
+        duration: 2000,
+        style: {
+          background: "#23272F",
+          color: "#9BE4A0",
+          border: "1px solid #393E4B",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        },
+        icon: "📋",
+      });
+    } catch (error) {
+      console.error("Failed to copy ICP Principal:", error);
+      toast.error("Failed to copy ICP Principal", {
+        position: "bottom-center",
+        duration: 2000,
+        style: {
+          background: "#23272F",
+          color: "#FF6B6B",
+          border: "1px solid #393E4B",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        },
+        icon: "❌",
+      });
+    }
   };
 
   // Menu configuration with logout function
@@ -420,9 +458,14 @@ function WalletLayoutContent() {
                       </svg>
                       <span className="text-white">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]">
-                      <img src="/assets/icons/copy-green.svg" alt="Your addresses" className="w-5 h-5" />
-                      <span className="text-white">Your addresses</span>
+                    <button
+                      className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]"
+                      onClick={() => {
+                        copyICPPrincipal();
+                        setIsProfileDropdownOpen(false);
+                      }}>
+                      <img src="/assets/icons/copy-green.svg" alt="Your Principal" className="w-5 h-5" />
+                      <span className="text-white">Your Principal</span>
                     </button>
                     <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]">
                       <img src="/assets/icons/share-green.svg" alt="Refer your friends" className="w-5 h-5" />
@@ -618,11 +661,16 @@ function WalletLayoutContent() {
                         </div>
                       </button>
 
-                      {/* Your Addresses */}
-                      <button className="w-full text-sm transition-colors group">
+                      {/* Copy ICP Principal */}
+                      <button
+                        className="w-full text-sm transition-colors group"
+                        onClick={() => {
+                          copyICPPrincipal();
+                          setIsProfileDropdownOpen(false);
+                        }}>
                         <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
-                          <span className="text-white">Your addresses</span>
+                          <img src="/assets/icons/copy-green.svg" alt="Copy Principal" />
+                          <span className="text-white">Copy Principal</span>
                         </div>
                       </button>
 

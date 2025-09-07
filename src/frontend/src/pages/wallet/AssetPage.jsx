@@ -1,5 +1,5 @@
 // React
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 
 // Framer Motion
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +18,7 @@ import TokenItemCard from "@/core/components/cards/TokenItemCard";
 
 export default function AssetsPage() {
   // Wallet Provider - Get balance state and functions
-  const { balances, balanceLoading, balanceErrors, isRefreshingBalances, refreshAllBalances, network, networkFilters } = useWallet();
+  const { balances, balanceLoading, balanceErrors, isRefreshingBalances, refreshAllBalances, network, networkFilters, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, refreshAllUSDPrices, hideBalance } = useWallet();
 
   // Modal States
   const [showSendModal, setShowSendModal] = useState(false);
@@ -85,6 +85,71 @@ export default function AssetsPage() {
     return networkMatch && searchMatch;
   });
 
+  // Calculate total portfolio value
+  const { totalPortfolioValue, isPortfolioLoading } = useMemo(() => {
+    let total = 0;
+    let hasAnyLoading = false;
+    let hasAnyError = false;
+
+    TOKENS_CONFIG.forEach((token) => {
+      const balance = balances[token.id];
+      const usdPrice = usdPrices[token.id];
+      const isBalanceLoading = balanceLoading[token.id];
+      const hasBalanceError = balanceErrors[token.id];
+      const isUsdPriceLoading = usdPriceLoading[token.id];
+      const hasUsdPriceError = usdPriceErrors[token.id];
+
+      // Check if any token is still loading or has error
+      if (isBalanceLoading || isUsdPriceLoading) {
+        hasAnyLoading = true;
+      }
+      if (hasBalanceError || hasUsdPriceError) {
+        hasAnyError = true;
+      }
+
+      // Calculate value if we have both balance and price
+      if (balance && usdPrice && !isBalanceLoading && !isUsdPriceLoading && !hasBalanceError && !hasUsdPriceError) {
+        const numericBalance = parseFloat(balance);
+        if (!isNaN(numericBalance) && numericBalance > 0) {
+          total += numericBalance * usdPrice;
+        }
+      }
+    });
+
+    return {
+      totalPortfolioValue: total,
+      isPortfolioLoading: hasAnyLoading,
+      hasPortfolioError: hasAnyError,
+    };
+  }, [balances, usdPrices, balanceLoading, usdPriceLoading, balanceErrors, usdPriceErrors]);
+
+  // Format portfolio value for display
+  const formattedPortfolioValue = useMemo(() => {
+    if (isPortfolioLoading) {
+      return <span className="inline-block w-24 h-8 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></span>;
+    }
+
+    // Hide balance if enabled
+    if (hideBalance) {
+      return "••••";
+    }
+
+    if (totalPortfolioValue === 0) {
+      return "$0.00";
+    }
+
+    // Format with appropriate decimal places
+    if (totalPortfolioValue < 0.01) {
+      return "$0.0000";
+    } else if (totalPortfolioValue < 1) {
+      return `$${totalPortfolioValue.toFixed(4)}`;
+    } else if (totalPortfolioValue < 1000) {
+      return `$${totalPortfolioValue.toFixed(2)}`;
+    } else {
+      return `$${totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+  }, [totalPortfolioValue, isPortfolioLoading, hideBalance]);
+
   return (
     <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219] md:p-0 p-2">
       {/* Card Wallet - Static */}
@@ -100,8 +165,8 @@ export default function AssetsPage() {
         {/* Content */}
         <div className="relative z-20 text-center">
           <div className="text-white text-sm font-normal mb-1">Total Portfolio Value</div>
-          <div className="text-white md:text-3xl text-2xl font-semibold mb-1">$0.00</div>
-          <div className="text-[#9BE4A0] md:text-base text-sm font-medium md:mb-6 mb-3">Top up your wallet to start using it!</div>
+          <div className="text-white md:text-3xl text-2xl font-semibold mb-1">{formattedPortfolioValue}</div>
+          <div className="text-[#9BE4A0] md:text-base text-sm font-medium md:mb-6 mb-3">{totalPortfolioValue > 0 ? "Your portfolio is growing! 🚀" : "Top up your wallet to start using it!"}</div>
 
           {/* Action Buttons */}
           <div className="flex md:gap-4 gap-2 w-full max-w-lg mx-auto">
@@ -177,7 +242,7 @@ export default function AssetsPage() {
                         delay: index * 0.05,
                         ease: "easeOut",
                       }}>
-                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={balanceErrors[token.id]} />
+                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={usdPriceErrors[token.id]} hideBalance={hideBalance} />
                     </motion.div>
                   ))}
                 </AnimatePresence>

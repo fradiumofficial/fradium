@@ -5,7 +5,7 @@ import { useAuth } from "./AuthProvider";
 import { wallet } from "declarations/wallet";
 
 // Token utilities
-import { TOKENS_CONFIG, getBalance } from "@/core/lib/coinUtils";
+import { TOKENS_CONFIG, getBalance, getUSD, getUSDPrices } from "@/core/lib/coinUtils";
 
 // Create context for wallet data
 const WalletContext = createContext();
@@ -58,6 +58,12 @@ export const WalletProvider = ({ children }) => {
   const [balanceLoading, setBalanceLoading] = useState({});
   const [balanceErrors, setBalanceErrors] = useState({});
   const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
+
+  // USD Price states
+  const [usdPrices, setUsdPrices] = useState({});
+  const [usdPriceLoading, setUsdPriceLoading] = useState({});
+  const [usdPriceErrors, setUsdPriceErrors] = useState({});
+  const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
 
   // Memoize user principal string to prevent unnecessary re-renders
   const userPrincipalString = useMemo(() => {
@@ -277,11 +283,53 @@ export const WalletProvider = ({ children }) => {
     }
   }, [fetchTokenBalance, isRefreshingBalances]);
 
-  // useEffect for balance fetching - placed after function definitions
+  // Function to fetch USD price for a specific token
+  const fetchTokenUSDPrice = useCallback(async (tokenId) => {
+    setUsdPriceLoading((prev) => ({ ...prev, [tokenId]: true }));
+    setUsdPriceErrors((prev) => ({ ...prev, [tokenId]: null }));
+
+    try {
+      const price = await getUSD(tokenId);
+      setUsdPrices((prev) => ({ ...prev, [tokenId]: price }));
+    } catch (error) {
+      console.error(`Error fetching USD price for token ${tokenId}:`, error);
+      setUsdPriceErrors((prev) => ({ ...prev, [tokenId]: error.message }));
+      setUsdPrices((prev) => ({ ...prev, [tokenId]: null }));
+    } finally {
+      setUsdPriceLoading((prev) => ({ ...prev, [tokenId]: false }));
+    }
+  }, []);
+
+  // Function to fetch all USD prices
+  const fetchAllUSDPrices = useCallback(async () => {
+    const allTokenIds = TOKENS_CONFIG.map((token) => token.id);
+    await Promise.all(allTokenIds.map((tokenId) => fetchTokenUSDPrice(tokenId)));
+  }, [fetchTokenUSDPrice]);
+
+  // Function to refresh all USD prices
+  const refreshAllUSDPrices = useCallback(async () => {
+    if (isRefreshingPrices) return;
+    setIsRefreshingPrices(true);
+    const allTokenIds = TOKENS_CONFIG.map((token) => token.id);
+    const loadingState = {};
+    allTokenIds.forEach((tokenId) => {
+      loadingState[tokenId] = true;
+    });
+    setUsdPriceLoading((prev) => ({ ...prev, ...loadingState }));
+    try {
+      await Promise.all(allTokenIds.map((tokenId) => fetchTokenUSDPrice(tokenId)));
+    } finally {
+      setIsRefreshingPrices(false);
+    }
+  }, [fetchTokenUSDPrice, isRefreshingPrices]);
+
+  // useEffect for balance and price fetching - placed after function definitions
   useEffect(() => {
     if (identity) {
-      fetchAddresses();
-      fetchAllBalances();
+      // Run all fetch operations in parallel to prevent blocking
+      Promise.all([fetchAddresses(), fetchAllBalances(), fetchAllUSDPrices()]).catch((error) => {
+        console.error("Error in parallel fetch operations:", error);
+      });
     } else {
       setIsLoading(false);
       setUserWallet(null);
@@ -290,8 +338,13 @@ export const WalletProvider = ({ children }) => {
       setBalanceLoading({});
       setBalanceErrors({});
       setIsRefreshingBalances(false);
+      // Reset USD price states when user logs out
+      setUsdPrices({});
+      setUsdPriceLoading({});
+      setUsdPriceErrors({});
+      setIsRefreshingPrices(false);
     }
-  }, [identity, fetchAllBalances, fetchAddresses]);
+  }, [identity, fetchAllBalances, fetchAddresses, fetchAllUSDPrices]);
 
   // Helper function to add new address to existing wallet
 
@@ -338,8 +391,15 @@ export const WalletProvider = ({ children }) => {
       isRefreshingBalances,
       fetchAllBalances,
       refreshAllBalances,
+      // USD Price related
+      usdPrices,
+      usdPriceLoading,
+      usdPriceErrors,
+      isRefreshingPrices,
+      fetchAllUSDPrices,
+      refreshAllUSDPrices,
     }),
-    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances]
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;

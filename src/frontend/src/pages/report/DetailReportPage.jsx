@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router";
 import { useState, useEffect } from "react";
 import { Input } from "@/core/components/ui/input";
 import Card from "../../core/components/Card";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/chainExplorers";
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
@@ -221,8 +221,38 @@ export default function DetailReportPage() {
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard!", {
+        position: "bottom-center",
+        duration: 2000,
+        style: {
+          background: "#23272F",
+          color: "#9BE4A0",
+          border: "1px solid #393E4B",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        },
+        icon: "📋",
+      });
+    } catch (error) {
+      console.error("Failed to copy text:", error);
+      toast.error("Failed to copy text", {
+        position: "bottom-center",
+        duration: 2000,
+        style: {
+          background: "#23272F",
+          color: "#FF6B6B",
+          border: "1px solid #393E4B",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        },
+        icon: "❌",
+      });
+    }
   };
 
   const calculateVoteWeight = () => {

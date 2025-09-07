@@ -12,6 +12,7 @@ import SidebarButton from "@/core/components/SidebarButton";
 import ButtonPurple from "@/core/components/ButtonPurple";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { cn } from "@/core/lib/utils";
+import toast from "react-hot-toast";
 
 const navigationItems = [
   { label: "Home", href: "/" },
@@ -39,16 +40,12 @@ const Navbar = () => {
     return pathname.startsWith(item.href);
   };
 
-  const desktopItemClass = (active) =>
-    `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 text-center ${active ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"
-    }`;
+  const desktopItemClass = (active) => `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 text-center ${active ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"}`;
 
-  const mobileItemClass = (active) =>
-    `font-[General Sans, sans-serif] text-lg ${active ? "text-white font-semibold" : "text-white/70 font-medium"} no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95`;
+  const mobileItemClass = (active) => `font-[General Sans, sans-serif] text-lg ${active ? "text-white font-semibold" : "text-white/70 font-medium"} no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95`;
 
   const isProductsActive = pathname.startsWith("/products");
-  const productsBtnClass = `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 flex items-center gap-1 ${isProductsActive ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"
-    }`;
+  const productsBtnClass = `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 flex items-center gap-1 ${isProductsActive ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"}`;
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -60,7 +57,7 @@ const Navbar = () => {
           subaccount: [],
         });
         setBalance(response);
-      } catch (error) { }
+      } catch (error) {}
     }
 
     fetchBalance();
@@ -177,7 +174,41 @@ const Navbar = () => {
                   <div className="flex flex-col space-y-1">
                     <div className="flex items-center gap-1 text-xs text-white">
                       <p>{identity.getPrincipal().toString()}</p>
-                      <button onClick={() => navigator.clipboard.writeText(identity.getPrincipal().toString())} className="hover:text-foreground">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(identity.getPrincipal().toString());
+                            toast.success("Principal ID copied to clipboard!", {
+                              position: "bottom-center",
+                              duration: 2000,
+                              style: {
+                                background: "#23272F",
+                                color: "#9BE4A0",
+                                border: "1px solid #393E4B",
+                                borderRadius: "8px",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                              },
+                              icon: "📋",
+                            });
+                          } catch (error) {
+                            console.error("Failed to copy Principal ID:", error);
+                            toast.error("Failed to copy Principal ID", {
+                              position: "bottom-center",
+                              duration: 2000,
+                              style: {
+                                background: "#23272F",
+                                color: "#FF6B6B",
+                                border: "1px solid #393E4B",
+                                borderRadius: "8px",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                              },
+                              icon: "❌",
+                            });
+                          }
+                        }}
+                        className="hover:text-foreground">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -205,14 +236,7 @@ const Navbar = () => {
           </div>
         ) : (
           <div className="hidden lg:flex relative items-center flex-shrink-0 min-w-fit">
-            <ButtonPurple
-              size="sm"
-              onClick={handleSignIn}
-              loading={isLoading}
-              fontWeight="medium"
-              iconSize="w-5 h-5"
-              icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg"
-            >
+            <ButtonPurple size="sm" onClick={handleSignIn} loading={isLoading} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
               Sign in
             </ButtonPurple>
           </div>
@@ -278,15 +302,7 @@ const Navbar = () => {
               )}
             </div>
             {/* Sign In Button Mobile - Neon Style */}
-            <ButtonPurple
-              size="sm"
-              onClick={handleSignIn}
-              loading={isLoading}
-              className="w-11/12 max-w-xs mt-2"
-              fontWeight="medium"
-              iconSize="w-5 h-5"
-              icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg"
-            >
+            <ButtonPurple size="sm" onClick={handleSignIn} loading={isLoading} className="w-11/12 max-w-xs mt-2" fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
               Sign in
             </ButtonPurple>
           </div>

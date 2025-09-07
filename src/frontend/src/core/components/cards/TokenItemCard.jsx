@@ -1,17 +1,18 @@
 import React from "react";
 import { formatAmount, getNetworkIcon } from "@/core/lib/coinUtils";
 
-// Balance Skeleton Component
-const BalanceSkeleton = () => (
-  <div className="flex flex-col items-end gap-2">
-    <div className="md:h-5 md:w-16 h-4 w-12 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></div>
-    <div className="md:h-4 md:w-10 h-3 w-8 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></div>
-  </div>
-);
+// Balance Row Skeleton Component
+const BalanceRowSkeleton = () => <div className="md:h-5 md:w-16 h-4 w-12 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></div>;
+
+// USD Value Row Skeleton Component
+const USDRowSkeleton = () => <div className="md:h-4 md:w-10 h-3 w-8 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></div>;
 
 // Token Item Card Component
-const TokenItemCard = ({ token, onClick, balance, isLoading, hasError }) => {
+const TokenItemCard = ({ token, onClick, balance, isLoading, hasError, usdPrice, usdPriceLoading, usdPriceError, hideBalance }) => {
   const networkIcon = getNetworkIcon(token.chain);
+
+  // Calculate USD value
+  const usdValue = balance && usdPrice && !isLoading && !usdPriceLoading ? (parseFloat(balance) * usdPrice).toFixed(2) : "0.00";
 
   return (
     <div className="flex items-center md:px-2 px-1 md:py-4 py-2 md:gap-4 gap-2 cursor-pointer hover:bg-[#181C22] transition-colors rounded-lg" onClick={() => onClick && onClick(token)}>
@@ -31,8 +32,8 @@ const TokenItemCard = ({ token, onClick, balance, isLoading, hasError }) => {
         <div className="text-[#B0B6BE] md:text-sm text-xs truncate">{token.chain}</div>
       </div>
       <div className="flex flex-col items-end gap-2">
-        {isLoading ? <BalanceSkeleton /> : hasError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-white md:font-semibold font-medium md:text-base text-sm">{formatAmount(balance)}</span>}
-        <span className="text-[#B0B6BE] md:text-sm text-xs">$0.00</span>
+        {isLoading ? <BalanceRowSkeleton /> : hasError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-white md:font-semibold font-medium md:text-base text-sm">{hideBalance ? "••••" : formatAmount(balance)}</span>}
+        {usdPriceLoading ? <USDRowSkeleton /> : usdPriceError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-[#B0B6BE] md:text-sm text-xs">{hideBalance ? "••••" : `$${usdValue}`}</span>}
       </div>
     </div>
   );
