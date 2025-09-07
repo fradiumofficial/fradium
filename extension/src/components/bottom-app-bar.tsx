@@ -63,6 +63,11 @@ const BottomNavbar: React.FC = () => {
     return [ROUTES.HISTORY, ROUTES.SCAN_HISTORY, ROUTES.DETAIL_HISTORY.replace(':id', '')].some((p) => pathname.startsWith(p));
   };
 
+  // Hide bottom bar on welcome and wallet confirmation pages
+  if (location.pathname === ROUTES.WELCOME || location.pathname === ROUTES.WALLET_CONFIRMATION) {
+    return null;
+  }
+
   return (
     <nav className="h-16 bg-[#212121] grid grid-cols-4 items-stretch shadow-lg">
       {navItems.map((item) => {

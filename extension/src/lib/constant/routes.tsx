@@ -12,7 +12,7 @@ export const ROUTES = {
   ACCOUNT: '/account',
   ANALYZE_PROGRESS: '/analyze-progress',
   FAILED: '/failed',
-  WELCOME: '/',
+  WELCOME: '/welcome',
   AI_ANALYZER: '/ai-analyzer',
   SETTING: '/setting',
   ALL_NETWORK: '/all-network',
