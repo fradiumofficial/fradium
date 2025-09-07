@@ -8,6 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@dfinity/agent':
+        specifier: ^3.2.4
+        version: 3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0)
+      '@dfinity/auth-client':
+        specifier: ^3.2.4
+        version: 3.2.4(@dfinity/agent@3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0))(@dfinity/identity@3.2.4(@dfinity/agent@3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/curves@1.9.7)(@noble/hashes@1.8.0))(@dfinity/principal@3.2.4)
+      '@dfinity/principal':
+        specifier: ^3.2.4
+        version: 3.2.4
       axios:
         specifier: ^1.11.0
         version: 1.11.0
@@ -141,6 +150,40 @@ packages:
   '@babel/types@7.28.4':
     resolution: {integrity: sha512-bkFqkLhh3pMBUQQkpVgWDWq/lqzc2678eUyDlTBhRqhCHFguYYGM0Efga7tYk4TogG/3x0EEl66/OQ+WGbWB/Q==}
     engines: {node: '>=6.9.0'}
+
+  '@dfinity/agent@3.2.4':
+    resolution: {integrity: sha512-2TpFyaInmdRemQ8QlP4yZusO+6Dqe98SBvSSGOWcCL2zQ7u/dgKA1jXwXb7tdHHMXvdC1bXFjeyBGqpqTG6avA==}
+    peerDependencies:
+      '@dfinity/candid': 3.2.4
+      '@dfinity/principal': 3.2.4
+      '@noble/hashes': ^1.8.0
+
+  '@dfinity/auth-client@3.2.4':
+    resolution: {integrity: sha512-BDY1wnQok6FJ8yqFHqY+v4iqdRV4isDFemApPgCF6oF12RllacixjadeqfBWAqjt5zNXUKPllJzZWlR96ymamg==}
+    peerDependencies:
+      '@dfinity/agent': 3.2.4
+      '@dfinity/identity': 3.2.4
+      '@dfinity/principal': 3.2.4
+
+  '@dfinity/candid@3.2.4':
+    resolution: {integrity: sha512-VpzY4mFHmm/F4iuqW3AMehKEsTeFbM5CDkRqp0IHS2gqxBm0XDkreJhIyv5S4P93NxGx1QzPCN1wzO5wPuH8OA==}
+    peerDependencies:
+      '@dfinity/principal': 3.2.4
+
+  '@dfinity/cbor@0.2.2':
+    resolution: {integrity: sha512-GPJpH73kDEKbUBdUjY80lz7cq9l0vm1h/7ppejPV6O0ZTqCLrYspssYvqjRmK4aNnJ/SKXsP0rg9LYX7zpegaA==}
+
+  '@dfinity/identity@3.2.4':
+    resolution: {integrity: sha512-+QUvC0rbWh0zRcHyqpYdbyJ2sfBLcwBKATsOWmQFoyMofgfFZTR+21ITqX+J8rcrHdj3XzSKSSYnq+8zRgF6ow==}
+    peerDependencies:
+      '@dfinity/agent': 3.2.4
+      '@dfinity/candid': 3.2.4
+      '@dfinity/principal': 3.2.4
+      '@noble/curves': ^1.9.2
+      '@noble/hashes': ^1.8.0
+
+  '@dfinity/principal@3.2.4':
+    resolution: {integrity: sha512-7qTjDb9k/J/55k0/ZnD8s2+L+IgfG6K1lC7iywhQQL/4Qe0UIljUTasDk85kooY2QeNvWSl7MsLWp69LPBiYjw==}
 
   '@emnapi/runtime@1.5.0':
     resolution: {integrity: sha512-97/BJ3iXHww3djw6hYIfErCZFee7qCtrneuLa20UXFCOTCfBM2cvQHjWJ2EG0s0MtdNwInarqCTz35i4wWXHsQ==}
@@ -654,6 +697,14 @@ packages:
     resolution: {integrity: sha512-x0fWaQtYp4E6sktbsdAqnehxDgEc/VwM7uLsRCYWaiGu0ykYdZPiS8zCWdnjHwyiumousxfBm4SO31eXqwEZhQ==}
     cpu: [x64]
     os: [win32]
+
+  '@noble/curves@1.9.7':
+    resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
+    engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@1.8.0':
+    resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
+    engines: {node: ^14.21.3 || >=16}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2233,6 +2284,9 @@ packages:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
 
+  idb@7.1.1:
+    resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
+
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
@@ -3398,6 +3452,39 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
+  '@dfinity/agent@3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0)':
+    dependencies:
+      '@dfinity/candid': 3.2.4(@dfinity/principal@3.2.4)
+      '@dfinity/cbor': 0.2.2
+      '@dfinity/principal': 3.2.4
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
+
+  '@dfinity/auth-client@3.2.4(@dfinity/agent@3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0))(@dfinity/identity@3.2.4(@dfinity/agent@3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/curves@1.9.7)(@noble/hashes@1.8.0))(@dfinity/principal@3.2.4)':
+    dependencies:
+      '@dfinity/agent': 3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0)
+      '@dfinity/identity': 3.2.4(@dfinity/agent@3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/curves@1.9.7)(@noble/hashes@1.8.0)
+      '@dfinity/principal': 3.2.4
+      idb: 7.1.1
+
+  '@dfinity/candid@3.2.4(@dfinity/principal@3.2.4)':
+    dependencies:
+      '@dfinity/principal': 3.2.4
+
+  '@dfinity/cbor@0.2.2': {}
+
+  '@dfinity/identity@3.2.4(@dfinity/agent@3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/curves@1.9.7)(@noble/hashes@1.8.0)':
+    dependencies:
+      '@dfinity/agent': 3.2.4(@dfinity/candid@3.2.4(@dfinity/principal@3.2.4))(@dfinity/principal@3.2.4)(@noble/hashes@1.8.0)
+      '@dfinity/candid': 3.2.4(@dfinity/principal@3.2.4)
+      '@dfinity/principal': 3.2.4
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
+
+  '@dfinity/principal@3.2.4':
+    dependencies:
+      '@noble/hashes': 1.8.0
+
   '@emnapi/runtime@1.5.0':
     dependencies:
       tslib: 2.8.1
@@ -3790,6 +3877,12 @@ snapshots:
 
   '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
     optional: true
+
+  '@noble/curves@1.9.7':
+    dependencies:
+      '@noble/hashes': 1.8.0
+
+  '@noble/hashes@1.8.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -5759,6 +5852,8 @@ snapshots:
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
+
+  idb@7.1.1: {}
 
   ieee754@1.2.1: {}
 

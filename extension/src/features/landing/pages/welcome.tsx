@@ -1,15 +1,54 @@
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthClient } from "@dfinity/auth-client";
+import { ROUTES } from "~lib/constant/routes";
 import NeoButton from "~components/custom-button";
-import WelcomeCard from "data-base64:../../../assets/welcome_card.svg";
+import { CDN } from "~lib/constant/cdn";
 
 function Welcome() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const handleLogin = useCallback(async () => {
+    setIsLoading(true);
+    setMessage("Opening Internet Identity...");
+    try {
+      const client = await AuthClient.create({});
+      const windowFeatures = [
+        "width=500",
+        "height=600",
+        "scrollbars=yes",
+        "resizable=yes",
+        "toolbar=no",
+        "menubar=no",
+        "location=no",
+        "status=no",
+        "directories=no"
+      ].join(",");
+
+      await new Promise<void>((resolve, reject) =>
+        client.login({
+          onSuccess: resolve,
+          onError: reject,
+          windowOpenerFeatures: windowFeatures
+        })
+      );
+
+      setMessage("Authenticated. Redirecting...");
+      navigate(ROUTES.WALLET_CONFIRMATION, { replace: true });
+    } catch (err) {
+      console.error(err);
+      setMessage("Authentication failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [navigate]);
+
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md p-[32px]">
-      <img src={WelcomeCard} className="pt-[50px]" alt="welcome" />
+      <img src={CDN.images.welcomeCard} className="pt-[50px]" alt="welcome" />
       <h1 className="text-[20px] font-bold text-center mx-[50px]">
         Step Into Safer Web3 with Fradium
       </h1>
@@ -32,7 +71,7 @@ function Welcome() {
       <NeoButton
         icon={isLoading ? undefined : ArrowRight}
         iconPosition="right"
-        onClick={() => {}}
+        onClick={handleLogin}
         disabled={isLoading}
       >
         {isLoading ? "Authenticating..." : "Create Wallet"}

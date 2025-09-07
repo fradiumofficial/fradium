@@ -13,6 +13,8 @@ import DetailHistory from "~features/history/pages/detailHistory"
 import TxDetail from "~features/history/pages/transactionDetail"
 import Account from "~features/preferences/pages/account"
 import { ROUTES } from "~lib/constant/routes"
+import Welcome from "~features/landing/pages/welcome"
+import WalletConfirmation from "~features/landing/pages/createWallet"
 
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"]
@@ -55,8 +57,10 @@ const PlasmoOverlay = () => {
         {/* Main Content Area */}
         <div className="plasmo-flex-1 plasmo-overflow-y-auto">
           <Routes>
-            {/* Default route shows Home page */}
-            <Route path="/" element={<Navigate to={ROUTES.HOME} replace />} />
+            <Route path={ROUTES.WELCOME} element={<Welcome />}/>
+            {/* Default route shows welcome page */}
+            <Route path="/" element={<Navigate to={ROUTES.WELCOME} replace />} />
+            <Route path={ROUTES.WALLET_CONFIRMATION} element={<WalletConfirmation />} />
             <Route path={ROUTES.HOME} element={<Home />} />
             <Route path={ROUTES.AI_ANALYZER} element={<AnalyzeAddress />} />
             <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />

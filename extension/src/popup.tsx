@@ -13,6 +13,8 @@ import Account from "~features/preferences/pages/account"
 import { ROUTES } from "~lib/constant/routes"
 
 import "~style.css"
+import Welcome from '~features/landing/pages/welcome';
+import WalletConfirmation from '~features/landing/pages/createWallet';
 
 function IndexPopup() {
   return (
@@ -21,8 +23,10 @@ function IndexPopup() {
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
           <Routes>
+            <Route path={ROUTES.WELCOME} element={<Welcome />}/>
             {/* Default route - show Home page directly */}
-            <Route path="/" element={<Navigate to={ROUTES.HOME} replace />} />
+            <Route path="/" element={<Navigate to={ROUTES.WELCOME} replace />} />
+            <Route path={ROUTES.WALLET_CONFIRMATION} element={<WalletConfirmation />} />
             <Route path={ROUTES.HOME} element={<Home />} />
             <Route path={ROUTES.AI_ANALYZER} element={<AnalyzeAddress />} />
             <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />

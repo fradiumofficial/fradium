@@ -10,6 +10,9 @@
     "package": "plasmo package"
   },
   "dependencies": {
+    "@dfinity/agent": "^3.2.4",
+    "@dfinity/auth-client": "^3.2.4",
+    "@dfinity/principal": "^3.2.4",
     "axios": "^1.11.0",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
