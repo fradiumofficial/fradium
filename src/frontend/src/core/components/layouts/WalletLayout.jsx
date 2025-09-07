@@ -229,7 +229,16 @@ function WalletLayoutContent() {
     <>
       <WelcomingWalletModal isOpen={isCreatingWallet} />
 
-      <div className="block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
+      <div className="relative overflow-hidden block md:flex min-h-screen bg-[000510] w-full max-w-full">
+        {/* Global background spanning all wallet sections */}
+        <img
+          src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          loading="eager"
+          className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none"
+        />
         {/* Modal Manage Networks */}
         <Dialog
           open={showManageNetworks}
@@ -267,31 +276,36 @@ function WalletLayoutContent() {
             </div>
           </DialogContent>
         </Dialog>
-        {/* Sidebar kiri: hanya tampil di desktop */}
-        <aside className="h-screen w-300 bg-[#0F1219] flex flex-col justify-between py-8 px-6 border-r border-[#23272F] hidden md:flex">
+        {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}
+        <aside className="relative z-10 h-screen w-[340px] bg-transparent flex flex-col justify-between py-8 pl-8 border-r border-[#23272F] hidden md:flex">
           {/* Logo dan Brand */}
-          <div>
+          <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
               <Link to="/">
                 <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
               </Link>
             </div>
             {/* Menu */}
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-2">
               {menu.map((item, idx) => {
                 const isActive = normalize(location.pathname) === normalize(item.path);
                 const iconSrc = `/assets/icons/${item.icon}-${isActive ? "dark" : "light"}.svg`;
                 return isActive ? (
-                  <SidebarButton key={item.label} icon={<img src={iconSrc} alt={item.label} className="w-5 h-5" />} className={idx === 0 ? "mt-0" : "mt-1"} as={Link} to={item.path}>
-                    {item.label}
-                  </SidebarButton>
+                  <Link key={item.label} to={item.path} className="relative flex w-full items-center gap-3 pl-5 pr-10 py-3 font-medium text-base text-white transition-all">
+                    {/* active inner gradient from right (white) to left (transparent) */}
+                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-l from-white/20 via-white/10 to-transparent" />
+                    {/* green toggle bar on the right, full height */}
+                    <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-[#9BE4A0] shadow-[0_0_12px_rgba(155,228,160,0.5)]" />
+                    <img src={iconSrc} alt={item.label} className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10">{item.label}</span>
+                  </Link>
                 ) : item.onClick ? (
-                  <button key={item.label} onClick={item.onClick} className={`flex items-center gap-3 px-4 py-3 font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"}`}>
+                  <button key={item.label} onClick={item.onClick} className={`relative flex w-full items-center gap-3 px-5 py-3 font-medium text-base transition-all text-white hover:bg-[#181C22] hover:text-[#9BEB83]`}>
                     <img src={iconSrc} alt={item.label} className="w-5 h-5" />
                     <span>{item.label}</span>
                   </button>
                 ) : (
-                  <Link key={item.label} to={item.path} className={`flex items-center gap-3 px-4 py-3 font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"}`}>
+                  <Link key={item.label} to={item.path} className={`relative flex w-full items-center gap-3 px-5 py-3 font-medium text-base transition-all text-white hover:bg-[#181C22] hover:text-[#9BEB83]`}>
                     <img src={iconSrc} alt={item.label} className="w-5 h-5" />
                     <span>{item.label}</span>
                   </Link>
@@ -300,7 +314,7 @@ function WalletLayoutContent() {
             </nav>
           </div>
           {/* Bottom icons */}
-          <div className="flex gap-3">
+          <div className="relative z-10 flex gap-3">
             <button className="w-10 h-10 flex items-center justify-center-[#181C22] hover:bg-[#23282f]">
               <img src="/assets/GithubLogo.svg" alt="Github" className="w-6 h-6" />
             </button>
@@ -309,6 +323,7 @@ function WalletLayoutContent() {
             </button>
           </div>
         </aside>
+        {/* ===== END: SIDEBAR KIRI ===== */}
         {/* Topbar khusus mobile */}
         <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219] sticky top-0 z-40 border-b border-[#23272F]">
           {/* Logo Fradium kiri */}
@@ -504,14 +519,11 @@ function WalletLayoutContent() {
             </div>
           </div>
         </div>
-        <main className="flex-1 w-full max-w-full p-4 md:p-8 overflow-auto pb-28 md:pb-8 pt-8 md:pt-7">
+        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-auto pb-28 md:pb-8 pt-8 md:pt-7">
           <Outlet />
         </main>
-        {/* Sidebar kanan: hanya tampil di desktop */}
-        <aside className="relative w-100 min-h-screen bg-[#0F1219] flex flex-col pt-6 pr-6 pb-6 pl-4 overflow-hidden hidden md:flex">
-          {/* Pattern background - diperbaiki positioning */}
-          <img src="/assets/pattern-sidebar.png" alt="Pattern" className="absolute bottom-0 w-60 right-0 z-0 pointer-events-none select-none object-cover object-bottom-right " />
-
+        {/* ===== START: SIDEBAR KANAN (Desktop) ===== */}
+        <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 overflow-hidden hidden md:flex">
           {/* Top action buttons */}
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-end">
@@ -712,6 +724,7 @@ function WalletLayoutContent() {
             </div>
           </div>
         </aside>
+        {/* ===== END: SIDEBAR KANAN ===== */}
       </div>
 
       {/* Bottom Navigation: hanya tampil di mobile */}
