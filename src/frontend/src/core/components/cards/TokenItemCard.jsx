@@ -1,5 +1,6 @@
 import React from "react";
 import { formatAmount, getNetworkIcon } from "@/core/lib/coinUtils";
+import { motion } from "framer-motion";
 
 // Balance Skeleton Component
 const BalanceSkeleton = () => (
@@ -14,9 +15,22 @@ const TokenItemCard = ({ token, onClick, balance, isLoading, hasError }) => {
   const networkIcon = getNetworkIcon(token.chain);
 
   return (
-    <div className="flex items-center md:px-2 px-1 md:py-4 py-2 md:gap-4 gap-2 cursor-pointer hover:bg-[#181C22] transition-colors rounded-lg" onClick={() => onClick && onClick(token)}>
+    <motion.div
+      className="group relative flex items-center md:px-2 px-1 md:py-4 py-2 md:gap-4 gap-2 cursor-pointer rounded-lg overflow-hidden hover:bg-white/5"
+      onClick={() => onClick && onClick(token)}
+      initial={{ y: 0 }}
+      whileHover={{ y: -2 }}
+      transition={{ type: "spring", stiffness: 320, damping: 24, mass: 0.6 }}
+    >
+      {/* Soft highlight overlay on hover */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)" }}
+        aria-hidden="true"
+      />
+
       <div className="relative">
-        <img src={token.imageUrl} alt={token.name} className="md:w-10 md:h-10 w-8 h-8 rounded-full" />
+        <img src={token.imageUrl} alt={token.name} className="md:w-10 md:h-10 w-8 h-8 rounded-full transition-transform duration-200 group-hover:scale-105" />
         {networkIcon && (
           <div className="absolute -bottom-0.5 -right-0.5 bg-[#0F1219] rounded-full p-0.5">
             <img src={networkIcon} alt={`${token.chain} network`} className="md:w-3 md:h-3 w-2.5 h-2.5 rounded-full" />
@@ -31,10 +45,18 @@ const TokenItemCard = ({ token, onClick, balance, isLoading, hasError }) => {
         <div className="text-[#B0B6BE] md:text-sm text-xs truncate">{token.chain}</div>
       </div>
       <div className="flex flex-col items-end gap-2">
-        {isLoading ? <BalanceSkeleton /> : hasError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-white font-medium md:text-base text-sm">{formatAmount(balance)}</span>}
-        <span className="text-[#B0B6BE] md:text-sm text-xs">$0.00</span>
+        {isLoading ? (
+          <BalanceSkeleton />
+        ) : hasError ? (
+          <span className="text-red-400 md:text-sm text-xs">Error</span>
+        ) : (
+          <span className="text-white font-medium md:text-base text-sm transition-transform duration-200 group-hover:scale-[1.03]">
+            {formatAmount(balance)}
+          </span>
+        )}
+        <span className="text-[#B0B6BE] md:text-sm text-xs transition-colors duration-200 group-hover:text-[#c9cfd6]">$0.00</span>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
