@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
+import { useWallet } from "~features/wallet/context/walletContext";
 
 type LogoutButtonProps = {
     onClick?: () => void;
@@ -11,28 +12,36 @@ type LogoutButtonProps = {
 function LogoutButton({ onClick, className = "" }: LogoutButtonProps) {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    const { signOut } = useWallet() as any;
 
-    // const handleLogout = async () => {
-    //     if (onClick) {
-    //         onClick();
-    //         return;
-    //     }
-    //     if (isLoading) return;
-    //     setIsLoading(true);
-    //     try {
-    //         await logout();
-    //     } catch (e) {
-    //         // ignore and continue navigation
-    //     } finally {
-    //         setIsLoading(false);
-    //         navigate(ROUTES.WELCOME, { replace: true });
-    //     }
-    // };
+    const handleLogout = async () => {
+        if (onClick) {
+            onClick();
+            return;
+        }
+        if (isLoading) return;
+        setIsLoading(true);
+        try {
+            // Ask background to terminate II session
+            await chrome.runtime.sendMessage({ type: "LOGOUT" });
+        } catch (_e) {
+            // ignore and continue
+        } finally {
+            try {
+                // Clear local auth state so routing updates immediately
+                await signOut();
+            } catch (_e2) {
+                // ignore
+            }
+            setIsLoading(false);
+            navigate(ROUTES.WELCOME, { replace: true });
+        }
+    };
 
     return (
         <div className={`bg-white/30  ${className}`}>
             <button
-                onClick={() => navigate(ROUTES.WELCOME, { replace: true })}
+                onClick={handleLogout}
                 disabled={isLoading}
                 className={`
           w-full

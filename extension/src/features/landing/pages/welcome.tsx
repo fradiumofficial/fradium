@@ -1,50 +1,31 @@
-import { ArrowRight } from "lucide-react";
+import { CDN } from "~lib/constant/cdn";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthClient } from "@dfinity/auth-client";
 import { ROUTES } from "~lib/constant/routes";
 import NeoButton from "~components/custom-button";
-import { CDN } from "~lib/constant/cdn";
+import { useWallet } from "~features/wallet/context/walletContext";
 
 function Welcome() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const { signIn } = useWallet() as any;
 
-  const handleLogin = useCallback(async () => {
-    setIsLoading(true);
-    setMessage("Opening Internet Identity...");
+  const handleLogin = async () => {
+    setIsLoading(true)
+    setMessage("Opening Internet Identity...")
     try {
-      const client = await AuthClient.create({});
-      const windowFeatures = [
-        "width=500",
-        "height=600",
-        "scrollbars=yes",
-        "resizable=yes",
-        "toolbar=no",
-        "menubar=no",
-        "location=no",
-        "status=no",
-        "directories=no"
-      ].join(",");
+      await signIn()
+      setMessage("Authenticated. Redirecting...")
+      navigate(ROUTES.WALLET_CONFIRMATION, { replace: true })
 
-      await new Promise<void>((resolve, reject) =>
-        client.login({
-          onSuccess: resolve,
-          onError: reject,
-          windowOpenerFeatures: windowFeatures
-        })
-      );
-
-      setMessage("Authenticated. Redirecting...");
-      navigate(ROUTES.WALLET_CONFIRMATION, { replace: true });
     } catch (err) {
-      console.error(err);
-      setMessage("Authentication failed. Please try again.");
+      console.error(err)
+      setMessage("Authentication failed. Please try again.")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [navigate]);
+  }
 
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md p-[32px]">
@@ -69,7 +50,7 @@ function Welcome() {
       )}
       
       <NeoButton
-        icon={isLoading ? undefined : ArrowRight}
+        icon={CDN.icons.arrowForward}
         iconPosition="right"
         onClick={handleLogin}
         disabled={isLoading}
