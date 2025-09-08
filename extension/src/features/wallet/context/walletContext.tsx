@@ -1,4 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { AuthClient } from "@dfinity/auth-client";
+import { getInternetIdentityNetwork } from "~lib/utils/utils";
 
 interface NetworkFilters {
   Bitcoin: boolean;
@@ -18,10 +20,15 @@ interface NetworkValues {
 interface WalletContextType {
   // Wallet state
   isLoading: boolean;
+  isAuthenticated: boolean;
+  principalText: string | null;
   isCreatingWallet: boolean;
   setIsCreatingWallet: (creating: boolean) => void;
   hasConfirmedWallet: boolean;
   setHasConfirmedWallet: (confirmed: boolean) => void;
+  confirmWallet: () => void;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
   
   // Wallet operations
   addAddressToWallet: (network: string, tokenType: string, address: string) => Promise<boolean>;
@@ -52,6 +59,8 @@ export const useWallet = () => {
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [principalText, setPrincipalText] = useState<string | null>(null);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [network, setNetwork] = useState("All Networks");
   const [hideBalance, setHideBalance] = useState(false);
@@ -69,6 +78,43 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     Fradium: true,
     Ethereum: true,
   });
+
+  // Persist simple wallet confirmation state in localStorage
+  const STORAGE_KEY_HAS_WALLET = "fradium_has_confirmed_wallet";
+  const STORAGE_KEY_PRINCIPAL = "fradium_principal";
+
+  // Load persisted state on first mount
+  useEffect(() => {
+    const bootstrap = async () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_HAS_WALLET);
+        if (stored) setHasConfirmedWallet(stored === "true");
+
+        const storedPrincipal = localStorage.getItem(STORAGE_KEY_PRINCIPAL);
+        if (storedPrincipal) {
+          setPrincipalText(storedPrincipal);
+          setIsAuthenticated(true);
+        } else {
+          // Try to restore existing II session
+          const client = await AuthClient.create({});
+          const isAuth = await client.isAuthenticated();
+          if (isAuth) {
+            const identity = client.getIdentity();
+            const principal = identity.getPrincipal().toString();
+            setPrincipalText(principal);
+            setIsAuthenticated(true);
+            try { localStorage.setItem(STORAGE_KEY_PRINCIPAL, principal); } catch {}
+          }
+        }
+      } catch {
+        // ignore
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    bootstrap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Function to update network values
   const updateNetworkValues = useCallback((values: Partial<NetworkValues>) => {
@@ -101,14 +147,67 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return false;
   }, []);
 
+  // Helper to confirm/create a wallet locally (can be replaced with canister call)
+  const confirmWallet = useCallback(() => {
+    setHasConfirmedWallet(true);
+    try {
+      localStorage.setItem(STORAGE_KEY_HAS_WALLET, "true");
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
+  const signIn = useCallback(async () => {
+    const client = await AuthClient.create({});
+
+    const windowFeatures = [
+      "width=500",
+      "height=600",
+      "scrollbars=yes",
+      "resizable=yes",
+      "toolbar=no",
+      "menubar=no",
+      "location=no",
+      "status=no",
+      "directories=no"
+    ].join(",");
+
+    await new Promise<void>((resolve, reject) =>
+      client.login({
+        identityProvider: getInternetIdentityNetwork() || undefined,
+        onSuccess: resolve,
+        onError: reject,
+        windowOpenerFeatures: windowFeatures
+      })
+    );
+    const identity = client.getIdentity();
+    const principal = identity.getPrincipal().toString();
+    setPrincipalText(principal);
+    setIsAuthenticated(true);
+    try { localStorage.setItem(STORAGE_KEY_PRINCIPAL, principal); } catch {}
+  }, []);
+
+  const signOut = useCallback(async () => {
+    const client = await AuthClient.create({});
+    await client.logout();
+    setIsAuthenticated(false);
+    setPrincipalText(null);
+    try { localStorage.removeItem(STORAGE_KEY_PRINCIPAL); } catch {}
+  }, []);
+
 
   const walletContextValue = useMemo(
     () => ({
       isLoading,
+      isAuthenticated,
+      principalText,
       isCreatingWallet,
       setIsCreatingWallet,
       hasConfirmedWallet,
       setHasConfirmedWallet,
+      confirmWallet,
+      signIn,
+      signOut,
       addAddressToWallet,
       network,
       setNetwork,
@@ -121,8 +220,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }),
     [
       isLoading,
+      isAuthenticated,
+      principalText,
       isCreatingWallet,
       hasConfirmedWallet,
+      confirmWallet,
+      signIn,
+      signOut,
       addAddressToWallet,
       network,
       hideBalance,

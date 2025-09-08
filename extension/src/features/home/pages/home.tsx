@@ -1,9 +1,10 @@
 import { EyeClosedIcon, EyeIcon, MoveUpRight, MoveDownLeft, Search, Settings2 } from "lucide-react";
 import ProfileHeader from "~components/header";
 import { CDN } from "~lib/constant/cdn";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
+import { useWallet } from "~features/wallet/context/walletContext";
 
 
 interface TokenBalance {
@@ -34,6 +35,7 @@ const TokenType = {
 } as const;
 
 function Home() {
+  const { getNetworkValue } = useWallet() as any
   const [hideBalance, setHideBalance] = useState(false);
   const navigate = useNavigate();
   const toggleVisibility = () => setHideBalance(!hideBalance);
@@ -57,7 +59,7 @@ function Home() {
           <div className="flex justify-center items-center">
             <div className="font-sans flex-col items-start">
               <div className="flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">{hideBalance ? "••••" : 449}</span>
+                <span className="text-white text-4xl font-bold">{hideBalance ? "••••" : getNetworkValue("All Networks")}</span>
 
                 <button
                   onClick={(e) => {
@@ -144,7 +146,27 @@ function Home() {
           </div>
         </div>
       </div>
-
+      {/* Token balances summary */}
+      <div className="w-full flex flex-col items-center">
+        <div className="w-[327px] bg-[#1F2025] border border-white/10 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/70">Bitcoin</span>
+            <span className="text-sm font-medium">{getNetworkValue("Bitcoin")}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/70">Ethereum</span>
+            <span className="text-sm font-medium">{getNetworkValue("Ethereum")}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/70">Solana</span>
+            <span className="text-sm font-medium">{getNetworkValue("Solana")}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/70">Fradium (FUM)</span>
+            <span className="text-sm font-medium">{getNetworkValue("Fradium")}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,14 +1,28 @@
-import { ArrowRight } from "lucide-react"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "~lib/constant/routes"
 
 import NeoButton from "~components/custom-button"
+import { useWallet } from "~features/wallet/context/walletContext"
 
 function WalletConfirmation() {
   const navigate = useNavigate()
   const [message, setMessage] = useState("")
-  const [isDeleting, setIsDeleting] = useState(false)
+  const { confirmWallet, isLoading, hasConfirmedWallet } = useWallet() as any
+
+  // If user already has a wallet, skip this screen
+  useEffect(() => {
+    if (hasConfirmedWallet && !isLoading) {
+      navigate(ROUTES.HOME, { replace: true })
+    }
+  }, [hasConfirmedWallet, isLoading, navigate])
+
+  const handleCreateWallet = useCallback(() => {
+    setMessage("Creating your wallet...")
+    confirmWallet()
+    setMessage("Wallet created! Redirecting...")
+    navigate(ROUTES.HOME, { replace: true })
+  }, [confirmWallet, navigate])
 
   return (
     <div className="w-[375px] h-[600px] bg-[#25262B] text-white p-8 flex flex-col justify-center">
@@ -27,11 +41,11 @@ function WalletConfirmation() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-white">
-            "Create Your Wallet"
+            Create Your Wallet
           </h1>
           <p className="text-white/70 text-sm">
-            "To access all features of Fradium, you need to create a secure
-            wallet. This will enable you to:"
+            To access all features of Fradium, you need to create a secure
+            wallet. This will enable you to:
           </p>
         </div>
 
@@ -88,12 +102,11 @@ function WalletConfirmation() {
 
         <div className="space-y-3">
           <NeoButton
-            icon={ArrowRight}
             iconPosition="right"
-            onClick={() => navigate(ROUTES.HOME, { replace: true })}
-            disabled={false}
+            onClick={handleCreateWallet}
+            disabled={isLoading}
             className="w-full">
-            {"Create Wallet Now"}
+            Create Wallet
           </NeoButton>
         </div>
       </div>
