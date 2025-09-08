@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { CDN } from "~lib/constant/cdn";
 
 type NetworkItem = {
 	key: string;
@@ -74,7 +75,7 @@ export default function AllNetworksDropdown({
 								type="button"
 								className="flex items-center gap-2 text-[#9BE4A0] text-[18px] font-medium"
 							>
-								<img src="/assets/construction.svg" className="w-5 h-5" alt="manage" />
+								<img src={CDN.icons.construction} className="w-5 h-5" alt="manage" />
 								Manage Networks
 							</button>
 						</div>

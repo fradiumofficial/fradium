@@ -1,5 +1,6 @@
 import { useState } from "react";
 import NeoButton from "~components/custom-button";
+import { CDN } from "~lib/constant/cdn";
 
 
 type ManageNetworkProps = {
@@ -42,11 +43,8 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
       <div className="px-6 pt-6 pb-2">
         <h2 className="text-white text-[20px] font-semibold">Manage Network</h2>
         <p className="text-white/60 text-[14px] font-normal mt-2">
-          Select which networks to use in your wallet
+          All network you are using here
         </p>
-        <div className="mt-3 text-[12px] text-white/50">
-          Currently enabled: {[btc && "Bitcoin", sol && "Solana", fra && "Fradium"].filter(Boolean).join(", ") || "None"}
-        </div>
       </div>
 
       <div className="px-6 mt-6">
@@ -55,7 +53,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/assets/bitcoin-dark.svg"
+                src={CDN.tokens.bitcoinDark}
                 className="w-6 h-6"
                 alt="btc"
               />
@@ -91,7 +89,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/assets/ethereum-dark.svg"
+                src={CDN.tokens.ethereumDark}
                 className="w-6 h-6"
                 alt="eth"
               />
@@ -127,7 +125,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/assets/fradium-dark.svg"
+                src={CDN.tokens.fradiumDark}
                 className="w-6 h-6"
                 alt="fra"
               />
@@ -163,7 +161,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/assets/solana-dark.svg"
+                src={CDN.tokens.solanaDark}
                 className="w-6 h-6"
                 alt="sol"
               />

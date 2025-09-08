@@ -3,32 +3,33 @@ import { useNetwork } from "~features/network/context/networkContext";
 import { useState } from "react";
 import ManageNetwork from "./manage_network";
 import { useWallet } from "~features/wallet/context/walletContext";
+import { CDN } from "~lib/constant/cdn";
 
 const BASE_NETWORKS = [
   {
     key: "all" as const,
     name: "All Networks",
-    icon: "/assets/construction.svg",
+    icon: CDN.icons.construction,
   },
   {
     key: "btc" as const,
     name: "Bitcoin",
-    icon: "/assets/bitcoin-dark.svg",
+    icon: CDN.tokens.bitcoinDark,
   },
   {
     key: "eth" as const,
     name: "Ethereum",
-    icon: "/assets/ethereum-dark.svg",
+    icon: CDN.tokens.ethereumDark,
   },
   {
     key: "sol" as const,
     name: "Solana",
-    icon: "/assets/solana-dark.svg",
+    icon: CDN.tokens.solanaDark,
   },
   {
     key: "fra" as const,
     name: "Fradium",
-    icon: "/assets/fradium-dark.svg",
+    icon: CDN.tokens.fradiumDark,
   },
 ] as const;
 
@@ -132,7 +133,7 @@ export default function AllNetwork({
               className="mx-auto flex items-center gap-2 text-[#9BE4A0] text-[14px] font-medium"
             >
               <img
-                src="/assets/construction.svg"
+                src={CDN.icons.construction}
                 className="w-5 h-5"
                 alt="manage"
               />
