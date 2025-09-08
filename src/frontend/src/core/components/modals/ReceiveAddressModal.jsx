@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 
 // Framer Motion
 import { motion, AnimatePresence } from "framer-motion";
+import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 
 // Wallet Provider
 import { useWallet } from "@/core/providers/WalletProvider";
@@ -112,53 +113,52 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
 
   // Address Item Component with Framer Motion Animation
   const AddressItem = ({ title, description, address, onCopy, onQrClick }) => (
-    <motion.div className="flex flex-col gap-3" variants={itemVariants} initial="hidden" animate="visible">
+    <motion.div className="flex flex-col gap-2" variants={itemVariants} initial="hidden" animate="visible">
       {/* Title */}
-      <motion.div className="text-white text-sm font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+      <motion.div className="text-white/90 text-[13px] font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
         {title}
       </motion.div>
 
       {/* Description */}
       {description && (
-        <motion.div className="text-[#B0B6BE] text-xs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+        <motion.div className="text-[#B0B6BE] text-[11px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
           {description}
         </motion.div>
       )}
 
-      {/* Address container */}
+      {/* Address pill */}
       <motion.div
-        className="bg-[#23272F] border border-[#393E4B] rounded-lg p-4"
+        className="rounded-full border border-white/10 pl-4 pr-2 py-2.5"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{
-          duration: 0.2,
-        }}>
-        <div className="flex items-center gap-2">
-          <motion.span className="text-[#B0B6BE] text-sm truncate flex-1 font-mono" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+        transition={{ duration: 0.2 }}
+      >
+        <div className="flex items-center gap-1">
+          <motion.span className="text-white text-[13px] truncate flex-1 font-mono" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             {address || "Not available"}
           </motion.span>
-          <motion.img
-            src="/assets/icons/qr_code.svg"
-            alt="QR Code"
-            className="w-5 h-5 cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
+          <motion.button
+            type="button"
+            className="grid place-items-center w-8 h-8 hover:bg-white/[0.1] transition-colors"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{
-              duration: 0.2,
-            }}
+            transition={{ duration: 0.2 }}
             onClick={() => onQrClick(title, address)}
-          />
-          <motion.img
-            src="/assets/icons/content_copy.svg"
-            alt="Copy"
-            className="w-5 h-5 cursor-pointer hover:opacity-70 transition-opacity flex-shrink-0"
+            aria-label="Show QR"
+          >
+            <img src="/assets/icons/qr_code.svg" alt="QR Code" className="w-4 h-4 opacity-80" />
+          </motion.button>
+          <motion.button
+            type="button"
+            className="grid place-items-center w-8 h-8 hover:bg-white/[0.1] transition-colors"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{
-              duration: 0.2,
-            }}
+            transition={{ duration: 0.2 }}
             onClick={() => onCopy(address)}
-          />
+            aria-label="Copy Address"
+          >
+            <img src="/assets/icons/content_copy.svg" alt="Copy" className="w-4 h-4 opacity-80" />
+          </motion.button>
         </div>
       </motion.div>
     </motion.div>
@@ -178,10 +178,11 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-start justify-start bg-black/70 backdrop-blur-sm pt-16 pl-4 pr-4">
-      <div className={`bg-[#23272F] px-6 py-8 w-full ${qrDetail.open ? "max-w-sm" : "max-w-md"} rounded-lg shadow-lg relative flex flex-col gap-6 mx-auto`}>
+    <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/70 backdrop-blur-md p-4">
+      <div className={`relative w-full ${qrDetail.open ? "max-w-sm" : "max-w-[480px]"} bg-[#171A1C] rounded-[24px] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.65)]`}>
+        <div className="pointer-events-none absolute -inset-x-8 -top-8 h-20 bg-[#A6F3AE]/10 blur-3xl opacity-25 rounded-full" />
         <button
-          className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
+          className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
           onClick={() => {
             if (qrDetail.open) {
               handleCloseQr();
@@ -190,54 +191,67 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
             }
           }}
           aria-label="Close">
-          ×
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
-        <div className="text-white text-xl font-semibold mb-2">{qrDetail.open ? `Receive ${qrDetail.coin}` : "Receive Crypto"}</div>
-        <AnimatePresence mode="wait">
-          {getAddressesLoadingState() ? (
-            <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <SkeletonReceiveModal />
-            </motion.div>
-          ) : qrDetail.open ? (
-            // QR Detail View
-            <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col items-center gap-2">
-              {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="QR Code" className="w-full max-w-80 h-auto object-contain bg-white rounded" style={{ imageRendering: "crisp-edges" }} />}
-              <div className="text-[#B0B6BE] text-sm">Scan to receive {qrDetail.coin}</div>
-            </motion.div>
+        <div className="p-5 sm:p-6">
+          <div className="text-white text-[16px] pl-4 sm:text-[16px] font-medium leading-tight mb-4">{qrDetail.open ? `Receive ${qrDetail.coin}` : "Copy or scan barcode here to Receive Coin"}</div>
+          <AnimatePresence mode="wait">
+            {getAddressesLoadingState() ? (
+              <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <SkeletonReceiveModal />
+              </motion.div>
+            ) : qrDetail.open ? (
+              // QR Detail View
+              <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col items-center gap-3 w-full">
+                <div className="w-full rounded-2xl bg-white/[0.04] border border-white/10 p-5 flex flex-col items-center">
+                  {qrCodeDataUrl && (
+                    <img src={qrCodeDataUrl} alt="QR Code" className="w-full max-w-56 h-auto object-contain rounded" style={{ imageRendering: "crisp-edges" }} />
+                  )}
+                  <div className="text-[#B0B6BE] text-sm mt-3">Scan to receive {qrDetail.coin}</div>
+                </div>
+              </motion.div>
+            ) : (
+              // Address List View
+              <motion.div key="addresses" initial="hidden" animate="visible" variants={containerVariants} transition={{ duration: 0.2 }}>
+                <div className="rounded-[20px] bg-white/[0.03] border border-white/5 p-4 sm:p-5">
+                  <div className="flex flex-col gap-4">
+                    <AddressItem title="Bitcoin:" address={addresses.bitcoin} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                    <AddressItem title="Ethereum:" address={addresses.ethereum} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                    <AddressItem title="Fradium:" address={addresses.solana} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                    <AddressItem title="ICP Principal:" description="Use for receiving ICRC-1 tokens in the ICP network, such as SNS, ck tokens, etc." address={addresses.icp_principal} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                    <AddressItem title="ICP Account (for exchanges):" description="Use for receiving ICP on centralized exchanges and legacy transfers." address={addresses.icp_account} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {qrDetail.open ? (
+            // QR View Actions
+            <div className="mt-4">
+              <div className="text-[#B0B6BE] text-sm mb-1">Your {qrDetail.coin} address:</div>
+              <div className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 mb-3">
+                <span className="text-white text-sm truncate flex-1">{qrDetail.address}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button className="py-2.5 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={() => copyToClipboard(qrDetail.address)}>
+                  Copy Address
+                </button>
+                <ButtonGreen fullWidth className="rounded-full" onClick={handleCloseQr} size="md" textSize="text-base" fontWeight="medium">
+                  Share
+                </ButtonGreen>
+              </div>
+            </div>
           ) : (
-            // Address List View
-            <motion.div key="addresses" className="flex flex-col gap-4" initial="hidden" animate="visible" variants={containerVariants} transition={{ duration: 0.2 }}>
-              <AddressItem title="Bitcoin (BTC):" address={addresses.bitcoin} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-              <AddressItem title="Ethereum (ETH):" address={addresses.ethereum} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-              <AddressItem title="Solana (SOL):" address={addresses.solana} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-              <AddressItem title="ICP Principal:" description="Use for receiving ICRC-1 tokens in the ICP network, such as SNS, ck tokens, etc." address={addresses.icp_principal} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-              <AddressItem title="ICP Account (for exchanges):" description="Use for receiving ICP on centralized exchanges and legacy transfers." address={addresses.icp_account} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-            </motion.div>
+            // Address List Actions
+            <div className="mt-4">
+              <ButtonGreen fullWidth onClick={onClose} size="md" textSize="text-base" fontWeight="medium">
+                Done
+              </ButtonGreen>
+            </div>
           )}
-        </AnimatePresence>
-        {qrDetail.open ? (
-          // QR View Actions
-          <div>
-            <div className="text-[#B0B6BE] text-sm mb-1">Your {qrDetail.coin} address:</div>
-            <div className="flex items-center gap-2 bg-[#23272F] border border-[#393E4B] rounded px-3 py-2 mb-4">
-              <span className="text-[#B0B6BE] text-sm truncate flex-1">{qrDetail.address}</span>
-            </div>
-            <div className="flex gap-2">
-              <button className="flex-1 py-3 rounded-lg bg-[#23272F] text-[#9BE4A0] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] hover:text-white transition" onClick={() => copyToClipboard(qrDetail.address)}>
-                <img src="/assets/icons/content_copy.svg" alt="Copy" className="w-5 h-5" />
-                Copy Address
-              </button>
-              <button className="flex-1 py-3 rounded-lg bg-[#23272F] text-[#B0B6BE] font-semibold flex items-center justify-center gap-2 hover:bg-[#23282f] hover:text-white transition" onClick={handleCloseQr}>
-                Back to List
-              </button>
-            </div>
-          </div>
-        ) : (
-          // Address List Actions
-          <button className="w-full bg-[#9BE4A0] text-black font-semibold py-3 rounded-lg hover:bg-[#8FD391] transition-colors" onClick={onClose}>
-            Done
-          </button>
-        )}
+        </div>
       </div>
     </div>,
     document.body

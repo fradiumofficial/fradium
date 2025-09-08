@@ -70,17 +70,19 @@ const ButtonGreen = ({ children, icon, onClick, className = "", size = "md", ful
         "relative inline-flex items-center justify-center gap-3 rounded-full overflow-hidden",
         s.padding,
         fullWidth ? "w-full" : "",
-        // base visual - solid green button
-        "bg-gradient-to-b from-[#A8F2B7] to-[#64D57E]",
-        // simple border without glow effects
+        // base visual - green gradient
+        "bg-gradient-to-b from-[#99E39E] to-[#4BB255]",
+        // subtle single border like previous style
         "border border-[#FFFFFF47]",
         // interaction
         "transition-all duration-200 ease-out will-change-transform",
-        "hover:from-[#9EE8AD] hover:to-[#5ACB73]",
-        "active:from-[#8FE49E] active:to-[#50C168]",
+        "hover:from-[#90DB95] hover:to-[#46A74F]",
+        "active:from-[#86D28C] active:to-[#409C49]",
         "disabled:opacity-60 disabled:cursor-not-allowed",
         className
       )}
+      // simple soft drop shadow underneath
+      style={{ boxShadow: disabled ? undefined : "0 8px 20px rgba(0,0,0,0.35)" }}
       {...props}>
       <span className="flex items-center gap-2">
         {loading ? (
