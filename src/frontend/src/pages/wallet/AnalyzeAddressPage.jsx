@@ -1,8 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import { Info } from "lucide-react";
+import ScanningModal from "@/components/ScanningModal.jsx";
 
 export default function AnalyseAddressPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleAnalyse = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="flex flex-col items-start p-0 gap-5 m-auto w-full max-w-[500px] min-h-[442px] px-4">
       {/* Analysis Card */}
@@ -38,7 +49,15 @@ export default function AnalyseAddressPage() {
               </div>
 
               {/* Analyze Button */}
-              <ButtonGreen size="sm" icon="/assets/icons/analyze-address-dark.svg" iconSize="w-5 h-5" className="w-full sm:w-[117px] h-10" textSize="text-sm" fontWeight="medium">
+              <ButtonGreen
+                size="sm"
+                icon="/assets/icons/analyze-address-dark.svg"
+                iconSize="w-5 h-5"
+                className="w-full sm:w-[117px] h-10"
+                textSize="text-sm"
+                fontWeight="medium"
+                onClick={handleAnalyse}
+              >
                 Analyse
               </ButtonGreen>
             </div>
@@ -61,6 +80,12 @@ export default function AnalyseAddressPage() {
           </div>
         </div>
       </div>
+
+      {/* Scanning Modal */}
+      <ScanningModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }

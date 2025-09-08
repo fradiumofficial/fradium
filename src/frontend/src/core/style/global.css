@@ -11,6 +11,7 @@ body {
     text-wrap: balance;
   }
 }
+
 @layer base {
   :root {
     --background: 240 3% 9%;
@@ -63,15 +64,18 @@ body {
   opacity: 0.01;
   transform: translateY(6px);
 }
+
 .route-fade-enter-active {
   opacity: 1;
   transform: translateY(0);
   transition: opacity 300ms ease, transform 300ms ease;
 }
+
 .route-fade-exit {
   opacity: 1;
   transform: translateY(0);
 }
+
 .route-fade-exit-active {
   opacity: 0.01;
   transform: translateY(-6px);
@@ -82,7 +86,93 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Scanning Modal Animations */
+@keyframes ripple-scan {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(166, 243, 174, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(166, 243, 174, 0.5), 0 0 40px rgba(166, 243, 174, 0.3);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ripple-ring {
+  animation: ripple-scan 2s infinite;
+}
+
+.glow-effect {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.5s ease-out;
+}
+
+/* Animation delay utilities */
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+.animation-delay-900 {
+  animation-delay: 0.9s;
+}
+
+/* Sweep animation around search icon */
+@keyframes sweep-rotate {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.9;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.9;
+  }
+}
+
+.scan-sweep {
+  background: conic-gradient(from 0deg, rgba(166, 243, 174, 0.0) 0deg, rgba(166, 243, 174, 0.14) 40deg, rgba(166, 243, 174, 0.0) 80deg);
+  filter: blur(6px);
+  animation: sweep-rotate 3s linear infinite;
 }
