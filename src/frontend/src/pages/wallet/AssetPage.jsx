@@ -165,7 +165,8 @@ export default function AssetsPage() {
         <motion.div
           className="group relative w-full overflow-hidden rounded-[28px] p-6 bg-gradient-to-b from-[#7C72FE] via-[#5A52C6] to-[#433BA6] ring-1 ring-white/15"
           style={{ boxShadow: "0 5px 18px -4px rgba(74,66,170,0.6), 0 0 0 1px #7C77C4" }}
-          initial={{ y: 0, scale: 1 }}
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
           whileHover={{ boxShadow: "0 12px 28px -6px rgba(74,66,170,0.15), 0 0 0 1px #7C77C4" }}
           transition={{ type: "spring", stiffness: 220, damping: 20, mass: 0.6 }}
           onMouseEnter={() => setIsCardHover(true)}
