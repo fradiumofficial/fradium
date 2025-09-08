@@ -27,13 +27,7 @@ export const WalletProvider = ({ children }) => {
   const [network, setNetwork] = useState("All Networks");
   const [hideBalance, setHideBalance] = useState(false);
   const [hasConfirmedWallet, setHasConfirmedWallet] = useState(false);
-  const [networkValues, setNetworkValues] = useState({
-    "All Networks": 0,
-    Bitcoin: 0,
-    Ethereum: 0,
-    Solana: 0,
-    Fradium: 0,
-  });
+  // Network values are now calculated dynamically, no need for state
   const [networkFilters, setNetworkFilters] = useState({
     Bitcoin: true,
     Ethereum: true,
@@ -196,10 +190,7 @@ export const WalletProvider = ({ children }) => {
     [userWallet]
   );
 
-  // Function to update network values
-  const updateNetworkValues = useCallback((values) => {
-    setNetworkValues((prev) => ({ ...prev, ...values }));
-  }, []);
+  // Network values are now calculated dynamically from balances and USD prices
 
   // Function to fetch wallet addresses
   const fetchAddresses = useCallback(async () => {
@@ -348,14 +339,39 @@ export const WalletProvider = ({ children }) => {
 
   // Helper function to add new address to existing wallet
 
+  // Function to calculate total USD value for a specific network
+  const calculateNetworkValue = useCallback(
+    (networkName) => {
+      if (hideBalance) return 0;
+
+      // Get all tokens for this network
+      const networkTokens = TOKENS_CONFIG.filter((token) => {
+        if (networkName === "All Networks") return true;
+        return token.chain === networkName;
+      });
+
+      let totalValue = 0;
+
+      networkTokens.forEach((token) => {
+        const balance = balances[token.id] || 0;
+        const usdPrice = usdPrices[token.id] || 0;
+        const tokenValue = parseFloat(balance) * (usdPrice || 0);
+        totalValue += tokenValue;
+      });
+
+      return totalValue;
+    },
+    [balances, usdPrices, hideBalance]
+  );
+
   // Function to get formatted network value
   const getNetworkValue = useCallback(
     (networkName) => {
-      const value = networkValues[networkName] || 0;
+      const value = calculateNetworkValue(networkName);
       if (hideBalance) return "••••";
       return `$${value.toFixed(2)}`;
     },
-    [networkValues, hideBalance]
+    [calculateNetworkValue, hideBalance]
   );
 
   const walletContextValue = useMemo(
@@ -370,8 +386,7 @@ export const WalletProvider = ({ children }) => {
       setNetwork,
       hideBalance,
       setHideBalance,
-      networkValues,
-      updateNetworkValues,
+      calculateNetworkValue,
       getNetworkValue,
       networkFilters,
       updateNetworkFilters,
@@ -399,7 +414,7 @@ export const WalletProvider = ({ children }) => {
       fetchAllUSDPrices,
       refreshAllUSDPrices,
     }),
-    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, networkValues, updateNetworkValues, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices]
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, calculateNetworkValue, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;
