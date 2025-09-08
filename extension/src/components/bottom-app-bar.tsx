@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CDN } from '~lib/constant/cdn';
 import { ROUTES } from '~lib/constant/routes';
+import { useWallet } from "~lib/context/walletContext";
 
 const WalletIcon: React.FC<{ className?: string; isActive?: boolean }> = ({ isActive, ...props }) => (
   <img
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
 
 const BottomNavbar: React.FC = () => {
   const location = useLocation();
+  const { isAuthenticated, hasConfirmedWallet } = useWallet() as any
 
   const isAnalyzerPath = (pathname: string) => {
     return [
@@ -63,8 +65,8 @@ const BottomNavbar: React.FC = () => {
     return [ROUTES.HISTORY, ROUTES.SCAN_HISTORY, ROUTES.DETAIL_HISTORY.replace(':id', '')].some((p) => pathname.startsWith(p));
   };
 
-  // Hide bottom bar on welcome and wallet confirmation pages
-  if (location.pathname === ROUTES.WELCOME || location.pathname === ROUTES.WALLET_CONFIRMATION) {
+  // Hide bottom bar until wallet exists and also on welcome/confirmation pages
+  if (!isAuthenticated || !hasConfirmedWallet || location.pathname === ROUTES.WELCOME || location.pathname === ROUTES.WALLET_CONFIRMATION) {
     return null;
   }
 

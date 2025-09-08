@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { useNetwork } from "~features/network/context/networkContext";
 import { useState } from "react";
 import ManageNetwork from "./manage_network";
-import { useWallet } from "~features/wallet/context/walletContext";
+import { useWallet } from "~lib/context/walletContext";
 import { CDN } from "~lib/constant/cdn";
 
 const BASE_NETWORKS = [
