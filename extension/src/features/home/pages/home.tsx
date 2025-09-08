@@ -119,7 +119,7 @@ function Home() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          // handleSendClick();
+                          handleSendClick();
                         }}
                         className="
                         w-[50px] h-[45px] flex items-center 
