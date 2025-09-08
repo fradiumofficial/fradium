@@ -3,13 +3,13 @@ import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import NeoButton from "~components/custom-button";
-import { useWallet } from "~lib/context/walletContext";
+import { useAuth } from "~lib/context/authContext";
 
 function Welcome() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const { signIn } = useWallet() as any;
+  const { signIn } = useAuth();
 
   const handleLogin = async () => {
     setIsLoading(true)
