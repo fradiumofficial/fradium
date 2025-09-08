@@ -37,5 +37,8 @@ export const CDN = {
     github: `${CDN_BASE}/icons/GithubLogo.svg`,
     x: `${CDN_BASE}/icons/XLogo.svg`,
     arrowForward: `${CDN_BASE}/icons/arrow_forward.svg`,
+    sendCoin: `${CDN_BASE}/icons/send_coin.svg`,
+    qrCode: `${CDN_BASE}/icons/qr_code.svg`,
+    copyContent: `${CDN_BASE}/icons/content_copy.svg`,
   }
 }
