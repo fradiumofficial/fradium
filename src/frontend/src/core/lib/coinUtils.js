@@ -178,3 +178,143 @@ export function getNetworkIcon(chain) {
   const network = NETWORK_CONFIG.find((net) => net.name.toLowerCase() === chain.toLowerCase());
   return network ? network.icon : null;
 }
+
+// Function to get USD price for a token with fallback APIs
+export async function getUSD(tokenId) {
+  const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
+  if (!token) throw new Error("Token not found: " + tokenId);
+
+  // Map token symbols to CoinGecko IDs
+  const coinGeckoIds = {
+    BTC: "bitcoin",
+    ETH: "ethereum",
+    SOL: "solana",
+    ICP: "internet-computer",
+    FADM: "fradium", // Note: Fradium might not be on CoinGecko, we'll handle this
+  };
+
+  const coinGeckoId = coinGeckoIds[token.symbol];
+
+  // Primary API: CoinGecko
+  try {
+    if (coinGeckoId) {
+      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`CoinGecko API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data[coinGeckoId] && data[coinGeckoId].usd) {
+        return data[coinGeckoId].usd;
+      }
+    }
+  } catch (error) {
+    console.warn("CoinGecko API failed:", error);
+  }
+
+  // Fallback API: CoinPaprika
+  try {
+    const paprikaIds = {
+      BTC: "btc-bitcoin",
+      ETH: "eth-ethereum",
+      SOL: "sol-solana",
+      ICP: "icp-internet-computer",
+    };
+
+    const paprikaId = paprikaIds[token.symbol];
+
+    if (paprikaId) {
+      const response = await fetch(`https://api.coinpaprika.com/v1/tickers/${paprikaId}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`CoinPaprika API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.quotes && data.quotes.USD && data.quotes.USD.price) {
+        return data.quotes.USD.price;
+      }
+    }
+  } catch (error) {
+    console.warn("CoinPaprika API failed:", error);
+  }
+
+  // Fallback API: CoinMarketCap (requires API key, but we can try without)
+  try {
+    const cmcIds = {
+      BTC: "1",
+      ETH: "1027",
+      SOL: "5426",
+      ICP: "8916",
+    };
+
+    const cmcId = cmcIds[token.symbol];
+
+    if (cmcId) {
+      const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail?id=${cmcId}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`CoinMarketCap API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.data && data.data.statistics && data.data.statistics.price) {
+        return data.data.statistics.price;
+      }
+    }
+  } catch (error) {
+    console.warn("CoinMarketCap API failed:", error);
+  }
+
+  // Final fallback: Use cached/default prices or return null
+  console.warn(`All price APIs failed for ${token.symbol}, using fallback`);
+
+  // For tokens not supported by major APIs, return a default price or null
+  const fallbackPrices = {
+    BTC: 0,
+    ETH: 0,
+    SOL: 0,
+    ICP: 0,
+    FADM: 0, // Placeholder price for Fradium
+  };
+
+  return fallbackPrices[token.symbol] || null;
+}
+
+// Function to get USD prices for multiple tokens at once
+export async function getUSDPrices(tokenIds) {
+  const promises = tokenIds.map((tokenId) => getUSD(tokenId));
+  const results = await Promise.allSettled(promises);
+
+  const prices = {};
+  results.forEach((result, index) => {
+    const tokenId = tokenIds[index];
+    if (result.status === "fulfilled") {
+      prices[tokenId] = result.value;
+    } else {
+      console.error(`Failed to get USD price for token ${tokenId}:`, result.reason);
+      prices[tokenId] = null;
+    }
+  });
+
+  return prices;
+}

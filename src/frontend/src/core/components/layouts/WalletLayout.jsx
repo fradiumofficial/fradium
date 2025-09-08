@@ -6,10 +6,205 @@ import { useAuth } from "@/core/providers/AuthProvider";
 import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import { NETWORK_CONFIG } from "@/core/lib/coinUtils";
+import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Remove duplicate NETWORK_CONFIG import since we import from coinUtils
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
+
+const MotionLink = motion(Link);
+
+function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdownOpen, setIsProfileDropdownOpen, network, getNetworkValue, getAvailableNetworks, handleNetworkChange, handleToggleHideBalance, contextHideBalance, navigate, logout }) {
+  return (
+    <>
+      <div className="relative network-dropdown">
+        <motion.button whileHover={{ y: -1, scale: 1.02 }} transition={{ type: "spring", stiffness: 280, damping: 20, mass: 0.6 }} onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="relative flex items-center gap-3 h-12 px-5 rounded-full text-white font-medium bg-white/5 text-base hover:opacity-95 transition-colors border border-white/10">
+          <img src="/assets/icons/construction.svg" alt="All Networks" className="w-5 h-5" />
+          <span className="text-white pr-2 capitalize">{network}</span>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}>
+            <path d="M7 10l5 5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </motion.button>
+
+        <AnimatePresence>
+          {isDropdownOpen && (
+            <motion.div className="absolute top-full mt-3 w-[300px] rounded-2xl border border-white/10 z-[9999] overflow-hidden" style={{ right: "0px", background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))", boxShadow: "0 12px 40px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)" }} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+              <div className="py-2">
+                <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-base">
+                  <motion.div whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === "All Networks" ? "bg-white/8" : "hover:bg-white/5"}`}>
+                    <div className="flex items-center gap-3">
+                      {network === "All Networks" ? (
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
+                          <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : (
+                        <div className="w-4 h-4" />
+                      )}
+                      <span className="text-white">All Networks</span>
+                    </div>
+                    <span className="text-[#9CA3AF]">{getNetworkValue("All Networks")}</span>
+                  </motion.div>
+                </button>
+
+                <div className="h-px bg-white/10 mx-4 my-1" />
+
+                {getAvailableNetworks().map((net, index) => (
+                  <div key={net.key}>
+                    <button onClick={() => handleNetworkChange(net.name)} className="w-full text-base">
+                      <motion.div whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === net.name ? "bg-white/8" : "hover:bg-white/5"}`}>
+                        <div className="flex items-center gap-3">
+                          {network === net.name ? (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
+                              <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <div className="w-4 h-4" />
+                          )}
+                          <span className="text-white text-left">{net.name}</span>
+                        </div>
+                        <span className="text-[#9CA3AF]">{net.value}</span>
+                      </motion.div>
+                    </button>
+                    {index < getAvailableNetworks().length - 1 && <div className="h-px bg-white/10 mx-4" />}
+                  </div>
+                ))}
+
+                <div className="h-px bg-white/10 mx-4 my-2" />
+
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full flex items-center gap-3 px-6 py-3 text-[#9BEB83] hover:bg-white/5 transition-colors">
+                  <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
+                  <span className="font-medium">Manage Networks</span>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div className="relative profile-dropdown">
+        <motion.button whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 280, damping: 20, mass: 0.6 }} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="group flex items-center justify-center bg-[#161B22] w-11 h-11 rounded-full border border-white/10 hover:bg-[#2A2F36] transition-all duration-200 ease-out cursor-pointer hover:border-white/20">
+          <img src="/assets/icons/person.svg" alt="User" className="w-6 h-6 transition-transform duration-200 group-hover:scale-110" />
+        </motion.button>
+
+        <AnimatePresence>
+          {isProfileDropdownOpen && (
+            <motion.div className="absolute top-full right-0 mt-3 w-[270px] rounded-3xl font-normal border border-white/10 z-[9999] overflow-hidden" style={{ background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))", boxShadow: "0 12px 40px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)" }} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+              <div className="py-4">
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
+                  <div className="mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5">
+                    {contextHideBalance ? (
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
+                        <path d="M1 1l22 22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
+                      </svg>
+                    )}
+                    <span className="text-white font-normal">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
+                  </div>
+                </motion.button>
+
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group">
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                    <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
+                    <span className="text-white">Your addresses</span>
+                  </div>
+                </motion.button>
+
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group">
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                    <img src="/assets/icons/contact.svg" alt="Contact" />
+                    <span className="text-white">Contact</span>
+                  </div>
+                </motion.button>
+
+                <div className="h-px bg-white/10 mx-5 my-3"></div>
+
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                      <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
+                      <line x1="12" y1="8" x2="12" y2="12" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    <span className="text-white">Why Fradium</span>
+                  </div>
+                </motion.button>
+
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <polyline points="14,2 14,8 20,8" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="16" y1="13" x2="8" y2="13" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="16" y1="17" x2="8" y2="17" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <polyline points="10,9 9,9 8,9" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="text-white">Documentation</span>
+                  </div>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ y: -1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }}
+                  className="w-full text-sm transition-colors group"
+                  onClick={() => {
+                    navigate("/wallet/setting");
+                    setIsProfileDropdownOpen(false);
+                  }}>
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                    <img src="/assets/icons/setting-green.svg" alt="Settings" />
+                    <span className="text-white">Settings</span>
+                  </div>
+                </motion.button>
+
+                <div className="h-px bg-white/10 mx-5 my-3"></div>
+
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg_WHITE/5">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="text-white">Source Code</span>
+                  </div>
+                </motion.button>
+
+                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full mb-2 text-sm transition-colors group" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                      <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="text-white">X Account</span>
+                  </div>
+                </motion.button>
+
+                <div className="mx-5 mt-2 mb-2">
+                  <div className="rounded-full p-[1px] hover:bg-white/5">
+                    <motion.button
+                      whileHover={{ y: -1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }}
+                      className="w-full h-12 rounded-full text-[#9BEB83] font-medium border border-white/10"
+                      onClick={() => {
+                        navigate("/");
+                        logout();
+                      }}>
+                      Log Out
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
+  );
+}
 
 export default function WalletLayout() {
   return (
@@ -30,7 +225,7 @@ function WalletLayoutContent() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters } = useWallet();
+  const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters, addresses } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
 
@@ -40,6 +235,29 @@ function WalletLayoutContent() {
     name: network.name,
     icon: network.icon,
   }));
+
+  // Helper: map sidebar label to icon URL (active/inactive)
+  const getSidebarIconUrl = (label, active) => {
+    const ACTIVE = {
+      "Analyze Address": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/analyse-address-active.svg",
+      "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-active.svg",
+      "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-active.svg",
+      Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-active.svg",
+    };
+    const INACTIVE = {
+      "Analyze Address": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/analyse-address-inactive.svg",
+      "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-inactive.svg",
+      "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-inactive.svg",
+      Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-inactive.svg",
+    };
+
+    const src = active ? ACTIVE[label] : INACTIVE[label];
+    if (src) return src;
+
+    // fallback to existing local assets
+    const key = label === "Analyze Address" ? "analyze-address" : label === "Analyze Contract" ? "analyze-contract" : label === "Transaction History" ? "transaction-history" : label === "Scan History" ? "history" : "wallet";
+    return `/assets/icons/${key}-${active ? "dark" : "light"}.svg`;
+  };
 
   // Function to get localStorage key for user's hide balance setting
   const getHideBalanceKey = () => {
@@ -117,6 +335,43 @@ function WalletLayoutContent() {
     saveHideBalance(newHideBalance); // Save the new hide balance
   };
 
+  // Function to copy ICP Principal to clipboard
+  const copyICPPrincipal = async () => {
+    const icpPrincipal = addresses.icp_principal || "Not available";
+
+    try {
+      await navigator.clipboard.writeText(icpPrincipal);
+      toast.success("ICP Principal copied to clipboard!", {
+        position: "bottom-center",
+        duration: 2000,
+        style: {
+          background: "#23272F",
+          color: "#9BE4A0",
+          border: "1px solid #393E4B",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        },
+        icon: "📋",
+      });
+    } catch (error) {
+      console.error("Failed to copy ICP Principal:", error);
+      toast.error("Failed to copy ICP Principal", {
+        position: "bottom-center",
+        duration: 2000,
+        style: {
+          background: "#23272F",
+          color: "#FF6B6B",
+          border: "1px solid #393E4B",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        },
+        icon: "❌",
+      });
+    }
+  };
+
   // Menu configuration with logout function
   const menu = [
     { label: "Assets", icon: "wallet", path: "/wallet" },
@@ -124,11 +379,6 @@ function WalletLayoutContent() {
       label: "Analyze Address",
       icon: "analyze-address",
       path: "/wallet/analyze-address",
-    },
-    {
-      label: "Analyze Contract",
-      icon: "analyze-contract",
-      path: "/wallet/analyze-contract",
     },
     {
       label: "Transaction History",
@@ -229,7 +479,10 @@ function WalletLayoutContent() {
     <>
       <WelcomingWalletModal isOpen={isCreatingWallet} />
 
-      <div className="block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
+      <div className="relative block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
+        {/* Global background spanning all wallet sections */}
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png" alt="" aria-hidden="true" decoding="async" loading="eager" className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
+        <div className="absolute inset-0 z-0 bg-[#0F1219]/25 pointer-events-none" aria-hidden="true"></div>
         {/* Modal Manage Networks */}
         <Dialog
           open={showManageNetworks}
@@ -267,48 +520,56 @@ function WalletLayoutContent() {
             </div>
           </DialogContent>
         </Dialog>
-        {/* Sidebar kiri: hanya tampil di desktop */}
-        <aside className="h-screen w-300 bg-[#0F1219] flex flex-col justify-between py-8 px-6 border-r border-[#23272F] hidden md:flex">
+        {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}
+        <aside className="relative z-10 h-screen w-[200px] lg:w-[240px] xl:w-[320px] bg-transparent flex flex-col justify-between py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-white/10 hidden md:flex">
           {/* Logo dan Brand */}
-          <div>
+          <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
               <Link to="/">
                 <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
               </Link>
             </div>
             {/* Menu */}
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-2">
               {menu.map((item, idx) => {
                 const isActive = normalize(location.pathname) === normalize(item.path);
-                const iconSrc = `/assets/icons/${item.icon}-${isActive ? "dark" : "light"}.svg`;
+                const iconSrc = getSidebarIconUrl(item.label, isActive);
                 return isActive ? (
-                  <SidebarButton key={item.label} icon={<img src={iconSrc} alt={item.label} className="w-5 h-5" />} className={idx === 0 ? "mt-0" : "mt-1"} as={Link} to={item.path}>
-                    {item.label}
-                  </SidebarButton>
-                ) : item.onClick ? (
-                  <button key={item.label} onClick={item.onClick} className={`flex items-center gap-3 px-4 py-3 font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"}`}>
-                    <img src={iconSrc} alt={item.label} className="w-5 h-5" />
-                    <span>{item.label}</span>
-                  </button>
-                ) : (
-                  <Link key={item.label} to={item.path} className={`flex items-center gap-3 px-4 py-3 font-medium text-base transition-all relative text-white hover:bg-[#181C22] hover:text-[#9BEB83] ${idx === 0 ? "mt-0" : "mt-1"}`}>
-                    <img src={iconSrc} alt={item.label} className="w-5 h-5" />
-                    <span>{item.label}</span>
+                  <Link key={item.label} to={item.path} className="relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all">
+                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-l from-white/20 via-white/10 to-transparent" />
+                    <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-[#9BE4A0] shadow-[0_0_12px_rgba(155,228,160,0.5)]" />
+                    <img src={iconSrc} alt={item.label} className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10 text-white font-medium">{item.label}</span>
                   </Link>
+                ) : item.onClick ? (
+                  <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} key={item.label} onClick={item.onClick} className={`group relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all text-white/70 hover:text-white font-normal`}>
+                    <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-l from-white/10 via-white/5 to-transparent" />
+                    <span className="absolute right-0 top-0 bottom-0 w-0 group-hover:w-[5px] transition-all duration-200 bg-[#9BE4A0] shadow-[0_0_10px_rgba(155,228,160,0.4)]" />
+                    <img src={iconSrc} alt={item.label} className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10">{item.label}</span>
+                  </motion.button>
+                ) : (
+                  <MotionLink whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} key={item.label} to={item.path} className={`group relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all text-white/70 hover:text-white font-normal`}>
+                    <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-l from-white/10 via-white/5 to-transparent" />
+                    <span className="absolute right-0 top-0 bottom-0 w-0 group-hover:w-[5px] transition-all duration-200 bg-[#9BE4A0] shadow-[0_0_10px_rgba(155,228,160,0.4)]" />
+                    <img src={iconSrc} alt={item.label} className="w-5 h-5 relative z-10" />
+                    <span className="relative z-10">{item.label}</span>
+                  </MotionLink>
                 );
               })}
             </nav>
           </div>
-          {/* Bottom icons */}
-          <div className="flex gap-3">
-            <button className="w-10 h-10 flex items-center justify-center-[#181C22] hover:bg-[#23282f]">
-              <img src="/assets/GithubLogo.svg" alt="Github" className="w-6 h-6" />
+          {/* Bottom icons - absolute at bottom */}
+          <div className="absolute bottom-6 left-8 z-10 flex items-center gap-5">
+            <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 transition-colors" title="Github" onClick={() => window.open("https://github.com/fradiumofficial", "_blank")}>
+              <img src="/assets/GithubLogo.svg" alt="Github" className="w-5 h-5" />
             </button>
-            <button className="w-10 h-10 flex items-center justify-center-[#181C22] hover:bg-[#23282f]">
-              <img src="/assets/XLogo.svg" alt="X" className="w-6 h-6" />
+            <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 transition-colors" title="X" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
+              <img src="/assets/XLogo.svg" alt="X" className="w-5 h-5" />
             </button>
           </div>
         </aside>
+        {/* ===== END: SIDEBAR KIRI ===== */}
         {/* Topbar khusus mobile */}
         <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219] sticky top-0 z-40 border-b border-[#23272F]">
           {/* Logo Fradium kiri */}
@@ -420,9 +681,14 @@ function WalletLayoutContent() {
                       </svg>
                       <span className="text-white">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]">
-                      <img src="/assets/icons/copy-green.svg" alt="Your addresses" className="w-5 h-5" />
-                      <span className="text-white">Your addresses</span>
+                    <button
+                      className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]"
+                      onClick={() => {
+                        copyICPPrincipal();
+                        setIsProfileDropdownOpen(false);
+                      }}>
+                      <img src="/assets/icons/copy-green.svg" alt="Your Principal" className="w-5 h-5" />
+                      <span className="text-white">Your Principal</span>
                     </button>
                     <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]">
                       <img src="/assets/icons/share-green.svg" alt="Refer your friends" className="w-5 h-5" />
@@ -447,271 +713,77 @@ function WalletLayoutContent() {
                       </svg>
                       <span className="text-white">Documentation</span>
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="text-white">Source Code</span>
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                        <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="text-white">X Account</span>
-                    </button>
                     <button
-                      className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]"
+                      className="w-full text-sm transition-colors group"
                       onClick={() => {
                         navigate("/wallet/setting");
                         setIsProfileDropdownOpen(false);
                       }}>
-                      <img src="/assets/icons/setting-green.svg" alt="Settings" className="w-5 h-5" />
-                      <span className="text-white">Settings</span>
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <img src="/assets/icons/setting-green.svg" alt="Settings" />
+                        <span className="text-white">Settings</span>
+                      </div>
                     </button>
-                    <div className="flex-1"></div>
-                    <button
-                      className="w-full bg-[#9BEB83] text-[#23272F] font-semibold text-base py-3 rounded-lg mb-6 mt-2"
-                      onClick={() => {
-                        navigate("/");
-                        logout();
-                        setIsProfileDropdownOpen(false);
-                      }}>
-                      <span className="flex items-center justify-center gap-2">
-                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+                    <div className="h-px bg-white/5 mx-4"></div>
+                    {/* Source Code */}
+                    <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
+                        <span className="text-white">Source Code</span>
+                      </div>
+                    </button>
+
+                    {/* X Account */}
+                    <button className="w-full mb-2 text-sm transition-colors group" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
+                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                          <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-white">X Account</span>
+                      </div>
+                    </button>
+
+                    {/* Logout Button using SidebarButton */}
+                    <div className="mx-4 mt-2">
+                      <SidebarButton
+                        icon="/assets/icons/logout-dark.svg"
+                        onClick={() => {
+                          navigate("/");
+                          logout();
+                        }}>
                         Logout
-                      </span>
-                    </button>
-                  </div>
-                  {/* Logout button sticky di bawah */}
-                  <div className="sticky bottom-0 left-0 right-0 bg-[#23242A] px-4 pb-6 pt-2 z-10">
-                    <button
-                      className="w-full bg-[#9BEB83] text-[#23272F] font-semibold text-base py-3 rounded-lg flex items-center justify-center gap-2 shadow-md"
-                      onClick={() => {
-                        navigate("/");
-                        logout();
-                        setIsProfileDropdownOpen(false);
-                      }}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                        <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1" stroke="#23272F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      Logout
-                    </button>
+                      </SidebarButton>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
         </div>
-        <main className="flex-1 w-full max-w-full p-4 md:p-8 overflow-auto pb-28 md:pb-8 pt-8 md:pt-7">
-          <Outlet />
+        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col">
+          {/* Topbar Network & User for md screens - placed above Outlet to avoid content shrink */}
+          <div className="hidden md:flex xl:hidden w-full items-center justify-end gap-3 mb-4">
+            <WalletRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} />
+          </div>
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-[30rem] sm:max-w-[32rem] md:max-w-[34rem] lg:max-w-[36rem] xl:max-w-[44rem] 2xl:max-w-[48rem] md:-translate-x-[100px] lg:-translate-x-[120px] xl:translate-x-0 transition-transform">
+              <Outlet />
+            </div>
+          </div>
         </main>
-        {/* Sidebar kanan: hanya tampil di desktop */}
-        <aside className="relative w-100 min-h-screen bg-[#0F1219] flex flex-col pt-6 pr-6 pb-6 pl-4 overflow-hidden hidden md:flex">
-          {/* Pattern background - diperbaiki positioning */}
-          <img src="/assets/pattern-sidebar.png" alt="Pattern" className="absolute bottom-0 w-60 right-0 z-0 pointer-events-none select-none object-cover object-bottom-right " />
-
+        {/* ===== START: SIDEBAR KANAN (Desktop) ===== */}
+        <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
           {/* Top action buttons */}
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-end">
-              {/* Network Dropdown */}
-              <div className="relative network-dropdown">
-                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-3 bg-[#23272F] px-4 py-2.5 text-white font-medium text-sm w-[190px] hover:bg-[#2A2F36] transition-all">
-                  <img src="/assets/icons/construction.svg" alt="All Networks" className="w-6 h-6" />
-                  <span className="text-white pr-2 capitalize text-sm">{network}</span>
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}>
-                    <path d="M7 10l5 5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-
-                {/* Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div className="absolute top-full mt-2 w-64 bg-[#3A3F47] shadow-lg border border-[#4A4F57] z-50 overflow-hidden" style={{ left: "-10px" }}>
-                    <div className="py-2">
-                      {/* All Networks - always shown */}
-                      <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-sm transition-colors group">
-                        <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === "All Networks" ? "bg-[#4A4F57]" : ""}`}>
-                          <div className="flex items-center gap-3">
-                            {network === "All Networks" && (
-                              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                                <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
-                            {network !== "All Networks" && <div className="w-4 h-4"></div>}
-                            <span className="text-white font-medium">All Networks</span>
-                          </div>
-                          <span className="text-[#9CA3AF] text-sm font-medium">{getNetworkValue("All Networks")}</span>
-                        </div>
-                      </button>
-
-                      {/* Dynamic network list based on active networks */}
-                      {getAvailableNetworks().length > 0 && (
-                        <>
-                          {/* Divider */}
-                          <div className="h-px bg-[#5A5F67] mx-4"></div>
-
-                          {getAvailableNetworks().map((net, index) => (
-                            <React.Fragment key={net.key}>
-                              <button onClick={() => handleNetworkChange(net.name)} className="w-full text-sm transition-colors group">
-                                <div className={`mx-4 flex items-center justify-between py-3 px-2 transition-colors group-hover:bg-[#4A4F57] ${network === net.name ? "bg-[#4A4F57]" : ""}`}>
-                                  <div className="flex items-center gap-3">
-                                    {network === net.name && (
-                                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                                        <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                      </svg>
-                                    )}
-                                    {network !== net.name && <div className="w-4 h-4"></div>}
-                                    <span className="text-white">{net.name}</span>
-                                  </div>
-                                  <span className="text-[#9CA3AF] text-sm font-medium">{net.value}</span>
-                                </div>
-                              </button>
-                              {/* Add divider between networks except for the last one */}
-                              {index < getAvailableNetworks().length - 1 && <div className="h-px bg-[#5A5F67] mx-4"></div>}
-                            </React.Fragment>
-                          ))}
-
-                          {/* Divider before manage networks */}
-                          <div className="h-px bg-[#5A5F67] mx-4"></div>
-                        </>
-                      )}
-
-                      {/* Manage Networks */}
-                      <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#9BEB83] hover:bg-[#4A4F57] transition-colors" onClick={() => setShowManageNetworks(true)}>
-                        <img src="/assets/icons/construction.svg" alt="Manage Networks" />
-                        <span className="font-medium">Manage Networks</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* User Button */}
-              <div className="relative profile-dropdown">
-                <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="flex items-center justify-center bg-[#23272F] w-11 h-11 hover:bg-[#2A2F36] transition-all">
-                  <img src="/assets/icons/person.svg" alt="User" className="w-6 h-6" />
-                </button>
-
-                {/* Profile Dropdown Menu */}
-                {isProfileDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-[#3A3F47] shadow-lg border border-[#4A4F57] z-50 overflow-hidden" style={{ left: "-210px" }}>
-                    <div className="py-2">
-                      {/* Hide Balance */}
-                      <button className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          {contextHideBalance ? (
-                            // Eye with slash (hidden state)
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
-                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
-                              <path d="M1 1l22 22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          ) : (
-                            // Normal eye (visible state)
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
-                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
-                            </svg>
-                          )}
-                          <span className="text-white">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
-                        </div>
-                      </button>
-
-                      {/* Your Addresses */}
-                      <button className="w-full text-sm transition-colors group">
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
-                          <span className="text-white">Your addresses</span>
-                        </div>
-                      </button>
-
-                      {/* Refer Your Friends */}
-                      {/* <button className="w-full text-sm transition-colors group">
-                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                        <img src="/assets/icons/share-green.svg" alt="Refer your friends" />
-                        <span className="text-white">Refer your friends</span>
-                      </div>
-                    </button> */}
-                      <div className="h-px bg-white/5 mx-4"></div>
-
-                      {/* Why Fradium */}
-                      <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
-                            <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
-                            <line x1="12" y1="8" x2="12" y2="12" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
-                          </svg>
-                          <span className="text-white">Why Fradium</span>
-                        </div>
-                      </button>
-
-                      {/* Documentation */}
-                      <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <polyline points="14,2 14,8 20,8" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <line x1="16" y1="13" x2="8" y2="13" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <line x1="16" y1="17" x2="8" y2="17" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <polyline points="10,9 9,9 8,9" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          <span className="text-white">Documentation</span>
-                        </div>
-                      </button>
-
-                      <button
-                        className="w-full text-sm transition-colors group"
-                        onClick={() => {
-                          navigate("/wallet/setting");
-                          setIsProfileDropdownOpen(false);
-                        }}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          <img src="/assets/icons/setting-green.svg" alt="Settings" />
-                          <span className="text-white">Settings</span>
-                        </div>
-                      </button>
-
-                      <div className="h-px bg-white/5 mx-4"></div>
-                      {/* Source Code */}
-                      <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
-                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          <span className="text-white">Source Code</span>
-                        </div>
-                      </button>
-
-                      {/* X Account */}
-                      <button className="w-full mb-2 text-sm transition-colors group" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
-                        <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
-                            <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          <span className="text-white">X Account</span>
-                        </div>
-                      </button>
-
-                      {/* Logout Button using SidebarButton */}
-                      <div className="mx-4 mt-2">
-                        <SidebarButton
-                          icon="/assets/icons/logout-dark.svg"
-                          onClick={() => {
-                            navigate("/");
-                            logout();
-                          }}>
-                          Logout
-                        </SidebarButton>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <WalletRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} />
             </div>
           </div>
         </aside>
+        {/* ===== END: SIDEBAR KANAN ===== */}
       </div>
 
       {/* Bottom Navigation: hanya tampil di mobile */}

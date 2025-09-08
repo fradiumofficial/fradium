@@ -1,5 +1,6 @@
 // React
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 // External Libraries
 import QRCode from "qrcode";
@@ -176,8 +177,8 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
     setQrCodeDataUrl("");
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className={`bg-[#23272F] px-6 py-8 w-full ${qrDetail.open ? "max-w-sm" : "max-w-md"} rounded-lg shadow-lg relative flex flex-col gap-6`}>
         <button
           className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
@@ -238,7 +239,8 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
           </button>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

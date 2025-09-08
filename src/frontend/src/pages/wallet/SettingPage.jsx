@@ -3,7 +3,7 @@ import { useAuth } from "../../core/providers/AuthProvider";
 import { useWallet } from "../../core/providers/WalletProvider";
 import { Dialog, DialogContent } from "../../core/components/ui/Dialog";
 import SidebarButton from "../../core/components/SidebarButton";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 export default function SettingPage() {
   const { identity } = useAuth();
@@ -127,11 +127,40 @@ export default function SettingPage() {
     setShowManageNetworks(true);
   };
 
-  const copyPrincipalToClipboard = () => {
+  const copyPrincipalToClipboard = async () => {
     const principalId = identity?.getPrincipal()?.toString();
     if (principalId) {
-      navigator.clipboard.writeText(principalId);
-      toast.success("Principal ID copied to clipboard!");
+      try {
+        await navigator.clipboard.writeText(principalId);
+        toast.success("Principal ID copied to clipboard!", {
+          position: "bottom-center",
+          duration: 2000,
+          style: {
+            background: "#23272F",
+            color: "#9BE4A0",
+            border: "1px solid #393E4B",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+          },
+          icon: "📋",
+        });
+      } catch (error) {
+        console.error("Failed to copy Principal ID:", error);
+        toast.error("Failed to copy Principal ID", {
+          position: "bottom-center",
+          duration: 2000,
+          style: {
+            background: "#23272F",
+            color: "#FF6B6B",
+            border: "1px solid #393E4B",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+          },
+          icon: "❌",
+        });
+      }
     }
   };
 
