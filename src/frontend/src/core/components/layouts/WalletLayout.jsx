@@ -19,20 +19,20 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
   return (
     <>
       <div className="relative network-dropdown">
-        <motion.button whileHover={{ y: -1, scale: 1.02 }} transition={{ type: "spring", stiffness: 280, damping: 20, mass: 0.6 }} onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="relative flex items-center gap-3 h-12 px-5 rounded-full text-white font-medium bg-white/5 text-base hover:opacity-95 transition-colors border border-white/10">
+        <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="relative flex items-center gap-3 h-12 px-5 rounded-full text-white font-medium bg-white/5 text-base hover:opacity-95 transition-colors border border-white/10">
           <img src="/assets/icons/construction.svg" alt="All Networks" className="w-5 h-5" />
           <span className="text-white pr-2 capitalize">{network}</span>
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}>
             <path d="M7 10l5 5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </motion.button>
+        </button>
 
         <AnimatePresence>
           {isDropdownOpen && (
             <motion.div className="absolute top-full mt-3 w-[300px] rounded-2xl border border-white/10 z-[9999] overflow-hidden" style={{ right: "0px", background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))", boxShadow: "0 12px 40px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)" }} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: "easeOut" }}>
               <div className="py-2">
                 <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-base">
-                  <motion.div whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === "All Networks" ? "bg-white/8" : "hover:bg-white/5"}`}>
+                  <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === "All Networks" ? "bg-white/8" : "hover:bg-white/5"}`}>
                     <div className="flex items-center gap-3">
                       {network === "All Networks" ? (
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
@@ -44,7 +44,7 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                       <span className="text-white">All Networks</span>
                     </div>
                     <span className="text-[#9CA3AF]">{getNetworkValue("All Networks")}</span>
-                  </motion.div>
+                  </div>
                 </button>
 
                 <div className="h-px bg-white/10 mx-4 my-1" />
@@ -52,7 +52,7 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                 {getAvailableNetworks().map((net, index) => (
                   <div key={net.key}>
                     <button onClick={() => handleNetworkChange(net.name)} className="w-full text-base">
-                      <motion.div whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === net.name ? "bg-white/8" : "hover:bg-white/5"}`}>
+                      <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === net.name ? "bg-white/8" : "hover:bg-white/5"}`}>
                         <div className="flex items-center gap-3">
                           {network === net.name ? (
                             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
@@ -64,7 +64,7 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                           <span className="text-white text-left">{net.name}</span>
                         </div>
                         <span className="text-[#9CA3AF]">{net.value}</span>
-                      </motion.div>
+                      </div>
                     </button>
                     {index < getAvailableNetworks().length - 1 && <div className="h-px bg-white/10 mx-4" />}
                   </div>
@@ -72,10 +72,10 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
 
                 <div className="h-px bg-white/10 mx-4 my-2" />
 
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full flex items-center gap-3 px-6 py-3 text-[#9BEB83] hover:bg-white/5 transition-colors">
+                <button className="w-full flex items-center gap-3 px-6 py-3 text-[#9BEB83] hover:bg-white/5 transition-colors">
                   <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
                   <span className="font-medium">Manage Networks</span>
-                </motion.button>
+                </button>
               </div>
             </motion.div>
           )}
@@ -83,15 +83,15 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
       </div>
 
       <div className="relative profile-dropdown">
-        <motion.button whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 280, damping: 20, mass: 0.6 }} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="group flex items-center justify-center bg-[#161B22] w-11 h-11 rounded-full border border-white/10 hover:bg-[#2A2F36] transition-all duration-200 ease-out cursor-pointer hover:border-white/20">
+        <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="group flex items-center justify-center bg-[#161B22] w-11 h-11 rounded-full border border-white/10 hover:bg-[#2A2F36] transition-all duration-200 ease-out cursor-pointer hover:border-white/20">
           <img src="/assets/icons/person.svg" alt="User" className="w-6 h-6 transition-transform duration-200 group-hover:scale-110" />
-        </motion.button>
+        </button>
 
         <AnimatePresence>
           {isProfileDropdownOpen && (
             <motion.div className="absolute top-full right-0 mt-3 w-[270px] rounded-3xl font-normal border border-white/10 z-[9999] overflow-hidden" style={{ background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))", boxShadow: "0 12px 40px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)" }} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: "easeOut" }}>
               <div className="py-4">
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
+                <button className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
                   <div className="mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5">
                     {contextHideBalance ? (
                       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
@@ -107,25 +107,25 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                     )}
                     <span className="text-white font-normal">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
                   </div>
-                </motion.button>
+                </button>
 
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group">
+                <button className="w-full text-sm transition-colors group">
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                     <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
                     <span className="text-white">Your addresses</span>
                   </div>
-                </motion.button>
+                </button>
 
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group">
+                <button className="w-full text-sm transition-colors group">
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                     <img src="/assets/icons/contact.svg" alt="Contact" />
                     <span className="text-white">Contact</span>
                   </div>
-                </motion.button>
+                </button>
 
                 <div className="h-px bg-white/10 mx-5 my-3"></div>
 
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
+                <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                       <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
@@ -134,9 +134,9 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                     </svg>
                     <span className="text-white">Why Fradium</span>
                   </div>
-                </motion.button>
+                </button>
 
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
+                <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -147,11 +147,9 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                     </svg>
                     <span className="text-white">Documentation</span>
                   </div>
-                </motion.button>
+                </button>
 
-                <motion.button
-                  whileHover={{ y: -1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }}
+                <button
                   className="w-full text-sm transition-colors group"
                   onClick={() => {
                     navigate("/wallet/setting");
@@ -161,40 +159,38 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                     <img src="/assets/icons/setting-green.svg" alt="Settings" />
                     <span className="text-white">Settings</span>
                   </div>
-                </motion.button>
+                </button>
 
                 <div className="h-px bg-white/10 mx-5 my-3"></div>
 
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
+                <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg_WHITE/5">
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                       <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     <span className="text-white">Source Code</span>
                   </div>
-                </motion.button>
+                </button>
 
-                <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} className="w-full mb-2 text-sm transition-colors group" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
+                <button className="w-full mb-2 text-sm transition-colors group" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                       <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     <span className="text-white">X Account</span>
                   </div>
-                </motion.button>
+                </button>
 
                 <div className="mx-5 mt-2 mb-2">
                   <div className="rounded-full p-[1px] hover:bg-white/5">
-                    <motion.button
-                      whileHover={{ y: -1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }}
+                    <button
                       className="w-full h-12 rounded-full text-[#9BEB83] font-medium border border-white/10"
                       onClick={() => {
                         navigate("/");
                         logout();
                       }}>
                       Log Out
-                    </motion.button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -542,12 +538,12 @@ function WalletLayoutContent() {
                     <span className="relative z-10 text-white font-medium">{item.label}</span>
                   </Link>
                 ) : item.onClick ? (
-                  <motion.button whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} key={item.label} onClick={item.onClick} className={`group relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all text-white/70 hover:text-white font-normal`}>
+                  <button key={item.label} onClick={item.onClick} className={`group relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all text-white/70 hover:text-white font-normal`}>
                     <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-l from-white/10 via-white/5 to-transparent" />
                     <span className="absolute right-0 top-0 bottom-0 w-0 group-hover:w-[5px] transition-all duration-200 bg-[#9BE4A0] shadow-[0_0_10px_rgba(155,228,160,0.4)]" />
                     <img src={iconSrc} alt={item.label} className="w-5 h-5 relative z-10" />
                     <span className="relative z-10">{item.label}</span>
-                  </motion.button>
+                  </button>
                 ) : (
                   <MotionLink whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.6 }} key={item.label} to={item.path} className={`group relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all text-white/70 hover:text-white font-normal`}>
                     <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-l from-white/10 via-white/5 to-transparent" />

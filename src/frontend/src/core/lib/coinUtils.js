@@ -89,6 +89,71 @@ export function getTokens() {
   return TOKENS_CONFIG;
 }
 
+// Detect address network
+export function detectAddressNetwork(address) {
+  if (!address || typeof address !== "string") return "Unknown";
+
+  const trimmed = address.trim();
+  const lower = trimmed.toLowerCase();
+
+  // Ethereum: 0x + 40 hex chars
+  if (trimmed.startsWith("0x") && trimmed.length === 42) {
+    const hexPart = trimmed.slice(2);
+    if (/^[0-9a-fA-F]{40}$/.test(hexPart)) return "Ethereum";
+  }
+
+  // Bitcoin Legacy (mainnet/testnet) by first char and length 26..35
+  if ((trimmed.startsWith("1") || trimmed.startsWith("3") || trimmed.startsWith("m") || trimmed.startsWith("n") || trimmed.startsWith("2")) && trimmed.length >= 26 && trimmed.length <= 35) {
+    return "Bitcoin";
+  }
+
+  // Bitcoin Bech32 (mainnet/testnet)
+  if (lower.startsWith("bc1q") || lower.startsWith("bc1p") || lower.startsWith("tb1q") || lower.startsWith("tb1p")) {
+    return "Bitcoin";
+  }
+
+  // Solana: Base58, len usually >= 36
+  const base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  if (trimmed.length >= 36 && [...trimmed].every((c) => base58Chars.includes(c))) {
+    return "Solana";
+  }
+
+  // ICP Principal (simplified): lowercase, hyphen-separated groups
+  // Example: m5rq4-tzmga-7d5hk-l37qx-42aao-gk3xg-jvocx-tqxeh-26hfr-hcaga-qae
+  if (/^[a-z0-9-]+$/.test(lower) && lower.includes("-")) {
+    const parts = lower.split("-").filter(Boolean);
+    if (parts.length >= 5) {
+      return "Internet Computer";
+    }
+  }
+
+  return "Unknown";
+}
+
+// Return list of tokens supported by the detected network of the address
+export function getSupportedTokensForAddress(address) {
+  const network = detectAddressNetwork(address);
+  if (network === "Unknown") return [];
+  return TOKENS_CONFIG.filter((t) => t.chain === network);
+}
+
+// Very simple fee info by network/token
+export function getFeeInfo(token) {
+  if (!token) return "";
+  switch (token.chain) {
+    case "Bitcoin":
+      return "Network fee: dynamic sat/vB (depends on mempool).";
+    case "Ethereum":
+      return "Network fee: gas (Gwei) based on network congestion.";
+    case "Solana":
+      return "Network fee: ~0.000005 SOL per tx (approx).";
+    case "Internet Computer":
+      return "Network fee: minimal cycles via ICRC transfer.";
+    default:
+      return "Network fee varies by network conditions.";
+  }
+}
+
 export async function sendToken(tokenId, to, amount) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);

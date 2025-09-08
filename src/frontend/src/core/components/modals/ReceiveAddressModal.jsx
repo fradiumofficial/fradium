@@ -178,8 +178,8 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className={`bg-[#23272F] px-6 py-8 w-full ${qrDetail.open ? "max-w-sm" : "max-w-md"} rounded-lg shadow-lg relative flex flex-col gap-6`}>
+    <div className="fixed inset-0 z-[9999] flex items-start justify-start bg-black/70 backdrop-blur-sm pt-16 pl-4 pr-4">
+      <div className={`bg-[#23272F] px-6 py-8 w-full ${qrDetail.open ? "max-w-sm" : "max-w-md"} rounded-lg shadow-lg relative flex flex-col gap-6 mx-auto`}>
         <button
           className="absolute top-4 right-4 text-[#B0B6BE] hover:text-white text-2xl font-bold"
           onClick={() => {
