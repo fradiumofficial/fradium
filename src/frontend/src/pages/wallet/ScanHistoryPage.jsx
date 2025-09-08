@@ -1,37 +1,54 @@
 import React from "react";
+import { TOKENS_CONFIG } from "@/core/lib/tokenUtils";
+
+function getIconByChain(chain) {
+  const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
+  return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
+}
 
 export default function ScanHistoryPage() {
+  const items = [
+    { chain: "Bitcoin", address: "m1psqxsf...f", label: "Ransomware - AI", date: "24/04/35" },
+    { chain: "Ethereum", address: "0x9a23...d1", label: "Phising - Community", date: "24/04/35" },
+    { chain: "Bitcoin", address: "bc1q8...3k", label: "Phising - Community", date: "24/04/35" },
+    { chain: "Ethereum", address: "0x7fe2...ab", label: "Ransomware - AI", date: "24/04/35" },
+  ];
+
   return (
-    <div className="flex flex-col gap-8 max-w-xl mx-auto w-full bg-[#0F1219] md:p-0 p-2">
+    <div className="flex flex-col gap-8 w-full max-w-xl mx-auto px-4">
       {/* Header Section */}
-      <div className="flex flex-col gap-4">
-        <h1 className="text-white md:text-2xl text-lg font-semibold">Scan History</h1>
-        <p className="text-[#B0B6BE] md:text-base text-sm font-normal">Your complete address analysis history with community reports and AI-powered security scans.</p>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-white text-2xl font-semibold">Scan History</h1>
+        <p className="text-white/60 text-sm">List of previously scanned addresses and smart contracts</p>
       </div>
 
       {/* Scan Activity List Section */}
-      <div>
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-white md:text-lg text-base font-semibold">List of scan activity</h2>
+      <div className="w-full">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-white text-base font-semibold">List of scan activity</h2>
           <div className="flex gap-4">
-            <img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 opacity-70" />
-            <img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4 opacity-70" />
+            <img src="/assets/icons/search.svg" alt="Search" className="w-5 h-5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" />
+            <img src="/assets/icons/page_info.svg" alt="Filter" className="w-5 h-5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" />
           </div>
         </div>
 
-        {/* Empty State - Static */}
-        <div className="text-center py-12">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-[#B0B6BE]/10 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-[#B0B6BE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+        {/* List - no borders, larger items */}
+        <div className="flex flex-col gap-2">
+          {items.map((item, idx) => (
+            <div key={idx} className="group">
+              <div className="flex items-center justify-between px-6 py-5 rounded-xl transition-colors group-hover:bg-white/[0.04]">
+                <div className="flex items-center gap-4">
+                  <img src={getIconByChain(item.chain)} alt={item.chain} className="w-10 h-10 rounded-full" />
+                  <div className="flex flex-col">
+                    <div className="text-white text-base font-medium leading-tight max-w-[300px] truncate">{item.address}</div>
+                    <div className="text-white/70 text-sm">{item.label}</div>
+                  </div>
+                </div>
+                <div className="text-white/70 text-sm">{item.date}</div>
+              </div>
+              {idx !== items.length - 1 && <div className="h-px bg-white/10 mx-6 transition-colors group-hover:bg-white/15" />}
             </div>
-            <div>
-              <p className="text-white font-medium">No scan history yet</p>
-              <p className="text-[#B0B6BE] text-sm mt-1">Start analyzing addresses to see your security scan records here</p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
