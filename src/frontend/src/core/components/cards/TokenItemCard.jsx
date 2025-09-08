@@ -1,5 +1,5 @@
 import React from "react";
-import { formatAmount, getNetworkIcon } from "@/core/lib/coinUtils";
+import { formatAmount, getNetworkIcon } from "@/core/lib/tokenUtils";
 import { motion } from "framer-motion";
 
 // Balance Row Skeleton Component

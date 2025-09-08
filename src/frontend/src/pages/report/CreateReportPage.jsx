@@ -21,8 +21,8 @@ import { Principal } from "@dfinity/principal";
 // Utils (local)
 import { convertE8sToToken, optValue } from "@/core/lib/canisterUtils";
 
-import { uploadMultipleFilesToPinataWithFallback } from "@/core/services/pinata";
-import { validateFiles, formatFileSize, FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from "@/core/services/fileValidation";
+import { uploadMultipleFilesToPinataWithFallback } from "@/core/lib/pinataUtils";
+import { validateFiles, formatFileSize, FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from "@/core/lib/fileValidationUtils";
 import { toast } from "react-toastify";
 
 export default function CreateReportPage() {

@@ -5,11 +5,11 @@ import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
-import { NETWORK_CONFIG } from "@/core/lib/coinUtils";
+import { NETWORK_CONFIG } from "@/core/lib/tokenUtils";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Remove duplicate NETWORK_CONFIG import since we import from coinUtils
+// Remove duplicate NETWORK_CONFIG import since we import from tokenUtils
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
 
@@ -225,7 +225,7 @@ function WalletLayoutContent() {
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
 
-  // Get networks from coinUtils configuration
+  // Get networks from tokenUtils configuration
   const NETWORKS = NETWORK_CONFIG.map((network) => ({
     key: network.id,
     name: network.name,
