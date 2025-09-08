@@ -15,8 +15,8 @@ import Account from "~features/preferences/pages/account"
 import { ROUTES } from "~lib/constant/routes"
 import Welcome from "~features/landing/pages/welcome"
 import WalletConfirmation from "~features/landing/pages/createWallet"
-import { WalletProvider } from "~features/wallet/context/walletContext"
-import { useWallet } from "~features/wallet/context/walletContext"
+import { WalletProvider } from "~lib/context/walletContext"
+import { useWallet } from "~lib/context/walletContext"
 
 const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { hasConfirmedWallet, isLoading } = useWallet() as any

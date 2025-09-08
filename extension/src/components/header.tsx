@@ -5,10 +5,12 @@ import AllNetwork from "~features/network/pages/all_network";
 import { CDN } from "~lib/constant/cdn";
 import { ROUTES } from "~lib/constant/routes";
 import { useNetwork } from "~features/network/context/networkContext";
+import { useWallet } from "~lib/context/walletContext";
 
 const ProfileHeader = () => {
   const [open, setOpen] = useState(false);
   const [principal, setPrincipal] = useState<string | null>(null);
+  const { principalText } = useWallet() as any;
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,43 +35,26 @@ const ProfileHeader = () => {
   };
 
   useEffect(() => {
-    // Mock principal for now
-    setPrincipal("cy7jashlashdabmnnzz");
-  }, []);
+    setPrincipal(principalText || null);
+  }, [principalText]);
 
   const rightIconSrc = selectedNetwork === "btc" ? `${CDN.tokens.bitcoinDark}` : selectedNetwork === "eth" ? `${CDN.tokens.ethereumDark}` : selectedNetwork === "sol" ? `${CDN.tokens.solanaDark}` : selectedNetwork === "fra" ? `${CDN.tokens.fradiumDark}` : `${CDN.icons.construction}`;
 
-  const principalText = shortPrincipal(principal || undefined);
-  
-  // Check if we should show back button
-  const showBackButton = location.pathname !== ROUTES.HOME && location.pathname !== "/";
-  
-  const handleBackClick = () => {
-    navigate(-1);
-  };
+  const principalShort = shortPrincipal(principal || undefined);
 
   return (
     <div className="sticky top-0 z-20 relative w-full bg-[#1C1D22] p-4">
       <div className="relative flex items-center justify-between">
         {/* Left: Back Button or Fradium Logo */}
         <div className="flex items-center">
-          {showBackButton ? (
-            <button 
-              onClick={handleBackClick}
-              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-          ) : (
-            <img src={CDN.icons.icon128} alt="Fradium Logo" className="w-10 h-10" />
-          )}
+          <img src={CDN.icons.icon128} alt="Fradium Logo" className="w-10 h-10" />
         </div>
 
         {/* Center: Wallet Information */}
         <div className="flex-1 flex flex-col items-center">
           <h1 className="text-white text-sm font-medium mb-1">Fradium Wallet</h1>
           <div className="flex items-center gap-2">
-            <span className="text-gray-400 font-medium text-xs">{principalText}</span>
+            <span className="text-gray-400 font-medium text-xs">{principalShort}</span>
             {copiedAddress === principal ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => principal && handleCopyAddress(principal)} />}
           </div>
         </div>

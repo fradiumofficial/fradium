@@ -15,8 +15,9 @@ import { ROUTES } from "~lib/constant/routes"
 import "~style.css"
 import Welcome from '~features/landing/pages/welcome';
 import WalletConfirmation from '~features/landing/pages/createWallet';
-import { WalletProvider } from '~features/wallet/context/walletContext';
-import { useWallet } from "~features/wallet/context/walletContext";
+import { AuthProvider } from '~lib/context/authContext';
+import { WalletProvider } from '~lib/context/walletContext';
+import { useWallet } from "~lib/context/walletContext";
 import { NetworkProvider } from "~features/network/context/networkContext";
 
 const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -54,6 +55,7 @@ async function handleLogin() {
 function IndexPopup() {
   return (
     <BrowserRouter >
+      <AuthProvider>
       <WalletProvider>
       <NetworkProvider>
       <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex flex-col">
@@ -85,6 +87,7 @@ function IndexPopup() {
       </div>
       </NetworkProvider>
       </WalletProvider>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

@@ -2,7 +2,7 @@ import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
-import { useWallet } from "~features/wallet/context/walletContext";
+import { useWallet } from "~lib/context/walletContext";
 
 type LogoutButtonProps = {
     onClick?: () => void;

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { ROUTES } from "~lib/constant/routes"
 
 import NeoButton from "~components/custom-button"
-import { useWallet } from "~features/wallet/context/walletContext"
+import { useWallet } from "~lib/context/walletContext"
 
 function WalletConfirmation() {
   const navigate = useNavigate()
