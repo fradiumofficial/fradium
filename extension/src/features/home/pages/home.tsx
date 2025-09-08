@@ -47,7 +47,8 @@ function Home() {
 
   // Navigation handlers
   const handleAnalyzeAddress = () => navigate(ROUTES.ANALYZE_ADDRESS);
-  const handleViewHistory = () => navigate(ROUTES.HISTORY);
+  const handleReceiveClick = () => navigate(ROUTES.RECEIVE);
+  const handleSendClick = () => navigate(ROUTES.SEND);
   const handleAccountSettings = () => navigate(ROUTES.ACCOUNT);
 
   return (
@@ -92,7 +93,7 @@ function Home() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          // handleReceiveClick();
+                          handleReceiveClick();
                         }}
                         className="
                         w-[50px] h-[45px] flex items-center 

@@ -19,6 +19,8 @@ import { AuthProvider } from '~lib/context/authContext';
 import { WalletProvider } from '~lib/context/walletContext';
 import { useWallet } from "~lib/context/walletContext";
 import { NetworkProvider } from "~features/network/context/networkContext";
+import { Send } from 'lucide-react';
+import Receive from '~features/transaction/receive';
 
 const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { hasConfirmedWallet, isAuthenticated, isLoading } = useWallet() as any
@@ -76,6 +78,8 @@ function IndexPopup() {
             <Route path={ROUTES.DETAIL_HISTORY} element={<RequireWallet><DetailHistory /></RequireWallet>} />
             <Route path={ROUTES.TX_DETAIL} element={<RequireWallet><TxDetail /></RequireWallet>} />
             <Route path={ROUTES.ACCOUNT} element={<RequireWallet><Account /></RequireWallet>} />
+            <Route path={ROUTES.RECEIVE} element={<RequireWallet><Receive /></RequireWallet>} />
+            <Route path={ROUTES.SEND} element={<RequireWallet><Send /></RequireWallet>} />
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
         </div>
