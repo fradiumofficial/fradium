@@ -139,7 +139,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
           </motion.span>
           <motion.button
             type="button"
-            className="grid place-items-center w-8 h-8 hover:bg-white/[0.1] transition-colors"
+            className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
@@ -150,7 +150,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
           </motion.button>
           <motion.button
             type="button"
-            className="grid place-items-center w-8 h-8 hover:bg-white/[0.1] transition-colors"
+            className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}

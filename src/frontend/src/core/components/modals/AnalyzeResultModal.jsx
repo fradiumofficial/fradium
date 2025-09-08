@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { CheckCircle, Wallet, BarChart3, Gauge, Clock } from "lucide-react";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 
-export default function AnalyzeResultModal({ isOpen, onClose }) {
+export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze", onCancel, onConfirm }) {
   if (!isOpen) return null;
 
   return createPortal(
@@ -114,10 +114,27 @@ export default function AnalyzeResultModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Action Button */}
-              <ButtonGreen size="md" icon="/assets/icons/analyze-address-dark.svg" iconSize="w-5 h-5" className="w-full h-10" textSize="text-sm" fontWeight="medium" onClick={onClose}>
-                Go Analyze Other
-              </ButtonGreen>
+              {/* CTA Area */}
+              {variant === "send" ? (
+                <div className="w-full flex items-center gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={onCancel || onClose}
+                    className="flex-1 h-10 rounded-full border border-white/15 text-white/90 hover:bg-white/[0.05] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <div className="flex-1">
+                    <ButtonGreen fullWidth size="md" fontWeight="semibold" onClick={onConfirm || onClose}>
+                      Confirm Send
+                    </ButtonGreen>
+                  </div>
+                </div>
+              ) : (
+                <ButtonGreen size="md" icon="/assets/icons/analyze-address-dark.svg" iconSize="w-5 h-5" className="w-full h-10" textSize="text-sm" fontWeight="medium" onClick={onClose}>
+                  Go Analyze Other
+                </ButtonGreen>
+              )}
             </div>
           </div>
         </div>
