@@ -35,7 +35,9 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
+      "https://*.ic0.app/*",
+      "https://*.icp0.io/*",
+      "https://*.icp-api.io/*"
     ]
   }
 }

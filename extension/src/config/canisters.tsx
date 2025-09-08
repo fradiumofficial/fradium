@@ -6,5 +6,5 @@ export const CANISTERS = {
   fradiumToken: process.env.PLASMO_PUBLIC_FRADIUM_TOKEN_URL!,
   fradiumTokenIndex: process.env.PLASMO_PUBLIC_FRADIUM_TOKEN_INDEX_URL!,
   llm: process.env.PLASMO_PUBLIC_LLM_URL!,
-  wallet: process.env.PLASMO_PUBLIC_WALLET_URL!,
+  wallet: process.env.PLASMO_PUBLIC_CANISTER_ID_WALLET!,
 }

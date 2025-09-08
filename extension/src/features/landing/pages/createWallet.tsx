@@ -8,7 +8,7 @@ import { useWallet } from "~lib/context/walletContext"
 function WalletConfirmation() {
   const navigate = useNavigate()
   const [message, setMessage] = useState("")
-  const { confirmWallet, isLoading, hasConfirmedWallet } = useWallet() as any
+  const { confirmWallet, isLoading, hasConfirmedWallet } = useWallet();
 
   // If user already has a wallet, skip this screen
   useEffect(() => {
@@ -17,11 +17,15 @@ function WalletConfirmation() {
     }
   }, [hasConfirmedWallet, isLoading, navigate])
 
-  const handleCreateWallet = useCallback(() => {
+  const handleCreateWallet = useCallback(async () => {
     setMessage("Creating your wallet...")
-    confirmWallet()
-    setMessage("Wallet created! Redirecting...")
-    navigate(ROUTES.HOME, { replace: true })
+    const ok = await confirmWallet()
+    if (ok) {
+      setMessage("Wallet created! Redirecting...")
+      navigate(ROUTES.HOME, { replace: true })
+    } else {
+      setMessage("Failed to create wallet. Please try again.")
+    }
   }, [confirmWallet, navigate])
 
   return (
@@ -93,20 +97,13 @@ function WalletConfirmation() {
           </div>
         </div>
 
-        {/* Status Message */}
-        {message && (
-          <div className="text-center p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
-            <p className="text-blue-200 text-xs">{message}</p>
-          </div>
-        )}
-
         <div className="space-y-3">
           <NeoButton
             iconPosition="right"
             onClick={handleCreateWallet}
             disabled={isLoading}
             className="w-full">
-            Create Wallet
+            {isLoading ? message : "Create Wallet"}
           </NeoButton>
         </div>
       </div>

@@ -1,143 +1,246 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useAuth } from "~lib/context/authContext";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
+import { useAuth } from "~lib/context/authContext"
+import { AuthClient } from "@dfinity/auth-client"
+import {
+  createActor as createWalletActor,
+  canisterId as walletCanisterId,
+} from "../../../../src/declarations/wallet"
+import {
+  getCanisterId as getConfiguredCanisterId,
+  createAgentWithFallback,
+} from "~config/networkConfig"
 
 interface NetworkFilters {
-  Bitcoin: boolean;
-  Solana: boolean;
-  Fradium: boolean;
-  Ethereum: boolean;
+  Bitcoin: boolean
+  Solana: boolean
+  Fradium: boolean
+  Ethereum: boolean
 }
 
 interface NetworkValues {
-  "All Networks": number;
-  Bitcoin: number;
-  Solana: number;
-  Fradium: number;
-  Ethereum: number;
+  "All Networks": number
+  Bitcoin: number
+  Solana: number
+  Fradium: number
+  Ethereum: number
 }
 
 interface WalletContextType {
   // Wallet state
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  principalText: string | null;
-  isCreatingWallet: boolean;
-  setIsCreatingWallet: (creating: boolean) => void;
-  hasConfirmedWallet: boolean;
-  setHasConfirmedWallet: (confirmed: boolean) => void;
-  confirmWallet: () => void;
-  
+  isLoading: boolean
+  isAuthenticated: boolean
+  principalText: string | null
+  isCreatingWallet: boolean
+  setIsCreatingWallet: (creating: boolean) => void
+  hasConfirmedWallet: boolean
+  setHasConfirmedWallet: (confirmed: boolean) => void
+  confirmWallet: () => Promise<boolean>
+
+  // Addresses
+  addresses: { bitcoin?: string; ethereum?: string; solana?: string } | null
+  isFetchingAddresses: boolean
+  fetchAddresses: () => Promise<void>
+
   // Wallet operations
-  addAddressToWallet: (network: string, tokenType: string, address: string) => Promise<boolean>;
-  
+  addAddressToWallet: (
+    network: string,
+    tokenType: string,
+    address: string
+  ) => Promise<boolean>
+
   // Network management
-  network: string;
-  setNetwork: (network: string) => void;
-  networkFilters: NetworkFilters;
-  
+  network: string
+  setNetwork: (network: string) => void
+  networkFilters: NetworkFilters
+
   // Balance management
-  hideBalance: boolean;
-  setHideBalance: (hide: boolean) => void;
-  networkValues: NetworkValues;
-  updateNetworkValues: (values: Partial<NetworkValues>) => void;
-  getNetworkValue: (networkName: string) => string;
+  hideBalance: boolean
+  setHideBalance: (hide: boolean) => void
+  networkValues: NetworkValues
+  updateNetworkValues: (values: Partial<NetworkValues>) => void
+  getNetworkValue: (networkName: string) => string
 }
 
-const WalletContext = createContext<WalletContextType | null>(null);
+const WalletContext = createContext<WalletContextType | null>(null)
 
-// Custom hook to use wallet context
+// Custom hook
 export const useWallet = () => {
-  const context = useContext(WalletContext);
+  const context = useContext(WalletContext)
   if (!context) {
-    throw new Error("useWallet must be used within a WalletProvider");
+    throw new Error("useWallet must be used within a WalletProvider")
   }
-  return context;
-};
+  return context
+}
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, principalText } = useAuth();
-  const [isCreatingWallet, setIsCreatingWallet] = useState(false);
-  const [network, setNetwork] = useState("All Networks");
-  const [hideBalance, setHideBalance] = useState(false);
-  const [hasConfirmedWallet, setHasConfirmedWallet] = useState(false);
+export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [isLoading, setIsLoading] = useState(true)
+  const { isAuthenticated, principalText } = useAuth()
+
+  const [isCreatingWallet, setIsCreatingWallet] = useState(false)
+  const [network, setNetwork] = useState("All Networks")
+  const [hideBalance, setHideBalance] = useState(false)
+  const [hasConfirmedWallet, setHasConfirmedWallet] = useState(false)
+  const [addresses, setAddresses] = useState<{
+    bitcoin?: string
+    ethereum?: string
+    solana?: string
+  } | null>(null)
+  const [isFetchingAddresses, setIsFetchingAddresses] = useState(false)
+
   const [networkValues, setNetworkValues] = useState<NetworkValues>({
     "All Networks": 0,
     Bitcoin: 0,
     Solana: 0,
     Fradium: 0,
     Ethereum: 0,
-  });
-  const [networkFilters, setNetworkFilters] = useState<NetworkFilters>({
+  })
+
+  const [networkFilters] = useState<NetworkFilters>({
     Bitcoin: true,
     Solana: true,
     Fradium: true,
     Ethereum: true,
-  });
+  })
 
-  // Persist simple wallet confirmation state in localStorage
-  const STORAGE_KEY_HAS_WALLET = "fradium_has_confirmed_wallet";
-  const STORAGE_KEY_PRINCIPAL = "fradium_principal";
+  // Persisted storage key
+  const STORAGE_KEY_HAS_WALLET = "fradium_has_confirmed_wallet"
 
-  // Load persisted state on first mount
+  // Load persisted state on mount
   useEffect(() => {
-    const bootstrap = async () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY_HAS_WALLET);
-        if (stored) setHasConfirmedWallet(stored === "true");
-
-        // principal handled by AuthContext; nothing to do here
-      } catch {
-        // ignore
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    bootstrap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Function to update network values
-  const updateNetworkValues = useCallback((values: Partial<NetworkValues>) => {
-    setNetworkValues((prev) => {
-      const updated = { ...prev, ...values };
-      
-      // Auto-calculate "All Networks" as sum of enabled individual networks only
-      if (!values["All Networks"]) {
-        updated["All Networks"] = 
-          (networkFilters.Bitcoin ? updated.Bitcoin : 0) + 
-          (networkFilters.Ethereum ? updated.Ethereum : 0) + 
-          (networkFilters.Solana ? updated.Solana : 0) + 
-          (networkFilters.Fradium ? updated.Fradium : 0);
-      }
-      
-      return updated;
-    });
-  }, [networkFilters]);
-
-  // Minimal implementation: format value for display
-  const getNetworkValue = useCallback((networkName: string) => {
-    const value = networkValues[networkName as keyof NetworkValues] || 0;
-    if (hideBalance) return "••••";
-    return `$${value.toFixed(2)}`;
-  }, [networkValues, hideBalance]);
-
-  // Minimal implementation: no-op add address, returns false
-  const addAddressToWallet = useCallback(async (_network: string, _tokenType: string, _address: string) => {
-    console.warn("addAddressToWallet is not implemented in this build");
-    return false;
-  }, []);
-
-  // Helper to confirm/create a wallet locally (can be replaced with canister call)
-  const confirmWallet = useCallback(() => {
-    setHasConfirmedWallet(true);
     try {
-      localStorage.setItem(STORAGE_KEY_HAS_WALLET, "true");
+      const stored = localStorage.getItem(STORAGE_KEY_HAS_WALLET)
+      if (stored) setHasConfirmedWallet(stored === "true")
     } catch {
-      // ignore storage errors
+      // ignore
+    } finally {
+      setIsLoading(false)
     }
-  }, []);
+  }, [])
 
+  // Update balances
+  const updateNetworkValues = useCallback(
+    (values: Partial<NetworkValues>) => {
+      setNetworkValues((prev) => {
+        const updated = { ...prev, ...values }
+
+        if (!values["All Networks"]) {
+          updated["All Networks"] =
+            (networkFilters.Bitcoin ? updated.Bitcoin : 0) +
+            (networkFilters.Ethereum ? updated.Ethereum : 0) +
+            (networkFilters.Solana ? updated.Solana : 0) +
+            (networkFilters.Fradium ? updated.Fradium : 0)
+        }
+        return updated
+      })
+    },
+    [networkFilters]
+  )
+
+  // Format balance display
+  const getNetworkValue = useCallback(
+    (networkName: string) => {
+      const value = networkValues[networkName as keyof NetworkValues] || 0
+      return hideBalance ? "••••" : `$${value.toFixed(2)}`
+    },
+    [networkValues, hideBalance]
+  )
+
+  // Placeholder wallet op
+  const addAddressToWallet = useCallback(
+    async (_network: string, _tokenType: string, _address: string) => {
+      console.warn("addAddressToWallet is not implemented in this build")
+      return false
+    },
+    []
+  )
+
+  // Resolve canister ID
+  const resolveWalletCanisterId = useCallback(() => {
+    const configured = getConfiguredCanisterId("wallet")
+    if (configured && configured.length >= 8) return configured
+
+    const envId =
+      (walletCanisterId as string | undefined)?.toString?.() || walletCanisterId
+    if (envId && typeof envId === "string" && envId.trim().length > 0)
+      return envId.trim()
+
+    return undefined
+  }, [])
+
+  // Create actor
+  const getWalletActor = useCallback(async () => {
+    const canister = resolveWalletCanisterId()
+    if (!canister) {
+      console.warn("WALLET canisterId is not configured")
+      return undefined as any
+    }
+
+    const host = await createAgentWithFallback()
+    const client = await AuthClient.create({})
+    const identity = client.getIdentity()
+
+    return createWalletActor(canister, {
+      agentOptions: { identity, host },
+    } as any)
+  }, [resolveWalletCanisterId])
+
+  // Fetch addresses
+  const fetchAddresses = useCallback(async () => {
+    if (!isAuthenticated || !hasConfirmedWallet || isFetchingAddresses) return
+    setIsFetchingAddresses(true)
+    try {
+      const actor: any = await getWalletActor()
+      if (!actor?.wallet_addresses) {
+        console.warn("Wallet actor not available or method missing")
+        return
+      }
+      const res = await actor.wallet_addresses()
+      setAddresses({
+        bitcoin: res?.bitcoin,
+        ethereum: res?.ethereum,
+        solana: res?.solana,
+      })
+    } catch (e) {
+      console.warn("Failed to fetch addresses", e)
+    } finally {
+      setIsFetchingAddresses(false)
+    }
+  }, [getWalletActor, isAuthenticated, hasConfirmedWallet, isFetchingAddresses])
+
+  // Confirm wallet
+  const confirmWallet = useCallback(async (): Promise<boolean> => {
+    if (!isAuthenticated) {
+      console.warn("User must be authenticated before creating a wallet")
+      return false
+    }
+    try {
+      const actor: any = await getWalletActor()
+      if (!actor) return false
+      const res = await actor.wallet_addresses()
+      setAddresses({
+        bitcoin: res?.bitcoin,
+        ethereum: res?.ethereum,
+        solana: res?.solana,
+      })
+      setHasConfirmedWallet(true)
+      try {
+        localStorage.setItem(STORAGE_KEY_HAS_WALLET, "true")
+      } catch {}
+      return true
+    } catch (e) {
+      console.warn("confirmWallet failed", e)
+      return false
+    }
+  }, [getWalletActor, isAuthenticated])
 
   const walletContextValue = useMemo(
     () => ({
@@ -149,6 +252,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       hasConfirmedWallet,
       setHasConfirmedWallet,
       confirmWallet,
+      addresses,
+      isFetchingAddresses,
+      fetchAddresses,
       addAddressToWallet,
       network,
       setNetwork,
@@ -166,6 +272,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isCreatingWallet,
       hasConfirmedWallet,
       confirmWallet,
+      addresses,
+      isFetchingAddresses,
+      fetchAddresses,
       addAddressToWallet,
       network,
       hideBalance,
@@ -174,7 +283,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       getNetworkValue,
       networkFilters,
     ]
-  );
+  )
 
-  return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;
-};
+  return (
+    <WalletContext.Provider value={walletContextValue}>
+      {children}
+    </WalletContext.Provider>
+  )
+}

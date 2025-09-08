@@ -21,7 +21,7 @@ function Receive() {
       fetchAddresses?.()
     }
   }, [isAuthenticated, hasConfirmedWallet, addresses, fetchAddresses])
-  
+
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
       <ProfileHeader />
@@ -68,9 +68,9 @@ function Receive() {
         </div>
 
         <div>
-          <NeoButton onClick={() => navigate(ROUTES.HOME)}>
-            Done
-          </NeoButton>
+        <NeoButton onClick={() => navigate(ROUTES.HOME)}>
+          Done
+        </NeoButton>
       </div>
       </div>
     </div>

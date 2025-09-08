@@ -35,10 +35,10 @@ const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children })
 }
 
 const AuthOrWelcome: React.FC = () => {
-  const { isAuthenticated, isLoading } = useWallet() as any
+  const { isAuthenticated, hasConfirmedWallet, isLoading } = useWallet() as any
   if (isLoading) return null
   if (isAuthenticated) {
-    return <Navigate to={ROUTES.HOME} replace />
+    return <Navigate to={hasConfirmedWallet ? ROUTES.HOME : ROUTES.WALLET_CONFIRMATION} replace />
   }
   return <Welcome />
 }
