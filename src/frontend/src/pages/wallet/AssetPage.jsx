@@ -7,7 +7,7 @@ import SendTokenModal from "@/core/components/modals/SendTokenModal";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Token Configuration
-import { TOKENS_CONFIG, NETWORK_CONFIG } from "@/core/lib/coinUtils";
+import { TOKENS_CONFIG, NETWORK_CONFIG } from "@/core/lib/tokenUtils";
 
 // Wallet Provider
 import { useWallet } from "@/core/providers/WalletProvider";

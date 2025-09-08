@@ -5,7 +5,7 @@ import { useAuth } from "./AuthProvider";
 import { wallet } from "declarations/wallet";
 
 // Token utilities
-import { TOKENS_CONFIG, getBalance, getUSD, getUSDPrices } from "@/core/lib/coinUtils";
+import { TOKENS_CONFIG, getBalance, getUSD, getUSDPrices } from "@/core/lib/tokenUtils";
 
 // Create context for wallet data
 const WalletContext = createContext();
