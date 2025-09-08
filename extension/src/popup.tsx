@@ -17,6 +17,7 @@ import Welcome from '~features/landing/pages/welcome';
 import WalletConfirmation from '~features/landing/pages/createWallet';
 import { WalletProvider } from '~features/wallet/context/walletContext';
 import { useWallet } from "~features/wallet/context/walletContext";
+import { NetworkProvider } from "~features/network/context/networkContext";
 
 const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { hasConfirmedWallet, isAuthenticated, isLoading } = useWallet() as any
@@ -54,6 +55,7 @@ function IndexPopup() {
   return (
     <BrowserRouter >
       <WalletProvider>
+      <NetworkProvider>
       <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex flex-col">
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
@@ -81,6 +83,7 @@ function IndexPopup() {
           <BottomNavbar />
         </div>
       </div>
+      </NetworkProvider>
       </WalletProvider>
     </BrowserRouter>
   )

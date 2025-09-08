@@ -1,8 +1,10 @@
 import { Check, ChevronDown, Copy, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import AllNetwork from "~features/network/pages/all_network";
 import { CDN } from "~lib/constant/cdn";
 import { ROUTES } from "~lib/constant/routes";
+import { useNetwork } from "~features/network/context/networkContext";
 
 const ProfileHeader = () => {
   const [open, setOpen] = useState(false);
@@ -11,8 +13,8 @@ const ProfileHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Mock data for now
-  const selectedNetwork = "btc";
+  // Selected network from context
+  const { selectedNetwork } = useNetwork();
   
   // Helper function to shorten principal
   const shortPrincipal = (principal?: string) => {
@@ -93,7 +95,7 @@ const ProfileHeader = () => {
       />
 
       {/* Modal Dropdown - Commented out for now since AllNetwork component might not exist */}
-      {/* <AllNetwork isOpen={open} onClose={() => setOpen(false)} /> */}
+      <AllNetwork isOpen={open} onClose={() => setOpen(false)} />
     </div>
   );
 };
