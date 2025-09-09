@@ -2,6 +2,10 @@ import ProfileHeader from "~components/header";
 import { Search, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
+import { useState, useEffect } from "react";
+import { CDN } from "~lib/constant/cdn";
+import { HistoryService } from "~service/historyService";
+import { useAuth } from "~lib/context/authContext";
 
 type ScanHistoryItem = {
   id: string;
@@ -10,39 +14,56 @@ type ScanHistoryItem = {
   isSafe: boolean;
   source: "ai" | "community";
   date: string;
+  analysisResult: any;
 };
-import { useState, useEffect } from "react";
-import { CDN } from "~lib/constant/cdn";
 
 function ScanHistory() {
   const navigate = useNavigate();
+  const { identity } = useAuth();
   const [scanItems, setScanItems] = useState<ScanHistoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState<ScanHistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load scan history on component mount
   useEffect(() => {
-    // Dummy data fallback
-    const dummy: ScanHistoryItem[] = [
-      {
-        id: "scan_1",
-        address: "0x1234567890abcdef1234567890abcdef12345678",
-        tokenType: "Ethereum",
-        isSafe: true,
-        source: "ai",
-        date: new Date(Date.now() - 1000 * 60 * 10).toLocaleString(),
-      },
-      {
-        id: "scan_2",
-        address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-        tokenType: "Bitcoin",
-        isSafe: false,
-        source: "community",
-        date: new Date(Date.now() - 1000 * 60 * 60).toLocaleString(),
-      },
-    ];
-    setScanItems(dummy);
-  }, []);
+    const loadHistory = async () => {
+      if (!identity) {
+        setError("User not authenticated");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Set identity for the service
+        HistoryService.identity = identity;
+
+        // Fetch history from backend
+        const result = await HistoryService.getAnalyzeHistory();
+
+        if (result.success && result.data) {
+          // Convert backend data to frontend format
+          const frontendData = HistoryService.convertBackendHistoryToFrontend(result.data);
+          setScanItems(frontendData);
+        } else {
+          setError(result.error || "Failed to load history");
+          // No dummy data fallback - show empty state instead
+          setScanItems([]);
+        }
+      } catch (err) {
+        console.error("Error loading scan history:", err);
+        setError("Failed to load scan history");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadHistory();
+  }, [identity]);
 
   // Filter items based on search term
   useEffect(() => {
@@ -116,7 +137,7 @@ function ScanHistory() {
               <Search className="w-5 h-5 mr-2 text-white/60" />
               <input
                 type="text"
-                placeholder="Search by token"
+                placeholder="Search by token or address"
                 className="bg-transparent outline-none placeholder:text-white/60 w-full text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,7 +153,34 @@ function ScanHistory() {
 
           {/* List or Empty State area fills remaining height */}
           <div className="relative flex-1 mt-6">
-            {SHOW_EMPTY ? (
+            {isLoading ? (
+              <div className="relative z-10 w-full h-full flex items-center justify-center text-center">
+                <div>
+                  <div className="text-[16px] font-medium mb-2">Loading history...</div>
+                  <div className="text-white/60 text-[14px]">Please wait while we fetch your scan history</div>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="relative z-10 w-full h-full flex items-center justify-center text-center">
+                <div>
+                  <img
+                    src={CDN.icons.empty}
+                    alt="error"
+                    className="w-16 h-16 mb-6 mx-auto"
+                  />
+                  <div className="text-[18px] font-medium mb-2">Error loading history</div>
+                  <div className="text-red-400 text-[14px] font-normal leading-relaxed max-w-[320px] mx-auto mb-4">
+                    {error}
+                  </div>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="bg-[#3A3B41] text-white px-4 py-2 rounded-md text-sm hover:bg-[#4A4B51] transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            ) : SHOW_EMPTY ? (
               <>
                 <div className="relative z-10 w-full h-full flex items-center justify-center text-center">
                   <div>
@@ -162,12 +210,12 @@ function ScanHistory() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center">
                         <img
-                          src={`/assets/tokens/${item.tokenType.toLowerCase()}.svg`}
+                          src={CDN.tokens[item.tokenType.toLowerCase() as keyof typeof CDN.tokens]}
                           alt={item.tokenType}
                           className="w-10 h-10 rounded-full"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              "/assets/images/default-token.png";
+                              CDN.tokens.unknown;
                           }}
                         />
                         <div className="ml-3">

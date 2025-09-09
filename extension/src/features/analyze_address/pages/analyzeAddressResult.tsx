@@ -6,10 +6,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ROUTES } from "~lib/constant/routes";
 import type { AnalysisResult } from "~types/analyze_model.type";
+import { HistoryService } from "~service/historyService";
+import { useAuth } from "~lib/context/authContext";
 
 function AnalyzeAdressResult() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { identity } = useAuth();
   const result = location.state?.result as AnalysisResult;
   const address = location.state?.address as string;
 
@@ -17,6 +20,94 @@ function AnalyzeAdressResult() {
   const [isAddressSafe, setIsAddressSafe] = useState<boolean>(() => {
     return result?.isSafe === true;
   });
+
+  // Save analysis result to history when component mounts
+  useEffect(() => {
+    const saveToHistory = async () => {
+      if (result && address && identity) {
+        try {
+          // Set identity for the service
+          HistoryService.identity = identity;
+
+          // Prepare metadata based on analysis result
+          let metadata = '';
+          let analyzedType: 'CommunityVote' | 'AIAnalysis' = 'AIAnalysis';
+
+          if (result.source === 'community') {
+            analyzedType = 'CommunityVote';
+            metadata = JSON.stringify({
+              source: 'community',
+              final_status: result.finalStatus,
+              community_data: result.communityData,
+              confidence: result.confidence,
+              risk_level: result.riskLevel,
+              description: result.description,
+              timestamp: Date.now()
+            });
+          } else if (result.source === 'ai') {
+            analyzedType = 'AIAnalysis';
+            metadata = JSON.stringify({
+              source: 'ai',
+              final_status: result.finalStatus,
+              ai_data: result.aiAnalysis,
+              confidence: result.confidence,
+              risk_level: result.riskLevel,
+              description: result.description,
+              timestamp: Date.now()
+            });
+          } else if (result.source === 'ai_and_community') {
+            analyzedType = 'AIAnalysis'; // Default to AI for combined analysis
+            metadata = JSON.stringify({
+              source: 'ai_and_community',
+              final_status: result.finalStatus,
+              ai_data: result.aiAnalysis,
+              community_data: result.communityData,
+              confidence: result.confidence,
+              risk_level: result.riskLevel,
+              description: result.description,
+              timestamp: Date.now()
+            });
+          }
+
+          // Detect token type from address
+          const tokenType = detectTokenType(address);
+
+          // Save to history
+          const authenticatedBackend = HistoryService.createAuthenticatedBackend(identity);
+          const saveResult = await HistoryService.createAnalyzeHistory(authenticatedBackend, {
+            address,
+            is_safe: result.isSafe,
+            analyzed_type: analyzedType,
+            metadata,
+            token_type: tokenType
+          });
+
+          if (saveResult.success) {
+            console.log('Analysis result saved to history successfully');
+          } else {
+            console.error('Failed to save analysis to history:', saveResult.error);
+          }
+        } catch (error) {
+          console.error('Error saving analysis to history:', error);
+        }
+      }
+    };
+
+    saveToHistory();
+  }, [result, address, identity]);
+
+  // Helper function to detect token type
+  const detectTokenType = (addr: string): 'Bitcoin' | 'Ethereum' | 'Solana' | 'Fradium' | 'Unknown' => {
+    if (addr.startsWith('1') || addr.startsWith('3') || addr.startsWith('bc1')) {
+      return 'Bitcoin';
+    } else if (addr.startsWith('0x') && addr.length === 42) {
+      return 'Ethereum';
+    } else if (addr.length >= 32 && addr.length <= 44) {
+      return 'Solana';
+    } else {
+      return 'Unknown';
+    }
+  };
 
   // Use useEffect to update state if result changes
   useEffect(() => {

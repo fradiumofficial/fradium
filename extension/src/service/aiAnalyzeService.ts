@@ -6,6 +6,7 @@ import { extractBitcoinFeatures } from './bitcoinAnalyzeService';
 import { extractEthereumFeatures } from './ethereumAnalyzeService';
 import { ai } from '../../../src/declarations/ai';
 import { backend } from '../../../src/declarations/backend';
+import { HistoryService } from './historyService';
 import type {
   RansomwareResult,
   CommunityAnalysisResult,
@@ -68,6 +69,7 @@ export class AIAnalyzeService {
       // Case 2: If AI analysis shows unsafe, stop here
       if (!aiResult.result.isSafe) {
         console.log('AI analysis shows unsafe - stopping analysis');
+        await this.saveAnalysisToHistory(trimmedAddress, aiResult, network);
         return {
           ...aiResult,
           analysisSource: 'ai',
@@ -80,32 +82,38 @@ export class AIAnalyzeService {
       const communityResult = await this.performCommunityAnalysis(trimmedAddress);
       console.log('Community Analysis Result:', communityResult);
 
+      let finalResult: CombinedAnalysisResult;
+
       // Case 1: Both AI and Community show safe
       if (aiResult.result.isSafe && communityResult.result.isSafe) {
-        return {
+        finalResult = {
           ...aiResult,
           analysisSource: 'ai_and_community',
           finalStatus: 'safe_by_both',
           communityAnalysis: communityResult.result,
         };
       }
-
       // Case 3: AI shows safe but Community shows unsafe
-      if (aiResult.result.isSafe && !communityResult.result.isSafe) {
-        return {
+      else if (aiResult.result.isSafe && !communityResult.result.isSafe) {
+        finalResult = {
           ...communityResult,
           analysisSource: 'community',
           finalStatus: 'unsafe_by_community',
           aiAnalysis: aiResult.result,
         };
       }
-
       // Fallback case
-      return {
-        ...aiResult,
-        analysisSource: 'ai',
-        finalStatus: 'safe_by_ai',
-      };
+      else {
+        finalResult = {
+          ...aiResult,
+          analysisSource: 'ai',
+          finalStatus: 'safe_by_ai',
+        };
+      }
+
+      // Save the final result to history
+      await this.saveAnalysisToHistory(trimmedAddress, finalResult, network);
+      return finalResult;
 
     } catch (error) {
       console.error('AI Analyze Service Error:', error);
@@ -355,6 +363,91 @@ export class AIAnalyzeService {
       securityChecks: securityChecks,
       rawResult: rustResult,
     };
+  }
+
+  /**
+   * Save analysis result to history
+   * @param address - The analyzed address
+   * @param result - Analysis result to save
+   * @param network - Network type
+   */
+  private static async saveAnalysisToHistory(
+    address: string,
+    result: AIAnalysisResult | CombinedAnalysisResult,
+    network: SupportedNetwork
+  ): Promise<void> {
+    try {
+      // Prepare metadata based on analysis type and result
+      let metadata = '';
+      let analyzedType: 'AIAnalysis' | 'CommunityVote' = 'AIAnalysis';
+
+      if ('analysisSource' in result) {
+        // Combined analysis result
+        const combinedResult = result as CombinedAnalysisResult;
+
+        if (combinedResult.analysisSource === 'community' || combinedResult.finalStatus === 'unsafe_by_community') {
+          analyzedType = 'CommunityVote';
+          metadata = JSON.stringify({
+            analysis_type: 'community_analysis',
+            final_status: combinedResult.finalStatus,
+            community_result: combinedResult.result,
+            ai_result: combinedResult.aiAnalysis,
+            timestamp: Date.now()
+          });
+        } else {
+          analyzedType = 'AIAnalysis';
+          metadata = JSON.stringify({
+            analysis_type: 'ai_analysis',
+            final_status: combinedResult.finalStatus,
+            ai_result: combinedResult.result,
+            community_result: combinedResult.communityAnalysis,
+            timestamp: Date.now()
+          });
+        }
+      } else {
+        // AI analysis result only
+        const aiResult = result as AIAnalysisResult;
+        metadata = JSON.stringify({
+          analysis_type: 'ai_only_analysis',
+          ai_result: aiResult.result,
+          timestamp: Date.now()
+        });
+      }
+
+      // Convert network to token type
+      const tokenType = this.networkToTokenType(network);
+
+      // Save to history using the HistoryService
+      const authenticatedBackend = HistoryService.createAuthenticatedBackend(HistoryService.identity);
+      await HistoryService.createAnalyzeHistory(authenticatedBackend, {
+        address,
+        is_safe: result.result.isSafe,
+        analyzed_type: analyzedType,
+        metadata,
+        token_type: tokenType
+      });
+
+      console.log('Analysis result saved to history successfully');
+    } catch (error) {
+      console.error('Failed to save analysis to history:', error);
+      // Don't throw error - history saving failure shouldn't break the analysis
+    }
+  }
+
+  /**
+   * Convert network type to token type for backend
+   */
+  private static networkToTokenType(network: SupportedNetwork): 'Bitcoin' | 'Ethereum' | 'Solana' | 'Fradium' | 'Unknown' {
+    switch (network) {
+      case 'Bitcoin':
+        return 'Bitcoin';
+      case 'Ethereum':
+        return 'Ethereum';
+      case 'Solana':
+        return 'Solana';
+      default:
+        return 'Unknown';
+    }
   }
 
   /**
