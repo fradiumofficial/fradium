@@ -1,17 +1,20 @@
 import { CDN } from "~lib/constant/cdn";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import NeoButton from "~components/custom-button";
-import { useWallet } from "~features/wallet/context/walletContext";
+import { useAuth } from "~lib/context/authContext";
+import { CANISTERS } from "~config/canisters";
 
 function Welcome() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const { signIn } = useWallet() as any;
+  const { signIn } = useAuth();
 
   const handleLogin = async () => {
+    console.log('hahaha anj', process.env.PLASMO_PUBLIC_CANISTER_ID_WALLET)
+    console.log('hahaha ababa', CANISTERS.wallet)
     setIsLoading(true)
     setMessage("Opening Internet Identity...")
     try {
@@ -42,20 +45,13 @@ function Welcome() {
         Start your safer crypto interactions with Fradium
       </p>
       
-      {/* Status Message */}
-      {message && (
-        <div className="text-center p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
-          <p className="text-blue-200 text-xs">{message}</p>
-        </div>
-      )}
-      
       <NeoButton
         icon={CDN.icons.arrowForward}
         iconPosition="right"
         onClick={handleLogin}
         disabled={isLoading}
       >
-        {isLoading ? "Authenticating..." : "Create Wallet"}
+        {isLoading ? message : "Create Wallet"}
       </NeoButton>
     </div>
   );

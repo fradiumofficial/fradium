@@ -3,8 +3,6 @@ import { detectTokenType, TokenType } from "~lib/utils/tokenUtils";
 import ProfileHeader from "~components/header";
 import NeoButton from "~components/custom-button";
 import { CDN } from "~lib/constant/cdn";
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
 
 // Enhanced address validation function
 const validateAddress = (addr: string): string | null => {
@@ -45,7 +43,6 @@ const validateAddress = (addr: string): string | null => {
 function AnalyzeAddress() {
   const [address, setAddress] = useState<string>('');
   const [addressError, setAddressError] = useState<string>('');
-  const navigate = useNavigate();
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -70,20 +67,6 @@ function AnalyzeAddress() {
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
       <ProfileHeader />
 
-      <div className="flex flex-col px-[24px]">
-        <div className="flex flex-row items-center">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1 hover:bg-white/10 rounded"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-[20px] font-semibold text-white px-[12px]">
-            Analyze Address
-          </h1>
-        </div>
-      </div>
-
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>
 
@@ -106,7 +89,7 @@ function AnalyzeAddress() {
             disabled={false}
             type="submit"
           >
-            "Analyze Address"
+            Analyze Address
           </NeoButton>
           {false && (
             <div className="mt-2 p-2 bg-red-500/20 border border-red-500/50 rounded">

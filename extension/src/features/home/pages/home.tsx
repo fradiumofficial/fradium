@@ -1,10 +1,10 @@
 import { EyeClosedIcon, EyeIcon, MoveUpRight, MoveDownLeft, Search, Settings2 } from "lucide-react";
 import ProfileHeader from "~components/header";
 import { CDN } from "~lib/constant/cdn";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
-import { useWallet } from "~features/wallet/context/walletContext";
+import { useWallet } from "~lib/context/walletContext";
 
 
 interface TokenBalance {
@@ -35,14 +35,20 @@ const TokenType = {
 } as const;
 
 function Home() {
-  const { getNetworkValue } = useWallet() as any
+  const { getNetworkValue, principalText } = useWallet() as any
+  const [principal, setPrincipal] = useState<string | null>(null);
   const [hideBalance, setHideBalance] = useState(false);
   const navigate = useNavigate();
   const toggleVisibility = () => setHideBalance(!hideBalance);
 
+  useEffect(() => {
+    setPrincipal(principalText || null);
+  }, [principalText]);
+
   // Navigation handlers
   const handleAnalyzeAddress = () => navigate(ROUTES.ANALYZE_ADDRESS);
-  const handleViewHistory = () => navigate(ROUTES.HISTORY);
+  const handleReceiveClick = () => navigate(ROUTES.RECEIVE);
+  const handleSendClick = () => navigate(ROUTES.SEND);
   const handleAccountSettings = () => navigate(ROUTES.ACCOUNT);
 
   return (
@@ -73,7 +79,9 @@ function Home() {
               </div>
 
               {/* Wallet Status */}
-              <div className="flex flex-col items-center justify-center gap-1 my-2"><span className="text-xs text-[#9BE4A0]/70">cy7jashlashdabmnnzz</span></div>
+              <div className="flex flex-col items-center justify-center gap-1 my-2">
+                <span className="text-xs text-[#9BE4A0]/70">{principal ? `${principal.slice(0, 6)}...${principal.slice(-4)}` : "Not connected"}</span>
+              </div>
 
               <div className="flex flex-row">
                 <div className="basis-64 m-1">
@@ -85,7 +93,7 @@ function Home() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          // handleReceiveClick();
+                          handleReceiveClick();
                         }}
                         className="
                         w-[50px] h-[45px] flex items-center 
@@ -111,7 +119,7 @@ function Home() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          // handleSendClick();
+                          handleSendClick();
                         }}
                         className="
                         w-[50px] h-[45px] flex items-center 

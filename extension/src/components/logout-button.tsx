@@ -2,7 +2,7 @@ import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
-import { useWallet } from "~features/wallet/context/walletContext";
+import { useAuth } from "~lib/context/authContext";
 
 type LogoutButtonProps = {
     onClick?: () => void;
@@ -12,7 +12,7 @@ type LogoutButtonProps = {
 function LogoutButton({ onClick, className = "" }: LogoutButtonProps) {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
-    const { signOut } = useWallet() as any;
+    const { signOut } = useAuth();
 
     const handleLogout = async () => {
         if (onClick) {

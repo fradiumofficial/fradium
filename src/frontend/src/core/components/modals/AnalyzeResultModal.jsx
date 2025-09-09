@@ -4,7 +4,7 @@ import { CheckCircle, Wallet, BarChart3, Gauge, Clock, ExternalLink } from "luci
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import { getChainExplorer, getExplorerUrl } from "@/core/lib/chainExplorers.js";
 
-export default function AnalyzeResultModal({ isOpen, onClose, analysisResult }) {
+export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze", onCancel, onConfirm }) {
   if (!isOpen) return null;
 
   // Use analysis result data or fallback to mock data
@@ -171,10 +171,23 @@ export default function AnalyzeResultModal({ isOpen, onClose, analysisResult }) 
                 </div>
               </div>
 
-              {/* Action Button */}
-              <ButtonGreen size="md" icon="/assets/icons/analyze-address-dark.svg" iconSize="w-5 h-5" className="w-full h-10" textSize="text-sm" fontWeight="medium" onClick={onClose}>
-                Go Analyze Other
-              </ButtonGreen>
+              {/* CTA Area */}
+              {variant === "send" ? (
+                <div className="w-full flex items-center gap-3 mt-2">
+                  <button type="button" onClick={onCancel || onClose} className="flex-1 h-10 rounded-full border border-white/15 text-white/90 hover:bg-white/[0.05] transition-colors">
+                    Cancel
+                  </button>
+                  <div className="flex-1">
+                    <ButtonGreen fullWidth size="md" fontWeight="semibold" onClick={onConfirm || onClose}>
+                      Confirm Send
+                    </ButtonGreen>
+                  </div>
+                </div>
+              ) : (
+                <ButtonGreen size="md" icon="/assets/icons/analyze-address-dark.svg" iconSize="w-5 h-5" className="w-full h-10" textSize="text-sm" fontWeight="medium" onClick={onClose}>
+                  Go Analyze Other
+                </ButtonGreen>
+              )}
             </div>
           </div>
         </div>

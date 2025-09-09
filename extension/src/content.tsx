@@ -15,8 +15,10 @@ import Account from "~features/preferences/pages/account"
 import { ROUTES } from "~lib/constant/routes"
 import Welcome from "~features/landing/pages/welcome"
 import WalletConfirmation from "~features/landing/pages/createWallet"
-import { WalletProvider } from "~features/wallet/context/walletContext"
-import { useWallet } from "~features/wallet/context/walletContext"
+import { WalletProvider } from "~lib/context/walletContext"
+import { useWallet } from "~lib/context/walletContext"
+import Send from "~features/transaction/send"
+import Receive from "~features/transaction/receive"
 
 const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { hasConfirmedWallet, isLoading } = useWallet() as any
@@ -83,6 +85,8 @@ const PlasmoOverlay = () => {
             <Route path={ROUTES.DETAIL_HISTORY} element={<RequireWallet><DetailHistory /></RequireWallet>} />
             <Route path={ROUTES.TX_DETAIL} element={<RequireWallet><TxDetail /></RequireWallet>} />
             <Route path={ROUTES.ACCOUNT} element={<RequireWallet><Account /></RequireWallet>} />
+            <Route path={ROUTES.RECEIVE} element={<RequireWallet><Receive /></RequireWallet>} />
+            <Route path={ROUTES.SEND} element={<RequireWallet><Send /></RequireWallet>} />
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
         </div>
