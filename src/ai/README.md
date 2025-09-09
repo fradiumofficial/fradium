@@ -50,7 +50,7 @@ ai/
 │   ├── btc_risk_model_mlp.onnx      # Bitcoin MLP model
 │   ├── eth_risk_model_mlp.onnx      # Ethereum MLP model
 │   ├── sol_risk_model_mlp.onnx      # Solana MLP model
-│   └── icp_risk_model_mlp.onnx      # ICP MLP model
+│   └── icp_compliance_model_v1.onnx      # ICP MLP model
 ├── src/
 │   ├── btc/                         # Bitcoin-specific modules
 │   │   ├── config.rs                # BTC configuration
@@ -344,7 +344,6 @@ analyze_icp_address(address: String) -> Result<IllicitResult, String>
 * Prediction outputs are probabilistic and should be used as part of comprehensive risk assessment
 * Each chain module is optimized for its specific blockchain characteristics and data availability patterns
 * ICP module is currently experimental and serves as a foundation for future compliance features
-* Ethereum and Solana models can detect potentially risky activities like scam tokens and gambling protocols
 * The system provides different types of analysis depending on available data and use cases per blockchain
 
 ---
