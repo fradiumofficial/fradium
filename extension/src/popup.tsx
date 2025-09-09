@@ -21,6 +21,7 @@ import { NetworkProvider } from "~features/network/context/networkContext";
 import { Send } from 'lucide-react';
 import Receive from '~features/transaction/receive';
 import ProtectedRoute from '~components/protected-route';
+import ReceiveDetail from '~features/transaction/receiveDetail';
 
 const AuthOrWelcome: React.FC = () => {
   const { isAuthenticated, addresses, isLoading } = useWallet() as any
@@ -107,7 +108,11 @@ function IndexPopup() {
                 <Send />
               </ProtectedRoute>
             } />
-            
+            <Route path={ROUTES.RECEIVE_DETAIL} element={
+              <ProtectedRoute>
+                <ReceiveDetail />
+              </ProtectedRoute>
+            } />
             {/* Fallback route */}
             <Route path="*" element={<Navigate to={ROUTES.WELCOME} replace />} />
           </Routes>

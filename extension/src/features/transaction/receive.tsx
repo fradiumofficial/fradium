@@ -55,18 +55,6 @@ function Receive() {
           <span className="text-xs text-white/60">
             {getAddressesLoadingState() ? "Fetching addresses..." : addressesLoaded ? "Addresses loaded" : "No addresses available"}
           </span>
-          <button 
-            onClick={async () => {
-              const walletAddresses = await fetchWalletAddresses?.();
-              if (walletAddresses) {
-                setLocalAddresses(walletAddresses);
-              }
-            }} 
-            className="text-xs text-[#9BE4A0] hover:underline"
-            disabled={isFetchingAddresses}
-          >
-            {isFetchingAddresses ? "Loading..." : "Refresh"}
-          </button>
         </div>
         {/* Bitcoin */}
         <h1 className="text-[14px] font-medium text-white mb-[6px]">Bitcoin:</h1>
@@ -80,7 +68,7 @@ function Receive() {
             disabled={!localAddresses?.bitcoin} 
           />
           <div className="flex flex-row gap-[12px]">
-            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" />
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.bitcoin, network: "bitcoin" } })} />
             <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.bitcoin)} />
           </div>
         </div>
@@ -97,7 +85,7 @@ function Receive() {
             disabled={!localAddresses?.ethereum} 
           />
           <div className="flex flex-row gap-[12px]">
-            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" />
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.ethereum, network: "ethereum" } })} />
             <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.ethereum)} />
           </div>
         </div>
@@ -114,7 +102,7 @@ function Receive() {
             disabled={!localAddresses?.solana} 
           />
           <div className="flex flex-row gap-[12px]">
-            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" />
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.solana, network: "solana" } })} />
             <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.solana)} />
           </div>
         </div>
