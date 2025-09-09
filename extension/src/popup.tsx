@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes, Navigate, Outlet, Router } from "react-router-dom"
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
 import BottomNavbar from '~components/bottom-app-bar';
 import Home from "~features/home/pages/home"
 import AnalyzeAddress from "~features/analyze_address/pages/analyzeAdress"
@@ -18,10 +18,10 @@ import { AuthProvider } from '~lib/context/authContext';
 import { WalletProvider } from '~lib/context/walletContext';
 import { useWallet } from "~lib/context/walletContext";
 import { NetworkProvider } from "~features/network/context/networkContext";
-import { Send } from 'lucide-react';
 import Receive from '~features/transaction/receive';
 import ProtectedRoute from '~components/protected-route';
 import ReceiveDetail from '~features/transaction/receiveDetail';
+import Send from '~features/transaction/send';
 
 const AuthOrWelcome: React.FC = () => {
   const { isAuthenticated, addresses, isLoading } = useWallet() as any
