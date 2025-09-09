@@ -4,22 +4,29 @@ import { CheckCircle, Wallet, BarChart3, Gauge, Clock, ExternalLink } from "luci
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import { getChainExplorer, getExplorerUrl } from "@/core/lib/chainExplorers.js";
 
-export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze", onCancel, onConfirm }) {
+export default function AnalyzeResultModal({ isOpen, onClose, analysisResult, variant = "analyze", onCancel, onConfirm }) {
   if (!isOpen) return null;
 
-  // Use analysis result data or fallback to mock data
-  const result = analysisResult?.result || {
-    isSafe: true,
-    confidence: 96,
-    description: "This address appears to be clean with no suspicious activity detected in our comprehensive database",
-    stats: {
-      transactions: 296,
-      totalVolume: "89.98 BTC",
-      riskScore: "17/100",
-      lastActivity: "17 Days Ago",
-    },
-    securityChecks: ["No links to known scam addresses", "No links to known scam addresses", "No links to known scam addresses"],
-  };
+  // Pakai hasil analisis tanpa fallback; jika kosong, tampilkan error state
+  const result = analysisResult?.result;
+  if (!result) {
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/50 backdrop-blur-md">
+        <div className="w-full max-w-[500px] mx-auto">
+          <div className="flex flex-col items-start p-4 gap-4 w-full h-auto bg-black rounded-3xl border border-white/10">
+            <h2 className="text-white text-lg font-semibold">Terjadi kesalahan</h2>
+            <p className="text-white/70 text-sm">Gagal memuat hasil analisis alamat. Silakan coba lagi.</p>
+            <div className="w-full">
+              <ButtonGreen fullWidth size="md" fontWeight="semibold" onClick={onClose}>
+                Tutup
+              </ButtonGreen>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
 
   const network = analysisResult?.network || "Bitcoin";
   const address = analysisResult?.address || "";
@@ -28,17 +35,19 @@ export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze
   const finalStatus = analysisResult?.finalStatus;
   const communityAnalysis = analysisResult?.communityAnalysis;
   const aiAnalysis = analysisResult?.aiAnalysis;
+  const aiIsSafe = typeof aiAnalysis?.isSafe === "boolean" ? aiAnalysis.isSafe : result?.isSafe;
+  const communityIsSafe = typeof communityAnalysis?.isSafe === "boolean" ? communityAnalysis.isSafe : result?.isSafe;
 
   // Get blockchain explorer info
   const explorer = getChainExplorer(network);
   const explorerUrl = getExplorerUrl(network, address);
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/50 backdrop-blur-md">
-      <div className="w-full max-w-[500px] mx-auto">
-        <div className="flex flex-col items-start p-3 gap-3 w-full h-auto min-h-[670px] bg-black rounded-3xl">
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/50 backdrop-blur-md overflow-y-auto">
+      <div className="w-full max-w-[500px] mx-auto pb-8">
+        <div className="flex flex-col items-start p-3 gap-3 w-full h-auto min-h-[670px] max-h-[90vh] bg-black rounded-3xl overflow-y-auto">
           {/* Content */}
-          <div className="flex flex-col items-end p-0 gap-4 w-full h-auto min-h-[646px]">
+          <div className="flex flex-col items-end p-0 gap-4 w-full h-auto">
             {/* Image Container */}
             <div className="w-full h-[150px] bg-white/[0.03] rounded-xl relative overflow-hidden">
               {/* Decorative Elements */}
@@ -57,9 +66,9 @@ export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze
                 {/* Title Section */}
                 <div className="flex flex-col items-start p-0 gap-3 w-[316px] h-[88px] ml-4">
                   <div className="flex flex-col items-start p-0 gap-1 w-[316px] h-[44px]">
-                    <h2 className={`text-xl font-semibold leading-[120%] ${result.isSafe ? "text-white" : "text-red-400"}`}>Address is {result.isSafe ? "SAFE" : "RISKY"}</h2>
+                    <h2 className={`text-xl font-semibold leading-[120%] text-white`}>Address is {result.isSafe ? "SAFE" : "RISKY"}</h2>
                     <div className="flex flex-row items-center gap-2">
-                      <p className={`text-xs font-medium leading-[130%] ${result.isSafe ? "text-[#9BE4A0]" : "text-red-300"}`}>Confidence: {result.confidence}%</p>
+                      <p className="text-white text-xs font-medium leading-[130%]">Confidence: {result.confidence}%</p>
                       <span className="text-white/40 text-xs">•</span>
                       <p className="text-white/60 text-xs">{finalStatus === "safe_by_both" ? "Analyzed by AI & COMMUNITY" : finalStatus === "unsafe_by_ai" ? "Analyzed by AI" : finalStatus === "unsafe_by_community" ? "Analyzed by COMMUNITY" : `Analyzed by ${analysisSource.toUpperCase()}`}</p>
                     </div>
@@ -70,7 +79,7 @@ export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze
             </div>
 
             {/* Address Details Section */}
-            <div className="flex flex-col items-start p-2 px-6 pb-6 gap-5 w-full h-auto min-h-[220px]">
+            <div className="flex flex-col items-start p-2 px-6 pb-6 gap-5 w-full h-auto">
               <div className="flex flex-row items-center justify-between w-full">
                 <h3 className="text-white text-xl font-semibold leading-[120%]">Address Details</h3>
                 <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="flex flex-row items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.1] rounded-lg transition-colors duration-200">
@@ -122,27 +131,27 @@ export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze
 
             {/* Dual Analysis Section - Show when both AI and Community analyzed */}
             {(finalStatus === "safe_by_both" || finalStatus === "unsafe_by_community") && (
-              <div className="flex flex-col items-start p-2 px-6 pb-6 gap-5 w-full h-auto min-h-[120px]">
+              <div className="flex flex-col items-start p-2 px-6 pb-6 gap-5 w-full h-auto">
                 <h3 className="text-white text-lg font-semibold leading-[120%]">{finalStatus === "safe_by_both" ? "✅ Dual Analysis Confirmed" : "⚠️ Analysis Conflict"}</h3>
                 <div className="grid grid-cols-2 gap-4 w-full">
                   {/* AI Analysis */}
                   <div className="flex flex-col items-start p-3 gap-2 bg-white/[0.05] rounded-xl">
                     <div className="flex flex-row items-center gap-2">
-                      <span className="text-blue-400 text-sm font-medium">AI Analysis</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${aiAnalysis?.isSafe ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{aiAnalysis?.isSafe ? "SAFE" : "RISKY"}</span>
+                      <span className="text-white text-sm font-medium">AI Analysis</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${aiIsSafe ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white"}`}>{aiIsSafe ? "SAFE" : "RISKY"}</span>
                     </div>
-                    <p className="text-white/60 text-xs">Confidence: {aiAnalysis?.confidence || result.confidence}%</p>
-                    <p className="text-white/60 text-xs">Risk Score: {aiAnalysis?.stats?.riskScore || result.stats.riskScore}</p>
+                    <p className="text-white text-xs">Confidence: {aiAnalysis?.confidence || result.confidence}%</p>
+                    <p className="text-white text-xs">Risk Score: {aiAnalysis?.stats?.riskScore || result.stats.riskScore}</p>
                   </div>
 
                   {/* Community Analysis */}
                   <div className="flex flex-col items-start p-3 gap-2 bg-white/[0.05] rounded-xl">
                     <div className="flex flex-row items-center gap-2">
-                      <span className="text-purple-400 text-sm font-medium">Community Analysis</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${communityAnalysis?.isSafe ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{communityAnalysis?.isSafe ? "SAFE" : "RISKY"}</span>
+                      <span className="text-white text-sm font-medium">Community Analysis</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${communityIsSafe ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white"}`}>{communityIsSafe ? "SAFE" : "RISKY"}</span>
                     </div>
-                    <p className="text-white/60 text-xs">Confidence: {communityAnalysis?.confidence || result.confidence}%</p>
-                    <p className="text-white/60 text-xs">Risk Score: {communityAnalysis?.stats?.riskScore || result.stats.riskScore}</p>
+                    <p className="text-white text-xs">Confidence: {communityAnalysis?.confidence || result.confidence}%</p>
+                    <p className="text-white text-xs">Risk Score: {communityAnalysis?.stats?.riskScore || result.stats.riskScore}</p>
                   </div>
                 </div>
                 {finalStatus === "safe_by_both" && <p className="text-green-300 text-xs leading-[130%]">Both AI and Community analysis confirm this address is safe. Double verification provides higher confidence.</p>}
@@ -151,17 +160,17 @@ export default function AnalyzeResultModal({ isOpen, onClose, variant = "analyze
             )}
 
             {/* Security Checks Section */}
-            <div className="flex flex-col items-start p-2 px-6 pb-6 gap-5 w-full h-auto min-h-[244px]">
+            <div className="flex flex-col items-start p-2 px-6 pb-6 gap-5 w-full h-auto">
               <h3 className="text-white text-xl font-semibold leading-[120%]">{result.isSafe ? "Security Checks Passed" : "Security Issues Detected"}</h3>
 
               {/* Security Field */}
               <div
-                className="flex flex-col items-start p-4 gap-4 w-full h-auto min-h-[108px] rounded-xl"
+                className="flex flex-col items-start p-4 gap-4 w-full h-auto rounded-xl"
                 style={{
                   background: result.isSafe ? "radial-gradient(69.63% 230.37% at -11.33% 50%, #1A4A1B 0%, rgba(153, 227, 158, 0.21) 30.29%, rgba(255, 255, 255, 0.03) 100%)" : "radial-gradient(69.63% 230.37% at -11.33% 50%, #4A1B1B 0%, rgba(239, 68, 68, 0.21) 30.29%, rgba(255, 255, 255, 0.03) 100%)",
                   borderLeft: result.isSafe ? "1px solid #9BE4A0" : "1px solid #ef4444",
                 }}>
-                <div className="flex flex-col items-start p-0 gap-2 w-full h-auto min-h-[76px]">
+                <div className="flex flex-col items-start p-0 gap-2 w-full h-auto">
                   {result.securityChecks.map((check, index) => (
                     <div key={index} className="flex flex-row items-center p-0 gap-2 w-full h-5">
                       <CheckCircle className={`w-5 h-5 ${result.isSafe ? "text-[#9BE4A0]" : "text-red-400"}`} />
