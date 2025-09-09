@@ -10,11 +10,18 @@ import { TOKENS_CONFIG, getSupportedTokensForAddress, getFeeInfo, detectAddressN
 
 // Wallet Provider
 import { useWallet } from "@/core/providers/WalletProvider";
+import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal.jsx";
+import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal.jsx";
+import SuccesSendModal from "@/core/components/modals/SuccesSendModal.jsx";
 
 const SendTokenModal = ({ isOpen, onClose }) => {
   const [destination, setDestination] = useState("");
   const [selectedToken, setSelectedToken] = useState(null);
   const [amount, setAmount] = useState("");
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showSuccessSend, setShowSuccessSend] = useState(false);
 
   // Wallet Provider for balance and USD prices
   const { balances, usdPrices, balanceLoading, usdPriceLoading } = useWallet();
@@ -48,6 +55,11 @@ const SendTokenModal = ({ isOpen, onClose }) => {
     if (!destination.trim()) return null;
     return detectAddressNetwork(destination.trim());
   }, [destination]);
+
+  const isNetworkKnown = useMemo(() => {
+    if (!destination.trim()) return false;
+    return detectedNetwork && detectedNetwork !== "Unknown";
+  }, [destination, detectedNetwork]);
 
   // Get current balance and USD price for selected token
   const currentBalance = useMemo(() => {
@@ -98,6 +110,17 @@ const SendTokenModal = ({ isOpen, onClose }) => {
   };
 
   const buttonState = getButtonState();
+
+  const handleAnalyzeClick = () => {
+    if (buttonState.disabled) return;
+    if (!destination.trim()) return;
+    setShowLoadingModal(true);
+    // mimic AnalyzeAddressPage flow
+    setTimeout(() => {
+      setShowLoadingModal(false);
+      setShowResultModal(true);
+    }, 10000);
+  };
 
   // Handle Max button click
   const handleMaxClick = () => {
@@ -193,12 +216,22 @@ const SendTokenModal = ({ isOpen, onClose }) => {
 
               {/* Network Detection Info */}
               {destination.trim() && detectedNetwork && (
-                <motion.div variants={itemVariants} className="bg-[#1D222B] border border-[#2F3541] rounded-lg p-4">
+                <motion.div
+                  variants={itemVariants}
+                  className={`rounded-lg p-4 border ${isNetworkKnown
+                    ? "bg-[rgba(155,228,160,0.06)] border-[rgba(155,228,160,0.3)]"
+                    : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"
+                    }`}
+                >
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-2 h-2 bg-[#9BE4A0] rounded-full"></div>
+                    <div className={`w-2 h-2 rounded-full ${isNetworkKnown ? "bg-[#9BE4A0]" : "bg-[#F1999B]"}`}></div>
                     <span className="text-white text-sm font-medium">Network Detected</span>
                   </div>
-                  <div className="text-[#B0B6BE] text-xs">{detectedNetwork === "Unknown" ? "Unable to identify network type. Please check the address format." : `This address belongs to the ${detectedNetwork} network.`}</div>
+                  <div className={`text-xs ${isNetworkKnown ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>
+                    {detectedNetwork === "Unknown"
+                      ? "Unable to identify network type. Please check the address format."
+                      : `This address belongs to the ${detectedNetwork} network.`}
+                  </div>
                 </motion.div>
               )}
 
@@ -208,9 +241,18 @@ const SendTokenModal = ({ isOpen, onClose }) => {
                   <div className="text-[#B0B6BE] text-sm mb-2">Supported tokens for this address</div>
                   <div className="flex flex-col gap-2">
                     {supportedTokens.length === 0 ? (
-                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1D222B] border border-[#2F3541] rounded-lg p-4 text-center">
-                        <div className="text-[#B0B6BE] text-xs mb-1">No supported tokens detected</div>
-                        <div className="text-[#9BEB83] text-xs">This address format is not supported</div>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`rounded-lg p-4 text-center border ${isNetworkKnown
+                          ? "bg-[#1D222B] border-[#2F3541]"
+                          : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"
+                          }`}
+                      >
+                        <div className={`text-xs mb-1 ${isNetworkKnown ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>No supported tokens detected</div>
+                        <div className={`${isNetworkKnown ? "text-[#9BEB83]" : "text-[#F1999B]"} text-xs`}>
+                          {isNetworkKnown ? "This address format is not supported" : "Invalid or unsupported address format"}
+                        </div>
                       </motion.div>
                     ) : (
                       supportedTokens.map((token, index) => (
@@ -290,12 +332,27 @@ const SendTokenModal = ({ isOpen, onClose }) => {
                 <div className="text-[#B0B6BE] text-xs">{getFeeInfo(selectedToken)}</div>
               </motion.div>
 
-              <motion.button variants={itemVariants} disabled={buttonState.disabled} className={`w-full font-semibold py-3 rounded-lg transition-colors ${buttonState.disabled ? "bg-[#393E4B] text-[#B0B6BE] cursor-not-allowed" : "bg-[#9BE4A0] text-black hover:bg-[#8FD391]"}`}>
-                {buttonState.label}
-              </motion.button>
+              <motion.div variants={itemVariants}>
+                <ButtonGreen fullWidth disabled={buttonState.disabled} fontWeight="semibold" onClick={handleAnalyzeClick}>
+                  {buttonState.label}
+                </ButtonGreen>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
+        {/* Analyze modals to mirror AnalyzeAddressPage */}
+        <AnalyzeLoadingModal isOpen={showLoadingModal} onCancel={() => setShowLoadingModal(false)} />
+        <AnalyzeResultModal
+          isOpen={showResultModal}
+          onClose={() => setShowResultModal(false)}
+          variant="send"
+          onCancel={() => setShowResultModal(false)}
+          onConfirm={() => {
+            setShowResultModal(false);
+            setShowSuccessSend(true);
+          }}
+        />
+        <SuccesSendModal isOpen={showSuccessSend} onClose={() => setShowSuccessSend(false)} />
       </div>
     </div>,
     document.body

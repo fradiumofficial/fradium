@@ -16,6 +16,7 @@ mod address_detector;
 mod btc;
 mod eth;
 mod sol;
+mod icp;
 mod shared_models;
 use shared_models::RansomwareResult;
 
@@ -70,6 +71,7 @@ fn init() {
     ic_cdk::println!("--- Initializing Multi-Chain Analyzer ---");
     let btc_metadata = btc::init();
     let eth_metadata = eth::init();
+    icp::init();
     STATE.with(|s| {
         let mut state = s.borrow_mut();
         state.btc_metadata = btc_metadata;
@@ -96,6 +98,7 @@ fn post_upgrade() {
             ic_cdk::println!("[post_upgrade] ✅ State restored successfully.");
             btc::load_model_from_config();
             eth::prediction::load_model(eth::config::ETH_MODEL_BYTES).expect("Failed to reload ETH model");
+            icp::init();
             ic_cdk::println!("[post_upgrade] ✅ ONNX Models reloaded successfully.");
         }
         Err(e) => ic_cdk::trap(&format!("[post_upgrade] FATAL: Failed to restore state: {:?}", e)),
@@ -140,6 +143,17 @@ async fn analyze_sol_address(address: String) -> Result<RansomwareResult, String
             sol::analyze_solana_address(&address).await
         }
         _ => Err("This endpoint only accepts valid Solana addresses.".to_string()),
+    }
+}
+
+#[update]
+async fn analyze_icp_address(address: String) -> Result<RansomwareResult, String> { // <-- ADD THIS FUNCTION
+    match address_detector::detect_address_type(&address) {
+        address_detector::AddressType::InternetComputer => {
+            ic_cdk::println!("Address detected as ICP Principal. Routing to ICP analyzer...");
+            icp::analyze_icp_principal(&address).await
+        }
+        _ => Err("This endpoint only accepts valid ICP principals.".to_string()),
     }
 }
 

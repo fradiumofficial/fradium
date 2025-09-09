@@ -11,6 +11,7 @@ const proxyTarget = isLocal ? "http://127.0.0.1:4943" : "https://icp0.io";
 
 export default defineConfig({
   plugins: [react(), EnvironmentPlugin("all", { prefix: "CANISTER_" }), EnvironmentPlugin("all", { prefix: "DFX_" })],
+  base: "./",
   optimizeDeps: {
     esbuildOptions: {
       define: {

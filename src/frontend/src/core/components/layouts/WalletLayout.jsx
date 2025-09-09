@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
-import { Dialog, DialogContent, DialogTitle } from "../ui/Dialog";
+import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import { NETWORK_CONFIG } from "@/core/lib/tokenUtils";
 import toast from "react-hot-toast";

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { TOKENS_CONFIG } from "@/core/lib/tokenUtils";
 
 function getIconByChain(chain) {
@@ -25,16 +26,21 @@ export default function TransactionHistoryPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 max-w-xl mx-auto w-full md:p-0 p-2">
+    <motion.div
+      className="flex flex-col gap-8 max-w-xl mx-auto w-full md:p-0 p-2"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       {/* Header Section */}
-      <div className="flex flex-col gap-4">
+      <motion.div className="flex flex-col gap-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}>
         <h1 className="text-white md:text-2xl text-lg font-semibold">Transaction History</h1>
         <p className="text-[#B0B6BE] md:text-base text-sm font-normal">Track every move, stay in control. Your complete transaction timeline with real-time updates and intelligent status detection.</p>
-      </div>
+      </motion.div>
 
       {/* Transaction List Section */}
       <div>
-        <div className="mb-6 flex items-center justify-between">
+        <motion.div className="mb-6 flex items-center justify-between" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}>
           <h2 className="text-white md:text-lg text-base font-semibold">List of transactions</h2>
           <div className="flex gap-4">
             <img
@@ -50,7 +56,7 @@ export default function TransactionHistoryPage() {
               onClick={() => console.log("filter clicked")}
             />
           </div>
-        </div>
+        </motion.div>
 
         {showSearch && (
           <div className="mb-4">
@@ -93,7 +99,13 @@ export default function TransactionHistoryPage() {
           /* List items */
           <div className="flex flex-col">
             {transactions.map((tx, idx) => (
-              <div key={idx} className="group">
+              <motion.div
+                key={idx}
+                className="group"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut", delay: 0.12 + idx * 0.06 }}
+              >
                 <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl transition-colors group-hover:bg-white/[0.04]">
                   <div className="flex items-center gap-4">
                     <img src={getIconByChain(tx.chain)} alt={tx.chain} className="w-10 h-10 rounded-full" />
@@ -112,11 +124,11 @@ export default function TransactionHistoryPage() {
                   </div>
                 </div>
                 {idx !== transactions.length - 1 && <div className="h-px bg-white/10 mx-4" />}
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

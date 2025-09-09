@@ -46,6 +46,7 @@ import ProductsExtension from "@/pages/products/ProductsExtensionPage.jsx";
 import ProductsWallet from "@/pages/products/ProductsWalletPage.jsx";
 import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
 
+// NProgress
 NProgress.configure({
   minimum: 0.3,
   easing: "ease",

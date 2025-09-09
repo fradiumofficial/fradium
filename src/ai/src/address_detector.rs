@@ -5,6 +5,7 @@ pub enum AddressType {
     Bitcoin,
     Ethereum,
     Solana,
+    InternetComputer,
     Unknown,
 }
 
@@ -42,8 +43,15 @@ pub fn detect_address_type(address: &str) -> AddressType {
         return AddressType::Bitcoin;
     }
 
+    // InternetComputer Principal ID (lowercase alphanumeric + dashes)
+    // e.g., bkyz2-fmaaa-aaaaa-qaaaq-cai
+    // They are typically long and have a very specific character set.
+    if address.len() > 20 && address.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
+        return AddressType::InternetComputer;
+    }
+
     // Solana (Base58, length usually 32–44, avoid overlap with BTC testnet)
-    if address.len() >= 36 &&
+    if address.len() >= 32 && // Adjusted length to be more inclusive of valid Solana addresses
         address.chars().all(|c| "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".contains(c))
     {
         return AddressType::Solana;

@@ -1,17 +1,17 @@
-# 🛡️ Multi-Chain On-Chain Ransomware Detector on the Internet Computer
+# 🛡️ Multi-Chain On-Chain Illicit Transaction Detector on the Internet Computer
 
-This project showcases an advanced **multi-chain machine learning** system that detects ransomware-related activity across Bitcoin, Ethereum, and Solana blockchains. Deployed as a **canister smart contract on the Internet Computer (ICP)** blockchain, it provides **trustless and decentralized** inference with flexible preprocessing architectures tailored for each blockchain's unique characteristics.
+This project showcases an advanced **multi-chain machine learning** system that detects illicit and licit activity across Bitcoin, Ethereum, Solana, and Internet Computer Protocol (ICP) blockchains. Deployed as a **canister smart contract on the Internet Computer (ICP)** blockchain, it provides **trustless and decentralized** inference with flexible preprocessing architectures tailored for each blockchain's unique characteristics.
 
 ---
 
 ## 🚀 Key Features
 
 * **Multi-Chain Support**
-  Comprehensive analysis across Bitcoin, Ethereum, and Solana networks with chain-specific optimizations and feature extraction methodologies.
+  Comprehensive analysis across Bitcoin, Ethereum, Solana, and ICP networks with chain-specific optimizations and feature extraction methodologies.
 
 * **Hybrid Processing Architecture**
   - **Bitcoin & Ethereum**: Optimized hybrid approach with preprocessing handled client-side for enhanced efficiency
-  - **Solana**: Full on-chain processing with integrated feature extraction and analysis
+  - **Solana & ICP**: Full on-chain processing with integrated feature extraction and analysis
 
 * **Advanced ML Inference**
   Neural network models (MLP) powered by [`tract-onnx`](https://github.com/sonos/tract) for high-performance on-chain predictions.
@@ -38,7 +38,7 @@ This project showcases an advanced **multi-chain machine learning** system that 
 | **Blockchain**     | Internet Computer (DFINITY)      |
 | **ML Inference**   | tract-onnx                       |
 | **Model Training** | Python (Scikit-learn + skl2onnx) |
-| **Data Sources**   | Multi-chain APIs (Bitcoin, Ethereum, Solana) |
+| **Data Sources**   | Multi-chain APIs (Bitcoin, Ethereum, Solana, ICP) |
 
 ---
 
@@ -49,7 +49,8 @@ ai/
 ├── models/
 │   ├── btc_risk_model_mlp.onnx      # Bitcoin MLP model
 │   ├── eth_risk_model_mlp.onnx      # Ethereum MLP model
-│   └── sol_risk_model_mlp.onnx      # Solana MLP model
+│   ├── sol_risk_model_mlp.onnx      # Solana MLP model
+│   └── icp_compliance_model_v1.onnx      # ICP MLP model
 ├── src/
 │   ├── btc/                         # Bitcoin-specific modules
 │   │   ├── config.rs                # BTC configuration
@@ -68,6 +69,14 @@ ai/
 │   │   ├── models.rs                # SOL model handling
 │   │   ├── prediction.rs            # SOL prediction logic
 │   │   └── price_converter.rs       # SOL price conversion
+│   ├── icp/                         # ICP-specific modules
+│   │   ├── config.rs                # ICP configuration
+│   │   ├── data_extractor.rs        # ICP data extraction
+│   │   ├── feature_calculator.rs    # ICP feature calculation
+│   │   ├── mod.rs                   # ICP module entry
+│   │   ├── models.rs                # ICP model handling
+│   │   ├── parser.rs                # ICP transaction parsing
+│   │   └── prediction.rs            # ICP prediction logic
 │   ├── address_detector.rs          # Multi-chain address detection
 │   ├── lib.rs                       # Main canister entry point
 │   └── shared_models.rs             # Cross-chain shared utilities
@@ -80,6 +89,7 @@ ai/
 │   └── scripts/
 │       └── onnx_xgtrain_v3.py       # Model training script
 ├── ai.did                           # Candid interface definition
+├── build.rs                         # Build script for model embedding
 ├── Cargo.toml                       # Rust crate configuration
 └── README.md                        # Documentation (this file)
 ```
@@ -127,7 +137,7 @@ This script will:
 * Export configuration artifacts to `training/config/`:
   * `model_metadata.json`
   * `scaler_parameters.json`
-* Generate ONNX models for Bitcoin, Ethereum, and Solana
+* Generate ONNX models for Bitcoin, Ethereum, Solana, and ICP
 
 ---
 
@@ -139,6 +149,7 @@ Model artifacts are automatically loaded during canister initialization:
    * Bitcoin: `models/btc_risk_model_mlp.onnx`
    * Ethereum: `models/eth_risk_model_mlp.onnx`
    * Solana: `models/sol_risk_model_mlp.onnx`
+   * ICP: `models/icp_risk_model_mlp.onnx`
 
 2. **Configuration Files:**
    * Model metadata loaded from `training/config/model_metadata.json`
@@ -214,6 +225,13 @@ dfx canister call ai analyze_eth_address '(vec {record {"tx_frequency"; 0.7}; re
 dfx canister call ai analyze_sol_address '("11111111111111111111111111111112")'
 ```
 
+#### 🔍 Analyze ICP Addresses (Full On-Chain Processing)
+
+```bash
+# ICP analysis with complete on-chain processing
+dfx canister call ai analyze_icp_address '("rrkah-fqaaa-aaaaa-aaaaq-cai")'
+```
+
 ---
 
 ## 🏗️ Architecture Overview
@@ -225,7 +243,7 @@ dfx canister call ai analyze_sol_address '("11111111111111111111111111111112")'
 - **On-Chain Inference**: ML model predictions executed within the canister
 - **Benefits**: Reduced computational overhead while maintaining decentralized inference
 
-#### 🟣 Solana - Full On-Chain Processing
+#### 🟣 Solana & ICP - Full On-Chain Processing
 - **Integrated Pipeline**: Complete feature extraction, preprocessing, and inference on-chain
 - **Self-Contained**: No external dependencies for data processing
 - **Advanced Integration**: Direct blockchain data access and real-time analysis
@@ -233,7 +251,7 @@ dfx canister call ai analyze_sol_address '("11111111111111111111111111111112")'
 ### Core Components
 
 - **Address Detector**: Multi-chain address format recognition and routing
-- **Chain-Specific Modules**: Tailored processing for Bitcoin, Ethereum, and Solana
+- **Chain-Specific Modules**: Tailored processing for Bitcoin, Ethereum, Solana, and ICP
 - **Model Interface**: Unified ML model loading and inference across chains
 - **Feature Processors**: Chain-optimized feature extraction and calculation
 - **Prediction Engines**: Specialized prediction logic for each blockchain
@@ -242,7 +260,7 @@ dfx canister call ai analyze_sol_address '("11111111111111111111111111111112")'
 
 ## 📊 Model Information
 
-The system employs specialized machine learning models trained on blockchain-specific behavioral patterns:
+The system employs specialized machine learning models trained on blockchain-specific behavioral patterns to distinguish between licit and illicit transactions:
 
 ### Bitcoin Features
 - Transaction frequency and timing patterns
@@ -261,6 +279,12 @@ The system employs specialized machine learning models trained on blockchain-spe
 - Token account management patterns
 - Transaction fee optimization
 - Validator interaction behavior
+
+### ICP Features
+- Canister interaction patterns
+- Cycles consumption behavior
+- Principal authentication analysis
+- Inter-canister communication patterns
 
 All models are trained using scikit-learn and exported to ONNX format for efficient on-chain inference.
 
@@ -293,17 +317,22 @@ Comprehensive test samples are provided in `training/data_samples/test_sample.js
 
 ### Analyze Bitcoin Address
 ```rust
-analyze_btc_address(features: Vec<f32>, address: String, transaction_count: u32) -> Result<RansomwareResult, String>
+analyze_btc_address(features: Vec<f32>, address: String, transaction_count: u32) -> Result<IllicitResult, String>
 ```
 
 ### Analyze Ethereum Address  
 ```rust
-analyze_eth_address(features: HashMap<String, f64>, address: String, transaction_count: u32) -> Result<RansomwareResult, String>
+analyze_eth_address(features: HashMap<String, f64>, address: String, transaction_count: u32) -> Result<IllicitResult, String>
 ```
 
 ### Analyze Solana Address
 ```rust
-analyze_sol_address(address: String) -> Result<RansomwareResult, String>
+analyze_sol_address(address: String) -> Result<IllicitResult, String>
+```
+
+### Analyze ICP Address
+```rust
+analyze_icp_address(address: String) -> Result<IllicitResult, String>
 ```
 
 ---
@@ -314,6 +343,8 @@ analyze_sol_address(address: String) -> Result<RansomwareResult, String>
 * Multi-chain architecture allows seamless extension to additional blockchain networks
 * Prediction outputs are probabilistic and should be used as part of comprehensive risk assessment
 * Each chain module is optimized for its specific blockchain characteristics and data availability patterns
+* ICP module is currently experimental and serves as a foundation for future compliance features
+* The system provides different types of analysis depending on available data and use cases per blockchain
 
 ---
 

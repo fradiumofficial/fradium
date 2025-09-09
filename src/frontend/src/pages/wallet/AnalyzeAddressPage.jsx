@@ -4,37 +4,65 @@ import { Info } from "lucide-react";
 import { motion } from "framer-motion";
 import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal.jsx";
 import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal.jsx";
+import AIAnalyzeService from "@/core/services/ai/aiAnalyze.js";
 
 export default function AnalyseAddressPage() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
   const [address, setAddress] = useState("");
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const handleAnalyze = () => {
-    if (address.trim()) {
+  const handleAnalyze = async () => {
+    if (!address.trim()) {
+      setError("Please enter a valid address");
+      return;
+    }
+
+    try {
+      setError(null);
+      setIsAnalyzing(true);
       setShowLoadingModal(true);
+
+      // Perform actual analysis
+      const result = await AIAnalyzeService.analyzeAddress(address.trim());
+
+      setAnalysisResult(result);
+      setShowLoadingModal(false);
+      setShowResultModal(true);
+    } catch (err) {
+      console.error("Analysis error:", err);
+      setError(err.message || "Analysis failed. Please try again.");
+      setShowLoadingModal(false);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
   const handleCloseModal = () => {
     setShowResultModal(false);
+    setAnalysisResult(null);
+    setError(null);
   };
 
   const handleCancelAnalysis = () => {
     setShowLoadingModal(false);
+    setIsAnalyzing(false);
+    setError(null);
   };
 
-  // Handle loading to result modal transition
+  // Handle loading to result modal transition (fallback if analysis is too fast)
   useEffect(() => {
-    if (showLoadingModal) {
+    if (showLoadingModal && !isAnalyzing) {
       const timer = setTimeout(() => {
         setShowLoadingModal(false);
         setShowResultModal(true);
-      }, 10000); // 1 second delay
+      }, 2000); // 2 second minimum loading time
 
       return () => clearTimeout(timer);
     }
-  }, [showLoadingModal]);
+  }, [showLoadingModal, isAnalyzing]);
 
   return (
     <motion.div className="flex flex-col items-start p-0 gap-5 m-auto w-full max-w-[500px] min-h-[442px] px-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
@@ -67,16 +95,32 @@ export default function AnalyseAddressPage() {
             <motion.div className="flex flex-col sm:flex-row items-center p-0 gap-2 w-full h-auto" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
               {/* Input Field */}
               <motion.div className="flex flex-col items-start p-3 px-5 gap-4 w-full sm:w-[327px] h-11 bg-white/[0.05] border border-white/10 rounded-full" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-                <input type="text" placeholder="Input address here..." value={address} onChange={(e) => setAddress(e.target.value)} className="w-full h-5 text-white/60 text-sm leading-[140%] bg-transparent outline-none placeholder-white/60" />
+                <input
+                  type="text"
+                  placeholder="Input address here..."
+                  value={address}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    setError(null); // Clear error when user types
+                  }}
+                  className="w-full h-5 text-white/60 text-sm leading-[140%] bg-transparent outline-none placeholder-white/60"
+                />
               </motion.div>
 
               {/* Analyze Button */}
               <motion.div className="w-full sm:w-auto" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-                <ButtonGreen size="sm" icon="/assets/icons/analyze-address-dark.svg" iconSize="w-5 h-5" className="w-full h-10" textSize="text-sm" fontWeight="medium" onClick={handleAnalyze}>
-                  Analyze
+                <ButtonGreen size="sm" icon="/assets/icons/analyze-address-dark.svg" iconSize="w-5 h-5" className="w-full h-10" textSize="text-sm" fontWeight="medium" onClick={handleAnalyze} disabled={isAnalyzing || !address.trim()}>
+                  {isAnalyzing ? "Analyzing..." : "Analyze"}
                 </ButtonGreen>
               </motion.div>
             </motion.div>
+
+            {/* Error Display */}
+            {error && (
+              <motion.div className="w-full p-3 bg-red-500/10 border border-red-500/20 rounded-lg" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                <p className="text-red-400 text-sm text-center">{error}</p>
+              </motion.div>
+            )}
           </motion.div>
         </motion.div>
       </div>
@@ -108,7 +152,7 @@ export default function AnalyseAddressPage() {
       <AnalyzeLoadingModal isOpen={showLoadingModal} onCancel={handleCancelAnalysis} />
 
       {/* Result Modal */}
-      <AnalyzeResultModal isOpen={showResultModal} onClose={handleCloseModal} />
+      <AnalyzeResultModal isOpen={showResultModal} onClose={handleCloseModal} analysisResult={analysisResult} />
     </motion.div>
   );
 }
