@@ -9,8 +9,6 @@ import { NETWORK_CONFIG } from "@/core/lib/tokenUtils";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Remove duplicate NETWORK_CONFIG import since we import from tokenUtils
-
 import WelcomingWalletModal from "../modals/WelcomingWallet";
 
 const MotionLink = motion(Link);

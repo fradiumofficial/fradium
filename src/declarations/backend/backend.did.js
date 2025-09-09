@@ -26,7 +26,7 @@ export const idlFactory = ({ IDL }) => {
     'report' : IDL.Opt(Report),
     'is_safe' : IDL.Bool,
   });
-  const Result_6 = IDL.Variant({
+  const Result_7 = IDL.Variant({
     'Ok' : GetAnalyzeAddressResult,
     'Err' : IDL.Text,
   });
@@ -56,7 +56,7 @@ export const idlFactory = ({ IDL }) => {
     'token_type' : TokenType,
     'analyzed_type' : AnalyzeHistoryType,
   });
-  const Result_5 = IDL.Variant({
+  const Result_6 = IDL.Variant({
     'Ok' : IDL.Vec(AnalyzeHistory),
     'Err' : IDL.Text,
   });
@@ -69,6 +69,7 @@ export const idlFactory = ({ IDL }) => {
     'category' : IDL.Text,
     'stake_amount' : IDL.Nat,
   });
+  const Result_5 = IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text });
   const GetMyReportsParams = IDL.Record({
     'url' : IDL.Opt(IDL.Text),
     'report_id' : ReportId,
@@ -124,16 +125,17 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     'admin_change_report_deadline' : IDL.Func([ReportId, Time], [Result], []),
     'admin_delete_report' : IDL.Func([ReportId], [Result], []),
-    'analyze_address' : IDL.Func([IDL.Text], [Result_6], []),
+    'analyze_address' : IDL.Func([IDL.Text], [Result_7], []),
     'check_faucet_claim' : IDL.Func([], [Result], []),
     'claim_faucet' : IDL.Func([], [Result], []),
     'create_analyze_history' : IDL.Func(
         [CreateAnalyzeHistoryParams],
-        [Result_5],
+        [Result_6],
         [],
       ),
     'create_report' : IDL.Func([CreateReportParams], [Result], []),
-    'get_analyze_history' : IDL.Func([], [Result_5], []),
+    'get_analyze_history' : IDL.Func([IDL.Nat, IDL.Nat], [Result_6], []),
+    'get_analyze_history_count' : IDL.Func([], [Result_5], []),
     'get_my_reports' : IDL.Func([], [Result_4], []),
     'get_my_votes' : IDL.Func([], [Result_3], []),
     'get_report' : IDL.Func([ReportId], [Result_2], ['query']),

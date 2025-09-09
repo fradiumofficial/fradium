@@ -996,17 +996,43 @@ persistent actor Fradium {
     return #Ok(updatedHistory);
   };
 
-  public shared({ caller }) func get_analyze_history() : async Types.Result<[Types.AnalyzeHistory], Text> {
+  public shared({ caller }) func get_analyze_history(offset: Nat, limit: Nat) : async Types.Result<[Types.AnalyzeHistory], Text> {
     if(Principal.isAnonymous(caller)) {
       return #Err("Anonymous users can't perform this action.");
     };
 
     switch (analyzeAddressStore.get(caller)) {
       case (?history) {
-        return #Ok(history);
+        // Apply pagination
+        let totalCount = history.size();
+        let startIndex = offset;
+        let endIndex = if (offset + limit > totalCount) { totalCount } else { offset + limit };
+        
+        // Get paginated slice
+        let paginatedHistory = Array.tabulate<Types.AnalyzeHistory>(
+          endIndex - startIndex,
+          func(i) = history[startIndex + i]
+        );
+        
+        return #Ok(paginatedHistory);
       };
       case null {
         return #Ok([]);
+      };
+    };
+  };
+
+  public shared({ caller }) func get_analyze_history_count() : async Types.Result<Nat, Text> {
+    if(Principal.isAnonymous(caller)) {
+      return #Err("Anonymous users can't perform this action.");
+    };
+
+    switch (analyzeAddressStore.get(caller)) {
+      case (?history) {
+        return #Ok(history.size());
+      };
+      case null {
+        return #Ok(0);
       };
     };
   };

@@ -200,6 +200,8 @@ export const WalletProvider = ({ children }) => {
       setAddressesLoading(true);
       const result = await wallet.wallet_addresses();
 
+      console.log("result", result);
+
       const newAddresses = {
         bitcoin: result.bitcoin,
         ethereum: result.ethereum,

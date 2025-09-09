@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
+import { useNetwork } from "~features/network/context/networkContext";
 
 
 interface TokenBalance {
@@ -36,14 +37,86 @@ const TokenType = {
 
 function Home() {
   const { getNetworkValue, principalText } = useWallet() as any
+  const { selectedNetwork } = useNetwork();
   const [principal, setPrincipal] = useState<string | null>(null);
   const [hideBalance, setHideBalance] = useState(false);
+  const [isBalancesLoading, setIsBalancesLoading] = useState(false);
   const navigate = useNavigate();
   const toggleVisibility = () => setHideBalance(!hideBalance);
 
   useEffect(() => {
     setPrincipal(principalText || null);
   }, [principalText]);
+
+  // Mock token data - in real implementation, this would come from wallet context or API
+  const allTokens: TokenBalance[] = [
+    {
+      symbol: "BTC",
+      name: "Bitcoin",
+      balance: "0.0000",
+      usdValue: "$0.00",
+      icon: CDN.tokens.bitcoin,
+      isLoading: false,
+      hasError: false
+    },
+    {
+      symbol: "ETH",
+      name: "Ethereum",
+      balance: "0.0000",
+      usdValue: "$0.00",
+      icon: CDN.tokens.eth,
+      isLoading: false,
+      hasError: false
+    },
+    {
+      symbol: "SOL",
+      name: "Solana",
+      balance: "0.0000",
+      usdValue: "$0.00",
+      icon: CDN.tokens.solana,
+      isLoading: false,
+      hasError: false
+    },
+    {
+      symbol: "FUM",
+      name: "Fradium",
+      balance: "0.0000",
+      usdValue: "$0.00",
+      icon: CDN.tokens.fum,
+      isLoading: false,
+      hasError: false
+    }
+  ];
+
+  // Filter tokens based on selected network
+  const filteredTokens = useMemo(() => {
+    if (selectedNetwork === "all") {
+      return allTokens;
+    }
+
+    const networkMap = {
+      btc: "Bitcoin",
+      eth: "Ethereum",
+      sol: "Solana",
+      fra: "Fradium"
+    };
+
+    const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
+    if (!targetNetwork) return allTokens;
+
+    return allTokens.filter(token => {
+      // Map token symbols to network names for filtering
+      const tokenNetworkMap = {
+        BTC: "Bitcoin",
+        ETH: "Ethereum",
+        SOL: "Solana",
+        FUM: "Fradium"
+      };
+
+      const tokenNetwork = tokenNetworkMap[token.symbol as keyof typeof tokenNetworkMap];
+      return tokenNetwork === targetNetwork;
+    });
+  }, [selectedNetwork]);
 
   // Navigation handlers
   const handleAnalyzeAddress = () => navigate(ROUTES.ANALYZE_ADDRESS);
@@ -65,7 +138,9 @@ function Home() {
           <div className="flex justify-center items-center">
             <div className="font-sans flex-col items-start">
               <div className="flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">{hideBalance ? "••••" : getNetworkValue("All Networks")}</span>
+                <span className="text-white text-4xl font-bold">
+                  {hideBalance ? "••••" : selectedNetwork === "all" ? getNetworkValue("All Networks") : getNetworkValue(selectedNetwork)}
+                </span>
 
                 <button
                   onClick={(e) => {
@@ -152,26 +227,43 @@ function Home() {
               </button>
             </div>
           </div>
-        </div>
-      </div>
-      {/* Token balances summary */}
-      <div className="w-full flex flex-col items-center">
-        <div className="w-[327px] bg-[#1F2025] border border-white/10 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-white/70">Bitcoin</span>
-            <span className="text-sm font-medium">{getNetworkValue("Bitcoin")}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-white/70">Ethereum</span>
-            <span className="text-sm font-medium">{getNetworkValue("Ethereum")}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-white/70">Solana</span>
-            <span className="text-sm font-medium">{getNetworkValue("Solana")}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-white/70">Fradium (FUM)</span>
-            <span className="text-sm font-medium">{getNetworkValue("Fradium")}</span>
+
+          {/* Token List */}
+          <div className="space-y-2 mt-[10px]">
+            {filteredTokens.length === 0 && isBalancesLoading ? (
+              // Show loading state when no tokens but balances are loading
+              <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                <div className="w-8 h-8 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-white/50 text-sm">Loading token balances...</span>
+              </div>
+            ) : filteredTokens.length === 0 ? (
+              // Show empty state when no tokens and not loading
+              <div className="flex flex-col items-center justify-center py-8">
+                <span className="text-white/50 text-sm">No tokens available</span>
+              </div>
+            ) : (
+              // Show token list
+              filteredTokens.map((token) => (
+                <div key={token.symbol} className="flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer">
+                  <div className="flex items-center space-x-3">
+                    <img src={token.icon} alt={token.name} className="w-8 h-8" />
+                    <div>
+                      <div className="text-white font-medium flex flex-row">
+                        {token.symbol}
+                        {/* {token.hasError && (
+                          <div className="text-red-400 text-xs px-2">- Error fetching balance</div>
+                        )} */}
+                      </div>
+                      <div className="text-white/50 text-sm">{token.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-white font-medium">{token.isLoading ? <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div> : token.balance}</div>
+                    <div className="text-white/50 text-sm">{token.isLoading ? <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div> : token.usdValue}</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

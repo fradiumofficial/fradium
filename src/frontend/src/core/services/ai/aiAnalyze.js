@@ -47,15 +47,23 @@ export class AIAnalyzeService {
       }
 
       console.log("AI Analysis Result:", aiResult);
+      console.log("AI Analysis isSafe:", aiResult.result.isSafe);
 
       // Case 2: If AI analysis shows unsafe, stop here
       if (!aiResult.result.isSafe) {
         console.log("AI analysis shows unsafe - stopping analysis");
-        return {
+        const result = {
           ...aiResult,
           analysisSource: "ai",
           finalStatus: "unsafe_by_ai",
+          result: aiResult.result, // Ensure result is from AI analysis
         };
+        console.log("Returning unsafe_by_ai result:", result);
+
+        // Create analyze history for AI analysis
+        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, "ai", network);
+
+        return result;
       }
 
       // Case 1 & 3: AI shows safe, proceed with community analysis
@@ -65,22 +73,37 @@ export class AIAnalyzeService {
 
       // Case 1: Both AI and Community show safe
       if (aiResult.result.isSafe && communityResult.result.isSafe) {
-        return {
+        const result = {
           ...aiResult,
           analysisSource: "ai_and_community",
           finalStatus: "safe_by_both",
+          result: aiResult.result, // Primary result from AI
           communityAnalysis: communityResult.result,
+          aiAnalysis: aiResult.result,
         };
+
+        // Create analyze history for both AI and Community analysis
+        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, "ai", network);
+        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, "community", network);
+
+        return result;
       }
 
       // Case 3: AI shows safe but Community shows unsafe
       if (aiResult.result.isSafe && !communityResult.result.isSafe) {
-        return {
-          ...communityResult,
+        const result = {
+          ...aiResult, // Keep AI result as base (network, address, etc.)
           analysisSource: "community",
           finalStatus: "unsafe_by_community",
+          result: communityResult.result, // Primary result from Community
           aiAnalysis: aiResult.result,
         };
+
+        // Create analyze history for both AI and Community analysis
+        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, "ai", network);
+        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, "community", network);
+
+        return result;
       }
     } catch (error) {
       console.error("AI Analyze Service Error:", error);
@@ -104,6 +127,8 @@ export class AIAnalyzeService {
 
       // Call Rust AI canister - following the correct backend call pattern
       const ransomwareReport = await ai.analyze_btc_address(features, address, features.length);
+
+      console.log("Bitcoin Report:", ransomwareReport);
 
       if ("Ok" in ransomwareReport) {
         const result = ransomwareReport.Ok;
@@ -151,7 +176,7 @@ export class AIAnalyzeService {
       // Call Rust AI canister
       const ransomwareReport = await ai.analyze_eth_address(featuresPairs, address, txCount);
 
-      console.log("Ransomware Report:", ransomwareReport);
+      console.log("Ethereum Report:", ransomwareReport);
 
       if ("Ok" in ransomwareReport) {
         const result = ransomwareReport.Ok;
@@ -276,9 +301,18 @@ export class AIAnalyzeService {
    * @returns {Object} Transformed result for frontend
    */
   static transformRansomwareResult(rustResult) {
+    console.log("🔍 TransformRansomwareResult - Raw Rust Result:", rustResult);
     const isSafe = !rustResult.is_ransomware;
     const confidence = Math.round(rustResult.confidence * 100);
     const riskScore = Math.round(rustResult.ransomware_probability * 100);
+
+    console.log("🔍 TransformRansomwareResult - Transformed:", {
+      isSafe,
+      confidence,
+      riskScore,
+      is_ransomware: rustResult.is_ransomware,
+      ransomware_probability: rustResult.ransomware_probability,
+    });
 
     // Determine risk level based on ransomware probability
     let riskLevel = "LOW";
@@ -341,6 +375,76 @@ export class AIAnalyzeService {
    */
   static isNetworkSupported(network) {
     return this.getSupportedNetworks().includes(network);
+  }
+
+  /**
+   * Create analyze history in backend
+   * @param {string} address - Address that was analyzed
+   * @param {Object} result - Analysis result
+   * @param {string} analysisType - Type of analysis ("ai" or "community")
+   * @param {string} network - Network type
+   * @returns {Promise<void>}
+   */
+  static async createAnalyzeHistory(address, result, analysisType, network) {
+    try {
+      console.log(`Creating analyze history for ${analysisType} analysis of ${address}`);
+
+      // Map network string to TokenType
+      let tokenType;
+      switch (network) {
+        case "Bitcoin":
+          tokenType = { Bitcoin: null };
+          break;
+        case "Ethereum":
+          tokenType = { Ethereum: null };
+          break;
+        case "Solana":
+          tokenType = { Solana: null };
+          break;
+        default:
+          tokenType = { Unknown: null };
+      }
+
+      // Map analysis type to AnalyzeHistoryType
+      let analyzedType;
+      switch (analysisType) {
+        case "ai":
+          analyzedType = { AIAnalysis: null };
+          break;
+        case "community":
+          analyzedType = { CommunityVote: null };
+          break;
+        default:
+          analyzedType = { AIAnalysis: null };
+      }
+
+      const historyParams = {
+        address: address,
+        is_safe: result.isSafe,
+        analyzed_type: analyzedType,
+        metadata: JSON.stringify({
+          confidence: result.confidence,
+          riskLevel: result.riskLevel,
+          riskScore: result.stats?.riskScore,
+          transactions: result.stats?.transactions,
+          analysisType: analysisType,
+          network: network,
+          timestamp: new Date().toISOString(),
+        }),
+        token_type: tokenType,
+      };
+
+      const historyResult = await backend.create_analyze_history(historyParams);
+
+      if (historyResult.Err) {
+        console.error(`Failed to create analyze history: ${historyResult.Err}`);
+      } else {
+        console.log(`Successfully created analyze history for ${analysisType} analysis`);
+      }
+    } catch (error) {
+      console.error(`Error creating analyze history for ${analysisType}:`, error);
+      // Don't throw error to avoid breaking the main analysis flow
+    }
   }
 }
 

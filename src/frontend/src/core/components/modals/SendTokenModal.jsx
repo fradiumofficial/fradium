@@ -22,6 +22,7 @@ const SendTokenModal = ({ isOpen, onClose }) => {
   const [showResultModal, setShowResultModal] = useState(false);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
   const [showSuccessSend, setShowSuccessSend] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
 
   // Wallet Provider for balance and USD prices
   const { balances, usdPrices, balanceLoading, usdPriceLoading } = useWallet();
@@ -32,6 +33,10 @@ const SendTokenModal = ({ isOpen, onClose }) => {
       setDestination("");
       setSelectedToken(null);
       setAmount("");
+      setAnalysisResult(null);
+      setShowResultModal(false);
+      setShowLoadingModal(false);
+      setShowSuccessSend(false);
     }
   }, [isOpen]);
 
@@ -111,15 +116,32 @@ const SendTokenModal = ({ isOpen, onClose }) => {
 
   const buttonState = getButtonState();
 
-  const handleAnalyzeClick = () => {
+  const handleAnalyzeClick = async () => {
     if (buttonState.disabled) return;
     if (!destination.trim()) return;
+
     setShowLoadingModal(true);
-    // mimic AnalyzeAddressPage flow
-    setTimeout(() => {
+
+    try {
+      // Import AI Analyze Service
+      const { default: AIAnalyzeService } = await import("@/core/services/ai/aiAnalyze.js");
+
+      // Perform analysis
+      const result = await AIAnalyzeService.analyzeAddress(destination);
+
+      // Store the result
+      setAnalysisResult(result);
+
+      // Show result modal after 1 second delay
+      setTimeout(() => {
+        setShowLoadingModal(false);
+        setShowResultModal(true);
+      }, 1000);
+    } catch (error) {
+      console.error("Analysis failed:", error);
       setShowLoadingModal(false);
-      setShowResultModal(true);
-    }, 10000);
+      // You could show an error message here
+    }
   };
 
   // Handle Max button click
@@ -216,22 +238,12 @@ const SendTokenModal = ({ isOpen, onClose }) => {
 
               {/* Network Detection Info */}
               {destination.trim() && detectedNetwork && (
-                <motion.div
-                  variants={itemVariants}
-                  className={`rounded-lg p-4 border ${isNetworkKnown
-                    ? "bg-[rgba(155,228,160,0.06)] border-[rgba(155,228,160,0.3)]"
-                    : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"
-                    }`}
-                >
+                <motion.div variants={itemVariants} className={`rounded-lg p-4 border ${isNetworkKnown ? "bg-[rgba(155,228,160,0.06)] border-[rgba(155,228,160,0.3)]" : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"}`}>
                   <div className="flex items-center gap-3 mb-2">
                     <div className={`w-2 h-2 rounded-full ${isNetworkKnown ? "bg-[#9BE4A0]" : "bg-[#F1999B]"}`}></div>
                     <span className="text-white text-sm font-medium">Network Detected</span>
                   </div>
-                  <div className={`text-xs ${isNetworkKnown ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>
-                    {detectedNetwork === "Unknown"
-                      ? "Unable to identify network type. Please check the address format."
-                      : `This address belongs to the ${detectedNetwork} network.`}
-                  </div>
+                  <div className={`text-xs ${isNetworkKnown ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>{detectedNetwork === "Unknown" ? "Unable to identify network type. Please check the address format." : `This address belongs to the ${detectedNetwork} network.`}</div>
                 </motion.div>
               )}
 
@@ -241,18 +253,9 @@ const SendTokenModal = ({ isOpen, onClose }) => {
                   <div className="text-[#B0B6BE] text-sm mb-2">Supported tokens for this address</div>
                   <div className="flex flex-col gap-2">
                     {supportedTokens.length === 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className={`rounded-lg p-4 text-center border ${isNetworkKnown
-                          ? "bg-[#1D222B] border-[#2F3541]"
-                          : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"
-                          }`}
-                      >
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-lg p-4 text-center border ${isNetworkKnown ? "bg-[#1D222B] border-[#2F3541]" : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"}`}>
                         <div className={`text-xs mb-1 ${isNetworkKnown ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>No supported tokens detected</div>
-                        <div className={`${isNetworkKnown ? "text-[#9BEB83]" : "text-[#F1999B]"} text-xs`}>
-                          {isNetworkKnown ? "This address format is not supported" : "Invalid or unsupported address format"}
-                        </div>
+                        <div className={`${isNetworkKnown ? "text-[#9BEB83]" : "text-[#F1999B]"} text-xs`}>{isNetworkKnown ? "This address format is not supported" : "Invalid or unsupported address format"}</div>
                       </motion.div>
                     ) : (
                       supportedTokens.map((token, index) => (
@@ -345,6 +348,7 @@ const SendTokenModal = ({ isOpen, onClose }) => {
         <AnalyzeResultModal
           isOpen={showResultModal}
           onClose={() => setShowResultModal(false)}
+          analysisResult={analysisResult}
           variant="send"
           onCancel={() => setShowResultModal(false)}
           onConfirm={() => {
