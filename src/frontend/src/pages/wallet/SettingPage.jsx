@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../core/providers/AuthProvider";
 import { useWallet } from "../../core/providers/WalletProvider";
-import { Dialog, DialogContent } from "../../core/components/ui/Dialog";
+import { Dialog, DialogContent } from "../../core/components/ui/dialog";
 import SidebarButton from "../../core/components/SidebarButton";
 import toast from "react-hot-toast";
 

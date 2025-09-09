@@ -1,11 +1,11 @@
-import React from 'react';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import Container from './components/ui/Container';
-import Button from './components/ui/Button';
+import React from "react";
+import Navbar from "../../core/components/Navbar";
+import Footer from "../../core/components/Footer";
+import Container from "../../core/components/Container";
+import Button from "../../core/components/Button";
 
 function App() {
-  const basePath = import.meta?.env?.BASE_URL ?? '/';
+  const basePath = import.meta?.env?.BASE_URL ?? "/";
   const bg1 = `${basePath}assets/background-1.png`;
   const bg2 = `${basePath}assets/background-2.png`;
   const ornament = `${basePath}assets/ornamen-bg.png`;
@@ -25,51 +25,43 @@ function App() {
   };
   const featureCards = [
     {
-      title: 'Crypto Transfers',
-      description:
-        'Send BTC, ETH, and SOL with fee preview, ETA, network validation, QR support, and real-time tracking.',
+      title: "Crypto Transfers",
+      description: "Send BTC, ETH, and SOL with fee preview, ETA, network validation, QR support, and real-time tracking.",
       image: featureImages.transfer,
     },
     {
-      title: 'Receive Address',
-      description:
-        'Instantly surface your address and QR with clear “correct network only” reminders and memo/tag hints when needed.',
+      title: "Receive Address",
+      description: "Instantly surface your address and QR with clear “correct network only” reminders and memo/tag hints when needed.",
       image: featureImages.receive,
     },
     {
-      title: 'Create Wallet Addresses',
-      description:
-        'Generate new addresses for BTC, ETH, and SOL. Labeled and ready to receive or send without technical friction',
+      title: "Create Wallet Addresses",
+      description: "Generate new addresses for BTC, ETH, and SOL. Labeled and ready to receive or send without technical friction",
       image: featureImages.createWallet,
     },
     {
-      title: 'Real-time Balances',
-      description:
-        'See time-stamped balances for each asset in a single, easy snapshot—no app-hopping.',
+      title: "Real-time Balances",
+      description: "See time-stamped balances for each asset in a single, easy snapshot—no app-hopping.",
       image: featureImages.balance,
     },
     {
-      title: 'Buy with Fiat',
-      description:
-        'Purchase crypto without leaving chat. Every cost is shown upfront; coins are delivered to your address on success.',
+      title: "Buy with Fiat",
+      description: "Purchase crypto without leaving chat. Every cost is shown upfront; coins are delivered to your address on success.",
       image: featureImages.fiat,
     },
     {
-      title: 'Crypto → Fiat Conversion',
-      description:
-        'Get live BTC/ETH/SOL rates to USD/IDR (and more) so you always know what your holdings are worth.',
+      title: "Crypto → Fiat Conversion",
+      description: "Get live BTC/ETH/SOL rates to USD/IDR (and more) so you always know what your holdings are worth.",
       image: featureImages.convert,
     },
     {
-      title: 'Market Price Comparison',
-      description:
-        'Compare CoinGecko, CoinMarketCap, and Coinbase. View deltas and the most competitive price at a glance.',
+      title: "Market Price Comparison",
+      description: "Compare CoinGecko, CoinMarketCap, and Coinbase. View deltas and the most competitive price at a glance.",
       image: featureImages.comparation,
     },
     {
-      title: 'Price Recommendation',
-      description:
-        'Let the AI suggest the cheapest/trusted market for your purchase, with a short rationale and confidence indicator.',
+      title: "Price Recommendation",
+      description: "Let the AI suggest the cheapest/trusted market for your purchase, with a short rationale and confidence indicator.",
       image: featureImages.bestPrice,
     },
   ];
@@ -86,8 +78,8 @@ function App() {
               alt="bg-1"
               className="absolute inset-x-0 top-0 w-full h-[820px] object-cover"
               style={{
-                maskImage: 'linear-gradient(to bottom, black 70%, transparent)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent)'
+                maskImage: "linear-gradient(to bottom, black 70%, transparent)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent)",
               }}
             />
             <img
@@ -95,8 +87,8 @@ function App() {
               alt="bg-2"
               className="absolute inset-x-0 bottom-0 w-full h-[820px] object-cover opacity-95"
               style={{
-                maskImage: 'linear-gradient(to top, black 70%, transparent)',
-                WebkitMaskImage: 'linear-gradient(to top, black 70%, transparent)'
+                maskImage: "linear-gradient(to top, black 70%, transparent)",
+                WebkitMaskImage: "linear-gradient(to top, black 70%, transparent)",
               }}
             />
           </div>
@@ -114,13 +106,8 @@ function App() {
           <Container className="relative z-10 pt-16 pb-24">
             {/* Heading */}
             <div className="text-center">
-              <h1 className="text-[34px] sm:text-5xl lg:text-[64px] font-normal tracking-tight text-slate-900">
-                Simple, Transparent, Secure
-              </h1>
-              <p className="mx-auto mt-4 max-w-2xl text-[13px] sm:text-[18px] leading-relaxed text-slate-600">
-                Nara Wallet is a chat-first wallet agent for BTC, ETH, and SOL. Create addresses, send or
-                receive, buy with card, and see real-time prices with clear, upfront fees.
-              </p>
+              <h1 className="text-[34px] sm:text-5xl lg:text-[64px] font-normal tracking-tight text-slate-900">Simple, Transparent, Secure</h1>
+              <p className="mx-auto mt-4 max-w-2xl text-[13px] sm:text-[18px] leading-relaxed text-slate-600">Nara Wallet is a chat-first wallet agent for BTC, ETH, and SOL. Create addresses, send or receive, buy with card, and see real-time prices with clear, upfront fees.</p>
             </div>
 
             {/* Row 1: Get to know + How it works */}
@@ -135,21 +122,15 @@ function App() {
                       <span className="bg-gradient-to-r from-[#6C8CDF] to-[#2D54B8] bg-clip-text text-transparent font-normal">about</span> Nara Wallet
                     </span>
                   </h2>
-                  <p className="mt-5 max-w-xs text-slate-600 text-[15px] leading-relaxed">
-                    Agentbot is a chat-first crypto assistant that makes cross-chain transactions simple, safe,
-                    and transparent. Manage BTC, ETH, and SOL from one conversation. Our focus are ease of use,
-                    fair pricing, and security from day one.
-                  </p>
+                  <p className="mt-5 max-w-xs text-slate-600 text-[15px] leading-relaxed">Agentbot is a chat-first crypto assistant that makes cross-chain transactions simple, safe, and transparent. Manage BTC, ETH, and SOL from one conversation. Our focus are ease of use, fair pricing, and security from day one.</p>
                   <div className="mt-16">
-                    <Button size="lg" leftIcon={<img src="/assets/icon-logo.png" className="h-4 w-4" alt="" />}>Get Started</Button>
+                    <Button size="lg" leftIcon={<img src="/assets/icon-logo.png" className="h-4 w-4" alt="" />}>
+                      Get Started
+                    </Button>
                   </div>
                 </div>
                 {/* Phone image */}
-                <img
-                  src="/assets/Artboard.png"
-                  alt="phone"
-                  className="pointer-events-none select-none absolute right-[-22px] bottom-[-22px] hidden h-[450px] sm:block transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                />
+                <img src="/assets/Artboard.png" alt="phone" className="pointer-events-none select-none absolute right-[-22px] bottom-[-22px] hidden h-[450px] sm:block transition-transform duration-300 ease-out group-hover:scale-[1.03]" />
               </div>
 
               {/* Card: How it works (dark) */}
@@ -157,14 +138,8 @@ function App() {
                 <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(480px_220px_at_50%_-60px,rgba(139,92,246,0.20),rgba(236,72,153,0.16)_55%,transparent_80%)]" />
                 <div className="bg-[#070707] text-white rounded-[22px] md:rounded-[24px] w-full h-full pt-8 pb-8 overflow-hidden transition-transform duration-300 ease-out group-hover:scale-[1.01]">
                   <h3 className="text-[28px] pl-8 font-normal">How it works</h3>
-                  <p className="mt-2 text-[16px] pl-8 font-normal text-white/75 max-w-md leading-relaxed">
-                    Chat your request: Agent Wallet handles addresses, balances, transfers, and fiat checkout. Agent Conversion delivers live, compared prices and best picks
-                  </p>
-                  <img
-                    src="/assets/how-it-works3.png"
-                    alt="how it works"
-                    className="mt-8 w-full max-w-[560px] transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                  />
+                  <p className="mt-2 text-[16px] pl-8 font-normal text-white/75 max-w-md leading-relaxed">Chat your request: Agent Wallet handles addresses, balances, transfers, and fiat checkout. Agent Conversion delivers live, compared prices and best picks</p>
+                  <img src="/assets/how-it-works3.png" alt="how it works" className="mt-8 w-full max-w-[560px] transition-transform duration-300 ease-out group-hover:scale-[1.03]" />
                 </div>
               </div>
             </div>
@@ -206,33 +181,21 @@ function App() {
           </Container>
         </section>
 
-
-
-
         {/* Section 2: Features wrapper */}
         <section id="features" className="relative pb-8">
-
           <div className="relative z-30">
             <div className="relative z-30 max-w-[1380px] mx-auto overflow-hidden rounded-[20px] md:rounded-[24px] bg-[#111111] ring-1 ring-white/10 shadow-[0_24px_64px_rgba(2,6,23,0.35)]">
               {/* soft top glow */}
               {/* <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_220px_at_50%_-60px,rgba(255,255,255,0.08),transparent)]" /> */}
-              <img
-                src={ornament}
-                alt="ornament"
-                className="pointer-events-none select-none absolute -top-16 sm:-top-20 opacity-60 z-0"
-              />
+              <img src={ornament} alt="ornament" className="pointer-events-none select-none absolute -top-16 sm:-top-20 opacity-60 z-0" />
               {/* Top content */}
               <div className="relative z-30 p-6 sm:p-8 lg:p-12">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-16 items-start">
                   <div className="md:col-span-7">
-                    <h2 className="text-white font-normal tracking-tight leading-tight text-[56px] sm:text-6xl lg:text-[56px]">
-                      Simple, Transparent, Secure
-                    </h2>
+                    <h2 className="text-white font-normal tracking-tight leading-tight text-[56px] sm:text-6xl lg:text-[56px]">Simple, Transparent, Secure</h2>
                   </div>
                   <div className="md:col-span-5">
-                    <p className="text-white/80 text-[18px] font-normal sm:text-base leading-relaxed">
-                      You can manage BTC/ETH/SOL faster with fewer errors, view transparent fees, buy at competitive rates with AI price picks and comparisons, and stay protected by network validation and real-time monitoring.
-                    </p>
+                    <p className="text-white/80 text-[18px] font-normal sm:text-base leading-relaxed">You can manage BTC/ETH/SOL faster with fewer errors, view transparent fees, buy at competitive rates with AI price picks and comparisons, and stay protected by network validation and real-time monitoring.</p>
                     <button className="mt-6 inline-flex h-11 items-center justify-center rounded-full border border-white/20 px-5 text-white/90 hover:bg-white/10 transition">
                       <span className="mr-2">Get setup in 9 minutes</span>
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
@@ -247,19 +210,12 @@ function App() {
               <div className="relative z-30 px-6 pb-12 sm:px-8 lg:px-12">
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(299px,1fr))] justify-center gap-6 lg:gap-7">
                   {featureCards.map((card, idx) => (
-                    <div
-                      key={idx}
-                      className="group relative z-30 rounded-[10px] bg-[#8F82C70D] shadow-[0_10px_30px_rgba(0,0,0,0.35)] overflow-hidden w-[299px] h-[300px] flex flex-col transition-all duration-300 ease-out transform-gpu hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_16px_40px_rgba(0,0,0,0.45)] hover:ring-1 hover:ring-[#8F82C7]/40 focus-visible:ring-1 focus-visible:ring-[#8F82C7]/50"
-                    >
+                    <div key={idx} className="group relative z-30 rounded-[10px] bg-[#8F82C70D] shadow-[0_10px_30px_rgba(0,0,0,0.35)] overflow-hidden w-[299px] h-[300px] flex flex-col transition-all duration-300 ease-out transform-gpu hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_16px_40px_rgba(0,0,0,0.45)] hover:ring-1 hover:ring-[#8F82C7]/40 focus-visible:ring-1 focus-visible:ring-[#8F82C7]/50">
                       {/* subtle glow overlay on hover */}
                       <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(300px_140px_at_50%_0%,rgba(143,130,199,0.18),transparent)]" />
 
                       <div className="overflow-hidden">
-                        <img
-                          src={card.image}
-                          alt="feature visual"
-                          className="w-full h-[150px] rounded-[8px] object-cover pointer-events-none select-none transition-transform duration-300 ease-out group-hover:scale-[1.05]"
-                        />
+                        <img src={card.image} alt="feature visual" className="w-full h-[150px] rounded-[8px] object-cover pointer-events-none select-none transition-transform duration-300 ease-out group-hover:scale-[1.05]" />
                       </div>
                       <div className="px-4 pb-3 mt-4">
                         <h3 className="text-white text-[24px] leading-snug font-normal">{card.title}</h3>
@@ -276,21 +232,13 @@ function App() {
         {/* Section 3 (minimal): Glow background + Macbook content */}
         <section id="cta" className="relative overflow-hidden w-screen left-1/2 -translate-x-1/2 bg-[#ffffff]">
           {/* Glow as background */}
-          <img
-            src={glowEffect}
-            alt="glow"
-            className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover opacity-80"
-          />
+          <img src={glowEffect} alt="glow" className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover opacity-80" />
 
           {/* Content */}
           <div className="relative z-10 mx-auto">
             <div className="text-center">
-              <h2 className="text-[28px] sm:text-[40px] font-normal tracking-tight text-slate-900">
-                Ready to use crypto without the complexity?
-              </h2>
-              <p className="mt-2 text-slate-600 text-[14px] sm:text-[15px]">
-                Try Agentbot and complete your first transaction in minutes!
-              </p>
+              <h2 className="text-[28px] sm:text-[40px] font-normal tracking-tight text-slate-900">Ready to use crypto without the complexity?</h2>
+              <p className="mt-2 text-slate-600 text-[14px] sm:text-[15px]">Try Agentbot and complete your first transaction in minutes!</p>
               <div className="mt-8 mb-10">
                 <Button>
                   <span className="inline-flex items-center gap-2">
@@ -302,16 +250,8 @@ function App() {
             </div>
             <div className="relative mt-2">
               {/* Substract sits above glow but below macbook; pinned to bottom to extend page height */}
-              <img
-                src={substract}
-                alt="panel background"
-                className="pointer-events-none select-none absolute bottom-0 left-1/2 -translate-x-1/2 h-auto z-0"
-              />
-              <img
-                src={macbook}
-                alt="macbook"
-                className="relative z-10 mx-auto max-w-full w-[760px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
-              />
+              <img src={substract} alt="panel background" className="pointer-events-none select-none absolute bottom-0 left-1/2 -translate-x-1/2 h-auto z-0" />
+              <img src={macbook} alt="macbook" className="relative z-10 mx-auto max-w-full w-[760px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.35)]" />
             </div>
           </div>
         </section>
