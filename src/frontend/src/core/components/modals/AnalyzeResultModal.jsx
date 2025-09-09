@@ -133,9 +133,9 @@ export default function AnalyzeResultModal({ isOpen, onClose, analysisResult, va
             {(finalStatus === "safe_by_both" || finalStatus === "unsafe_by_community") && (
               <div className="flex flex-col items-start p-2 px-6 pb-6 gap-5 w-full h-auto">
                 <h3 className="text-white text-lg font-semibold leading-[120%]">{finalStatus === "safe_by_both" ? "✅ Dual Analysis Confirmed" : "⚠️ Analysis Conflict"}</h3>
-                <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="flex flex-col gap-4 w-full">
                   {/* AI Analysis */}
-                  <div className="flex flex-col items-start p-3 gap-2 bg-white/[0.05] rounded-xl">
+                  <div className="flex flex-col items-start p-3 gap-2 bg-white/[0.05] rounded-xl w-full">
                     <div className="flex flex-row items-center gap-2">
                       <span className="text-white text-sm font-medium">AI Analysis</span>
                       <span className={`text-xs px-2 py-1 rounded-full ${aiIsSafe ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white"}`}>{aiIsSafe ? "SAFE" : "RISKY"}</span>
@@ -145,7 +145,7 @@ export default function AnalyzeResultModal({ isOpen, onClose, analysisResult, va
                   </div>
 
                   {/* Community Analysis */}
-                  <div className="flex flex-col items-start p-3 gap-2 bg-white/[0.05] rounded-xl">
+                  <div className="flex flex-col items-start p-3 gap-2 bg-white/[0.05] rounded-xl w-full">
                     <div className="flex flex-row items-center gap-2">
                       <span className="text-white text-sm font-medium">Community Analysis</span>
                       <span className={`text-xs px-2 py-1 rounded-full ${communityIsSafe ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white"}`}>{communityIsSafe ? "SAFE" : "RISKY"}</span>

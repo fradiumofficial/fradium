@@ -383,3 +383,29 @@ export async function getUSDPrices(tokenIds) {
 
   return prices;
 }
+
+// Get chain name from token type
+export function getChainFromTokenType(tokenType) {
+  if (!tokenType) return "Unknown";
+
+  // Handle different token type structures
+  if (typeof tokenType === "string") {
+    return tokenType;
+  }
+
+  if (typeof tokenType === "object") {
+    // Handle object structure like { Bitcoin: null }
+    const keys = Object.keys(tokenType);
+    if (keys.length > 0) {
+      return keys[0];
+    }
+  }
+
+  return "Unknown";
+}
+
+// Get icon by chain name
+export function getIconByChain(chain) {
+  const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
+  return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
+}
