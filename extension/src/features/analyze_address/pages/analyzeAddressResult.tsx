@@ -6,10 +6,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ROUTES } from "~lib/constant/routes";
 import type { AnalysisResult } from "~types/analyze_model.type";
+import { HistoryService } from "~service/historyService";
+import { useAuth } from "~lib/context/authContext";
 
 function AnalyzeAdressResult() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { identity } = useAuth();
   const result = location.state?.result as AnalysisResult;
   const address = location.state?.address as string;
 
@@ -17,6 +20,94 @@ function AnalyzeAdressResult() {
   const [isAddressSafe, setIsAddressSafe] = useState<boolean>(() => {
     return result?.isSafe === true;
   });
+
+  // Save analysis result to history when component mounts
+  useEffect(() => {
+    const saveToHistory = async () => {
+      if (result && address && identity) {
+        try {
+          // Set identity for the service
+          HistoryService.identity = identity;
+
+          // Prepare metadata based on analysis result
+          let metadata = '';
+          let analyzedType: 'CommunityVote' | 'AIAnalysis' = 'AIAnalysis';
+
+          if (result.source === 'community') {
+            analyzedType = 'CommunityVote';
+            metadata = JSON.stringify({
+              source: 'community',
+              final_status: result.finalStatus,
+              community_data: result.communityData,
+              confidence: result.confidence,
+              risk_level: result.riskLevel,
+              description: result.description,
+              timestamp: Date.now()
+            });
+          } else if (result.source === 'ai') {
+            analyzedType = 'AIAnalysis';
+            metadata = JSON.stringify({
+              source: 'ai',
+              final_status: result.finalStatus,
+              ai_data: result.aiAnalysis,
+              confidence: result.confidence,
+              risk_level: result.riskLevel,
+              description: result.description,
+              timestamp: Date.now()
+            });
+          } else if (result.source === 'ai_and_community') {
+            analyzedType = 'AIAnalysis'; // Default to AI for combined analysis
+            metadata = JSON.stringify({
+              source: 'ai_and_community',
+              final_status: result.finalStatus,
+              ai_data: result.aiAnalysis,
+              community_data: result.communityData,
+              confidence: result.confidence,
+              risk_level: result.riskLevel,
+              description: result.description,
+              timestamp: Date.now()
+            });
+          }
+
+          // Detect token type from address
+          const tokenType = detectTokenType(address);
+
+          // Save to history
+          const authenticatedBackend = HistoryService.createAuthenticatedBackend(identity);
+          const saveResult = await HistoryService.createAnalyzeHistory(authenticatedBackend, {
+            address,
+            is_safe: result.isSafe,
+            analyzed_type: analyzedType,
+            metadata,
+            token_type: tokenType
+          });
+
+          if (saveResult.success) {
+            console.log('Analysis result saved to history successfully');
+          } else {
+            console.error('Failed to save analysis to history:', saveResult.error);
+          }
+        } catch (error) {
+          console.error('Error saving analysis to history:', error);
+        }
+      }
+    };
+
+    saveToHistory();
+  }, [result, address, identity]);
+
+  // Helper function to detect token type
+  const detectTokenType = (addr: string): 'Bitcoin' | 'Ethereum' | 'Solana' | 'Fradium' | 'Unknown' => {
+    if (addr.startsWith('1') || addr.startsWith('3') || addr.startsWith('bc1')) {
+      return 'Bitcoin';
+    } else if (addr.startsWith('0x') && addr.length === 42) {
+      return 'Ethereum';
+    } else if (addr.length >= 32 && addr.length <= 44) {
+      return 'Solana';
+    } else {
+      return 'Unknown';
+    }
+  };
 
   // Use useEffect to update state if result changes
   useEffect(() => {
@@ -112,9 +203,9 @@ function AnalyzeAdressResult() {
 
   // Convert confidence level to percentage for display
   const getConfidencePercentage = () => {
-    if (result.source === "ai" && result.aiData) {
+    if ((result.source === "ai" || result.source === "ai_and_community") && result.aiData) {
       return Math.round((result.aiData.confidence_level === "HIGH" ? 95 : result.aiData.confidence_level === "MEDIUM" ? 75 : 50));
-    } else if (result.source === "community" && result.communityData) {
+    } else if ((result.source === "community" || result.source === "ai_and_community") && result.communityData) {
       // For community, calculate based on vote ratio
       const report = result.communityData.report?.[0];
       if (report) {
@@ -154,9 +245,9 @@ function AnalyzeAdressResult() {
         {/* Analysis Source Indicator */}
         <div className="mt-4 p-3 bg-white/5 rounded">
           <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${result.source === "community" ? "bg-blue-400" : "bg-purple-400"}`}></div>
+            <div className={`w-2 h-2 rounded-full ${result.source === "community" ? "bg-blue-400" : result.source === "ai_and_community" ? "bg-green-400" : "bg-purple-400"}`}></div>
             <span className="text-sm font-medium">
-              Detected by {result.source === "community" ? "Community Analysis" : "AI Analysis"}
+              Detected by {result.source === "community" ? "Community Analysis" : result.source === "ai_and_community" ? "AI + Community Analysis" : "AI Analysis"}
             </span>
           </div>
         </div>
@@ -164,7 +255,7 @@ function AnalyzeAdressResult() {
         <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Analysis Details</h1>
         
         {/* Render different details based on analysis source */}
-        {result.source === "ai" && result.aiData ? (
+        {(result.source === "ai" || result.source === "ai_and_community") && result.aiData ? (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/5 flex-1 items-center gap-2 p-4">
               <p className="font-medium text-[18px] pb-2">{result.aiData.transactions_analyzed}</p>
@@ -198,7 +289,7 @@ function AnalyzeAdressResult() {
               </div>
             </div>
           </div>
-        ) : result.source === "community" && result.communityData ? (
+        ) : (result.source === "community" || result.source === "ai_and_community") && result.communityData ? (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/5 flex-1 items-center gap-2 p-4">
               <p className="font-medium text-[18px] pb-2">
@@ -272,7 +363,7 @@ function AnalyzeAdressResult() {
       </div>
 
       {/* Report Details - Only show if there's a community report */}
-      {result.source === "community" && result.communityData?.report?.[0] && (
+      {(result.source === "community" || result.source === "ai_and_community") && result.communityData?.report?.[0] && (
         <div className="m-4">
           <div className="bg-white/5 p-4 rounded">
             <h3 className="text-[18px] font-semibold mb-3">Report Details</h3>

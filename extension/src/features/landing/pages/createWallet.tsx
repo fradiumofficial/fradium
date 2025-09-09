@@ -1,32 +1,28 @@
-import { useState, useCallback, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ROUTES } from "~lib/constant/routes"
 
 import NeoButton from "~components/custom-button"
-import { useWallet } from "~lib/context/walletContext"
 
 function WalletConfirmation() {
   const navigate = useNavigate()
-  const [message, setMessage] = useState("")
-  const { confirmWallet, isLoading, hasConfirmedWallet } = useWallet();
 
   // If user already has a wallet, skip this screen
-  useEffect(() => {
-    if (hasConfirmedWallet && !isLoading) {
-      navigate(ROUTES.HOME, { replace: true })
-    }
-  }, [hasConfirmedWallet, isLoading, navigate])
+  // useEffect(() => {
+  //   if (hasConfirmedWallet && !isLoading) {
+  //     navigate(ROUTES.HOME, { replace: true })
+  //   }
+  // }, [hasConfirmedWallet, isLoading, navigate])
 
-  const handleCreateWallet = useCallback(async () => {
-    setMessage("Creating your wallet...")
-    const ok = await confirmWallet()
-    if (ok) {
-      setMessage("Wallet created! Redirecting...")
-      navigate(ROUTES.HOME, { replace: true })
-    } else {
-      setMessage("Failed to create wallet. Please try again.")
-    }
-  }, [confirmWallet, navigate])
+  // const handleCreateWallet = useCallback(async () => {
+  //   setMessage("Creating your wallet...")
+  //   const ok = await confirmWallet()
+  //   if (ok) {
+  //     setMessage("Wallet created! Redirecting...")
+  //     navigate(ROUTES.HOME, { replace: true })
+  //   } else {
+  //     setMessage("Failed to create wallet. Please try again.")
+  //   }
+  // }, [confirmWallet, navigate])
 
   return (
     <div className="w-[375px] h-[600px] bg-[#25262B] text-white p-8 flex flex-col justify-center">
@@ -100,10 +96,10 @@ function WalletConfirmation() {
         <div className="space-y-3">
           <NeoButton
             iconPosition="right"
-            onClick={handleCreateWallet}
-            disabled={isLoading}
+            onClick={() => {}}
+            disabled={false}
             className="w-full">
-            {isLoading ? message : "Create Wallet"}
+            Create Wallet
           </NeoButton>
         </div>
       </div>

@@ -40,5 +40,6 @@ export const CDN = {
     sendCoin: `${CDN_BASE}/icons/send_coin.svg`,
     qrCode: `${CDN_BASE}/icons/qr_code.svg`,
     copyContent: `${CDN_BASE}/icons/content_copy.svg`,
+    search: `${CDN_BASE}/icons/motion-search.webp`,
   }
 }

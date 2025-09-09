@@ -1,0 +1,167 @@
+type Voter = 
+ record {
+   vote: bool;
+   vote_weight: nat;
+   voter: principal;
+ };
+type VoteReportParams = 
+ record {
+   report_id: ReportId;
+   stake_amount: nat;
+   vote_type: bool;
+ };
+type TokenType = 
+ variant {
+   Bitcoin;
+   Ethereum;
+   Fradium;
+   Solana;
+   Unknown;
+ };
+type Time = int;
+type Result_6 = 
+ variant {
+   Err: text;
+   Ok: GetAnalyzeAddressResult;
+ };
+type Result_5 = 
+ variant {
+   Err: text;
+   Ok: vec AnalyzeHistory;
+ };
+type Result_4 = 
+ variant {
+   Err: text;
+   Ok: vec GetMyReportsParams;
+ };
+type Result_3 = 
+ variant {
+   Err: text;
+   Ok: vec GetMyVotesParams;
+ };
+type Result_2 = 
+ variant {
+   Err: text;
+   Ok: Report;
+ };
+type Result_1 = 
+ variant {
+   Err: text;
+   Ok: vec Report;
+ };
+type Result = 
+ variant {
+   Err: text;
+   Ok: text;
+ };
+type ReportId = nat32;
+type Report = 
+ record {
+   address: text;
+   category: text;
+   chain: text;
+   created_at: Time;
+   description: text;
+   evidence: vec text;
+   report_id: ReportId;
+   reporter: principal;
+   url: opt text;
+   vote_deadline: Time;
+   voted_by: vec Voter;
+   votes_no: nat;
+   votes_yes: nat;
+ };
+type GetMyVotesParams = 
+ record {
+   address: text;
+   category: text;
+   chain: text;
+   created_at: Time;
+   description: text;
+   evidence: vec text;
+   report_id: ReportId;
+   reporter: principal;
+   reward: nat;
+   stake_amount: nat;
+   unstaked_at: opt Time;
+   url: opt text;
+   vote_deadline: Time;
+   vote_type: bool;
+   voted_by: vec Voter;
+   votes_no: nat;
+   votes_yes: nat;
+ };
+type GetMyReportsParams = 
+ record {
+   address: text;
+   category: text;
+   chain: text;
+   created_at: Time;
+   description: text;
+   evidence: vec text;
+   report_id: ReportId;
+   reporter: principal;
+   reward: nat;
+   stake_amount: nat;
+   unstaked_at: opt Time;
+   url: opt text;
+   vote_deadline: Time;
+   voted_by: vec Voter;
+   votes_no: nat;
+   votes_yes: nat;
+ };
+type GetAnalyzeAddressResult = 
+ record {
+   is_safe: bool;
+   report: opt Report;
+ };
+type CreateReportParams = 
+ record {
+   address: text;
+   category: text;
+   chain: text;
+   description: text;
+   evidence: vec text;
+   stake_amount: nat;
+   url: opt text;
+ };
+type CreateAnalyzeHistoryParams = 
+ record {
+   address: text;
+   analyzed_type: AnalyzeHistoryType;
+   is_safe: bool;
+   metadata: text;
+   token_type: TokenType;
+ };
+type AnalyzeHistoryType = 
+ variant {
+   AIAnalysis;
+   CommunityVote;
+ };
+type AnalyzeHistory = 
+ record {
+   address: text;
+   analyzed_type: AnalyzeHistoryType;
+   created_at: Time;
+   is_safe: bool;
+   metadata: text;
+   token_type: TokenType;
+ };
+service : {
+  admin_change_report_deadline: (report_id: ReportId, new_deadline: Time) ->
+   (Result);
+  admin_delete_report: (report_id: ReportId) -> (Result);
+  analyze_address: (address: text) -> (Result_6);
+  check_faucet_claim: () -> (Result);
+  claim_faucet: () -> (Result);
+  create_analyze_history: (params: CreateAnalyzeHistoryParams) -> (Result_5);
+  create_report: (params: CreateReportParams) -> (Result);
+  get_analyze_history: () -> (Result_5);
+  get_my_reports: () -> (Result_4);
+  get_my_votes: () -> (Result_3);
+  get_report: (report_id: ReportId) -> (Result_2) query;
+  get_reports: () -> (Result_1) query;
+  unstake_created_report: (report_id: ReportId) -> (Result);
+  unstake_voted_report: (report_id: ReportId) -> (Result);
+  vote_report: (params: VoteReportParams) -> (Result);
+}

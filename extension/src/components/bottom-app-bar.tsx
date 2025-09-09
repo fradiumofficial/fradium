@@ -47,7 +47,7 @@ const navItems: NavItem[] = [
 
 const BottomNavbar: React.FC = () => {
   const location = useLocation();
-  const { isAuthenticated, hasConfirmedWallet } = useWallet() as any
+  const { isAuthenticated, addresses } = useWallet() as any
 
   const isAnalyzerPath = (pathname: string) => {
     return [
@@ -65,8 +65,8 @@ const BottomNavbar: React.FC = () => {
     return [ROUTES.HISTORY, ROUTES.SCAN_HISTORY, ROUTES.DETAIL_HISTORY.replace(':id', '')].some((p) => pathname.startsWith(p));
   };
 
-  // Hide bottom bar until wallet exists and also on welcome/confirmation pages
-  if (!isAuthenticated || !hasConfirmedWallet || location.pathname === ROUTES.WELCOME || location.pathname === ROUTES.WALLET_CONFIRMATION) {
+  // Hide bottom bar on welcome/confirmation pages or when not authenticated
+  if (!isAuthenticated || location.pathname === ROUTES.WELCOME || location.pathname === ROUTES.WALLET_CONFIRMATION) {
     return null;
   }
 

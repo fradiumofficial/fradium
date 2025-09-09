@@ -1,91 +1,99 @@
-import { AuthClient } from "@dfinity/auth-client"
-import { getInternetIdentityNetwork } from "~lib/utils/utils"
+import { createActor as createWalletActor, canisterId as walletCanisterId } from "../../src/declarations/wallet"
+import { backend } from "../../src/declarations/backend"
+import { HttpAgent } from "@dfinity/agent"
 
-let authClient: AuthClient | null = null
-let identity: any = null
+// Background script will receive identity from UI/popup
 let user: any = null
-let isAuthenticated = false
-const STORAGE_KEY_HAS_WALLET = "fradium_has_confirmed_wallet"
 
-// Ambil identity provider default atau custom
-function getIdentityProvider(custom?: string) {
-  return custom || getInternetIdentityNetwork()
-}
 
-// Inisialisasi AuthClient sekali di background
-async function initAuth() {
-  if (!authClient) {
-    authClient = await AuthClient.create({})
-    if (await authClient.isAuthenticated()) {
-      identity = authClient.getIdentity()
-      isAuthenticated = true
-    }
-  }
-}
-
-// LOGIN
+// LOGIN - Not supported in background (MV3 service worker)
 async function handleLogin(identityProvider?: string) {
-  await initAuth()
-  if (!authClient) throw new Error("AuthClient not initialized")
-
-  return new Promise(async (resolve, reject) => {
-    await authClient!.login({
-      identityProvider: getIdentityProvider(identityProvider),
-      onSuccess: async () => {
-        identity = authClient!.getIdentity()
-        isAuthenticated = true
-
-        // TODO: call your canister profile function if needed
-        // user = await getProfileFunction?.()
-
-        resolve({
-          ok: true,
-          principal: identity.getPrincipal().toText(),
-          user
-        })
-      },
-      onError: (err) => {
-        console.error("Login failed", err)
-        reject({ ok: false, error: err })
-      },
-      windowOpenerFeatures:
-        "width=500,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no,directories=no"
-    })
-  })
+  console.warn("Background: Login not supported in MV3 service worker")
+  return { ok: false, error: "Login not supported in background script" }
 }
 
-// LOGOUT
+// LOGOUT - Not supported in background (MV3 service worker)
 async function handleLogout() {
-  if (!authClient) return { ok: false }
-
-  await authClient.logout()
-  identity = null
-  user = null
-  isAuthenticated = false
-  return { ok: true }
+  console.warn("Background: Logout not supported in MV3 service worker")
+  return { ok: false, error: "Logout not supported in background script" }
 }
 
-// REFRESH PROFILE
-async function refreshUser(getProfileFunction?: () => Promise<any>) {
-  if (!isAuthenticated || !getProfileFunction) return null
-
+// ANALYZE ADDRESS (Backend)
+async function handleAnalyzeAddress(address: string, identity?: any) {
   try {
-    const profile = await getProfileFunction()
-    user = profile
-    return { ok: true, user }
+    if (!identity) {
+      console.warn("Background: No identity provided for analyze address")
+      return { ok: false, error: "No identity provided" }
+    }
+    
+    const result = await backend.analyze_address(address)
+
+    if ("Ok" in result) {
+      console.log("Background: Analyze address successful")
+      return { ok: true, data: result.Ok }
+    } else {
+      console.log("Background: Analyze address failed:", result.Err)
+      return { ok: false, error: result.Err }
+    }
   } catch (err) {
-    console.error("Profile refresh error:", err)
-    return { ok: false }
+    console.error("Background: analyze_address error:", err)
+    return { ok: false, error: String(err) }
   }
 }
 
-// CREATE/CONFIRM WALLET (persist simple flag in storage)
-async function handleCreateWallet() {
+// REFRESH PROFILE - Not supported in background
+async function refreshUser(getProfileFunction?: () => Promise<any>) {
+  console.warn("Background: Profile refresh not supported in MV3 service worker")
+  return { ok: false, error: "Profile refresh not supported in background" }
+}
+
+// GET WALLET ADDRESSES
+async function handleGetWalletAddresses(identity?: any) {
   try {
-    await chrome.storage?.local?.set?.({ [STORAGE_KEY_HAS_WALLET]: "true" })
-    return { ok: true }
+    if (!identity) {
+      console.warn("Background: No identity provided for wallet addresses")
+      return { ok: false, error: "No identity provided" }
+    }
+
+    if (!walletCanisterId) {
+      console.error("Background: Wallet canister ID not found")
+      return { ok: false, error: "Wallet canister ID not configured" }
+    }
+
+    // Create authenticated wallet actor
+    const agent = new HttpAgent({
+      identity,
+    })
+
+    // Fetch root key for certificate validation during development
+    if (process.env.DFX_NETWORK !== "ic") {
+      agent.fetchRootKey().catch((err) => {
+        console.warn(
+          "Unable to fetch root key. Check to ensure that your local replica is running"
+        )
+        console.error(err)
+      })
+    }
+
+    const authenticatedWallet = createWalletActor(walletCanisterId, {
+      agent: agent as any,
+    })
+
+    const addresses = await authenticatedWallet.wallet_addresses()
+    console.log("Background: Wallet addresses result:", addresses)
+
+    return {
+      ok: true,
+      addresses: {
+        bitcoin: addresses.bitcoin,
+        ethereum: addresses.ethereum,
+        solana: addresses.solana,
+        icp_principal: addresses.icp_principal,
+        icp_account: addresses.icp_account
+      }
+    }
   } catch (err) {
-    console.error("Create wallet error:", err)
+    console.error("Background: Get wallet addresses error:", err)
     return { ok: false, error: String(err) }
   }
 }
@@ -106,10 +114,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           break
 
         case "GET_AUTH_STATE":
+          console.warn("Background: GET_AUTH_STATE not supported - use UI auth state")
           sendResponse({
-            isAuthenticated,
-            principal: identity ? identity.getPrincipal().toText() : null,
-            user
+            isAuthenticated: false,
+            principal: null,
+            user: null,
+            error: "Auth state managed in UI only"
           })
           break
 
@@ -118,9 +128,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse(refreshed)
           break
 
-        case "CREATE_WALLET":
-          const created = await handleCreateWallet()
-          sendResponse(created)
+        case "GET_WALLET_ADDRESSES":
+          const addressesResult = await handleGetWalletAddresses(msg.identity)
+          sendResponse(addressesResult)
+          break
+
+        case "ANALYZE_ADDRESS":
+          const analyzeResult = await handleAnalyzeAddress(msg.address, msg.identity)
+          sendResponse(analyzeResult)
           break
 
         default:

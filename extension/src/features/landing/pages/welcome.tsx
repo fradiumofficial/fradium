@@ -1,32 +1,55 @@
 import { CDN } from "~lib/constant/cdn";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import NeoButton from "~components/custom-button";
 import { useAuth } from "~lib/context/authContext";
-import { CANISTERS } from "~config/canisters";
 
 function Welcome() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const { signIn } = useAuth();
+  const { signIn, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  console.log("🏠 Welcome: Component mounted/rendered");
+  console.log("🏠 Welcome: Auth state - isAuthenticated:", isAuthenticated, "authLoading:", authLoading);
+
+  // Monitor auth state changes
+  React.useEffect(() => {
+    console.log("🏠 Welcome: Auth state changed - isAuthenticated:", isAuthenticated, "authLoading:", authLoading);
+
+    // If user becomes authenticated while on welcome page, redirect to home
+    if (isAuthenticated && !authLoading) {
+      console.log("🏠 Welcome: User is authenticated, redirecting to home...");
+      navigate(ROUTES.HOME, { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleLogin = async () => {
-    console.log('hahaha anj', process.env.PLASMO_PUBLIC_CANISTER_ID_WALLET)
-    console.log('hahaha ababa', CANISTERS.wallet)
-    setIsLoading(true)
-    setMessage("Opening Internet Identity...")
+    console.log("🏠 Welcome: handleLogin called, starting authentication flow");
+    setIsLoading(true);
+    setMessage("Opening Internet Identity...");
+    console.log("🏠 Welcome: Set loading state to true, message: 'Opening Internet Identity...'");
+
     try {
-      await signIn()
-      setMessage("Authenticated. Redirecting...")
-      navigate(ROUTES.WALLET_CONFIRMATION, { replace: true })
+      console.log("🏠 Welcome: Calling signIn() from AuthContext...");
+      await signIn();
+      console.log("🏠 Welcome: signIn() completed successfully");
+
+      setMessage("Authenticated. Redirecting...");
+      console.log("🏠 Welcome: Set message to 'Authenticated. Redirecting...'");
+
+      console.log("🏠 Welcome: Navigating to home page...");
+      navigate(ROUTES.HOME, { replace: true });
+      console.log("🏠 Welcome: Navigation completed");
 
     } catch (err) {
-      console.error(err)
-      setMessage("Authentication failed. Please try again.")
+      console.error("🏠 Welcome: Authentication failed:", err);
+      setMessage("Authentication failed. Please try again.");
+      console.log("🏠 Welcome: Set error message: 'Authentication failed. Please try again.'");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
+      console.log("🏠 Welcome: Set loading state to false");
     }
   }
 

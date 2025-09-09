@@ -14,20 +14,9 @@ import TxDetail from "~features/history/pages/transactionDetail"
 import Account from "~features/preferences/pages/account"
 import { ROUTES } from "~lib/constant/routes"
 import Welcome from "~features/landing/pages/welcome"
-import WalletConfirmation from "~features/landing/pages/createWallet"
 import { WalletProvider } from "~lib/context/walletContext"
-import { useWallet } from "~lib/context/walletContext"
 import Send from "~features/transaction/send"
 import Receive from "~features/transaction/receive"
-
-const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { hasConfirmedWallet, isLoading } = useWallet() as any
-  if (isLoading) return children
-  if (!hasConfirmedWallet) {
-    return <Navigate to={ROUTES.WALLET_CONFIRMATION} replace />
-  }
-  return children
-}
 
 export const config: PlasmoCSConfig = {
   matches: ["https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io/"]
@@ -74,19 +63,18 @@ const PlasmoOverlay = () => {
             <Route path={ROUTES.WELCOME} element={<Welcome />}/>
             {/* Default route shows welcome page */}
             <Route path="/" element={<Navigate to={ROUTES.WELCOME} replace />} />
-            <Route path={ROUTES.WALLET_CONFIRMATION} element={<WalletConfirmation />} />
-            <Route path={ROUTES.HOME} element={<RequireWallet><Home /></RequireWallet>} />
-            <Route path={ROUTES.AI_ANALYZER} element={<RequireWallet><AnalyzeAddress /></RequireWallet>} />
-            <Route path={ROUTES.ANALYZE_ADDRESS} element={<RequireWallet><AnalyzeAddress /></RequireWallet>} />
-            <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={<RequireWallet><AnalyzeAddressResult /></RequireWallet>} />
-            <Route path={ROUTES.ANALYZE_PROGRESS} element={<RequireWallet><AnalyzeProgress /></RequireWallet>} />
-            <Route path={ROUTES.HISTORY} element={<RequireWallet><History /></RequireWallet>} />
-            <Route path={ROUTES.SCAN_HISTORY} element={<RequireWallet><ScanHistory /></RequireWallet>} />
-            <Route path={ROUTES.DETAIL_HISTORY} element={<RequireWallet><DetailHistory /></RequireWallet>} />
-            <Route path={ROUTES.TX_DETAIL} element={<RequireWallet><TxDetail /></RequireWallet>} />
-            <Route path={ROUTES.ACCOUNT} element={<RequireWallet><Account /></RequireWallet>} />
-            <Route path={ROUTES.RECEIVE} element={<RequireWallet><Receive /></RequireWallet>} />
-            <Route path={ROUTES.SEND} element={<RequireWallet><Send /></RequireWallet>} />
+            <Route path={ROUTES.HOME} element={<Home />} />
+            <Route path={ROUTES.AI_ANALYZER} element={<AnalyzeAddress />} />
+            <Route path={ROUTES.ANALYZE_ADDRESS} element={<AnalyzeAddress />} />
+            <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={<AnalyzeAddressResult />} />
+            <Route path={ROUTES.ANALYZE_PROGRESS} element={<AnalyzeProgress />} />
+            <Route path={ROUTES.HISTORY} element={<History />} />
+            <Route path={ROUTES.SCAN_HISTORY} element={<ScanHistory />} />
+            <Route path={ROUTES.DETAIL_HISTORY} element={<DetailHistory />} />
+            <Route path={ROUTES.TX_DETAIL} element={<TxDetail />} />
+            <Route path={ROUTES.ACCOUNT} element={<Account />} />
+            <Route path={ROUTES.RECEIVE} element={<Receive />} />
+            <Route path={ROUTES.SEND} element={<Send />} />
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
         </div>

@@ -7,15 +7,11 @@ import {
   useState,
 } from "react"
 import { useAuth } from "~lib/context/authContext"
-import { AuthClient } from "@dfinity/auth-client"
+import { HttpAgent } from "@dfinity/agent"
 import {
   createActor as createWalletActor,
   canisterId as walletCanisterId,
 } from "../../../../src/declarations/wallet"
-import {
-  getCanisterId as getConfiguredCanisterId,
-  createAgentWithFallback,
-} from "~config/networkConfig"
 
 interface NetworkFilters {
   Bitcoin: boolean
@@ -32,21 +28,29 @@ interface NetworkValues {
   Ethereum: number
 }
 
+interface WalletAddresses {
+  bitcoin?: string
+  ethereum?: string
+  solana?: string
+  icp_principal?: string
+  icp_account?: string
+}
+
 interface WalletContextType {
   // Wallet state
   isLoading: boolean
   isAuthenticated: boolean
   principalText: string | null
   isCreatingWallet: boolean
-  setIsCreatingWallet: (creating: boolean) => void
-  hasConfirmedWallet: boolean
-  setHasConfirmedWallet: (confirmed: boolean) => void
-  confirmWallet: () => Promise<boolean>
 
   // Addresses
-  addresses: { bitcoin?: string; ethereum?: string; solana?: string } | null
+  addresses: WalletAddresses | null
   isFetchingAddresses: boolean
+  addressesLoaded: boolean
+  hasLoadedAddressesOnce: boolean
   fetchAddresses: () => Promise<void>
+  fetchWalletAddresses: () => Promise<WalletAddresses | null>
+  getAddressesLoadingState: () => boolean
 
   // Wallet operations
   addAddressToWallet: (
@@ -83,18 +87,19 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isLoading, setIsLoading] = useState(true)
-  const { isAuthenticated, principalText } = useAuth()
+  const { isAuthenticated, principalText, identity } = useAuth()
 
   const [isCreatingWallet, setIsCreatingWallet] = useState(false)
   const [network, setNetwork] = useState("All Networks")
   const [hideBalance, setHideBalance] = useState(false)
   const [hasConfirmedWallet, setHasConfirmedWallet] = useState(false)
-  const [addresses, setAddresses] = useState<{
-    bitcoin?: string
-    ethereum?: string
-    solana?: string
-  } | null>(null)
+  const [addresses, setAddresses] = useState<WalletAddresses | null>(null)
   const [isFetchingAddresses, setIsFetchingAddresses] = useState(false)
+  const [addressesLoaded, setAddressesLoaded] = useState(false)
+  const [hasLoadedAddressesOnce, setHasLoadedAddressesOnce] = useState(false)
+
+  // Create authenticated wallet actor
+  const [walletActor, setWalletActor] = useState<any>(null)
 
   const [networkValues, setNetworkValues] = useState<NetworkValues>({
     "All Networks": 0,
@@ -111,19 +116,43 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     Ethereum: true,
   })
 
-  // Persisted storage key
-  const STORAGE_KEY_HAS_WALLET = "fradium_has_confirmed_wallet"
-
-  // Load persisted state on mount
+  // Create authenticated wallet actor when identity changes
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_HAS_WALLET)
-      if (stored) setHasConfirmedWallet(stored === "true")
-    } catch {
-      // ignore
-    } finally {
-      setIsLoading(false)
+    if (identity && walletCanisterId) {
+      try {
+        const agent = new HttpAgent({
+          identity,
+        })
+
+        // Fetch root key for certificate validation during development
+        if (process.env.DFX_NETWORK !== "ic") {
+          agent.fetchRootKey().catch((err) => {
+            console.warn(
+              "Unable to fetch root key. Check to ensure that your local replica is running"
+            )
+            console.error(err)
+          })
+        }
+
+        const actor = createWalletActor(walletCanisterId, {
+          agent: agent as any,
+        })
+
+        setWalletActor(actor)
+        console.log("Wallet actor created with authenticated identity")
+      } catch (error) {
+        console.error("Failed to create wallet actor:", error)
+        setWalletActor(null)
+      }
+    } else {
+      setWalletActor(null)
     }
+  }, [identity])
+
+  // Load state on mount
+  useEffect(() => {
+    // Initialize without persisted state
+    setIsLoading(false)
   }, [])
 
   // Update balances
@@ -163,84 +192,66 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   )
 
-  // Resolve canister ID
-  const resolveWalletCanisterId = useCallback(() => {
-    const configured = getConfiguredCanisterId("wallet")
-    if (configured && configured.length >= 8) return configured
-
-    const envId =
-      (walletCanisterId as string | undefined)?.toString?.() || walletCanisterId
-    if (envId && typeof envId === "string" && envId.trim().length > 0)
-      return envId.trim()
-
-    return undefined
-  }, [])
-
-  // Create actor
-  const getWalletActor = useCallback(async () => {
-    const canister = resolveWalletCanisterId()
-    if (!canister) {
-      console.warn("WALLET canisterId is not configured")
-      return undefined as any
-    }
-
-    const host = await createAgentWithFallback()
-    const client = await AuthClient.create({})
-    const identity = client.getIdentity()
-
-    return createWalletActor(canister, {
-      agentOptions: { identity, host },
-    } as any)
-  }, [resolveWalletCanisterId])
-
-  // Fetch addresses
+  // Fetch addresses using authenticated actor
   const fetchAddresses = useCallback(async () => {
-    if (!isAuthenticated || !hasConfirmedWallet || isFetchingAddresses) return
+    if (!walletActor || addressesLoaded || isFetchingAddresses) return;
+
     setIsFetchingAddresses(true)
+    console.log("Fetching addresses...")
     try {
-      const actor: any = await getWalletActor()
-      if (!actor?.wallet_addresses) {
-        console.warn("Wallet actor not available or method missing")
-        return
+      const result = await walletActor.wallet_addresses()
+      console.log("Wallet addresses result:", result)
+
+      const newAddresses: WalletAddresses = {
+        bitcoin: result.bitcoin,
+        ethereum: result.ethereum,
+        solana: result.solana,
+        icp_principal: result.icp_principal,
+        icp_account: result.icp_account,
       }
-      const res = await actor.wallet_addresses()
-      setAddresses({
-        bitcoin: res?.bitcoin,
-        ethereum: res?.ethereum,
-        solana: res?.solana,
-      })
-    } catch (e) {
-      console.warn("Failed to fetch addresses", e)
+
+      setAddresses(newAddresses)
+      setAddressesLoaded(true)
+      setHasLoadedAddressesOnce(true)
+    } catch (error) {
+      console.error("Error fetching addresses:", error)
     } finally {
       setIsFetchingAddresses(false)
     }
-  }, [getWalletActor, isAuthenticated, hasConfirmedWallet, isFetchingAddresses])
+  }, [walletActor, addressesLoaded, isFetchingAddresses])
 
-  // Confirm wallet
-  const confirmWallet = useCallback(async (): Promise<boolean> => {
-    if (!isAuthenticated) {
-      console.warn("User must be authenticated before creating a wallet")
-      return false
-    }
-    try {
-      const actor: any = await getWalletActor()
-      if (!actor) return false
-      const res = await actor.wallet_addresses()
-      setAddresses({
-        bitcoin: res?.bitcoin,
-        ethereum: res?.ethereum,
-        solana: res?.solana,
+  // Function to get loading state for addresses
+  const getAddressesLoadingState = useCallback(() => {
+    return isFetchingAddresses && !hasLoadedAddressesOnce
+  }, [isFetchingAddresses, hasLoadedAddressesOnce])
+
+  // Fetch wallet addresses using authenticated actor
+  const fetchWalletAddresses = useCallback(async (): Promise<WalletAddresses | null> => {
+    if (!isAuthenticated || addressesLoaded || isFetchingAddresses || !identity || !walletActor) return addresses
+
+    console.log("WalletContext: Fetching wallet addresses via authenticated actor...")
+    console.log("WalletContext: isAuthenticated:", isAuthenticated)
+    console.log("WalletContext: identity:", identity ? identity.getPrincipal().toString() : "null")
+
+    // Call fetchAddresses and return current addresses state
+    await fetchAddresses?.()
+    return addresses
+  }, [isAuthenticated, addressesLoaded, isFetchingAddresses, identity, walletActor, fetchAddresses, addresses])
+
+  useEffect(() => {
+    if (identity && walletActor) {
+      // Run fetch operations in parallel to prevent blocking
+      Promise.all([fetchWalletAddresses()]).catch((error) => {
+        console.error("Error in parallel fetch operations:", error)
       })
-      setHasConfirmedWallet(true)
-      try {
-        localStorage.setItem(STORAGE_KEY_HAS_WALLET, "true")
-      } catch {}
-      return true
-    } catch (e) {
-      console.warn("confirmWallet failed", e)
-      return false
+    } else {
+      // Reset address states when user logs out or actor is not available
+      setAddresses(null)
+      setAddressesLoaded(false)
+      setHasLoadedAddressesOnce(false)
+      setIsFetchingAddresses(false)
     }
-  }, [getWalletActor, isAuthenticated])
+  }, [identity, walletActor, fetchWalletAddresses])
 
   const walletContextValue = useMemo(
     () => ({
@@ -248,13 +259,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isAuthenticated,
       principalText,
       isCreatingWallet,
-      setIsCreatingWallet,
-      hasConfirmedWallet,
-      setHasConfirmedWallet,
-      confirmWallet,
       addresses,
       isFetchingAddresses,
+      addressesLoaded,
+      hasLoadedAddressesOnce,
       fetchAddresses,
+      fetchWalletAddresses,
+      getAddressesLoadingState,
       addAddressToWallet,
       network,
       setNetwork,
@@ -269,12 +280,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isLoading,
       isAuthenticated,
       principalText,
-      isCreatingWallet,
-      hasConfirmedWallet,
-      confirmWallet,
       addresses,
       isFetchingAddresses,
+      addressesLoaded,
+      hasLoadedAddressesOnce,
       fetchAddresses,
+      fetchWalletAddresses,
+      getAddressesLoadingState,
       addAddressToWallet,
       network,
       hideBalance,
