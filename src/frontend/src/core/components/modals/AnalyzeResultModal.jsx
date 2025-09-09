@@ -188,7 +188,7 @@ export default function AnalyzeResultModal({ isOpen, onClose, analysisResult, va
                   </button>
                   <div className="flex-1">
                     <ButtonGreen fullWidth size="md" fontWeight="semibold" onClick={onConfirm || onClose}>
-                      Confirm Send
+                      Continue
                     </ButtonGreen>
                   </div>
                 </div>

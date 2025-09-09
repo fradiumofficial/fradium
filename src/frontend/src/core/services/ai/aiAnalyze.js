@@ -31,19 +31,52 @@ export class AIAnalyzeService {
       const network = detectAddressNetwork(trimmedAddress);
       console.log(`Detected network: ${network} for address: ${trimmedAddress}`);
 
-      // Step 1: Perform AI Analysis first
-      let aiResult;
-      switch (network) {
-        case "Bitcoin":
-          aiResult = await this.analyzeBitcoinAddress(trimmedAddress, options);
-          break;
-        case "Ethereum":
-          aiResult = await this.analyzeEthereumAddress(trimmedAddress, options);
-          break;
-        case "Solana":
-        case "Internet Computer":
-        default:
-          throw new Error(`Token not supported: ${network} addresses are not yet supported for analysis`);
+      // Step 1: Try AI Analysis first (if supported)
+      let aiResult = null;
+      let aiSupported = true;
+
+      try {
+        switch (network) {
+          case "Bitcoin":
+            aiResult = await this.analyzeBitcoinAddress(trimmedAddress, options);
+            break;
+          case "Ethereum":
+            aiResult = await this.analyzeEthereumAddress(trimmedAddress, options);
+            break;
+          case "Solana":
+          case "Internet Computer":
+          default:
+            console.log(`AI Analysis not supported for ${network} - skipping to community analysis`);
+            aiSupported = false;
+            break;
+        }
+      } catch (error) {
+        console.error(`AI Analysis failed for ${network}:`, error.message);
+        console.log(`Skipping AI analysis for ${network} - proceeding with community analysis`);
+        aiSupported = false;
+      }
+
+      // If AI is not supported or failed, skip directly to community analysis
+      if (!aiSupported || !aiResult) {
+        console.log(`Proceeding with community analysis only for ${network}`);
+        const communityResult = await this.performCommunityAnalysis(trimmedAddress);
+        console.log("Community Analysis Result:", communityResult);
+
+        const result = {
+          success: true,
+          network: network,
+          address: trimmedAddress,
+          result: communityResult.result,
+          analysisSource: "community",
+          finalStatus: communityResult.result.isSafe ? "safe_by_community" : "unsafe_by_community",
+          type: "community",
+          timestamp: new Date().toISOString(),
+        };
+
+        // Create analyze history for community analysis only
+        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, "community", network);
+
+        return result;
       }
 
       console.log("AI Analysis Result:", aiResult);

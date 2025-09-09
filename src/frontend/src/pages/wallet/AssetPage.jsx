@@ -14,6 +14,8 @@ import { useWallet } from "@/core/providers/WalletProvider";
 
 // Modal Components
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
+import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal";
+import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal";
 
 // Token Item Card Component
 import TokenItemCard from "@/core/components/cards/TokenItemCard";
@@ -26,6 +28,15 @@ export default function AssetsPage() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
+
+  // Analyze Address States
+  const [showAnalyzeModal, setShowAnalyzeModal] = useState(false);
+  const [showAnalyzeLoading, setShowAnalyzeLoading] = useState(false);
+  const [showAnalyzeResult, setShowAnalyzeResult] = useState(false);
+  const [analyzeAddress, setAnalyzeAddress] = useState("");
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analyzeError, setAnalyzeError] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Search States
   const [showSearch, setShowSearch] = useState(false);
@@ -70,6 +81,59 @@ export default function AssetsPage() {
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
+  };
+
+  // Analyze Address Handlers
+  const handleAnalyzeClick = () => {
+    setShowAnalyzeModal(true);
+  };
+
+  const handleCloseAnalyzeModal = () => {
+    setShowAnalyzeModal(false);
+    setAnalyzeAddress("");
+    setAnalyzeError(null);
+  };
+
+  const handleAnalyze = async () => {
+    if (!analyzeAddress.trim()) {
+      setAnalyzeError("Please enter a valid address");
+      return;
+    }
+
+    try {
+      setAnalyzeError(null);
+      setIsAnalyzing(true);
+      setShowAnalyzeLoading(true);
+      setShowAnalyzeModal(false);
+
+      // Import AI Analyze Service
+      const { default: AIAnalyzeService } = await import("@/core/services/ai/aiAnalyze.js");
+
+      // Perform analysis
+      const result = await AIAnalyzeService.analyzeAddress(analyzeAddress.trim());
+
+      setAnalysisResult(result);
+      setShowAnalyzeLoading(false);
+      setShowAnalyzeResult(true);
+    } catch (err) {
+      console.error("Analysis error:", err);
+      setAnalyzeError(err.message || "Analysis failed. Please try again.");
+      setShowAnalyzeLoading(false);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleCloseAnalyzeResult = () => {
+    setShowAnalyzeResult(false);
+    setAnalysisResult(null);
+    setAnalyzeError(null);
+  };
+
+  const handleCancelAnalysis = () => {
+    setShowAnalyzeLoading(false);
+    setIsAnalyzing(false);
+    setAnalyzeError(null);
   };
 
   // Filter tokens based on network selection and search query
@@ -235,6 +299,7 @@ export default function AssetsPage() {
             <h2 className="md:text-base text-sm font-semibold text-white">Tokens</h2>
             <div className="flex md:gap-4 gap-2 ml-auto">
               <motion.img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverSearch(true)} onMouseLeave={() => setHoverSearch(false)} onClick={handleSearchToggle} animate={hoverSearch ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
+              <motion.img src="/assets/icons/analyze-address-dark.svg" alt="Analyze Address" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} onClick={handleAnalyzeClick} animate={hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
               <motion.img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} animate={hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
             </div>
           </div>
@@ -294,6 +359,59 @@ export default function AssetsPage() {
 
       {/* Modal Receive Address */}
       <ReceiveAddressModal isOpen={showReceive} onClose={handleCloseReceive} />
+
+      {/* Modal Analyze Address Input */}
+      {showAnalyzeModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+          <div className="w-full max-w-md bg-[#171A1C] rounded-2xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-semibold">Analyze Address</h3>
+              <button className="text-white/70 hover:text-white transition-colors" onClick={handleCloseAnalyzeModal} aria-label="Close">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-white/90 text-sm font-medium mb-2 block">Address to analyze</label>
+                <input
+                  type="text"
+                  placeholder="Enter wallet address..."
+                  value={analyzeAddress}
+                  onChange={(e) => {
+                    setAnalyzeAddress(e.target.value);
+                    setAnalyzeError(null);
+                  }}
+                  className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-3 text-white text-sm placeholder-[#B0B6BE] outline-none focus:border-[#9BE4A0] transition-colors"
+                />
+              </div>
+
+              {analyzeError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-red-400 text-sm">{analyzeError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={handleCloseAnalyzeModal}>
+                  Cancel
+                </button>
+                <button className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleAnalyze} disabled={!analyzeAddress.trim() || isAnalyzing}>
+                  {isAnalyzing ? "Analyzing..." : "Analyze"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Analyze Loading */}
+      <AnalyzeLoadingModal isOpen={showAnalyzeLoading} onCancel={handleCancelAnalysis} />
+
+      {/* Modal Analyze Result */}
+      <AnalyzeResultModal isOpen={showAnalyzeResult} onClose={handleCloseAnalyzeResult} analysisResult={analysisResult} />
     </div>
   );
 }

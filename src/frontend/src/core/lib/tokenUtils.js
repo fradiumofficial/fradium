@@ -186,6 +186,59 @@ export async function sendToken(tokenId, to, amount) {
   throw new Error("Unsupported token type");
 }
 
+// Enhanced send token function with proper backend integration
+export async function sendTokenToBackend(tokenId, to, amount) {
+  const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
+  if (!token) throw new Error("Token not found: " + tokenId);
+
+  console.log(`Sending ${amount} ${token.symbol} to ${to} via ${token.chain}`);
+
+  try {
+    let result;
+
+    if (token.type === "native") {
+      // Convert amount to proper units based on token decimals
+      const amountInSmallestUnit = Math.floor(amount * Math.pow(10, token.decimals));
+
+      switch (token.chain) {
+        case "Bitcoin":
+          result = await wallet.bitcoin_send({
+            destination_address: to,
+            amount_in_satoshi: BigInt(amountInSmallestUnit),
+          });
+          break;
+
+        case "Ethereum":
+          result = await wallet.ethereum_send(to, BigInt(amountInSmallestUnit));
+          break;
+
+        case "Solana":
+          result = await wallet.solana_send(to, BigInt(amountInSmallestUnit));
+          break;
+
+        default:
+          throw new Error(`Unsupported native token chain: ${token.chain}`);
+      }
+    } else if (token.type === "icrc" && token.canisterId) {
+      throw new Error("ICRC tokens are not supported yet");
+    } else {
+      throw new Error(`Unsupported token type: ${token.type}`);
+    }
+
+    console.log(`Successfully sent ${amount} ${token.symbol} to ${to}. Transaction ID: ${result}`);
+    return {
+      success: true,
+      transactionId: result,
+      token: token,
+      amount: amount,
+      destination: to,
+    };
+  } catch (error) {
+    console.error(`Failed to send ${token.symbol}:`, error);
+    throw new Error(`Failed to send ${token.symbol}: ${error.message}`);
+  }
+}
+
 export async function getBalance(tokenId) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
