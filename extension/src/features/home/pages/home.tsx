@@ -7,7 +7,6 @@ import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
 import { useNetwork } from "~features/network/context/networkContext";
 
-
 interface TokenBalance {
   symbol: string;
   name: string;
@@ -17,23 +16,6 @@ interface TokenBalance {
   isLoading?: boolean;
   hasError?: boolean;
 }
-
-interface TokenPrice {
-  usd: number;
-}
-
-interface PriceResponse {
-  [key: string]: TokenPrice;
-}
-
-// Token types - using const instead of enum to avoid syntax error
-const TokenType = {
-  BITCOIN: "Bitcoin",
-  ETHEREUM: "Ethereum",
-  SOLANA: "Solana",
-  FUM: "Fradium",
-  UNKNOWN: "Unknown",
-} as const;
 
 function Home() {
   const { getNetworkValue, principalText } = useWallet() as any
