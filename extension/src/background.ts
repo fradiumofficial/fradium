@@ -1,11 +1,23 @@
 import { AuthClient } from "@dfinity/auth-client"
 import { getInternetIdentityNetwork } from "~lib/utils/utils"
+import { createActor, canisterId } from "../../src/declarations/wallet"
 
 let authClient: AuthClient | null = null
 let identity: any = null
 let user: any = null
-let isAuthenticated = false
-const STORAGE_KEY_HAS_WALLET = "fradium_has_confirmed_wallet"
+let isUserAuthenticated = false
+
+// Initialize authentication on startup
+const initializeAuth = async () => {
+  try {
+    await initAuth()
+  } catch (error) {
+    console.error("Failed to initialize auth on startup:", error)
+  }
+}
+
+// Call initialization
+initializeAuth()
 
 // Ambil identity provider default atau custom
 function getIdentityProvider(custom?: string) {
@@ -14,14 +26,28 @@ function getIdentityProvider(custom?: string) {
 
 // Inisialisasi AuthClient sekali di background
 async function initAuth() {
-  if (!authClient) {
-    authClient = await AuthClient.create({})
-    if (await authClient.isAuthenticated()) {
-      identity = authClient.getIdentity()
-      isAuthenticated = true
+  try {
+    if (!authClient) {
+      authClient = await AuthClient.create({})
     }
+
+    const authenticated = await authClient.isAuthenticated()
+    if (authenticated) {
+      identity = authClient.getIdentity()
+      isUserAuthenticated = true
+      console.log("Background: User authenticated with principal:", identity.getPrincipal().toString())
+    } else {
+      identity = null
+      isUserAuthenticated = false
+      console.log("Background: User not authenticated")
+    }
+  } catch (error) {
+    console.error("Background auth initialization error:", error)
+    identity = null
+    isUserAuthenticated = false
   }
 }
+
 
 // LOGIN
 async function handleLogin(identityProvider?: string) {
@@ -33,11 +59,7 @@ async function handleLogin(identityProvider?: string) {
       identityProvider: getIdentityProvider(identityProvider),
       onSuccess: async () => {
         identity = authClient!.getIdentity()
-        isAuthenticated = true
-
-        // TODO: call your canister profile function if needed
-        // user = await getProfileFunction?.()
-
+        isUserAuthenticated = true
         resolve({
           ok: true,
           principal: identity.getPrincipal().toText(),
@@ -61,13 +83,13 @@ async function handleLogout() {
   await authClient.logout()
   identity = null
   user = null
-  isAuthenticated = false
+  isUserAuthenticated = false
   return { ok: true }
 }
 
 // REFRESH PROFILE
 async function refreshUser(getProfileFunction?: () => Promise<any>) {
-  if (!isAuthenticated || !getProfileFunction) return null
+  if (!isUserAuthenticated || !getProfileFunction) return null
 
   try {
     const profile = await getProfileFunction()
@@ -79,13 +101,50 @@ async function refreshUser(getProfileFunction?: () => Promise<any>) {
   }
 }
 
-// CREATE/CONFIRM WALLET (persist simple flag in storage)
-async function handleCreateWallet() {
+// GET WALLET ADDRESSES
+async function handleGetWalletAddresses() {
   try {
-    await chrome.storage?.local?.set?.({ [STORAGE_KEY_HAS_WALLET]: "true" })
-    return { ok: true }
+    // Ensure authentication is initialized
+    await initAuth()
+    
+    console.log("Background: Checking authentication state...")
+    console.log("Background: isUserAuthenticated:", isUserAuthenticated)
+    console.log("Background: identity:", identity ? identity.getPrincipal().toString() : "null")
+    
+    if (!isUserAuthenticated || !identity) {
+      console.warn("Background: User not authenticated when trying to get wallet addresses")
+      return { ok: false, error: "User not authenticated" }
+    }
+
+    console.log("Background: Creating wallet actor with identity:", identity.getPrincipal().toString())
+    
+    if (!canisterId) {
+      console.error("Background: Wallet canister ID not configured")
+      return { ok: false, error: "Wallet canister ID not configured" }
+    }
+
+    // Create wallet actor with authenticated identity
+    const walletActor = createActor(canisterId, {
+      agentOptions: { identity }
+    })
+
+    console.log("Background: Calling wallet_addresses method...")
+    // Call wallet_addresses function
+    const addresses = await walletActor.wallet_addresses()
+    console.log("Background: Wallet addresses result:", addresses)
+    
+    return { 
+      ok: true, 
+      addresses: {
+        bitcoin: addresses.bitcoin,
+        ethereum: addresses.ethereum,
+        solana: addresses.solana,
+        icp_principal: addresses.icp_principal,
+        icp_account: addresses.icp_account
+      }
+    }
   } catch (err) {
-    console.error("Create wallet error:", err)
+    console.error("Background: Get wallet addresses error:", err)
     return { ok: false, error: String(err) }
   }
 }
@@ -107,7 +166,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
         case "GET_AUTH_STATE":
           sendResponse({
-            isAuthenticated,
+            isAuthenticated: isUserAuthenticated,
             principal: identity ? identity.getPrincipal().toText() : null,
             user
           })
@@ -118,9 +177,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse(refreshed)
           break
 
-        case "CREATE_WALLET":
-          const created = await handleCreateWallet()
-          sendResponse(created)
+        case "GET_WALLET_ADDRESSES":
+          const addressesResult = await handleGetWalletAddresses()
+          sendResponse(addressesResult)
           break
 
         default:

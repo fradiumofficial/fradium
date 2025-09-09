@@ -6,8 +6,12 @@ type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
   principalText: string | null;
+  user: any | null;
+  identity: any | null;
+  authClient: AuthClient | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -22,39 +26,84 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [principalText, setPrincipalText] = useState<string | null>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [identity, setIdentity] = useState<any | null>(null);
+  const [authClient, setAuthClient] = useState<AuthClient | null>(null);
 
   const STORAGE_KEY_PRINCIPAL = "fradium_principal";
 
+  // Use provided identity provider or default
+  const getIdentityProvider = useCallback(() => {
+    return getInternetIdentityNetwork();
+  }, []);
+
+  // Update identity function (similar to AuthProvider.jsx)
+  const updateIdentity = useCallback(async (client: AuthClient) => {
+    try {
+      const authenticated = await client.isAuthenticated();
+      setIsAuthenticated(authenticated);
+      
+      if (authenticated) {
+        const newIdentity = client.getIdentity();
+        setIdentity(newIdentity);
+        const principal = newIdentity.getPrincipal().toString();
+        setPrincipalText(principal);
+        
+        setIsLoading(true);
+        
+        // For extension, we don't have profile function, so just set user to null
+        setUser(null);
+        setIsAuthenticated(true);
+        
+        setIsLoading(false);
+        
+        // Store principal in localStorage
+        try { 
+          localStorage.setItem(STORAGE_KEY_PRINCIPAL, principal); 
+        } catch {}
+      } else {
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const bootstrap = async () => {
+    const initAuth = async () => {
       try {
+        // Check localStorage first
         const storedPrincipal = localStorage.getItem(STORAGE_KEY_PRINCIPAL);
         if (storedPrincipal) {
           setPrincipalText(storedPrincipal);
           setIsAuthenticated(true);
+          setIsLoading(false);
           return;
         }
+
+        // Initialize AuthClient
         const client = await AuthClient.create({});
-        const isAuth = await client.isAuthenticated();
-        if (isAuth) {
-          const identity = client.getIdentity();
-          const principal = identity.getPrincipal().toString();
-          setPrincipalText(principal);
-          setIsAuthenticated(true);
-          try { localStorage.setItem(STORAGE_KEY_PRINCIPAL, principal); } catch {}
-        }
-      } catch {
-        // ignore
-      } finally {
+        setAuthClient(client);
+        await updateIdentity(client);
+      } catch (err) {
+        console.error("Auth initialization error:", err);
         setIsLoading(false);
       }
     };
-    bootstrap();
-  }, []);
+    initAuth();
+  }, [updateIdentity]);
 
   const signIn = useCallback(async () => {
-    const client = await AuthClient.create({});
+    if (!authClient) {
+      // Create new client if not available
+      const client = await AuthClient.create({});
+      setAuthClient(client);
+    }
 
+    const currentClient = authClient || await AuthClient.create({});
+
+    // Konfigurasi untuk membuka window baru, bukan tab (same as AuthProvider.jsx)
     const windowFeatures = [
       "width=500",
       "height=600",
@@ -68,32 +117,109 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ].join(",");
 
     await new Promise<void>((resolve, reject) =>
-      client.login({
-        identityProvider: getInternetIdentityNetwork() || undefined,
+      currentClient.login({
+        identityProvider: getIdentityProvider(),
         onSuccess: resolve,
         onError: reject,
         windowOpenerFeatures: windowFeatures
       })
     );
-    const identity = client.getIdentity();
-    const principal = identity.getPrincipal().toString();
+    
+    const newIdentity = currentClient.getIdentity();
+    await handleLoginSuccess(newIdentity);
+  }, [authClient, getIdentityProvider]);
+
+  // Handle login success (similar to AuthProvider.jsx)
+  const handleLoginSuccess = useCallback(async (newIdentity: any) => {
+    console.log("AuthContext: Login success, setting identity:", newIdentity.getPrincipal().toString());
+    
+    setIdentity(newIdentity);
+    const principal = newIdentity.getPrincipal().toString();
     setPrincipalText(principal);
+    
+    setIsLoading(true);
+    
+    // For extension, we don't have profile function, so just set user to null
+    setUser(null);
     setIsAuthenticated(true);
-    try { localStorage.setItem(STORAGE_KEY_PRINCIPAL, principal); } catch {}
+    
+    setIsLoading(false);
+    
+    // Store principal in localStorage
+    try { 
+      localStorage.setItem(STORAGE_KEY_PRINCIPAL, principal); 
+      console.log("AuthContext: Principal stored in localStorage:", principal);
+    } catch (error) {
+      console.error("AuthContext: Failed to store principal in localStorage:", error);
+    }
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    if (!isAuthenticated) return;
+
+    try {
+      // For extension, we don't have profile function, so just refresh identity
+      if (authClient) {
+        const isAuth = await authClient.isAuthenticated();
+        if (isAuth) {
+          const newIdentity = authClient.getIdentity();
+          setIdentity(newIdentity);
+          const principal = newIdentity.getPrincipal().toString();
+          setPrincipalText(principal);
+        } else {
+          // User is no longer authenticated
+          setIsAuthenticated(false);
+          setPrincipalText(null);
+          setIdentity(null);
+          setUser(null);
+          try { localStorage.removeItem(STORAGE_KEY_PRINCIPAL); } catch {}
+        }
+      }
+    } catch (err) {
+      console.error("User refresh error:", err);
+      // On error, assume user is no longer authenticated
+      setIsAuthenticated(false);
+      setPrincipalText(null);
+      setIdentity(null);
+      setUser(null);
+      try { localStorage.removeItem(STORAGE_KEY_PRINCIPAL); } catch {}
+    }
+  }, [isAuthenticated, authClient]);
 
   const signOut = useCallback(async () => {
     try {
       await chrome.runtime.sendMessage({ type: "LOGOUT" });
     } catch {}
-    const client = await AuthClient.create({});
-    await client.logout();
+    
+    if (authClient) {
+      await authClient.logout();
+    } else {
+      const client = await AuthClient.create({});
+      await client.logout();
+    }
+    
     setIsAuthenticated(false);
     setPrincipalText(null);
-    try { localStorage.removeItem(STORAGE_KEY_PRINCIPAL); } catch {}
-  }, []);
+    setIdentity(null);
+    setUser(null);
+    setAuthClient(null);
+    
+    try { 
+      localStorage.removeItem(STORAGE_KEY_PRINCIPAL); 
+    } catch {}
+  }, [authClient]);
 
-  const value = useMemo(() => ({ isLoading, isAuthenticated, principalText, signIn, signOut }), [isLoading, isAuthenticated, principalText, signIn, signOut]);
+  const value = useMemo(() => ({ 
+    isLoading, 
+    isAuthenticated, 
+    principalText, 
+    user, 
+    identity, 
+    authClient, 
+    signIn, 
+    signOut, 
+    refreshUser 
+  }), [isLoading, isAuthenticated, principalText, user, identity, authClient, signIn, signOut, refreshUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

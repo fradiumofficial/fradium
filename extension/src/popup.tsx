@@ -14,44 +14,22 @@ import { ROUTES } from "~lib/constant/routes"
 
 import "~style.css"
 import Welcome from '~features/landing/pages/welcome';
-import WalletConfirmation from '~features/landing/pages/createWallet';
 import { AuthProvider } from '~lib/context/authContext';
 import { WalletProvider } from '~lib/context/walletContext';
 import { useWallet } from "~lib/context/walletContext";
 import { NetworkProvider } from "~features/network/context/networkContext";
 import { Send } from 'lucide-react';
 import Receive from '~features/transaction/receive';
-
-const RequireWallet: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { hasConfirmedWallet, isAuthenticated, isLoading } = useWallet() as any
-  if (isLoading) return children
-  if (!isAuthenticated) {
-    return <Navigate to={ROUTES.WELCOME} replace />
-  }
-  if (!hasConfirmedWallet) {
-    return <Navigate to={ROUTES.WALLET_CONFIRMATION} replace />
-  }
-  return children
-}
+import ProtectedRoute from '~components/protected-route';
 
 const AuthOrWelcome: React.FC = () => {
-  const { isAuthenticated, hasConfirmedWallet, isLoading } = useWallet() as any
+  const { isAuthenticated, addresses, isLoading } = useWallet() as any
   if (isLoading) return null
   if (isAuthenticated) {
-    return <Navigate to={hasConfirmedWallet ? ROUTES.HOME : ROUTES.WALLET_CONFIRMATION} replace />
+    // If user is authenticated, go to home (wallet addresses will be loaded automatically)
+    return <Navigate to={ROUTES.HOME} replace />
   }
   return <Welcome />
-}
-
-async function handleLogin() {
-  const response = await chrome.runtime.sendMessage({ type: "LOGIN_WITH_ICP" })
-  if (response.ok) {
-    console.log("Login successful", response.principal)
-    return response.principal
-  } else {
-    console.log("Login failed")
-    return null
-  }
 }
 
 function IndexPopup() {
@@ -64,23 +42,74 @@ function IndexPopup() {
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
           <Routes>
+            {/* Public routes - no authentication required */}
             <Route path={ROUTES.WELCOME} element={<AuthOrWelcome />}/>
-            {/* Default route - show Home page directly */}
             <Route path="/" element={<Navigate to={ROUTES.WELCOME} replace />} />
-            <Route path={ROUTES.WALLET_CONFIRMATION} element={<WalletConfirmation />} />
-            <Route path={ROUTES.HOME} element={<RequireWallet><Home /></RequireWallet>} />
-            <Route path={ROUTES.AI_ANALYZER} element={<RequireWallet><AnalyzeAddress /></RequireWallet>} />
-            <Route path={ROUTES.ANALYZE_ADDRESS} element={<RequireWallet><AnalyzeAddress /></RequireWallet>} />
-            <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={<RequireWallet><AnalyzeAddressResult /></RequireWallet>} />
-            <Route path={ROUTES.ANALYZE_PROGRESS} element={<RequireWallet><AnalyzeProgress /></RequireWallet>} />
-            <Route path={ROUTES.HISTORY} element={<RequireWallet><History /></RequireWallet>} />
-            <Route path={ROUTES.SCAN_HISTORY} element={<RequireWallet><ScanHistory /></RequireWallet>} />
-            <Route path={ROUTES.DETAIL_HISTORY} element={<RequireWallet><DetailHistory /></RequireWallet>} />
-            <Route path={ROUTES.TX_DETAIL} element={<RequireWallet><TxDetail /></RequireWallet>} />
-            <Route path={ROUTES.ACCOUNT} element={<RequireWallet><Account /></RequireWallet>} />
-            <Route path={ROUTES.RECEIVE} element={<RequireWallet><Receive /></RequireWallet>} />
-            <Route path={ROUTES.SEND} element={<RequireWallet><Send /></RequireWallet>} />
-            <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+            
+            {/* Protected routes - authentication required */}
+            <Route path={ROUTES.HOME} element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.AI_ANALYZER} element={
+              <ProtectedRoute>
+                <AnalyzeAddress />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.ANALYZE_ADDRESS} element={
+              <ProtectedRoute>
+                <AnalyzeAddress />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.ANALYZE_ADDRESS_RESULT} element={
+              <ProtectedRoute>
+                <AnalyzeAddressResult />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.ANALYZE_PROGRESS} element={
+              <ProtectedRoute>
+                <AnalyzeProgress />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.HISTORY} element={
+              <ProtectedRoute>
+                <History />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.SCAN_HISTORY} element={
+              <ProtectedRoute>
+                <ScanHistory />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.DETAIL_HISTORY} element={
+              <ProtectedRoute>
+                <DetailHistory />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.TX_DETAIL} element={
+              <ProtectedRoute>
+                <TxDetail />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.ACCOUNT} element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.RECEIVE} element={
+              <ProtectedRoute>
+                <Receive />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.SEND} element={
+              <ProtectedRoute>
+                <Send />
+              </ProtectedRoute>
+            } />
+            
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to={ROUTES.WELCOME} replace />} />
           </Routes>
         </div>
         

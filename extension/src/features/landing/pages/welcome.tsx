@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import NeoButton from "~components/custom-button";
 import { useAuth } from "~lib/context/authContext";
-import { CANISTERS } from "~config/canisters";
 
 function Welcome() {
   const navigate = useNavigate();
@@ -13,14 +12,12 @@ function Welcome() {
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
-    console.log('hahaha anj', process.env.PLASMO_PUBLIC_CANISTER_ID_WALLET)
-    console.log('hahaha ababa', CANISTERS.wallet)
     setIsLoading(true)
     setMessage("Opening Internet Identity...")
     try {
       await signIn()
       setMessage("Authenticated. Redirecting...")
-      navigate(ROUTES.WALLET_CONFIRMATION, { replace: true })
+      navigate(ROUTES.HOME, { replace: true })
 
     } catch (err) {
       console.error(err)

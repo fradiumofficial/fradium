@@ -7,15 +7,13 @@ import {
   useState,
 } from "react"
 import { useAuth } from "~lib/context/authContext"
-import { AuthClient } from "@dfinity/auth-client"
 import {
   createActor as createWalletActor,
-  canisterId as walletCanisterId,
+  wallet,
 } from "../../../../src/declarations/wallet"
-import {
-  getCanisterId as getConfiguredCanisterId,
-  createAgentWithFallback,
-} from "~config/networkConfig"
+
+import { CANISTERS } from "~config/canisters"
+import { getInternetIdentityNetwork } from "~lib/utils/utils"
 
 interface NetworkFilters {
   Bitcoin: boolean
@@ -32,21 +30,29 @@ interface NetworkValues {
   Ethereum: number
 }
 
+interface WalletAddresses {
+  bitcoin?: string
+  ethereum?: string
+  solana?: string
+  icp_principal?: string
+  icp_account?: string
+}
+
 interface WalletContextType {
   // Wallet state
   isLoading: boolean
   isAuthenticated: boolean
   principalText: string | null
   isCreatingWallet: boolean
-  setIsCreatingWallet: (creating: boolean) => void
-  hasConfirmedWallet: boolean
-  setHasConfirmedWallet: (confirmed: boolean) => void
-  confirmWallet: () => Promise<boolean>
 
   // Addresses
-  addresses: { bitcoin?: string; ethereum?: string; solana?: string } | null
+  addresses: WalletAddresses | null
   isFetchingAddresses: boolean
+  addressesLoaded: boolean
+  hasLoadedAddressesOnce: boolean
   fetchAddresses: () => Promise<void>
+  fetchWalletAddresses: () => Promise<WalletAddresses | null>
+  getAddressesLoadingState: () => boolean
 
   // Wallet operations
   addAddressToWallet: (
@@ -83,18 +89,16 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isLoading, setIsLoading] = useState(true)
-  const { isAuthenticated, principalText } = useAuth()
+  const { isAuthenticated, principalText, identity } = useAuth()
 
   const [isCreatingWallet, setIsCreatingWallet] = useState(false)
   const [network, setNetwork] = useState("All Networks")
   const [hideBalance, setHideBalance] = useState(false)
   const [hasConfirmedWallet, setHasConfirmedWallet] = useState(false)
-  const [addresses, setAddresses] = useState<{
-    bitcoin?: string
-    ethereum?: string
-    solana?: string
-  } | null>(null)
+  const [addresses, setAddresses] = useState<WalletAddresses | null>(null)
   const [isFetchingAddresses, setIsFetchingAddresses] = useState(false)
+  const [addressesLoaded, setAddressesLoaded] = useState(false)
+  const [hasLoadedAddressesOnce, setHasLoadedAddressesOnce] = useState(false)
 
   const [networkValues, setNetworkValues] = useState<NetworkValues>({
     "All Networks": 0,
@@ -163,84 +167,116 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   )
 
-  // Resolve canister ID
-  const resolveWalletCanisterId = useCallback(() => {
-    const configured = getConfiguredCanisterId("wallet")
-    if (configured && configured.length >= 8) return configured
-
-    const envId =
-      (walletCanisterId as string | undefined)?.toString?.() || walletCanisterId
-    if (envId && typeof envId === "string" && envId.trim().length > 0)
-      return envId.trim()
-
-    return undefined
-  }, [])
-
-  // Create actor
-  const getWalletActor = useCallback(async () => {
-    const canister = resolveWalletCanisterId()
-    if (!canister) {
-      console.warn("WALLET canisterId is not configured")
-      return undefined as any
-    }
-
-    const host = await createAgentWithFallback()
-    const client = await AuthClient.create({})
-    const identity = client.getIdentity()
-
-    return createWalletActor(canister, {
-      agentOptions: { identity, host },
-    } as any)
-  }, [resolveWalletCanisterId])
-
-  // Fetch addresses
+  // Fetch addresses using direct actor call
   const fetchAddresses = useCallback(async () => {
-    if (!isAuthenticated || !hasConfirmedWallet || isFetchingAddresses) return
+    if (!isAuthenticated || addressesLoaded || isFetchingAddresses || !identity) return;
+    
     setIsFetchingAddresses(true)
     try {
-      const actor: any = await getWalletActor()
+      console.log("Creating wallet actor with identity:", identity.getPrincipal().toString())
+      
+      const actor: any = await createWalletActor(CANISTERS.wallet, {
+        agentOptions: { identity },
+      } as any)
+      
       if (!actor?.wallet_addresses) {
         console.warn("Wallet actor not available or method missing")
         return
       }
-      const res = await actor.wallet_addresses()
-      setAddresses({
-        bitcoin: res?.bitcoin,
-        ethereum: res?.ethereum,
-        solana: res?.solana,
-      })
-    } catch (e) {
-      console.warn("Failed to fetch addresses", e)
+      
+      console.log("Calling wallet_addresses method...")
+      const result = await actor.wallet_addresses()
+      console.log("Wallet addresses result:", result)
+      
+      const newAddresses: WalletAddresses = {
+        bitcoin: result.bitcoin,
+        ethereum: result.ethereum,
+        solana: result.solana,
+        icp_principal: result.icp_principal,
+        icp_account: result.icp_account,
+      }
+      
+      setAddresses(newAddresses)
+      setAddressesLoaded(true)
+      setHasLoadedAddressesOnce(true)
+    } catch (error) {
+      console.error("Error fetching addresses:", error)
     } finally {
       setIsFetchingAddresses(false)
     }
-  }, [getWalletActor, isAuthenticated, hasConfirmedWallet, isFetchingAddresses])
+  }, [isAuthenticated, addressesLoaded, isFetchingAddresses, identity])
 
-  // Confirm wallet
-  const confirmWallet = useCallback(async (): Promise<boolean> => {
-    if (!isAuthenticated) {
-      console.warn("User must be authenticated before creating a wallet")
-      return false
-    }
+  // Function to get loading state for addresses
+  const getAddressesLoadingState = useCallback(() => {
+    return isFetchingAddresses && !hasLoadedAddressesOnce
+  }, [isFetchingAddresses, hasLoadedAddressesOnce])
+
+  // Fetch wallet addresses using background script API
+  const fetchWalletAddresses = useCallback(async (): Promise<WalletAddresses | null> => {
+    if (!isAuthenticated || addressesLoaded || isFetchingAddresses) return addresses
+    
+    console.log("WalletContext: Fetching wallet addresses via background script...")
+    console.log("WalletContext: isAuthenticated:", isAuthenticated)
+    console.log("WalletContext: identity:", identity ? identity.getPrincipal().toString() : "null")
+    
+    setIsFetchingAddresses(true)
     try {
-      const actor: any = await getWalletActor()
-      if (!actor) return false
-      const res = await actor.wallet_addresses()
-      setAddresses({
-        bitcoin: res?.bitcoin,
-        ethereum: res?.ethereum,
-        solana: res?.solana,
+      const response = await chrome.runtime.sendMessage({
+        type: "GET_WALLET_ADDRESSES"
       })
-      setHasConfirmedWallet(true)
-      try {
-        localStorage.setItem(STORAGE_KEY_HAS_WALLET, "true")
-      } catch {}
-      return true
+
+      console.log("WalletContext: Background script response:", response)
+
+      if (response && response.ok && response.addresses) {
+        const walletAddresses: WalletAddresses = {
+          bitcoin: response.addresses.bitcoin,
+          ethereum: response.addresses.ethereum,
+          solana: response.addresses.solana,
+          icp_principal: response.addresses.icp_principal,
+          icp_account: response.addresses.icp_account,
+        }
+        
+        setAddresses(walletAddresses)
+        setAddressesLoaded(true)
+        setHasLoadedAddressesOnce(true)
+        return walletAddresses
+      } else {
+        console.warn("WalletContext: Failed to fetch wallet addresses:", response?.error || "Unknown error")
+        // Try fallback to direct actor call
+        console.log("WalletContext: Trying fallback to direct actor call...")
+        await fetchAddresses?.()
+        return addresses
+      }
     } catch (e) {
-      console.warn("confirmWallet failed", e)
-      return false
+      console.warn("WalletContext: Failed to fetch wallet addresses via background script", e)
+      // Try fallback to direct actor call
+      console.log("WalletContext: Trying fallback to direct actor call...")
+      try {
+        await fetchAddresses?.()
+        return addresses
+      } catch (fallbackError) {
+        console.error("WalletContext: Fallback also failed:", fallbackError)
+        return null
+      }
+    } finally {
+      setIsFetchingAddresses(false)
     }
-  }, [getWalletActor, isAuthenticated])
+  }, [isAuthenticated, addressesLoaded, isFetchingAddresses, fetchAddresses, addresses, identity])
+
+  useEffect(() => {
+    if (identity) {
+      // Run fetch operations in parallel to prevent blocking
+      Promise.all([fetchWalletAddresses()]).catch((error) => {
+        console.error("Error in parallel fetch operations:", error)
+      })
+    } else {
+      // Reset address states when user logs out
+      setAddresses(null)
+      setAddressesLoaded(false)
+      setHasLoadedAddressesOnce(false)
+      setIsFetchingAddresses(false)
+    }
+  }, [isAuthenticated, fetchWalletAddresses])
 
   const walletContextValue = useMemo(
     () => ({
@@ -248,13 +284,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isAuthenticated,
       principalText,
       isCreatingWallet,
-      setIsCreatingWallet,
-      hasConfirmedWallet,
-      setHasConfirmedWallet,
-      confirmWallet,
       addresses,
       isFetchingAddresses,
+      addressesLoaded,
+      hasLoadedAddressesOnce,
       fetchAddresses,
+      fetchWalletAddresses,
+      getAddressesLoadingState,
       addAddressToWallet,
       network,
       setNetwork,
@@ -269,12 +305,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isLoading,
       isAuthenticated,
       principalText,
-      isCreatingWallet,
-      hasConfirmedWallet,
-      confirmWallet,
       addresses,
       isFetchingAddresses,
+      addressesLoaded,
+      hasLoadedAddressesOnce,
       fetchAddresses,
+      fetchWalletAddresses,
+      getAddressesLoadingState,
       addAddressToWallet,
       network,
       hideBalance,
