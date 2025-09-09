@@ -134,7 +134,7 @@ export default function AssetsPage() {
   // Format portfolio value for display
   const formattedPortfolioValue = useMemo(() => {
     if (isPortfolioLoading) {
-      return <span className="inline-block w-24 h-8 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></span>;
+      return <span className="text-white text-[2.5rem] font-semibold my-2 opacity-50 animate-pulse">$0.00</span>;
     }
 
     // Hide balance if enabled
