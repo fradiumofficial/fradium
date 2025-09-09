@@ -112,9 +112,9 @@ function AnalyzeAdressResult() {
 
   // Convert confidence level to percentage for display
   const getConfidencePercentage = () => {
-    if (result.source === "ai" && result.aiData) {
+    if ((result.source === "ai" || result.source === "ai_and_community") && result.aiData) {
       return Math.round((result.aiData.confidence_level === "HIGH" ? 95 : result.aiData.confidence_level === "MEDIUM" ? 75 : 50));
-    } else if (result.source === "community" && result.communityData) {
+    } else if ((result.source === "community" || result.source === "ai_and_community") && result.communityData) {
       // For community, calculate based on vote ratio
       const report = result.communityData.report?.[0];
       if (report) {
@@ -154,9 +154,9 @@ function AnalyzeAdressResult() {
         {/* Analysis Source Indicator */}
         <div className="mt-4 p-3 bg-white/5 rounded">
           <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${result.source === "community" ? "bg-blue-400" : "bg-purple-400"}`}></div>
+            <div className={`w-2 h-2 rounded-full ${result.source === "community" ? "bg-blue-400" : result.source === "ai_and_community" ? "bg-green-400" : "bg-purple-400"}`}></div>
             <span className="text-sm font-medium">
-              Detected by {result.source === "community" ? "Community Analysis" : "AI Analysis"}
+              Detected by {result.source === "community" ? "Community Analysis" : result.source === "ai_and_community" ? "AI + Community Analysis" : "AI Analysis"}
             </span>
           </div>
         </div>
@@ -164,7 +164,7 @@ function AnalyzeAdressResult() {
         <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Analysis Details</h1>
         
         {/* Render different details based on analysis source */}
-        {result.source === "ai" && result.aiData ? (
+        {(result.source === "ai" || result.source === "ai_and_community") && result.aiData ? (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/5 flex-1 items-center gap-2 p-4">
               <p className="font-medium text-[18px] pb-2">{result.aiData.transactions_analyzed}</p>
@@ -198,7 +198,7 @@ function AnalyzeAdressResult() {
               </div>
             </div>
           </div>
-        ) : result.source === "community" && result.communityData ? (
+        ) : (result.source === "community" || result.source === "ai_and_community") && result.communityData ? (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/5 flex-1 items-center gap-2 p-4">
               <p className="font-medium text-[18px] pb-2">
@@ -272,7 +272,7 @@ function AnalyzeAdressResult() {
       </div>
 
       {/* Report Details - Only show if there's a community report */}
-      {result.source === "community" && result.communityData?.report?.[0] && (
+      {(result.source === "community" || result.source === "ai_and_community") && result.communityData?.report?.[0] && (
         <div className="m-4">
           <div className="bg-white/5 p-4 rounded">
             <h3 className="text-[18px] font-semibold mb-3">Report Details</h3>

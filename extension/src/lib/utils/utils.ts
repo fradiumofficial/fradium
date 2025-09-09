@@ -17,13 +17,13 @@ export function getInternetIdentityNetwork() {
   if (!canisterId) {
     console.warn("CANISTER_ID_INTERNET_IDENTITY is not set.");
     // Fallback to the public Internet Identity service
-    return "https://identity.ic0.app";
+    return "https://id.ai";
   }
 
   if (network === "local") {
     return `http://${canisterId}.localhost:4943`;
   } else {
     // Mainnet/public II URL
-    return `https://identity.ic0.app`;
+    return `https://id.ai`;
   }
 }

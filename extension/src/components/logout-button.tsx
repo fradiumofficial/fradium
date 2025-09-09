@@ -22,19 +22,14 @@ function LogoutButton({ onClick, className = "" }: LogoutButtonProps) {
         if (isLoading) return;
         setIsLoading(true);
         try {
-            // Ask background to terminate II session
-            await chrome.runtime.sendMessage({ type: "LOGOUT" });
+            // Clear local auth state and navigate
+            await signOut();
+            navigate(ROUTES.WELCOME, { replace: true });
         } catch (_e) {
             // ignore and continue
-        } finally {
-            try {
-                // Clear local auth state so routing updates immediately
-                await signOut();
-            } catch (_e2) {
-                // ignore
-            }
-            setIsLoading(false);
             navigate(ROUTES.WELCOME, { replace: true });
+        } finally {
+            setIsLoading(false);
         }
     };
 

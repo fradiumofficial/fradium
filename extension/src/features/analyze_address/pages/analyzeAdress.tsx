@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ROUTES } from "~lib/constant/routes";
 import { detectTokenType, TokenType } from "~lib/utils/tokenUtils";
 import ProfileHeader from "~components/header";
 import NeoButton from "~components/custom-button";
@@ -43,6 +45,16 @@ const validateAddress = (addr: string): string | null => {
 function AnalyzeAddress() {
   const [address, setAddress] = useState<string>('');
   const [addressError, setAddressError] = useState<string>('');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Pre-fill from prior attempt error state
+  React.useEffect(() => {
+    const priorAddress = (location.state as any)?.address as string | undefined;
+    const errorMsg = (location.state as any)?.error as string | undefined;
+    if (priorAddress) setAddress(priorAddress);
+    if (errorMsg) setAddressError(errorMsg);
+  }, [location.state]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -54,6 +66,7 @@ function AnalyzeAddress() {
     }
     
     setAddressError('');
+    navigate(ROUTES.ANALYZE_PROGRESS, { state: { address, isAnalyzing: true } });
   };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {

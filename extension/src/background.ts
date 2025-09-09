@@ -1,140 +1,89 @@
-import { AuthClient } from "@dfinity/auth-client"
-import { getInternetIdentityNetwork } from "~lib/utils/utils"
-import { createActor, canisterId } from "../../src/declarations/wallet"
+import { createActor as createWalletActor, canisterId as walletCanisterId } from "../../src/declarations/wallet"
+import { backend } from "../../src/declarations/backend"
+import { HttpAgent } from "@dfinity/agent"
 
-let authClient: AuthClient | null = null
-let identity: any = null
+// Background script will receive identity from UI/popup
 let user: any = null
-let isUserAuthenticated = false
-
-// Initialize authentication on startup
-const initializeAuth = async () => {
-  try {
-    await initAuth()
-  } catch (error) {
-    console.error("Failed to initialize auth on startup:", error)
-  }
-}
-
-// Call initialization
-initializeAuth()
-
-// Ambil identity provider default atau custom
-function getIdentityProvider(custom?: string) {
-  return custom || getInternetIdentityNetwork()
-}
-
-// Inisialisasi AuthClient sekali di background
-async function initAuth() {
-  try {
-    if (!authClient) {
-      authClient = await AuthClient.create({})
-    }
-
-    const authenticated = await authClient.isAuthenticated()
-    if (authenticated) {
-      identity = authClient.getIdentity()
-      isUserAuthenticated = true
-      console.log("Background: User authenticated with principal:", identity.getPrincipal().toString())
-    } else {
-      identity = null
-      isUserAuthenticated = false
-      console.log("Background: User not authenticated")
-    }
-  } catch (error) {
-    console.error("Background auth initialization error:", error)
-    identity = null
-    isUserAuthenticated = false
-  }
-}
 
 
-// LOGIN
+// LOGIN - Not supported in background (MV3 service worker)
 async function handleLogin(identityProvider?: string) {
-  await initAuth()
-  if (!authClient) throw new Error("AuthClient not initialized")
-
-  return new Promise(async (resolve, reject) => {
-    await authClient!.login({
-      identityProvider: getIdentityProvider(identityProvider),
-      onSuccess: async () => {
-        identity = authClient!.getIdentity()
-        isUserAuthenticated = true
-        resolve({
-          ok: true,
-          principal: identity.getPrincipal().toText(),
-          user
-        })
-      },
-      onError: (err) => {
-        console.error("Login failed", err)
-        reject({ ok: false, error: err })
-      },
-      windowOpenerFeatures:
-        "width=500,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no,directories=no"
-    })
-  })
+  console.warn("Background: Login not supported in MV3 service worker")
+  return { ok: false, error: "Login not supported in background script" }
 }
 
-// LOGOUT
+// LOGOUT - Not supported in background (MV3 service worker)
 async function handleLogout() {
-  if (!authClient) return { ok: false }
-
-  await authClient.logout()
-  identity = null
-  user = null
-  isUserAuthenticated = false
-  return { ok: true }
+  console.warn("Background: Logout not supported in MV3 service worker")
+  return { ok: false, error: "Logout not supported in background script" }
 }
 
-// REFRESH PROFILE
-async function refreshUser(getProfileFunction?: () => Promise<any>) {
-  if (!isUserAuthenticated || !getProfileFunction) return null
-
+// ANALYZE ADDRESS (Backend)
+async function handleAnalyzeAddress(address: string, identity?: any) {
   try {
-    const profile = await getProfileFunction()
-    user = profile
-    return { ok: true, user }
+    if (!identity) {
+      console.warn("Background: No identity provided for analyze address")
+      return { ok: false, error: "No identity provided" }
+    }
+    
+    const result = await backend.analyze_address(address)
+
+    if ("Ok" in result) {
+      console.log("Background: Analyze address successful")
+      return { ok: true, data: result.Ok }
+    } else {
+      console.log("Background: Analyze address failed:", result.Err)
+      return { ok: false, error: result.Err }
+    }
   } catch (err) {
-    console.error("Profile refresh error:", err)
-    return { ok: false }
+    console.error("Background: analyze_address error:", err)
+    return { ok: false, error: String(err) }
   }
+}
+
+// REFRESH PROFILE - Not supported in background
+async function refreshUser(getProfileFunction?: () => Promise<any>) {
+  console.warn("Background: Profile refresh not supported in MV3 service worker")
+  return { ok: false, error: "Profile refresh not supported in background" }
 }
 
 // GET WALLET ADDRESSES
-async function handleGetWalletAddresses() {
+async function handleGetWalletAddresses(identity?: any) {
   try {
-    // Ensure authentication is initialized
-    await initAuth()
-    
-    console.log("Background: Checking authentication state...")
-    console.log("Background: isUserAuthenticated:", isUserAuthenticated)
-    console.log("Background: identity:", identity ? identity.getPrincipal().toString() : "null")
-    
-    if (!isUserAuthenticated || !identity) {
-      console.warn("Background: User not authenticated when trying to get wallet addresses")
-      return { ok: false, error: "User not authenticated" }
+    if (!identity) {
+      console.warn("Background: No identity provided for wallet addresses")
+      return { ok: false, error: "No identity provided" }
     }
 
-    console.log("Background: Creating wallet actor with identity:", identity.getPrincipal().toString())
-    
-    if (!canisterId) {
-      console.error("Background: Wallet canister ID not configured")
+    if (!walletCanisterId) {
+      console.error("Background: Wallet canister ID not found")
       return { ok: false, error: "Wallet canister ID not configured" }
     }
 
-    // Create wallet actor with authenticated identity
-    const walletActor = createActor(canisterId, {
-      agentOptions: { identity }
+    // Create authenticated wallet actor
+    const agent = new HttpAgent({
+      identity,
     })
 
-    console.log("Background: Calling wallet_addresses method...")
-    // Call wallet_addresses function
-    const addresses = await walletActor.wallet_addresses()
+    // Fetch root key for certificate validation during development
+    if (process.env.DFX_NETWORK !== "ic") {
+      agent.fetchRootKey().catch((err) => {
+        console.warn(
+          "Unable to fetch root key. Check to ensure that your local replica is running"
+        )
+        console.error(err)
+      })
+    }
+
+    const authenticatedWallet = createWalletActor(walletCanisterId, {
+      agent: agent as any,
+    })
+
+    const addresses = await authenticatedWallet.wallet_addresses()
     console.log("Background: Wallet addresses result:", addresses)
-    
-    return { 
-      ok: true, 
+
+    return {
+      ok: true,
       addresses: {
         bitcoin: addresses.bitcoin,
         ethereum: addresses.ethereum,
@@ -165,10 +114,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           break
 
         case "GET_AUTH_STATE":
+          console.warn("Background: GET_AUTH_STATE not supported - use UI auth state")
           sendResponse({
-            isAuthenticated: isUserAuthenticated,
-            principal: identity ? identity.getPrincipal().toText() : null,
-            user
+            isAuthenticated: false,
+            principal: null,
+            user: null,
+            error: "Auth state managed in UI only"
           })
           break
 
@@ -178,8 +129,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           break
 
         case "GET_WALLET_ADDRESSES":
-          const addressesResult = await handleGetWalletAddresses()
+          const addressesResult = await handleGetWalletAddresses(msg.identity)
           sendResponse(addressesResult)
+          break
+
+        case "ANALYZE_ADDRESS":
+          const analyzeResult = await handleAnalyzeAddress(msg.address, msg.identity)
+          sendResponse(analyzeResult)
           break
 
         default:
