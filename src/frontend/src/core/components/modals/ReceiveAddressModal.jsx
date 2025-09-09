@@ -127,36 +127,15 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
       )}
 
       {/* Address pill */}
-      <motion.div
-        className="rounded-full border border-white/10 pl-4 pr-2 py-2.5"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2 }}
-      >
+      <motion.div className="rounded-full border border-white/10 pl-4 pr-2 py-2.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
         <div className="flex items-center gap-1">
           <motion.span className="text-white text-[13px] truncate flex-1 font-mono" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             {address || "Not available"}
           </motion.span>
-          <motion.button
-            type="button"
-            className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => onQrClick(title, address)}
-            aria-label="Show QR"
-          >
+          <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onQrClick(title, address)} aria-label="Show QR">
             <img src="/assets/icons/qr_code.svg" alt="QR Code" className="w-4 h-4 opacity-80" />
           </motion.button>
-          <motion.button
-            type="button"
-            className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => onCopy(address)}
-            aria-label="Copy Address"
-          >
+          <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onCopy(address)} aria-label="Copy Address">
             <img src="/assets/icons/content_copy.svg" alt="Copy" className="w-4 h-4 opacity-80" />
           </motion.button>
         </div>
@@ -206,9 +185,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
               // QR Detail View
               <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col items-center gap-3 w-full">
                 <div className="w-full rounded-2xl bg-white/[0.04] border border-white/10 p-5 flex flex-col items-center">
-                  {qrCodeDataUrl && (
-                    <img src={qrCodeDataUrl} alt="QR Code" className="w-full max-w-56 h-auto object-contain rounded" style={{ imageRendering: "crisp-edges" }} />
-                  )}
+                  {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="QR Code" className="w-full max-w-56 h-auto object-contain rounded" style={{ imageRendering: "crisp-edges" }} />}
                   <div className="text-[#B0B6BE] text-sm mt-3">Scan to receive {qrDetail.coin}</div>
                 </div>
               </motion.div>
@@ -219,6 +196,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
                   <div className="flex flex-col gap-4">
                     <AddressItem title="Bitcoin:" address={addresses.bitcoin} onCopy={copyToClipboard} onQrClick={handleQrClick} />
                     <AddressItem title="Ethereum:" address={addresses.ethereum} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                    <AddressItem title="Solana:" address={addresses.solana} onCopy={copyToClipboard} onQrClick={handleQrClick} />
                     <AddressItem title="Fradium:" address={addresses.solana} onCopy={copyToClipboard} onQrClick={handleQrClick} />
                     <AddressItem title="ICP Principal:" description="Use for receiving ICRC-1 tokens in the ICP network, such as SNS, ck tokens, etc." address={addresses.icp_principal} onCopy={copyToClipboard} onQrClick={handleQrClick} />
                     <AddressItem title="ICP Account (for exchanges):" description="Use for receiving ICP on centralized exchanges and legacy transfers." address={addresses.icp_account} onCopy={copyToClipboard} onQrClick={handleQrClick} />

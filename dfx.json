@@ -25,8 +25,8 @@
         }
       ],
       "build": ["bash src/wallet/build.sh", "candid-extractor target/wasm32-unknown-unknown/release/wallet.wasm > src/wallet/wallet.did"],
-      "init_arg": "(variant { Local })",
-      "_mainnet_init_arg": "(variant { Mainnet })",
+      "init_arg": "(variant { Mainnet })",
+      "_local_init_arg": "(variant { Local })",
       "dependencies": ["sol_rpc"]
     },
     "sol_rpc": {
