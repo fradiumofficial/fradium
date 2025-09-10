@@ -22,5 +22,5 @@ export const ROUTES = {
   RECEIVE: '/receive',
   SEND: '/send',
   CONFIRMATION_BALANCE: '/confirmation-balance',
-  BALANCE_DETAIL: '/balance-detail',
+  RECEIVE_DETAIL: '/receive-detail',
   }

@@ -43,6 +43,9 @@ interface WalletContextType {
   principalText: string | null
   isCreatingWallet: boolean
 
+  // Wallet actor
+  walletActor: any | null
+
   // Addresses
   addresses: WalletAddresses | null
   isFetchingAddresses: boolean
@@ -259,6 +262,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isAuthenticated,
       principalText,
       isCreatingWallet,
+      walletActor,
       addresses,
       isFetchingAddresses,
       addressesLoaded,
@@ -280,6 +284,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isLoading,
       isAuthenticated,
       principalText,
+      walletActor,
       addresses,
       isFetchingAddresses,
       addressesLoaded,

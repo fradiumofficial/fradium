@@ -4,7 +4,7 @@ import { CDN } from "~lib/constant/cdn";
 import NeoButton from "~components/custom-button";
 import { ROUTES } from "~lib/constant/routes";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "~lib/context/walletContext";
 
 function Receive() {
@@ -13,9 +13,6 @@ function Receive() {
     addresses, 
     isFetchingAddresses, 
     addressesLoaded,
-    hasLoadedAddressesOnce,
-    fetchAddresses, 
-    fetchWalletAddresses,
     getAddressesLoadingState,
     isAuthenticated 
   } = useWallet();
@@ -40,12 +37,23 @@ function Receive() {
     }
   }, [addresses]);
 
+  // Handle back navigation
+  const handleBack = useCallback(() => {
+    navigate(ROUTES.HOME);
+  }, [navigate]);
+
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
       <ProfileHeader />
 
       <div className="flex flex-row items-center px-[24px]">
-        <ChevronLeft className="w-6 h-6" />
+        <button
+            onClick={handleBack}
+            className="p-1 hover:bg-white/10 rounded"
+            aria-label="Go back"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
         <h1 className="text-[20px] font-semibold text-white px-[12px]">Receive Coin</h1>
       </div>
 
@@ -55,18 +63,6 @@ function Receive() {
           <span className="text-xs text-white/60">
             {getAddressesLoadingState() ? "Fetching addresses..." : addressesLoaded ? "Addresses loaded" : "No addresses available"}
           </span>
-          <button 
-            onClick={async () => {
-              const walletAddresses = await fetchWalletAddresses?.();
-              if (walletAddresses) {
-                setLocalAddresses(walletAddresses);
-              }
-            }} 
-            className="text-xs text-[#9BE4A0] hover:underline"
-            disabled={isFetchingAddresses}
-          >
-            {isFetchingAddresses ? "Loading..." : "Refresh"}
-          </button>
         </div>
         {/* Bitcoin */}
         <h1 className="text-[14px] font-medium text-white mb-[6px]">Bitcoin:</h1>
@@ -80,7 +76,7 @@ function Receive() {
             disabled={!localAddresses?.bitcoin} 
           />
           <div className="flex flex-row gap-[12px]">
-            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" />
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.bitcoin, network: "bitcoin" } })} />
             <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.bitcoin)} />
           </div>
         </div>
@@ -97,7 +93,7 @@ function Receive() {
             disabled={!localAddresses?.ethereum} 
           />
           <div className="flex flex-row gap-[12px]">
-            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" />
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.ethereum, network: "ethereum" } })} />
             <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.ethereum)} />
           </div>
         </div>
@@ -114,7 +110,7 @@ function Receive() {
             disabled={!localAddresses?.solana} 
           />
           <div className="flex flex-row gap-[12px]">
-            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" />
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.solana, network: "solana" } })} />
             <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.solana)} />
           </div>
         </div>

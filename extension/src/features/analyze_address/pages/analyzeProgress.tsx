@@ -20,10 +20,10 @@ export default function AnalysisProgress() {
   const isAnalyzing = location.state?.isAnalyzing;
 
   const analysisSteps = [
-    "Checking Community Reports...", 
-    "Analyzing Address with AI...", 
-    "Processing Transaction Patterns...", 
-    "Checking Security Database...", 
+    "Analyzing Community Reports...",
+    "Validating Address Safety...",
+    "Processing AI Analysis...",
+    "Checking Transaction Patterns...",
     "Finalizing Risk Assessment..."
   ];
 
@@ -55,7 +55,8 @@ export default function AnalysisProgress() {
         // Transform result for the existing result page format
         const result: AnalysisResult = {
           isSafe: analysisResult.result.isSafe,
-          source: analysisResult.analysisSource,
+          source: analysisResult.analysisSource === 'community' ? 'community' :
+                 analysisResult.analysisSource === 'community_and_ai' ? 'ai_and_community' : 'ai',
           communityData: analysisResult.communityAnalysis ? {
             is_safe: analysisResult.communityAnalysis.isSafe,
             report: analysisResult.communityAnalysis.rawResult?.report ? [analysisResult.communityAnalysis.rawResult.report] : []

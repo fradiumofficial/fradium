@@ -62,7 +62,7 @@ export interface AIAnalysisResult {
 }
 
 export interface CombinedAnalysisResult extends AIAnalysisResult {
-  analysisSource: 'ai' | 'ai_and_community' | 'community';
+  analysisSource: 'ai' | 'ai_and_community' | 'community' | 'community_and_ai';
   finalStatus: 'safe_by_both' | 'safe_by_ai' | 'unsafe_by_ai' | 'unsafe_by_community';
   communityAnalysis?: AnalysisResult;
   aiAnalysis?: AnalysisResult;
@@ -102,5 +102,27 @@ export interface EthereumFeatures extends ExtractedFeatures {
   first_transaction: string;
   last_transaction: string;
   current_balance: number;
+  [key: string]: any;
+}
+
+export interface SolanaFeatures extends ExtractedFeatures {
+  address_length: number;
+  has_numbers: number;
+  has_uppercase: number;
+  has_lowercase: number;
+  starts_with_number: number;
+  starts_with_letter: number;
+  total_txs: number;
+  avg_tx_value: number;
+  total_received: number;
+  total_sent: number;
+  unique_interactions: number;
+  first_tx_age_days: number;
+  last_tx_age_hours: number;
+  balance_sol: number;
+  program_interactions: number;
+  is_system_program: number;
+  is_vote_account: number;
+  is_token_account: number;
   [key: string]: any;
 }

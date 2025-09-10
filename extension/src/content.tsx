@@ -17,6 +17,7 @@ import Welcome from "~features/landing/pages/welcome"
 import { WalletProvider } from "~lib/context/walletContext"
 import Send from "~features/transaction/send"
 import Receive from "~features/transaction/receive"
+import ReceiveDetail from "~features/transaction/receiveDetail"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io/"]
@@ -75,6 +76,7 @@ const PlasmoOverlay = () => {
             <Route path={ROUTES.ACCOUNT} element={<Account />} />
             <Route path={ROUTES.RECEIVE} element={<Receive />} />
             <Route path={ROUTES.SEND} element={<Send />} />
+            <Route path={ROUTES.RECEIVE_DETAIL} element={<ReceiveDetail />} />
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
         </div>
