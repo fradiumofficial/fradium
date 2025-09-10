@@ -61,6 +61,28 @@ export const TOKENS_CONFIG = [
   },
 ];
 
+// API Keys for different services
+const ETHERSCAN_API_KEY = process.env.VITE_ETHERSCAN_API_KEY;
+
+if (!ETHERSCAN_API_KEY) {
+  throw new Error("VITE_ETHERSCAN_API_KEY environment variable is required but not set");
+}
+
+export const API_URLS = {
+  ethereum: {
+    sepolia: `https://api-sepolia.etherscan.io/api?module=account&action=txlist&apikey=${ETHERSCAN_API_KEY}`,
+    mainnet: `https://api.etherscan.io/api?module=account&action=txlist&apikey=${ETHERSCAN_API_KEY}`,
+  },
+  bitcoin: {
+    testnet: "https://api.blockcypher.com/v1/btc/test3",
+    mainnet: "https://api.blockcypher.com/v1/btc/main",
+  },
+  solana: {
+    devnet: "https://api.devnet.solana.com",
+    mainnet: "https://api.mainnet-beta.solana.com",
+  },
+};
+
 // Network configuration for WalletLayout compatibility
 export const NETWORK_CONFIG = [
   {
