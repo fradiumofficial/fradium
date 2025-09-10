@@ -1,7 +1,7 @@
 import { EyeClosedIcon, EyeIcon, MoveUpRight, MoveDownLeft, Search, Settings2, RefreshCw } from "lucide-react";
 import ProfileHeader from "~components/header";
 import { CDN } from "~lib/constant/cdn";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
@@ -126,12 +126,12 @@ function Home() {
     ));
   }, [isOutOfCyclesError]);
 
-  // Fetch Bitcoin balance
-  const fetchBitcoinBalance = useCallback(async () => {
+  // Fetch Bitcoin balance - using useRef to prevent recreation cascades
+  const fetchBitcoinBalance = useRef(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "btc" 
+    setTokenBalances(prev => prev.map(token =>
+      token.networkKey === "btc"
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -141,28 +141,28 @@ function Home() {
       const btcValue = Number(btcBalance) / 100000000; // Convert satoshi to BTC
       const balanceValue = btcValue.toFixed(getDecimalPlaces("btc"));
 
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "btc" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
+      setTokenBalances(prev => prev.map(token =>
+        token.networkKey === "btc"
+          ? {
+              ...token,
+              balance: balanceValue,
+              usdValue: "$0.00",
+              isLoading: false,
+              hasError: false
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "BTC");
     }
-  }, [isAuthenticated, walletActor, identity, getDecimalPlaces, canisterOutOfCycles]);
+  });
 
-  // Fetch Ethereum balance
-  const fetchEthereumBalance = useCallback(async () => {
+  // Fetch Ethereum balance - using useRef to prevent recreation cascades
+  const fetchEthereumBalance = useRef(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "eth" 
+    setTokenBalances(prev => prev.map(token =>
+      token.networkKey === "eth"
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -171,28 +171,28 @@ function Home() {
       const ethBalance = await walletActor.ethereum_balance();
       const balanceValue = ethBalance; // Already formatted as string
 
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "eth" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
+      setTokenBalances(prev => prev.map(token =>
+        token.networkKey === "eth"
+          ? {
+              ...token,
+              balance: balanceValue,
+              usdValue: "$0.00",
+              isLoading: false,
+              hasError: false
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "ETH");
     }
-  }, [isAuthenticated, walletActor, identity, canisterOutOfCycles]);
+  });
 
-  // Fetch Solana balance
-  const fetchSolanaBalance = useCallback(async () => {
+  // Fetch Solana balance - using useRef to prevent recreation cascades
+  const fetchSolanaBalance = useRef(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "sol" 
+    setTokenBalances(prev => prev.map(token =>
+      token.networkKey === "sol"
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -202,28 +202,28 @@ function Home() {
       const solValue = Number(solBalance) / 1000000000; // Convert lamports to SOL
       const balanceValue = solValue.toFixed(getDecimalPlaces("sol"));
 
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "sol" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
+      setTokenBalances(prev => prev.map(token =>
+        token.networkKey === "sol"
+          ? {
+              ...token,
+              balance: balanceValue,
+              usdValue: "$0.00",
+              isLoading: false,
+              hasError: false
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "SOL");
     }
-  }, [isAuthenticated, walletActor, identity, getDecimalPlaces, canisterOutOfCycles]);
+  });
 
-  // Fetch Fradium balance
-  const fetchFradiumBalance = useCallback(async () => {
+  // Fetch Fradium balance - using useRef to prevent recreation cascades
+  const fetchFradiumBalance = useRef(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "fra" 
+    setTokenBalances(prev => prev.map(token =>
+      token.networkKey === "fra"
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -232,21 +232,21 @@ function Home() {
       // Fradium balance - would need to be implemented
       const balanceValue = "0.00";
 
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "fra" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
+      setTokenBalances(prev => prev.map(token =>
+        token.networkKey === "fra"
+          ? {
+              ...token,
+              balance: balanceValue,
+              usdValue: "$0.00",
+              isLoading: false,
+              hasError: false
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "FUM");
     }
-  }, [isAuthenticated, walletActor, identity, canisterOutOfCycles]);
+  });
 
   // Reset canister error state (for manual retry)
   const resetCanisterError = useCallback(() => {
@@ -254,7 +254,7 @@ function Home() {
     setCanisterOutOfCycles(false);
   }, []);
 
-  // Fetch all token balances individually
+  // Fetch all token balances individually - stable reference to prevent recreation cascades
   const fetchAllBalances = useCallback(async (force = false) => {
     if (!isAuthenticated || !walletActor || canisterOutOfCycles) {
       setTokenBalances(tokenConfig);
@@ -269,19 +269,19 @@ function Home() {
     setIsFetchingBalances(true);
 
     try {
-      // Call all fetch functions in parallel - each will update its own loading state
+      // Call all fetch functions in parallel using stable references - each will update its own loading state
       await Promise.all([
-        fetchBitcoinBalance(),
-        fetchEthereumBalance(),
-        fetchSolanaBalance(),
-        fetchFradiumBalance()
+        fetchBitcoinBalance.current(),
+        fetchEthereumBalance.current(),
+        fetchSolanaBalance.current(),
+        fetchFradiumBalance.current()
       ]);
     } catch (error) {
       console.error("Error in parallel balance fetching:", error);
     } finally {
       setIsFetchingBalances(false);
     }
-  }, [isAuthenticated, walletActor, canisterOutOfCycles, isFetchingBalances, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, fetchFradiumBalance, tokenConfig]);
+  }, [isAuthenticated, walletActor, canisterOutOfCycles, isFetchingBalances, tokenConfig]);
 
   // Reset error state when authentication changes
   useEffect(() => {
