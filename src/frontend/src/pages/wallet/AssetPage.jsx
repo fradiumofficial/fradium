@@ -42,11 +42,16 @@ export default function AssetsPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Settings Dropdown States
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+  const [hideZeroValue, setHideZeroValue] = useState(false);
+
   // Hover/interaction states
   const [isCardHover, setIsCardHover] = useState(false);
   const [cardMouse, setCardMouse] = useState({ x: 0, y: 0 });
   const [hoverSearch, setHoverSearch] = useState(false);
   const [hoverFilter, setHoverFilter] = useState(false);
+  const [hoverSettings, setHoverSettings] = useState(false);
 
   // Event Handlers
   const handleSendClick = () => {
@@ -136,7 +141,23 @@ export default function AssetsPage() {
     setAnalyzeError(null);
   };
 
-  // Filter tokens based on network selection and search query
+  // Settings Dropdown Handlers
+  const handleSettingsToggle = () => {
+    setShowSettingsDropdown(!showSettingsDropdown);
+  };
+
+  const handleHideZeroValue = () => {
+    setHideZeroValue(!hideZeroValue);
+    setShowSettingsDropdown(false);
+  };
+
+  const handleManageNetworks = () => {
+    // Trigger the manage networks modal
+    window.dispatchEvent(new CustomEvent("openManageNetworks"));
+    setShowSettingsDropdown(false);
+  };
+
+  // Filter tokens based on network selection, search query, and zero value filter
   const filteredTokens = TOKENS_CONFIG.filter((token) => {
     // First, filter by network selection
     let networkMatch = true;
@@ -154,7 +175,15 @@ export default function AssetsPage() {
       searchMatch = token.name.toLowerCase().includes(searchQuery.toLowerCase()) || token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || token.chain.toLowerCase().includes(searchQuery.toLowerCase());
     }
 
-    return networkMatch && searchMatch;
+    // Finally, filter by zero value if hideZeroValue is enabled
+    let zeroValueMatch = true;
+    if (hideZeroValue) {
+      const balance = balances[token.id];
+      const numericBalance = parseFloat(balance || "0");
+      zeroValueMatch = numericBalance > 0;
+    }
+
+    return networkMatch && searchMatch && zeroValueMatch;
   });
 
   // Calculate total portfolio value
@@ -221,6 +250,20 @@ export default function AssetsPage() {
       return `$${totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
   }, [totalPortfolioValue, isPortfolioLoading, hideBalance]);
+
+  // Close settings dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSettingsDropdown && !event.target.closest(".settings-dropdown")) {
+        setShowSettingsDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSettingsDropdown]);
 
   return (
     <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4">
@@ -299,8 +342,57 @@ export default function AssetsPage() {
             <h2 className="md:text-base text-sm font-semibold text-white">Tokens</h2>
             <div className="flex md:gap-4 gap-2 ml-auto">
               <motion.img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverSearch(true)} onMouseLeave={() => setHoverSearch(false)} onClick={handleSearchToggle} animate={hoverSearch ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
-              <motion.img src="/assets/icons/analyze-address-dark.svg" alt="Analyze Address" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} onClick={handleAnalyzeClick} animate={hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
-              <motion.img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} animate={hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
+              {/* Settings Dropdown */}
+              <div className="relative settings-dropdown">
+                <div className="relative">
+                  <motion.img src="/assets/icons/page_info.svg" alt="Settings" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverSettings(true)} onMouseLeave={() => setHoverSettings(false)} onClick={handleSettingsToggle} animate={hoverSettings ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
+                  {hideZeroValue && <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#9BE4A0] rounded-full"></div>}
+                </div>
+
+                {/* Dropdown Menu */}
+                <AnimatePresence>
+                  {showSettingsDropdown && (
+                    <motion.div
+                      className="absolute top-full right-0 mt-2 w-48 rounded-xl border border-white/10 z-[9999] overflow-hidden"
+                      style={{
+                        background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))",
+                        boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+                        backdropFilter: "blur(10px)",
+                      }}
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}>
+                      <div className="py-2">
+                        <button onClick={handleHideZeroValue} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors">
+                          {hideZeroValue ? (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                              <path d="M1 1l22 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                            </svg>
+                          )}
+                          <span className={hideZeroValue ? "text-[#9BE4A0] font-medium" : ""}>Hide Zero Value</span>
+                          {hideZeroValue && <div className="ml-auto w-2 h-2 bg-[#9BE4A0] rounded-full"></div>}
+                        </button>
+
+                        <div className="h-px bg-white/10 mx-4 my-1" />
+
+                        <button onClick={handleManageNetworks} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors">
+                          <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-4 h-4" />
+                          <span>Manage Networks</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <motion.img src="/assets/icons/refresh.webp" alt="Refresh Balance" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={isRefreshingBalances ? { rotate: { duration: 1, repeat: Infinity, ease: "linear" } } : { type: "spring", stiffness: 280, damping: 20 }} />
             </div>
           </div>
 

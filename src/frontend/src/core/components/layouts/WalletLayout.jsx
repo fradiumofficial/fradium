@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
+import ManageNetworksModal from "../modals/ManageNetworksModal";
 
 const MotionLink = motion(Link);
 
@@ -70,7 +71,12 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
 
                 <div className="h-px bg-white/10 mx-4 my-2" />
 
-                <button className="w-full flex items-center gap-3 px-6 py-3 text-[#9BEB83] hover:bg-white/5 transition-colors">
+                <button
+                  className="w-full flex items-center gap-3 px-6 py-3 text-[#9BEB83] hover:bg-white/5 transition-colors"
+                  onClick={() => {
+                    // This will be handled by the parent component
+                    window.dispatchEvent(new CustomEvent("openManageNetworks"));
+                  }}>
                   <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
                   <span className="font-medium">Manage Networks</span>
                 </button>
@@ -110,14 +116,7 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                 <button className="w-full text-sm transition-colors group">
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                     <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
-                    <span className="text-white">Your addresses</span>
-                  </div>
-                </button>
-
-                <button className="w-full text-sm transition-colors group">
-                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
-                    <img src="/assets/icons/contact.svg" alt="Contact" />
-                    <span className="text-white">Contact</span>
+                    <span className="text-white">Copy Principal</span>
                   </div>
                 </button>
 
@@ -237,12 +236,14 @@ function WalletLayoutContent() {
       "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-active.svg",
       "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-active.svg",
       Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-active.svg",
+      Settings: "/assets/icons/setting.svg",
     };
     const INACTIVE = {
       "Analyze Address": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/analyse-address-inactive.svg",
       "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-inactive.svg",
       "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-inactive.svg",
       Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-inactive.svg",
+      Settings: "/assets/icons/setting.svg",
     };
 
     const src = active ? ACTIVE[label] : INACTIVE[label];
@@ -285,42 +286,6 @@ function WalletLayoutContent() {
 
     // Return default (false - show balance)
     return false;
-  };
-
-  // Helper function to get network filter status
-  const getNetworkFilterStatus = (networkKey) => {
-    // Find network from NETWORK_CONFIG
-    const network = NETWORK_CONFIG.find((net) => net.id === networkKey);
-    return network ? networkFilters[network.name] || false : false;
-  };
-
-  const handleToggleNetwork = (key) => {
-    // Find network from NETWORK_CONFIG
-    const network = NETWORK_CONFIG.find((net) => net.id === key);
-    if (!network) return;
-
-    const newFilters = {
-      ...networkFilters,
-      [network.name]: !networkFilters[network.name],
-    };
-    updateNetworkFilters(newFilters);
-  };
-
-  const handleSaveNetworks = () => {
-    // No need to explicitly save since updateNetworkFilters already saves to localStorage
-
-    // Check if current selected network is disabled, if so switch to "All Networks"
-    const currentNetworkKey = network.toLowerCase();
-    if (currentNetworkKey !== "all networks") {
-      // Find the network from NETWORK_CONFIG
-      const currentNetwork = NETWORK_CONFIG.find((net) => net.name.toLowerCase() === currentNetworkKey);
-
-      if (currentNetwork && !networkFilters[currentNetwork.name]) {
-        setNetwork("All Networks");
-      }
-    }
-
-    setShowManageNetworks(false);
   };
 
   const handleToggleHideBalance = () => {
@@ -380,6 +345,7 @@ function WalletLayoutContent() {
       path: "/wallet/transaction-history",
     },
     { label: "Scan History", icon: "history", path: "/wallet/scan-history" },
+    { label: "Settings", icon: "setting", path: "/wallet/setting" },
   ];
 
   // Load hide balance setting from localStorage on component mount and user change
@@ -423,6 +389,16 @@ function WalletLayoutContent() {
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Listen for custom event to open Manage Networks modal
+  React.useEffect(() => {
+    const handleOpenManageNetworks = () => {
+      setShowManageNetworks(true);
+    };
+
+    window.addEventListener("openManageNetworks", handleOpenManageNetworks);
+    return () => window.removeEventListener("openManageNetworks", handleOpenManageNetworks);
   }, []);
 
   // Remove auto-save to prevent conflicts with manual save
@@ -478,44 +454,9 @@ function WalletLayoutContent() {
         <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png" alt="" aria-hidden="true" decoding="async" loading="eager" className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
         <div className="absolute inset-0 z-0 bg-[#0F1219]/25 pointer-events-none" aria-hidden="true"></div>
         {/* Modal Manage Networks */}
-        <Dialog
-          open={showManageNetworks}
-          onOpenChange={(open) => {
-            if (!open) {
-              // Save networks when modal is closed
-              // The WalletProvider handles saving active networks to localStorage
-              // saveActiveNetworks(activeNetworks); // This line is no longer needed
-            }
-            setShowManageNetworks(open);
-          }}>
-          <DialogContent className="bg-[#23242A] border-none max-w-xl p-0 rounded-xl">
-            <DialogTitle className="sr-only">Manage Networks</DialogTitle>
-            <div className="px-8 pt-8 pb-4">
-              <div className="text-white text-2xl font-bold mb-8">Active networks</div>
-              <div className="divide-y divide-white/10">
-                {NETWORKS.map((net) => (
-                  <div key={net.key} className="flex items-center justify-between py-4">
-                    <div className="flex items-center gap-4">
-                      <img src={net.icon} alt={net.name} className="w-7 h-7" />
-                      <span className="text-white text-lg font-medium">{net.name}</span>
-                    </div>
-                    {/* Custom Switch */}
-                    <button className={`w-11 h-6 rounded-full flex items-center transition-colors duration-200 ${getNetworkFilterStatus(net.key) ? "bg-[#9BE4A0]" : "bg-[#23272F]"}`} onClick={() => handleToggleNetwork(net.key)}>
-                      <span className={`inline-block w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${getNetworkFilterStatus(net.key) ? "translate-x-5" : "translate-x-0"}`} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="px-8 pb-8">
-              <SidebarButton onClick={handleSaveNetworks} className="w-full" buttonClassName="justify-center">
-                Save
-              </SidebarButton>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ManageNetworksModal isOpen={showManageNetworks} onClose={() => setShowManageNetworks(false)} networkFilters={networkFilters} updateNetworkFilters={updateNetworkFilters} currentNetwork={network} setNetwork={setNetwork} />
         {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}
-        <aside className="relative z-10 h-screen w-[200px] lg:w-[240px] xl:w-[320px] bg-transparent flex flex-col justify-between py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-white/10 hidden md:flex">
+        <aside className="relative z-10 w-[200px] lg:w-[240px] xl:w-[320px] bg-transparent flex flex-col py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-white/10 hidden md:flex min-h-screen">
           {/* Logo dan Brand */}
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
@@ -553,8 +494,8 @@ function WalletLayoutContent() {
               })}
             </nav>
           </div>
-          {/* Bottom icons - absolute at bottom */}
-          <div className="absolute bottom-6 left-8 z-10 flex items-center gap-5">
+          {/* Bottom icons - fixed at bottom */}
+          <div className="fixed bottom-6 left-8 z-10 flex items-center gap-5 mt-auto">
             <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 transition-colors" title="Github" onClick={() => window.open("https://github.com/fradiumofficial", "_blank")}>
               <img src="/assets/GithubLogo.svg" alt="Github" className="w-5 h-5" />
             </button>
@@ -791,6 +732,7 @@ function WalletLayoutContent() {
             "analyze-contract": "analyze-contract",
             "transaction-history": "transaction-history",
             history: "scan-history",
+            setting: "setting",
           };
           const mobileIconKey = mobileIconMap[item.icon] || item.icon;
           const iconSrc = `/assets/icons/mobile/${mobileIconKey}-${isActive ? "active" : "non"}.svg`;

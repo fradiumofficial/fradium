@@ -81,7 +81,7 @@ export const NETWORK_CONFIG = [
   {
     id: "icp",
     name: "Internet Computer",
-    icon: "/assets/images/networks/solana.webp", // Using solana as placeholder for ICP
+    icon: "/assets/images/networks/icp.webp",
   },
 ];
 

@@ -93,19 +93,24 @@ export default function ScanHistoryPage() {
         isSafe: item.is_safe,
         metadata: item.metadata,
         rawItem: item,
-      }));
+        timestamp: Number(item.created_at), // Convert BigInt to Number for sorting
+      })).sort((a, b) => b.timestamp - a.timestamp); // Sort by timestamp descending (newest first)
 
       if (isLoadMore) {
-        setItems((prev) => [...prev, ...newItems]);
+        // When loading more, merge and sort all items to maintain chronological order
+        setItems((prev) => {
+          const allItems = [...prev, ...newItems].sort((a, b) => b.timestamp - a.timestamp);
+          return allItems;
+        });
       } else {
         setItems(newItems);
       }
 
       setTotalCount(countResult.Ok);
       setCurrentOffset(offset + ITEMS_PER_PAGE);
-      setHasMore(offset + ITEMS_PER_PAGE < countResult.Ok);
+      setHasMore(offset + ITEMS_PER_PAGE < Number(countResult.Ok));
 
-      console.log(`Fetched ${newItems.length} items, total: ${countResult.Ok}, hasMore: ${offset + ITEMS_PER_PAGE < countResult.Ok}`);
+      console.log(`Fetched ${newItems.length} items, total: ${Number(countResult.Ok)}, hasMore: ${offset + ITEMS_PER_PAGE < Number(countResult.Ok)}`);
     } catch (err) {
       console.error("Error fetching scan history:", err);
       setError(err.message);
@@ -316,8 +321,8 @@ export default function ScanHistoryPage() {
           )}
         </AnimatePresence>
 
-        {/* Loading State - Skeleton */}
-        {loading && <SkeletonList count={5} />}
+        {/* Loading State - Skeleton (only for initial load, not load more) */}
+        {loading && !loadingMore && <SkeletonList count={5} />}
 
         {/* Error State */}
         {error && (
@@ -490,16 +495,9 @@ export default function ScanHistoryPage() {
                       Loading...
                     </>
                   ) : (
-                    <>Load More ({totalCount - items.length} remaining)</>
+                    <>Load More ({Number(totalCount) - items.length} remaining)</>
                   )}
                 </button>
-              </motion.div>
-            )}
-
-            {/* Loading More Skeleton */}
-            {loadingMore && (
-              <motion.div className="flex flex-col gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-                <SkeletonList count={3} />
               </motion.div>
             )}
 
@@ -508,11 +506,11 @@ export default function ScanHistoryPage() {
               <div className="text-center py-4 text-white/40 text-xs">
                 {getFilteredItems().length === items.length ? (
                   <>
-                    Showing all {totalCount} scan{totalCount !== 1 ? "s" : ""}
+                    Showing all {Number(totalCount)} scan{Number(totalCount) !== 1 ? "s" : ""}
                   </>
                 ) : (
                   <>
-                    Showing {getFilteredItems().length} of {totalCount} scan{totalCount !== 1 ? "s" : ""}
+                    Showing {getFilteredItems().length} of {Number(totalCount)} scan{Number(totalCount) !== 1 ? "s" : ""}
                   </>
                 )}
               </div>

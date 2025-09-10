@@ -11,7 +11,7 @@ use crate::shared::validate_caller_not_anonymous;
 #[update]
 pub async fn bitcoin_balance() -> u64 {
     // Hardcoded return for testing
-    return 0;
+    // return 0;
 
     let ctx = BTC_CONTEXT.with(|ctx| ctx.get());
     let caller: Principal = validate_caller_not_anonymous();
