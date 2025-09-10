@@ -4,7 +4,7 @@ import { CDN } from "~lib/constant/cdn";
 import NeoButton from "~components/custom-button";
 import { ROUTES } from "~lib/constant/routes";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "~lib/context/walletContext";
 
 function Receive() {
@@ -13,9 +13,6 @@ function Receive() {
     addresses, 
     isFetchingAddresses, 
     addressesLoaded,
-    hasLoadedAddressesOnce,
-    fetchAddresses, 
-    fetchWalletAddresses,
     getAddressesLoadingState,
     isAuthenticated 
   } = useWallet();
@@ -40,12 +37,23 @@ function Receive() {
     }
   }, [addresses]);
 
+  // Handle back navigation
+  const handleBack = useCallback(() => {
+    navigate(ROUTES.HOME);
+  }, [navigate]);
+
   return (
     <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
       <ProfileHeader />
 
       <div className="flex flex-row items-center px-[24px]">
-        <ChevronLeft className="w-6 h-6" />
+        <button
+            onClick={handleBack}
+            className="p-1 hover:bg-white/10 rounded"
+            aria-label="Go back"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
         <h1 className="text-[20px] font-semibold text-white px-[12px]">Receive Coin</h1>
       </div>
 

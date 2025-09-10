@@ -1,6 +1,6 @@
 {
-  "name": "extension-test",
-  "displayName": "Extension test",
+  "name": "fradium-wallet-extension",
+  "displayName": "Fradium Wallet extension",
   "version": "0.0.1",
   "description": "The Trust Layer for Web3 Transaction",
   "author": "FradiumOfficial",
