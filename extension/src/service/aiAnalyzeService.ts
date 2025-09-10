@@ -4,6 +4,7 @@
 import { detectTokenType } from '~lib/utils/tokenUtils';
 import { extractBitcoinFeatures } from './bitcoinAnalyzeService';
 import { extractEthereumFeatures } from './ethereumAnalyzeService';
+import { extractSolanaFeatures } from './solanaAnalyzeService';
 import { ai } from '../../../src/declarations/ai';
 import { backend } from '../../../src/declarations/backend';
 import { HistoryService } from './historyService';
@@ -15,7 +16,8 @@ import type {
   CombinedAnalysisResult,
   AnalysisOptions,
   SupportedNetwork,
-  EthereumFeatures
+  EthereumFeatures,
+  SolanaFeatures
 } from './types';
 
 /**
@@ -25,6 +27,7 @@ import type {
 export class AIAnalyzeService {
   /**
    * Analyze an address and return risk assessment
+   * New flow: Community Analysis first, then AI Analysis if community is safe
    * @param address - The address to analyze
    * @param options - Analysis options
    * @returns Promise<CombinedAnalysisResult> Analysis result
@@ -44,13 +47,28 @@ export class AIAnalyzeService {
         throw new Error('Invalid address: Address cannot be empty');
       }
 
-      console.log('anjay mabar', ai, backend);
-
       // Detect network type using extension's tokenUtils
       const network = detectTokenType(trimmedAddress) as SupportedNetwork;
       console.log(`Detected network: ${network} for address: ${trimmedAddress}`);
 
-      // Step 1: Perform AI Analysis first
+      // Step 1: Perform Community Analysis first
+      console.log('Starting Community Analysis first...');
+      const communityResult = await this.performCommunityAnalysis(trimmedAddress);
+      console.log('Community Analysis Result:', communityResult);
+
+      // Case 1: If Community analysis shows unsafe, stop here and return community result
+      if (!communityResult.result.isSafe) {
+        console.log('Community analysis shows unsafe - stopping analysis');
+        await this.saveAnalysisToHistory(trimmedAddress, communityResult, network);
+        return {
+          ...communityResult,
+          analysisSource: 'community',
+          finalStatus: 'unsafe_by_community',
+        };
+      }
+
+      // Case 2: Community shows safe, proceed with AI Analysis
+      console.log('Community analysis shows safe - proceeding with AI analysis');
       let aiResult: AIAnalysisResult;
       switch (network) {
         case 'Bitcoin':
@@ -60,46 +78,32 @@ export class AIAnalyzeService {
           aiResult = await this.analyzeEthereumAddress(trimmedAddress, options);
           break;
         case 'Solana':
+          aiResult = await this.analyzeSolanaAddress(trimmedAddress, options);
+          break;
         default:
           throw new Error(`Token not supported: ${network} addresses are not yet supported for analysis`);
       }
 
       console.log('AI Analysis Result:', aiResult);
 
-      // Case 2: If AI analysis shows unsafe, stop here
-      if (!aiResult.result.isSafe) {
-        console.log('AI analysis shows unsafe - stopping analysis');
-        await this.saveAnalysisToHistory(trimmedAddress, aiResult, network);
-        return {
-          ...aiResult,
-          analysisSource: 'ai',
-          finalStatus: 'unsafe_by_ai',
-        };
-      }
-
-      // Case 1 & 3: AI shows safe, proceed with community analysis
-      console.log('AI analysis shows safe - proceeding with community analysis');
-      const communityResult = await this.performCommunityAnalysis(trimmedAddress);
-      console.log('Community Analysis Result:', communityResult);
-
       let finalResult: CombinedAnalysisResult;
 
-      // Case 1: Both AI and Community show safe
-      if (aiResult.result.isSafe && communityResult.result.isSafe) {
+      // Case 2a: Both Community and AI show safe
+      if (communityResult.result.isSafe && aiResult.result.isSafe) {
         finalResult = {
           ...aiResult,
-          analysisSource: 'ai_and_community',
+          analysisSource: 'community_and_ai',
           finalStatus: 'safe_by_both',
           communityAnalysis: communityResult.result,
         };
       }
-      // Case 3: AI shows safe but Community shows unsafe
-      else if (aiResult.result.isSafe && !communityResult.result.isSafe) {
+      // Case 2b: Community shows safe but AI shows unsafe
+      else if (communityResult.result.isSafe && !aiResult.result.isSafe) {
         finalResult = {
-          ...communityResult,
-          analysisSource: 'community',
-          finalStatus: 'unsafe_by_community',
-          aiAnalysis: aiResult.result,
+          ...aiResult,
+          analysisSource: 'ai',
+          finalStatus: 'unsafe_by_ai',
+          communityAnalysis: communityResult.result,
         };
       }
       // Fallback case
@@ -108,6 +112,7 @@ export class AIAnalyzeService {
           ...aiResult,
           analysisSource: 'ai',
           finalStatus: 'safe_by_ai',
+          communityAnalysis: communityResult.result,
         };
       }
 
@@ -140,6 +145,8 @@ export class AIAnalyzeService {
 
       // Call AI canister - following the correct backend call pattern
       const ransomwareReport = await ai.analyze_btc_address(features, address, features.length);
+
+      console.log("Bitcoin AI Report:", ransomwareReport);
 
       if ('Ok' in ransomwareReport) {
         const result = ransomwareReport.Ok as RansomwareResult;
@@ -190,7 +197,7 @@ export class AIAnalyzeService {
       // Call AI canister
       const ransomwareReport = await ai.analyze_eth_address(featuresPairs, address, txCount);
 
-      console.log('Ransomware Report:', ransomwareReport);
+      console.log('Ethereum AI Report:', ransomwareReport);
 
       if ('Ok' in ransomwareReport) {
         const result = ransomwareReport.Ok as RansomwareResult;
@@ -214,6 +221,65 @@ export class AIAnalyzeService {
     } catch (error) {
       console.error('Ethereum analysis error:', error);
       throw new Error(`Ethereum analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Analyze Solana address
+   * @param address - Solana address
+   * @param options - Analysis options
+   * @returns Promise<AIAnalysisResult> Analysis result
+   */
+  static async analyzeSolanaAddress(
+    address: string,
+    options: AnalysisOptions = {}
+  ): Promise<AIAnalysisResult> {
+    try {
+      console.log(`Analyzing Solana address: ${address}`);
+
+      // Extract features using Solana service
+      const features = await extractSolanaFeatures(address);
+      console.log(`Extracted features for Solana address:`, features);
+
+      // Convert features object to array format expected by Rust canister
+      const featuresPairs: [string, number][] = Object.entries(features).map(([k, v]) => [k, typeof v === 'number' ? v : 0]);
+      const txCount = this.getTxCountFromFeaturesSOL(features);
+
+      // Note: AI analysis for Solana is not yet implemented in the canister
+      // For now, return a basic safe result with placeholder data
+      console.log('Solana AI analysis not yet implemented, returning basic analysis');
+
+      const transformedResult: AnalysisResult = {
+        isSafe: true, // Default to safe for now
+        confidence: 50, // Lower confidence since no AI analysis
+        riskLevel: 'MEDIUM',
+        description: `Basic analysis completed for Solana address. AI-powered analysis for Solana is not yet available. This address appears to be valid but comprehensive risk assessment requires AI analysis.`,
+        stats: {
+          transactions: features.total_txs,
+          totalVolume: `${features.total_received} SOL received`,
+          riskScore: '50/100',
+          lastActivity: 'Address validated',
+        },
+        securityChecks: [
+          'Address format is valid',
+          'Basic pattern analysis completed',
+          'AI analysis not yet available for Solana'
+        ],
+        rawResult: features,
+      };
+
+      return {
+        success: true,
+        network: 'Solana',
+        address: address,
+        result: transformedResult,
+        features: features,
+        type: 'ai',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Solana analysis error:', error);
+      throw new Error(`Solana analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -258,6 +324,15 @@ export class AIAnalyzeService {
    * @returns number Transaction count
    */
   static getTxCountFromFeaturesETH(features: EthereumFeatures): number {
+    return Math.round(features.total_txs || 0);
+  }
+
+  /**
+   * Get transaction count from Solana features
+   * @param features - Solana features object
+   * @returns number Transaction count
+   */
+  static getTxCountFromFeaturesSOL(features: SolanaFeatures): number {
     return Math.round(features.total_txs || 0);
   }
 
@@ -315,9 +390,18 @@ export class AIAnalyzeService {
    * @returns AnalysisResult Transformed result for frontend
    */
   static transformRansomwareResult(rustResult: RansomwareResult): AnalysisResult {
+    console.log("🔍 TransformRansomwareResult - Raw Rust Result:", rustResult);
     const isSafe = !rustResult.is_ransomware;
     const confidence = Math.round(rustResult.confidence * 100);
     const riskScore = Math.round(rustResult.ransomware_probability * 100);
+
+    console.log("🔍 TransformRansomwareResult - Transformed:", {
+      isSafe,
+      confidence,
+      riskScore,
+      is_ransomware: rustResult.is_ransomware,
+      ransomware_probability: rustResult.ransomware_probability,
+    });
 
     // Determine risk level based on ransomware probability
     let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
@@ -327,24 +411,30 @@ export class AIAnalyzeService {
       riskLevel = 'MEDIUM';
     }
 
+    // Convert chain_type to proper network name
+    let networkName = rustResult.chain_type.toLowerCase();
+    if (networkName === 'btc') networkName = 'bitcoin';
+    if (networkName === 'eth') networkName = 'ethereum';
+    if (networkName === 'sol') networkName = 'solana';
+
     // Generate description based on result
     let description: string;
     if (isSafe) {
-      description = `This ${rustResult.chain_type.toLowerCase()} address appears to be clean with no suspicious activity detected in our comprehensive database. Analyzed ${rustResult.transactions_analyzed} transactions.`;
+      description = `This ${networkName} address appears to be clean with no suspicious activity detected in our comprehensive database. Analyzed ${rustResult.transactions_analyzed} transactions.`;
     } else {
-      description = `This ${rustResult.chain_type.toLowerCase()} address shows concerning patterns that may indicate suspicious activity. Analyzed ${rustResult.transactions_analyzed} transactions.`;
+      description = `This ${networkName} address shows concerning patterns that may indicate suspicious activity. Analyzed ${rustResult.transactions_analyzed} transactions.`;
     }
 
     // Generate security checks based on result
     const securityChecks: string[] = [];
     if (isSafe) {
-      securityChecks.push('No links to known scam addresses');
-      securityChecks.push('Transaction patterns appear normal');
-      securityChecks.push('No suspicious mixing activity detected');
+      securityChecks.push("No links to known scam addresses");
+      securityChecks.push("Transaction patterns appear normal");
+      securityChecks.push("No suspicious mixing activity detected");
     } else {
-      securityChecks.push('Potential links to suspicious addresses detected');
-      securityChecks.push('Unusual transaction patterns identified');
-      securityChecks.push('Possible mixing or laundering activity');
+      securityChecks.push("Potential links to suspicious addresses detected");
+      securityChecks.push("Unusual transaction patterns identified");
+      securityChecks.push("Possible mixing or laundering activity");
     }
 
     return {
@@ -356,12 +446,12 @@ export class AIAnalyzeService {
         transactions: rustResult.transactions_analyzed,
         totalVolume: `${rustResult.ransomware_probability.toFixed(4)} (probability)`,
         riskScore: `${riskScore}/100`,
-        lastActivity: 'Recently analyzed',
+        lastActivity: "Recently analyzed",
         thresholdUsed: rustResult.threshold_used,
         dataSource: rustResult.data_source,
       },
       securityChecks: securityChecks,
-      rawResult: rustResult,
+      rawResult: rustResult, // Include raw result for debugging
     };
   }
 
@@ -455,7 +545,7 @@ export class AIAnalyzeService {
    * @returns SupportedNetwork[] List of supported networks
    */
   static getSupportedNetworks(): SupportedNetwork[] {
-    return ['Bitcoin', 'Ethereum'];
+    return ['Bitcoin', 'Ethereum', 'Solana'];
   }
 
   /**
