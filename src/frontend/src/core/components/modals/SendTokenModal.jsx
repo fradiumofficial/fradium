@@ -10,6 +10,7 @@ import { TOKENS_CONFIG, getSupportedTokensForAddress, getFeeInfo, detectAddressN
 
 // Wallet Provider
 import { useWallet } from "@/core/providers/WalletProvider";
+import { useAuth } from "@/core/providers/AuthProvider";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal.jsx";
 import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal.jsx";
@@ -31,6 +32,9 @@ const SendTokenModal = ({ isOpen, onClose }) => {
 
   // Wallet Provider for balance and USD prices
   const { balances, usdPrices, balanceLoading, usdPriceLoading } = useWallet();
+
+  // Auth Provider for principal
+  const { identity } = useAuth();
 
   // Reset state when modal is closed
   React.useEffect(() => {
@@ -172,7 +176,8 @@ const SendTokenModal = ({ isOpen, onClose }) => {
       setSendError(null);
 
       // Send token to backend
-      const result = await sendTokenToBackend(selectedToken.id, destination.trim(), parseFloat(amount));
+      const principal = identity?.getPrincipal();
+      const result = await sendTokenToBackend(selectedToken.id, destination.trim(), parseFloat(amount), principal);
 
       // Store transaction result
       setTransactionResult(result);

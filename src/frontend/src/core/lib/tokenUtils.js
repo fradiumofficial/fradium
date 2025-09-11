@@ -1,4 +1,12 @@
 import { wallet } from "declarations/wallet";
+import { icp_ledger } from "declarations/icp_ledger";
+import { fradium_ledger } from "declarations/fradium_ledger";
+import { Principal } from "@dfinity/principal";
+
+// Helper function to safely stringify objects that may contain BigInt
+function safeStringify(obj) {
+  return JSON.stringify(obj, (key, value) => (typeof value === "bigint" ? value.toString() : value));
+}
 
 // --- Mainnet tokens ---
 export const TOKENS_CONFIG = [
@@ -40,7 +48,7 @@ export const TOKENS_CONFIG = [
     name: "Internet Computer",
     symbol: "ICP",
     chain: "Internet Computer",
-    decimals: 8,
+    decimals: null,
     imageUrl: "assets/images/coins/icp.webp",
     mainnet: true,
     // Token type
@@ -50,14 +58,14 @@ export const TOKENS_CONFIG = [
   {
     id: 5,
     name: "Fradium",
-    symbol: "FADM",
+    symbol: "FRADIUM",
     chain: "Internet Computer",
-    decimals: 8,
+    decimals: null,
     imageUrl: "assets/images/coins/fradium.webp",
-    mainnet: true,
+    mainnet: false,
     // Token type
     type: "icrc",
-    canisterId: "mxzaz-hqaaa-aaaar-qaada-cai",
+    canisterId: "sr4wk-4qaaa-aaaae-qfdta-cai",
   },
 ];
 
@@ -176,40 +184,80 @@ export function getFeeInfo(token) {
   }
 }
 
-export async function sendToken(tokenId, to, amount) {
+export async function sendToken(tokenId, to, amount, principal) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
   if (token.type === "native") {
     switch (token.id) {
-      case "BTC":
+      case 1: // BTC
         return await wallet.bitcoin_send({ destination_address: to, amount_in_satoshi: amount });
-      case "ETH":
+      case 2: // ETH
         return await wallet.ethereum_send(to, amount);
-      case "SOL":
+      case 3: // SOL
         return await wallet.solana_send(to, amount);
       default:
         throw new Error("Native token not supported");
     }
   }
 
-  if (token.type === "icrc" && token.canisterId) {
-    const ledger = await initLedgerActor(token.canisterId);
-    return await ledger.icrc1_transfer({
-      from_subaccount: [],
-      to: { owner: to, subaccount: [] },
-      amount,
-      fee: [],
-      memo: [],
-      created_at_time: [],
-    });
+  if (token.type === "icrc") {
+    if (!principal) {
+      throw new Error("Principal is required for ICRC tokens");
+    }
+
+    // Get decimals dynamically from ledger if token.decimals is null
+    let decimals = token.decimals;
+    if (decimals === null) {
+      switch (token.id) {
+        case 4: // ICP
+          decimals = await icp_ledger.icrc1_decimals();
+          break;
+        case 5: // Fradium
+          decimals = await fradium_ledger.icrc1_decimals();
+          break;
+        default:
+          throw new Error("Unknown ICRC token for decimals");
+      }
+    }
+
+    // Convert amount to smallest unit (e8s)
+    const amountInSmallestUnit = Math.floor(amount * Math.pow(10, decimals));
+
+    // Convert string principal to Principal object
+    const toPrincipal = Principal.fromText(to);
+
+    switch (token.id) {
+      case 4: // ICP
+        return await icp_ledger.icrc1_transfer({
+          from_subaccount: [],
+          to: { owner: toPrincipal, subaccount: [] },
+          amount: BigInt(amountInSmallestUnit),
+          fee: [],
+          memo: [],
+          created_at_time: [],
+        });
+
+      case 5: // Fradium
+        return await fradium_ledger.icrc1_transfer({
+          from_subaccount: [],
+          to: { owner: toPrincipal, subaccount: [] },
+          amount: BigInt(amountInSmallestUnit),
+          fee: [],
+          memo: [],
+          created_at_time: [],
+        });
+
+      default:
+        throw new Error(`Unsupported ICRC token: ${token.symbol}`);
+    }
   }
 
   throw new Error("Unsupported token type");
 }
 
 // Enhanced send token function with proper backend integration
-export async function sendTokenToBackend(tokenId, to, amount) {
+export async function sendTokenToBackend(tokenId, to, amount, principal) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
@@ -241,8 +289,65 @@ export async function sendTokenToBackend(tokenId, to, amount) {
         default:
           throw new Error(`Unsupported native token chain: ${token.chain}`);
       }
-    } else if (token.type === "icrc" && token.canisterId) {
-      throw new Error("ICRC tokens are not supported yet");
+    } else if (token.type === "icrc") {
+      if (!principal) {
+        throw new Error("Principal is required for ICRC tokens");
+      }
+
+      // Get decimals dynamically from ledger if token.decimals is null
+      let decimals = token.decimals;
+      if (decimals === null) {
+        switch (token.id) {
+          case 4: // ICP
+            decimals = await icp_ledger.icrc1_decimals();
+            break;
+          case 5: // Fradium
+            decimals = await fradium_ledger.icrc1_decimals();
+            break;
+          default:
+            throw new Error("Unknown ICRC token for decimals");
+        }
+      }
+
+      // Convert amount to smallest unit (e8s)
+      const amountInSmallestUnit = Math.floor(amount * Math.pow(10, decimals));
+
+      // Convert string principal to Principal object
+      const toPrincipal = Principal.fromText(to);
+
+      switch (token.id) {
+        case 4: // ICP
+          result = await icp_ledger.icrc1_transfer({
+            from_subaccount: [],
+            to: { owner: toPrincipal, subaccount: [] },
+            amount: BigInt(amountInSmallestUnit),
+            fee: [],
+            memo: [],
+            created_at_time: [],
+          });
+          break;
+
+        case 5: // Fradium
+          result = await fradium_ledger.icrc1_transfer({
+            from_subaccount: [],
+            to: { owner: toPrincipal, subaccount: [] },
+            amount: BigInt(amountInSmallestUnit),
+            fee: [],
+            memo: [],
+            created_at_time: [],
+          });
+          break;
+
+        default:
+          throw new Error(`Unsupported ICRC token: ${token.symbol}`);
+      }
+
+      // Handle ICRC transfer result
+      if (result && typeof result === "object" && "Ok" in result) {
+        result = result.Ok;
+      } else if (result && typeof result === "object" && "Err" in result) {
+        throw new Error(`Transfer failed: ${safeStringify(result.Err)}`);
+      }
     } else {
       throw new Error(`Unsupported token type: ${token.type}`);
     }
@@ -257,11 +362,13 @@ export async function sendTokenToBackend(tokenId, to, amount) {
     };
   } catch (error) {
     console.error(`Failed to send ${token.symbol}:`, error);
-    throw new Error(`Failed to send ${token.symbol}: ${error.message}`);
+    // Safely handle error message that might contain BigInt
+    const errorMessage = error.message || error.toString();
+    throw new Error(`Failed to send ${token.symbol}: ${errorMessage}`);
   }
 }
 
-export async function getBalance(tokenId) {
+export async function getBalance(tokenId, principal) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
@@ -277,6 +384,57 @@ export async function getBalance(tokenId) {
         throw new Error("Native token not supported");
     }
   }
+
+  if (token.type === "icrc") {
+    if (!principal) {
+      throw new Error("Principal is required for ICRC tokens");
+    }
+
+    switch (token.id) {
+      case 4: // ICP
+        try {
+          const balance = await icp_ledger.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+          console.log("ICP balance:", balance);
+
+          // Get decimals dynamically from ledger if token.decimals is null
+          let decimals = token.decimals;
+          if (decimals === null) {
+            decimals = await icp_ledger.icrc1_decimals();
+          }
+
+          // Convert from e8s to ICP using dynamic decimals
+          return (Number(balance) / Math.pow(10, decimals)).toString();
+        } catch (error) {
+          console.error("Error fetching ICP balance:", error);
+          return "0";
+        }
+      case 5: // Fradium (FADM)
+        try {
+          const balance = await fradium_ledger.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+
+          // Get decimals dynamically from ledger if token.decimals is null
+          let decimals = token.decimals;
+          if (decimals === null) {
+            decimals = await fradium_ledger.icrc1_decimals();
+          }
+
+          // Convert from e8s to FADM using dynamic decimals
+          return (Number(balance) / Math.pow(10, decimals)).toString();
+        } catch (error) {
+          console.error("Error fetching Fradium balance:", error);
+          return "0";
+        }
+      default:
+        throw new Error("ICRC token not supported");
+    }
+  }
+
   throw new Error("Unsupported token type");
 }
 

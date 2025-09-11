@@ -13,6 +13,8 @@ import { Toaster } from "react-hot-toast";
 import { fradium_token as token } from "declarations/fradium_token";
 import { backend as backend } from "declarations/backend";
 import { wallet as wallet } from "declarations/wallet";
+import { fradium_ledger as fradium_ledger } from "declarations/fradium_ledger";
+import { icp_ledger as icp_ledger } from "declarations/icp_ledger";
 
 // Global Style
 import "@/core/style/global.css";
@@ -168,7 +170,7 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <NProgressRouter />
-      <AuthProvider canisters={{ token, backend, wallet }}>
+      <AuthProvider canisters={{ token, backend, wallet, fradium_ledger, icp_ledger }}>
         <AnimatedRoutes />
         <Toaster
           position="bottom-center"

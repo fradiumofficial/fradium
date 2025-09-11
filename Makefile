@@ -1,3 +1,16 @@
+# Load all env vars
+ifneq (,$(wildcard .env))
+    include .env
+    export $(shell sed -nE "s/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1/p" .env)
+endif
+
+define strip_quotes
+$(subst ',,$(subst ",,$(1)))
+endef
+
+$(foreach v,$(shell sed -nE "s/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1/p" .env),\
+  $(eval $(v) := $(call strip_quotes,$($(v)))))
+
 BITCOIND=$(shell command -v bitcoind || command -v bitcoin-core.daemon)
 
 bitcoin-start:
@@ -29,10 +42,6 @@ bitcoin-send:
 bitcoin-mine:
 	bitcoin-cli -conf="$(CURDIR)/bitcoin.conf" generatetoaddress 1 mtbZzVBwLnDmhH4pE9QynWAgh6H3aC1E6M
 
-setup:
-	chmod +x "$(CURDIR)/scripts/setup.sh"
-	"$(CURDIR)/scripts/setup.sh"
-
 deploy-backend:
 	dfx deploy backend
 
@@ -47,3 +56,19 @@ deploy-ai:
 deploy-solana:
 	cd "src/solana" && ./build.sh
 	candid-extractor "target/wasm32-unknown-unknown/release/solana.wasm" > "src/solana/solana.did"
+
+icp-transfer:
+	chmod +x "$(CURDIR)/scripts/icp.transfer_token.sh"
+	"$(CURDIR)/scripts/icp.transfer_token.sh" $(address) $(amount)
+
+icp-balance:
+	chmod +x "$(CURDIR)/scripts/icp.check_balance.sh"
+	"$(CURDIR)/scripts/icp.check_balance.sh"
+
+fradium-transfer:
+	chmod +x "$(CURDIR)/scripts/fradium.transfer_token.sh"
+	"$(CURDIR)/scripts/fradium.transfer_token.sh" $(address) $(amount)
+
+fradium-balance:
+	chmod +x "$(CURDIR)/scripts/fradium.check_balance.sh"
+	"$(CURDIR)/scripts/fradium.check_balance.sh"

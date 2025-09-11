@@ -32,7 +32,9 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
+    'analyze_icp_address' : IDL.Func([IDL.Text], [Result], []),
     'analyze_sol_address' : IDL.Func([IDL.Text], [Result], []),
+    'get_icp_api_health' : IDL.Func([], [IDL.Text], ['query']),
     'transform' : IDL.Func([TransformArgs], [HttpResponse], ['query']),
     'transform_helius_response' : IDL.Func(
         [TransformArgs],

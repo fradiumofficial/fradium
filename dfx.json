@@ -7,58 +7,58 @@
       "candid": "src/ai/ai.did",
       "optimize": "cycles",
       "wasm": "target/wasm32-unknown-unknown/release/ai.wasm",
+      "build": "scripts/build.ai.sh",
       "metadata": [
         {
           "name": "candid:service"
         }
-      ],
-      "build": ["cargo build --target wasm32-unknown-unknown --release -p ai", "candid-extractor target/wasm32-unknown-unknown/release/ai.wasm > src/ai/ai.did"]
+      ]
     },
     "wallet": {
       "candid": "src/wallet/wallet.did",
       "wasm": "target/wasm32-unknown-unknown/release/wallet.wasm",
       "package": "wallet",
       "type": "custom",
+      "build": "scripts/build.wallet.sh",
+      "_mainnet_init_arg": "(variant { Mainnet })",
+      "init_arg": "(variant { Local })",
+      "dependencies": ["sol_rpc", "evm_rpc"],
       "metadata": [
         {
           "name": "candid:service"
         }
-      ],
-      "build": ["bash src/wallet/build.sh", "candid-extractor target/wasm32-unknown-unknown/release/wallet.wasm > src/wallet/wallet.did"],
-      "init_arg": "(variant { Mainnet })",
-      "_local_init_arg": "(variant { Local })",
-      "dependencies": ["sol_rpc"]
+      ]
     },
     "sol_rpc": {
       "candid": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.did",
       "package": "sol_rpc_canister",
+      "specified_id": "tghme-zyaaa-aaaar-qarca-cai",
       "type": "custom",
+      "wasm": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.wasm.gz",
+      "init_arg": "( record { manageApiKeys = null; overrideProvider = null; logFilter = opt variant { ShowAll }; numSubnetNodes = null; mode = opt variant { Demo }; } )",
       "remote": {
         "id": {
           "ic": "tghme-zyaaa-aaaar-qarca-cai",
-          "playground": "tghme-zyaaa-aaaar-qarca-cai",
-          "local": "tghme-zyaaa-aaaar-qarca-cai"
+          "playground": "tghme-zyaaa-aaaar-qarca-cai"
         }
-      },
-      "wasm": "https://github.com/dfinity/sol-rpc-canister/releases/download/v1.0.0/sol_rpc_canister.wasm.gz",
-      "init_arg": "( record { manageApiKeys = null; overrideProvider = null; logFilter = opt variant { ShowAll }; numSubnetNodes = null; mode = opt variant { Demo }; } )"
+      }
     },
     "evm_rpc": {
+      "type": "custom",
       "candid": "https://github.com/internet-computer-protocol/evm-rpc-canister/releases/latest/download/evm_rpc.did",
+      "wasm": "https://github.com/internet-computer-protocol/evm-rpc-canister/releases/latest/download/evm_rpc.wasm.gz",
       "init_arg": "(record { })",
+      "specified_id": "7hfb6-caaaa-aaaar-qadga-cai",
       "remote": {
         "id": {
-          "ic": "7hfb6-caaaa-aaaar-qadga-cai",
-          "local": "7hfb6-caaaa-aaaar-qadga-cai"
+          "ic": "7hfb6-caaaa-aaaar-qadga-cai"
         }
-      },
-      "type": "custom",
-      "wasm": "https://github.com/internet-computer-protocol/evm-rpc-canister/releases/latest/download/evm_rpc.wasm.gz"
+      }
     },
     "backend": {
       "main": "src/backend/main.mo",
       "type": "motoko",
-      "dependencies": ["fradium_token"]
+      "dependencies": ["fradium_ledger"]
     },
     "frontend": {
       "source": ["src/frontend/dist"],
@@ -87,16 +87,49 @@
       "candid": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.did",
       "wasm": "https://github.com/dfinity/llm/releases/latest/download/llm-canister-ollama.wasm"
     },
-    "fradium_token": {
-      "specified_id": "mxzaz-hqaaa-aaaar-qaada-cai",
+    "icp_ledger": {
       "type": "custom",
-      "candid": "src/token/token_ledger.did",
-      "wasm": "src/token/token-ledger.wasm.gz"
+      "build": "scripts/build.icp_ledger.sh",
+      "candid": "target/ic/icp_ledger.did",
+      "wasm": "target/ic/icp_ledger.wasm",
+      "specified_id": "ryjl3-tyaaa-aaaaa-aaaba-cai",
+      "init_arg_file": "target/ic/icp_ledger.args.did",
+      "remote": {
+        "id": {
+          "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
+        }
+      }
     },
-    "fradium_token_index": {
+    "icp_index": {
+      "dependencies": ["icp_ledger"],
       "type": "custom",
-      "candid": "src/token/token_index.did",
-      "wasm": "src/token/token-index.wasm.gz"
+      "build": "scripts/build.icp_index.sh",
+      "candid": "target/ic/icp_index.did",
+      "wasm": "target/ic/icp_index.wasm",
+      "init_arg_file": "target/ic/icp_index.args.did",
+      "specified_id": "qhbym-qaaaa-aaaaa-aaafq-cai",
+      "remote": {
+        "id": {
+          "ic": "qhbym-qaaaa-aaaaa-aaafq-cai"
+        }
+      }
+    },
+    "fradium_ledger": {
+      "specified_id": "sr4wk-4qaaa-aaaae-qfdta-cai",
+      "type": "custom",
+      "candid": "src/token/fradium_ledger.did",
+      "wasm": "src/token/fradium_ledger.wasm.gz",
+      "build": "scripts/build.fradium_ledger.sh",
+      "init_arg_file": "target/ic/fradium_ledger.args.did"
+    },
+    "fradium_index": {
+      "specified_id": "vjrnc-hiaaa-aaaam-aejza-cai",
+      "type": "custom",
+      "candid": "src/token/fradium_index.did",
+      "wasm": "src/token/fradium_index.wasm.gz",
+      "build": "scripts/build.fradium_index.sh",
+      "init_arg_file": "target/ic/fradium_index.args.did",
+      "dependencies": ["fradium_ledger"]
     }
   },
   "defaults": {

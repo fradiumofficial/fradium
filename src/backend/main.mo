@@ -12,7 +12,7 @@ import Bool "mo:base/Bool";
 
 import Nat64 "mo:base/Nat64";
 
-import TokenCanister "canister:fradium_token";
+import TokenCanister "canister:fradium_ledger";
 import Types "types";
 
 persistent actor Fradium {

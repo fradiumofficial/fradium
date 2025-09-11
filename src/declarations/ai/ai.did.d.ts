@@ -31,7 +31,9 @@ export interface _SERVICE {
     [Array<[string, number]>, string, number],
     Result
   >,
+  'analyze_icp_address' : ActorMethod<[string], Result>,
   'analyze_sol_address' : ActorMethod<[string], Result>,
+  'get_icp_api_health' : ActorMethod<[], string>,
   'transform' : ActorMethod<[TransformArgs], HttpResponse>,
   'transform_helius_response' : ActorMethod<[TransformArgs], HttpResponse>,
 }

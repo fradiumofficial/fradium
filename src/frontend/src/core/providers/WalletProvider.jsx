@@ -32,7 +32,7 @@ export const WalletProvider = ({ children }) => {
     Bitcoin: true,
     Ethereum: true,
     Solana: true,
-    Fradium: true,
+    "Internet Computer": true,
   });
 
   // Address states for receive modal
@@ -226,32 +226,42 @@ export const WalletProvider = ({ children }) => {
   }, [addressesLoading, hasLoadedAddressesOnce]);
 
   // Function to fetch balance for a specific token
-  const fetchTokenBalance = useCallback(async (token) => {
-    if (token.type !== "native") return; // Skip non-native tokens for now
+  const fetchTokenBalance = useCallback(
+    async (token) => {
+      setBalanceLoading((prev) => ({ ...prev, [token.id]: true }));
+      setBalanceErrors((prev) => ({ ...prev, [token.id]: null }));
 
-    setBalanceLoading((prev) => ({ ...prev, [token.id]: true }));
-    setBalanceErrors((prev) => ({ ...prev, [token.id]: null }));
+      try {
+        // Get principal from Internet Identity
+        const principal = identity?.getPrincipal();
 
-    try {
-      const balance = await getBalance(token.id);
-      const formattedBalance = (Number(balance) / Math.pow(10, token.decimals)).toFixed(6);
+        const balance = await getBalance(token.id, principal);
 
-      setBalances((prev) => ({ ...prev, [token.id]: formattedBalance }));
-    } catch (error) {
-      console.error(`Error fetching balance for ${token.symbol}:`, error);
-      setBalanceErrors((prev) => ({ ...prev, [token.id]: error.message }));
-      setBalances((prev) => ({ ...prev, [token.id]: "0.000000" }));
-    } finally {
-      setBalanceLoading((prev) => ({ ...prev, [token.id]: false }));
-    }
-  }, []);
+        // For ICRC tokens, balance is already converted to proper units in getBalance
+        // For native tokens, we need to convert from smallest unit
+        let formattedBalance;
+        if (token.type === "icrc") {
+          formattedBalance = Number(balance).toFixed(6);
+        } else {
+          formattedBalance = (Number(balance) / Math.pow(10, token.decimals)).toFixed(6);
+        }
+
+        setBalances((prev) => ({ ...prev, [token.id]: formattedBalance }));
+      } catch (error) {
+        console.error(`Error fetching balance for ${token.symbol}:`, error);
+        setBalanceErrors((prev) => ({ ...prev, [token.id]: error.message }));
+        setBalances((prev) => ({ ...prev, [token.id]: "0.000000" }));
+      } finally {
+        setBalanceLoading((prev) => ({ ...prev, [token.id]: false }));
+      }
+    },
+    [identity]
+  );
 
   // Function to fetch all balances
   const fetchAllBalances = useCallback(async () => {
-    const nativeTokens = TOKENS_CONFIG.filter((token) => token.type === "native");
-
-    // Load all balances in parallel
-    await Promise.all(nativeTokens.map((token) => fetchTokenBalance(token)));
+    // Load all token balances in parallel (both native and ICRC tokens)
+    await Promise.all(TOKENS_CONFIG.map((token) => fetchTokenBalance(token)));
   }, [fetchTokenBalance]);
 
   // Function to refresh all balances
@@ -259,18 +269,17 @@ export const WalletProvider = ({ children }) => {
     if (isRefreshingBalances) return; // Prevent multiple refresh calls
 
     setIsRefreshingBalances(true);
-    const nativeTokens = TOKENS_CONFIG.filter((token) => token.type === "native");
 
-    // Set all native tokens to loading state
+    // Set all tokens to loading state
     const loadingState = {};
-    nativeTokens.forEach((token) => {
+    TOKENS_CONFIG.forEach((token) => {
       loadingState[token.id] = true;
     });
     setBalanceLoading((prev) => ({ ...prev, ...loadingState }));
 
     try {
-      // Load all balances in parallel
-      await Promise.all(nativeTokens.map((token) => fetchTokenBalance(token)));
+      // Load all balances in parallel (both native and ICRC tokens)
+      await Promise.all(TOKENS_CONFIG.map((token) => fetchTokenBalance(token)));
     } finally {
       setIsRefreshingBalances(false);
     }

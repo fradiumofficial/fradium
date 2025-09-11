@@ -2,10 +2,10 @@
   "backend": {
     "ic": "oqcob-6iaaa-aaaar-qbr7q-cai"
   },
-  "fradium_token": {
+  "fradium_ledger": {
     "ic": "sr4wk-4qaaa-aaaae-qfdta-cai"
   },
-  "fradium_token_index": {
+  "fradium_index": {
     "ic": "vjrnc-hiaaa-aaaam-aejza-cai"
   },
   "chatbot": {

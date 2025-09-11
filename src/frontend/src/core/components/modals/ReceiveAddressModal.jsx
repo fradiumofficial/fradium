@@ -27,9 +27,45 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen, fetchAddresses]);
 
+  // Handle address errors and validation
+  useEffect(() => {
+    if (addresses) {
+      const newErrors = {};
+
+      // Check each address and set error if empty or invalid
+      Object.keys(addresses).forEach((key) => {
+        const address = addresses[key];
+        if (!address || address.trim() === "") {
+          newErrors[key] = "Address not available";
+        } else {
+          newErrors[key] = null;
+        }
+      });
+
+      // Special handling for Fradium (using solana address for now)
+      if (addresses.solana && addresses.solana.trim() !== "") {
+        newErrors.fradium = null;
+      } else {
+        newErrors.fradium = "Address not available";
+      }
+
+      setAddressErrors(newErrors);
+    }
+  }, [addresses]);
+
   // QR Code states
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
   const [qrDetail, setQrDetail] = useState({ open: false, coin: null, address: null });
+
+  // Address error states
+  const [addressErrors, setAddressErrors] = useState({
+    bitcoin: null,
+    ethereum: null,
+    solana: null,
+    fradium: null,
+    icp_principal: null,
+    icp_account: null,
+  });
 
   // QR Code generation
   useEffect(() => {
@@ -112,36 +148,46 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
   };
 
   // Address Item Component with Framer Motion Animation
-  const AddressItem = ({ title, description, address, onCopy, onQrClick }) => (
-    <motion.div className="flex flex-col gap-2" variants={itemVariants} initial="hidden" animate="visible">
-      {/* Title */}
-      <motion.div className="text-white/90 text-[13px] font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-        {title}
-      </motion.div>
+  const AddressItem = ({ title, description, address, error, onCopy, onQrClick }) => {
+    const hasError = error || !address;
+    const displayText = hasError ? error || "Address not available" : address;
+    const isError = hasError;
 
-      {/* Description */}
-      {description && (
-        <motion.div className="text-[#B0B6BE] text-[11px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-          {description}
+    return (
+      <motion.div className="flex flex-col gap-2" variants={itemVariants} initial="hidden" animate="visible">
+        {/* Title */}
+        <motion.div className="text-white/90 text-[13px] font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+          {title}
         </motion.div>
-      )}
 
-      {/* Address pill */}
-      <motion.div className="rounded-full border border-white/10 pl-4 pr-2 py-2.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-        <div className="flex items-center gap-1">
-          <motion.span className="text-white text-[13px] truncate flex-1 font-mono" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            {address || "Not available"}
-          </motion.span>
-          <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onQrClick(title, address)} aria-label="Show QR">
-            <img src="/assets/icons/qr_code.svg" alt="QR Code" className="w-4 h-4 opacity-80" />
-          </motion.button>
-          <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onCopy(address)} aria-label="Copy Address">
-            <img src="/assets/icons/content_copy.svg" alt="Copy" className="w-4 h-4 opacity-80" />
-          </motion.button>
-        </div>
+        {/* Description */}
+        {description && (
+          <motion.div className="text-[#B0B6BE] text-[11px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+            {description}
+          </motion.div>
+        )}
+
+        {/* Address pill */}
+        <motion.div className={`rounded-full border pl-4 pr-2 py-2.5 ${isError ? "border-red-500/50 bg-red-500/10" : "border-white/10"}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+          <div className="flex items-center gap-1">
+            <motion.span className={`text-[13px] truncate flex-1 font-mono ${isError ? "text-red-400" : "text-white"}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              {displayText}
+            </motion.span>
+            {!isError && (
+              <>
+                <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onQrClick(title, address)} aria-label="Show QR">
+                  <img src="/assets/icons/qr_code.svg" alt="QR Code" className="w-4 h-4 opacity-80" />
+                </motion.button>
+                <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onCopy(address)} aria-label="Copy Address">
+                  <img src="/assets/icons/content_copy.svg" alt="Copy" className="w-4 h-4 opacity-80" />
+                </motion.button>
+              </>
+            )}
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
-  );
+    );
+  };
 
   if (!isOpen) return null;
 
@@ -194,12 +240,29 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
               <motion.div key="addresses" initial="hidden" animate="visible" variants={containerVariants} transition={{ duration: 0.2 }}>
                 <div className="rounded-[20px] bg-white/[0.03] border border-white/5 p-4 sm:p-5">
                   <div className="flex flex-col gap-4">
-                    <AddressItem title="Bitcoin:" address={addresses.bitcoin} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-                    <AddressItem title="Ethereum:" address={addresses.ethereum} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-                    <AddressItem title="Solana:" address={addresses.solana} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-                    <AddressItem title="Fradium:" address={addresses.solana} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-                    <AddressItem title="ICP Principal:" description="Use for receiving ICRC-1 tokens in the ICP network, such as SNS, ck tokens, etc." address={addresses.icp_principal} onCopy={copyToClipboard} onQrClick={handleQrClick} />
-                    <AddressItem title="ICP Account (for exchanges):" description="Use for receiving ICP on centralized exchanges and legacy transfers." address={addresses.icp_account} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                    {/* Define address items with their configurations */}
+                    {[
+                      { key: "bitcoin", title: "Bitcoin:", address: addresses.bitcoin, error: addressErrors.bitcoin },
+                      { key: "ethereum", title: "Ethereum:", address: addresses.ethereum, error: addressErrors.ethereum },
+                      { key: "solana", title: "Solana:", address: addresses.solana, error: addressErrors.solana },
+                      { key: "fradium", title: "Fradium:", address: addresses.solana, error: addressErrors.fradium },
+                      {
+                        key: "icp_principal",
+                        title: "ICP Principal:",
+                        description: "Use for receiving ICRC-1 tokens in the ICP network, such as SNS, ck tokens, etc.",
+                        address: addresses.icp_principal,
+                        error: addressErrors.icp_principal,
+                      },
+                      {
+                        key: "icp_account",
+                        title: "ICP Account (for exchanges):",
+                        description: "Use for receiving ICP on centralized exchanges and legacy transfers.",
+                        address: addresses.icp_account,
+                        error: addressErrors.icp_account,
+                      },
+                    ].map((item) => (
+                      <AddressItem key={item.key} title={item.title} description={item.description} address={item.address} error={item.error} onCopy={copyToClipboard} onQrClick={handleQrClick} />
+                    ))}
                   </div>
                 </div>
               </motion.div>

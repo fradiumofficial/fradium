@@ -1,6 +1,6 @@
 // src/config.rs
 
-pub const ETH_MODEL_BYTES: &[u8] = include_bytes!("../../models/eth_ransomware_model_mlp.onnx");
+pub const ETH_MODEL_BYTES: &[u8] = include_bytes!("../../models/eth_risk_model_mlp.onnx");
 
 // PASTE THE CONTENT of your 'eth_scaler_parameters.json' file here.
 pub const ETH_SCALER_PARAMS_JSON: &str = r#"
