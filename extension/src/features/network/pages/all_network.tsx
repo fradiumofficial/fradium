@@ -69,7 +69,7 @@ export default function AllNetwork({
 
   return (
     <div className="fixed inset-0 z-[60]">
-      {/* backdrop (transparent per reference, but clickable) */}
+      {/* backdrop area to close when clicking outside */}
       <div
         className="absolute inset-0"
         onClick={() => {
@@ -77,18 +77,16 @@ export default function AllNetwork({
         }}
       />
 
-      {/* Centered dropdown panel below header */}
-      <div className="absolute left-1/2 -translate-x-1/2 top-[88px] w-[320px]">
-        <div className=" border border-white/10 bg-[#2A2D31] shadow-xl overflow-hidden">
-          {/* Title */}
-          <div className="px-4 pt-4 pb-3">
-            <h2 className="text-white text-[20px] font-semibold">
-              Choose Network
-            </h2>
+      {/* Glassmorphism dropdown translated from provided CSS */}
+      <div className="absolute left-[96px] top-[60px] w-[260px] h-[256px]">
+        <div className="flex flex-col items-start p-3 gap-2 w-full h-full bg-black/50 border border-white/15 backdrop-blur-[13.5px] rounded-[20px] shadow-xl">
+          {/* Title: Choose Network */}
+          <div className="flex items-center px-2 py-1">
+            <h2 className="text-white text-[12px] leading-[120%] font-normal">Choose Network</h2>
           </div>
 
           {/* List */}
-          <div className="divide-y divide-white/5">
+          <div className="flex flex-col items-start w-[236px] flex-1 overflow-auto gap-2">
             {networks.map((n) => {
               const isActive = n.key === selectedNetwork;
               return (
@@ -98,58 +96,41 @@ export default function AllNetwork({
                     setSelectedNetwork(n.key);
                     onClose();
                   }}
-                  className={`w-full flex items-center justify-between px-4 py-4 text-left ${
-                    isActive ? "bg-white/5" : ""
-                  }`}
+                  className={`flex w-[236px] h-[45px] items-center justify-between rounded-[18px] ${
+                    isActive ? "bg-white/10" : "bg-white/5"
+                  } backdrop-blur-[10px] px-[14px] py-3 text-left`}
                 >
-                  <div className="flex items-center gap-3">
-                    {/* Active check or spacer */}
+                  <div className="flex items-center gap-2">
                     {isActive ? (
                       <Check className="w-5 h-5 text-[#9BE4A0]" />
                     ) : (
-                      <img
-                        src={n.icon}
-                        alt="icon"
-                        className="w-5 h-5 rounded-full"
-                      />
+                      <img src={n.icon} alt="icon" className="w-5 h-5 rounded-full" />
                     )}
-
-                    <span className="text-white text-[14px] font-normal">
-                      {n.name}
-                    </span>
+                    <span className="text-white text-[14px] leading-[130%] font-normal">{n.name}</span>
                   </div>
-                  <span className="text-white/50 text-[14px] font-normal">
-                    {n.amount}
-                  </span>
+                  <span className="text-white/50 text-[14px] leading-[150%] font-medium">{n.amount}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Manage button */}
-          <div className="px-4 py-4">
-            <button
-              onClick={() => setManageOpen(true)}
-              className="mx-auto flex items-center gap-2 text-[#9BE4A0] text-[14px] font-medium"
-            >
-              <img
-                src={CDN.icons.construction}
-                className="w-5 h-5"
-                alt="manage"
-              />
-              Manage Networks
-            </button>
-          </div>
+          {/* Manage Networks */}
+          <button
+            onClick={() => setManageOpen(true)}
+            className="flex w-[236px] h-[44px] items-center justify-between rounded-[18px] bg-white/5 backdrop-blur-[10px] px-2 py-3 text-left"
+          >
+            <div className="flex items-center gap-2 w-full">
+              <img src={CDN.icons.construction} className="w-5 h-5" alt="manage" />
+              <span className="text-[#99E39E] text-[14px] leading-[130%] font-medium">Manage Networks</span>
+            </div>
+          </button>
         </div>
       </div>
 
       {/* Manage modal overlay (centered panel, clicks inside do not close) */}
       {manageOpen && (
         <div className="absolute inset-0 z-[70] flex items-start justify-center pt-20">
-          <div
-            className="absolute inset-0"
-            onClick={() => setManageOpen(false)}
-          />
+          <div className="absolute inset-0" onClick={() => setManageOpen(false)} />
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <ManageNetwork onClose={() => setManageOpen(false)} />
           </div>

@@ -1,4 +1,3 @@
-import ProfileHeader from "~components/header";
 import { Search, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
@@ -102,10 +101,8 @@ function ScanHistory() {
 
   return (
     <div
-      className={`w-[375px] h-[600px] bg-[#25262B] text-white pb-20 flex flex-col`}
+      className={`w-[375px] bg-[#25262B] text-white flex flex-col`}
     >
-      <ProfileHeader />
-
       {/* Content wrapper fills remaining height */}
       <div
         className={`relative flex-1 ${

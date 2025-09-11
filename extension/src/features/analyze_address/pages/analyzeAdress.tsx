@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { detectTokenType, TokenType } from "~lib/utils/tokenUtils";
-import ProfileHeader from "~components/header";
 import NeoButton from "~components/custom-button";
 import { CDN } from "~lib/constant/cdn";
 
@@ -77,9 +76,7 @@ function AnalyzeAddress() {
   };
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-      <ProfileHeader />
-
+    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto">
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Analyze Address</h1>
 

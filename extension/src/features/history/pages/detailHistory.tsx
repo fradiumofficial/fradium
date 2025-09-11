@@ -1,5 +1,4 @@
 import { SafetyCard } from "~components/custom-card";
-import ProfileHeader from "~components/header";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
@@ -99,8 +98,7 @@ function DetailHistory() {
 
   if (error) {
     return (
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-        <ProfileHeader />
+      <div className="w-[375px] bg-[#25262B] text-white shadow-md overflow-y-auto">
         <div className="m-4 text-center">
           <h1 className="font-semibold text-[20px] text-white mb-4">Error Loading History</h1>
           <p className="text-red-400 text-[14px] mb-4">{error}</p>
@@ -126,8 +124,7 @@ function DetailHistory() {
 
   if (!historyItem) {
     return (
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-        <ProfileHeader />
+      <div className="w-[375px] bg-[#25262B] text-white shadow-md overflow-y-auto">
         <div className="m-4 text-center">
           <h1 className="font-semibold text-[20px] text-white mb-4">History Not Found</h1>
           <p className="text-white/50 mb-4">The requested history item could not be found.</p>
@@ -163,10 +160,7 @@ function DetailHistory() {
   const confidencePercentage = getConfidencePercentage();
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-
-      {/* Header Sections */}
-      <ProfileHeader />
+    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
 
       {/* Analyze Address Section */}
       <div className="m-4">

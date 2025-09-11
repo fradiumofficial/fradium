@@ -1,7 +1,6 @@
-import { EyeClosedIcon, EyeIcon, MoveUpRight, MoveDownLeft, Search, Settings2, RefreshCw } from "lucide-react";
-import ProfileHeader from "~components/header";
+import { Search, Settings2, RefreshCw } from "lucide-react";
 import { CDN } from "~lib/constant/cdn";
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
@@ -126,12 +125,12 @@ function Home() {
     ));
   }, [isOutOfCyclesError]);
 
-  // Fetch Bitcoin balance - using useRef to prevent recreation cascades
-  const fetchBitcoinBalance = useRef(async () => {
+  // Fetch Bitcoin balance
+  const fetchBitcoinBalance = useCallback(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token =>
-      token.networkKey === "btc"
+    setTokenBalances(prev => prev.map(token => 
+      token.networkKey === "btc" 
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -141,28 +140,28 @@ function Home() {
       const btcValue = Number(btcBalance) / 100000000; // Convert satoshi to BTC
       const balanceValue = btcValue.toFixed(getDecimalPlaces("btc"));
 
-      setTokenBalances(prev => prev.map(token =>
-        token.networkKey === "btc"
-          ? {
-              ...token,
-              balance: balanceValue,
-              usdValue: "$0.00",
-              isLoading: false,
-              hasError: false
+      setTokenBalances(prev => prev.map(token => 
+        token.networkKey === "btc" 
+          ? { 
+              ...token, 
+              balance: balanceValue, 
+              usdValue: "$0.00", 
+              isLoading: false, 
+              hasError: false 
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "BTC");
     }
-  });
+  }, [isAuthenticated, walletActor, identity, getDecimalPlaces, canisterOutOfCycles]);
 
-  // Fetch Ethereum balance - using useRef to prevent recreation cascades
-  const fetchEthereumBalance = useRef(async () => {
+  // Fetch Ethereum balance
+  const fetchEthereumBalance = useCallback(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token =>
-      token.networkKey === "eth"
+    setTokenBalances(prev => prev.map(token => 
+      token.networkKey === "eth" 
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -171,28 +170,28 @@ function Home() {
       const ethBalance = await walletActor.ethereum_balance();
       const balanceValue = ethBalance; // Already formatted as string
 
-      setTokenBalances(prev => prev.map(token =>
-        token.networkKey === "eth"
-          ? {
-              ...token,
-              balance: balanceValue,
-              usdValue: "$0.00",
-              isLoading: false,
-              hasError: false
+      setTokenBalances(prev => prev.map(token => 
+        token.networkKey === "eth" 
+          ? { 
+              ...token, 
+              balance: balanceValue, 
+              usdValue: "$0.00", 
+              isLoading: false, 
+              hasError: false 
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "ETH");
     }
-  });
+  }, [isAuthenticated, walletActor, identity, canisterOutOfCycles]);
 
-  // Fetch Solana balance - using useRef to prevent recreation cascades
-  const fetchSolanaBalance = useRef(async () => {
+  // Fetch Solana balance
+  const fetchSolanaBalance = useCallback(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token =>
-      token.networkKey === "sol"
+    setTokenBalances(prev => prev.map(token => 
+      token.networkKey === "sol" 
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -202,28 +201,28 @@ function Home() {
       const solValue = Number(solBalance) / 1000000000; // Convert lamports to SOL
       const balanceValue = solValue.toFixed(getDecimalPlaces("sol"));
 
-      setTokenBalances(prev => prev.map(token =>
-        token.networkKey === "sol"
-          ? {
-              ...token,
-              balance: balanceValue,
-              usdValue: "$0.00",
-              isLoading: false,
-              hasError: false
+      setTokenBalances(prev => prev.map(token => 
+        token.networkKey === "sol" 
+          ? { 
+              ...token, 
+              balance: balanceValue, 
+              usdValue: "$0.00", 
+              isLoading: false, 
+              hasError: false 
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "SOL");
     }
-  });
+  }, [isAuthenticated, walletActor, identity, getDecimalPlaces, canisterOutOfCycles]);
 
-  // Fetch Fradium balance - using useRef to prevent recreation cascades
-  const fetchFradiumBalance = useRef(async () => {
+  // Fetch Fradium balance
+  const fetchFradiumBalance = useCallback(async () => {
     if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
 
-    setTokenBalances(prev => prev.map(token =>
-      token.networkKey === "fra"
+    setTokenBalances(prev => prev.map(token => 
+      token.networkKey === "fra" 
         ? { ...token, isLoading: true, hasError: false }
         : token
     ));
@@ -232,21 +231,21 @@ function Home() {
       // Fradium balance - would need to be implemented
       const balanceValue = "0.00";
 
-      setTokenBalances(prev => prev.map(token =>
-        token.networkKey === "fra"
-          ? {
-              ...token,
-              balance: balanceValue,
-              usdValue: "$0.00",
-              isLoading: false,
-              hasError: false
+      setTokenBalances(prev => prev.map(token => 
+        token.networkKey === "fra" 
+          ? { 
+              ...token, 
+              balance: balanceValue, 
+              usdValue: "$0.00", 
+              isLoading: false, 
+              hasError: false 
             }
           : token
       ));
     } catch (error) {
       handleBalanceError(error, "FUM");
     }
-  });
+  }, [isAuthenticated, walletActor, identity, canisterOutOfCycles]);
 
   // Reset canister error state (for manual retry)
   const resetCanisterError = useCallback(() => {
@@ -254,7 +253,7 @@ function Home() {
     setCanisterOutOfCycles(false);
   }, []);
 
-  // Fetch all token balances individually - stable reference to prevent recreation cascades
+  // Fetch all token balances individually
   const fetchAllBalances = useCallback(async (force = false) => {
     if (!isAuthenticated || !walletActor || canisterOutOfCycles) {
       setTokenBalances(tokenConfig);
@@ -269,19 +268,19 @@ function Home() {
     setIsFetchingBalances(true);
 
     try {
-      // Call all fetch functions in parallel using stable references - each will update its own loading state
+      // Call all fetch functions in parallel - each will update its own loading state
       await Promise.all([
-        fetchBitcoinBalance.current(),
-        fetchEthereumBalance.current(),
-        fetchSolanaBalance.current(),
-        fetchFradiumBalance.current()
+        fetchBitcoinBalance(),
+        fetchEthereumBalance(),
+        fetchSolanaBalance(),
+        fetchFradiumBalance()
       ]);
     } catch (error) {
       console.error("Error in parallel balance fetching:", error);
     } finally {
       setIsFetchingBalances(false);
     }
-  }, [isAuthenticated, walletActor, canisterOutOfCycles, isFetchingBalances, tokenConfig]);
+  }, [isAuthenticated, walletActor, canisterOutOfCycles, isFetchingBalances, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, fetchFradiumBalance, tokenConfig]);
 
   // Reset error state when authentication changes
   useEffect(() => {
@@ -357,209 +356,185 @@ function Home() {
   };
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-      {/* Header Sections */}
-      <ProfileHeader />
-
-      <div className="flex flex-col items-center space-y-4">
-        <div className="w-[327px] h-[215px] bg-[#1F2025] cursor-pointer hover:bg-[#2A2B30] transition-colors" onClick={() => {}}>
-          <div className="flex flex-row justify-between">
-            <img src={CDN.images.topLeft} alt="Top Left" />
-            <img src={CDN.images.topRight} alt="Top Right" />
-          </div>
-          <div className="flex justify-center items-center">
-            <div className="font-sans flex-col items-start">
-              <div className="flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">
-                  {hideBalance ? "••••" : selectedNetwork === "all" ? getNetworkValue("All Networks") : getNetworkValue(selectedNetwork)}
-                </span>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent wallet navigation when toggling visibility
-                    toggleVisibility();
-                  }}
-                  className="ml-1 text-gray-400 hover:text-white transition-colors"
-                  aria-label="Toggle balance visibility">
-                  {hideBalance ? <EyeClosedIcon /> : <EyeIcon />}
-                </button>
+    <div className="w-[375px] text-white shadow-md overflow-hidden">
+      {/* Content Container */}
+      <div className="flex flex-col items-start p-[20px_20px_16px] gap-3 w-[375px] h-[224px] flex-none order-2 flex-grow-0 z-[2]">
+        {/* Card */}
+        <div className="box-border flex flex-col items-center p-[20px_16px_16px] gap-5 w-[335px] h-[188px] bg-gradient-to-br from-[#7C72FE] via-[#5A52C6] via-[#534BBA] to-[#433BA6] shadow-[0px_0px_0px_1px_#7C77C4,0px_5px_18px_-4px_rgba(74,66,170,0.6)] rounded-[28px] flex-none order-0 self-stretch flex-grow-0">
+          {/* Text Section */}
+          <div className="flex flex-col items-center p-0 gap-[10px] w-[200px] h-[87px] flex-none order-0 flex-grow-0">
+            {/* Total Portfolio Value */}
+            <div className="w-[135px] h-[21px] font-['General Sans'] font-medium text-[14px] leading-[150%] flex items-center letter-[-0.01em] text-white flex-none order-0 flex-grow-0">
+              Total Portfolio Value
+            </div>
+            
+            {/* Amount and Description */}
+            <div className="flex flex-col items-center p-0 gap-[6px] w-[186px] h-[56px] flex-none order-1 flex-grow-0">
+              {/* Balance Amount */}
+              <div className="w-[86px] h-8 font-['General Sans'] font-semibold text-[32px] leading-8 flex items-center text-white flex-none order-0 flex-grow-0">
+                {hideBalance ? "••••" : selectedNetwork === "all" ? getNetworkValue("All Networks") : getNetworkValue(selectedNetwork)}
               </div>
-
-              {/* Wallet Status */}
-              <div className="flex flex-col items-center justify-center gap-1 my-2">
-                <span className="text-xs text-[#9BE4A0]/70">{principal ? `${principal.slice(0, 6)}...${principal.slice(-4)}` : "Not connected"}</span>
-              </div>
-
-              <div className="flex flex-row">
-                <div className="basis-64 m-1">
-                  <div className="flex flex-row w-[145px] h-[60px] bg-white/10 justify-center items-center gap-4">
-                    <div>
-                      <h1 className="text-white font-bold text-[16px]">Receive</h1>
-                    </div>
-                    <div className="w-[50px] bg-[#823EFD]">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReceiveClick();
-                        }}
-                        className={`
-                        w-[50px] h-[45px] flex items-center
-                        justify-center gap-2
-                        font-bold text-white
-                        bg-[#99E39E]
-                        border-2 border-gray-800
-                        transform -translate-y-1 translate-x-1
-                        hover:-translate-y-0 hover:translate-x-0 active:translate-y-0 active:translate-x-0
-                        transition-all duration-150 ease-in-out`}
-                        title={isFetchingBalances ? "Please wait for balance loading..." : "Receive tokens"}>
-                        <MoveDownLeft className="text-black" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="basis-64 m-1">
-                  <div className="flex flex-row w-[145px] h-[60px] bg-white/10 justify-center items-center gap-4">
-                    <div>
-                      <h1 className="text-white font-bold text-[16px]">Send</h1>
-                    </div>
-                    <div className="w-[50px] bg-[#823EFD]">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSendClick();
-                        }}
-                        className={`
-                        w-[50px] h-[45px] flex items-center
-                        justify-center gap-2
-                        font-bold text-white
-                        bg-[#99E4A0]
-                        border-2 border-gray-800
-                        transform -translate-y-1 translate-x-1
-                        hover:-translate-y-0 hover:translate-x-0 active:translate-y-0 active:translate-x-0
-                        transition-all duration-150 ease-in-out`}
-                        title={isFetchingBalances ? "Please wait for balance loading..." : "Send tokens"}>
-                        <MoveUpRight className="text-black" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              
+              {/* Description */}
+              <div className="w-[200px] h-[18px] font-['General Sans'] font-medium text-[12px] leading-[150%] flex items-center letter-[-0.01em] text-white flex-none order-1 flex-grow-0">
+                Top up your wallet to start using it!
               </div>
             </div>
           </div>
-          <div className="flex flex-row justify-between mt-[20px]">
-            <div className="flex flex-col-1">
-              <h1 className="text-[16px] font-semibold">Tokens</h1>
-            </div>
-            <div className="flex flex-col-2 items-center space-x-2">
-              <button
-                onClick={() => fetchAllBalances(true)}
-                disabled={isFetchingBalances}
-                className={`p-1 rounded transition-opacity ${
-                  isFetchingBalances
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/10 cursor-pointer'
-                }`}
-                title={isFetchingBalances ? "Loading balances..." : "Refresh balances"}
-              >
-                <RefreshCw className={`w-4 h-4 ${isFetchingBalances ? 'animate-spin' : ''}`} />
-              </button>
-              <button
-                onClick={handleAnalyzeAddress}
-                disabled={isFetchingBalances}
-                className={`p-1 rounded transition-opacity ${
-                  isFetchingBalances
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/10 cursor-pointer'
-                }`}
-                title={isFetchingBalances ? "Please wait..." : "Analyze address"}
-              >
-                <Search />
-              </button>
-              <button
-                onClick={handleAccountSettings}
-                disabled={isFetchingBalances}
-                className={`p-1 rounded transition-opacity ${
-                  isFetchingBalances
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/10 cursor-pointer'
-                }`}
-                title={isFetchingBalances ? "Please wait..." : "Account settings"}
-              >
-                <Settings2 />
-              </button>
-            </div>
-          </div>
 
-          {/* Global Loading Indicator */}
-          {isFetchingBalances && (
-            <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-blue-400 text-sm">Loading token balances...</span>
-              </div>
-            </div>
-          )}
-
-          {/* Canister Error Message */}
-          {canisterError && (
-            <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-red-400 text-sm">{canisterError}</span>
+          {/* Button Section */}
+          <div className="flex flex-row items-start p-0 gap-2 w-[303px] h-[45px] flex-none order-1 self-stretch flex-grow-0">
+            {/* Receive Button */}
+            <button 
+              onClick={handleReceiveClick}
+              className="box-border flex flex-row justify-between items-center p-[12px_12px_12px_16px] gap-2 w-[147.5px] h-[45px] bg-gradient-to-r from-white/[0.003] via-white/[0.112] to-white/[0.15] backdrop-blur-[10px] rounded-full flex-none order-0 flex-grow-1 hover:bg-white/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex flex-row items-center p-0 gap-[6px] mx-auto w-[126px] h-[21px] flex-none order-0 flex-grow-0">
+                <div className="w-5 h-5 flex-none order-0 flex-grow-0 relative">
+                  <img src={CDN.icons.qrCode} alt="QR Code" className="w-[15px] h-[15px] absolute left-[calc(50%-15px/2)] top-[calc(50%-15px/2)]" />
                 </div>
-                <button
-                  onClick={() => {
-                    resetCanisterError();
-                    fetchAllBalances(true); // Force retry
-                  }}
-                  className="px-3 py-1 bg-red-500/30 hover:bg-red-500/50 text-red-400 text-xs rounded transition-colors"
-                  disabled={isFetchingBalances}
-                >
-                  {isFetchingBalances ? 'Retrying...' : 'Retry'}
-                </button>
+                <div className="w-[100px] h-[21px] font-['General Sans'] font-medium text-[16px] leading-[130%] text-white flex-none order-1 flex-grow-0">
+                  Receive
+                </div>
               </div>
-            </div>
-          )}
+              <div className="mx-auto w-5 h-5 flex-none order-1 flex-grow-0 relative">
+                <img src={CDN.icons.sendCoin} alt="Receive" className="w-[11.67px] h-[11.67px] absolute left-[calc(50%-11.67px/2+51.92px)] top-[calc(50%-11.67px/2+0.17px)] rotate-180" />
+              </div>
+            </button>
 
-          {/* Token List */}
-          <div className="space-y-2 mt-[10px]">
-            {filteredTokens.length === 0 ? (
-              // Show empty state when no tokens
-              <div className="flex flex-col items-center justify-center py-8">
-                <span className="text-white/50 text-sm">No tokens available</span>
+            {/* Send Button */}
+            <button 
+              onClick={handleSendClick}
+              className="box-border flex flex-row justify-between items-center p-[12px_12px_12px_16px] gap-2 w-[147.5px] h-[45px] bg-gradient-to-r from-white/[0.003] via-white/[0.112] to-white/[0.15] backdrop-blur-[10px] rounded-full flex-none order-1 flex-grow-1 hover:bg-white/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex flex-row items-center p-0 gap-[6px] mx-auto w-[126px] h-[21px] flex-none order-0 flex-grow-0">
+                <div className="w-5 h-5 flex-none order-0 flex-grow-0 relative">
+                  <img src={CDN.icons.sendToken} alt="Send" className="w-[16.67px] h-[16.67px] absolute left-[calc(50%-16.67px/2+0px)] top-[calc(50%-16.67px/2+0px)]" />
+                </div>
+                <div className="w-[100px] h-[21px] font-['General Sans'] font-medium text-[16px] leading-[130%] text-white flex-none order-1 flex-grow-0">
+                  Send
+                </div>
               </div>
-            ) : (
-              // Show token list with individual loading states
-              filteredTokens.map((token) => (
-                <div key={token.symbol} className="flex items-center justify-between hover:bg-white/10 transition-colors cursor-pointer">
-                  <div className="flex items-center space-x-3">
-                    <img src={token.icon} alt={token.name} className="w-8 h-8" />
-                    <div>
-                      <div className="text-white font-medium flex flex-row">
-                        {token.symbol}
-                        {token.hasError && (
-                          <div className="text-red-400 text-xs px-2">- Error fetching balance</div>
-                        )}
+              <div className="mx-auto w-5 h-5 flex-none order-1 flex-grow-0 relative">
+                <img src={CDN.icons.callReceived} alt="Send" className="w-[11.67px] h-[11.67px] absolute left-[calc(50%-11.67px/2+51.92px)] top-[calc(50%-11.67px/2+0.17px)] rotate-180" />
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tokens Section */}
+      <div className="box-border flex flex-col items-start p-[12px_20px_20px] gap-2 w-[375px] h-[271px] flex-none order-3 self-stretch flex-grow-0 z-[3]">
+        {/* Header */}
+        <div className="flex flex-row justify-between items-center p-0 gap-[38px] w-[335px] h-6 flex-none order-0 self-stretch flex-grow-0">
+          {/* Tokens Title */}
+          <div className="mx-auto w-[55px] h-6 font-['General Sans'] font-semibold text-[16px] leading-[150%] flex items-center text-white flex-none order-0 flex-grow-0">
+            Tokens
+          </div>
+          
+          {/* Icon Section */}
+          <div className="mx-auto flex flex-row items-center p-0 gap-3 w-[84px] h-5 flex-none order-1 flex-grow-0">
+            <button
+              onClick={handleAnalyzeAddress}
+              disabled={isFetchingBalances}
+              className={`w-5 h-5 flex-none order-0 flex-grow-0 relative ${
+                isFetchingBalances
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-white/10 cursor-pointer'
+              }`}
+              title={isFetchingBalances ? "Please wait..." : "Analyze address"}
+            >
+              <Search className="w-5 h-5 text-white" />
+            </button>
+            <button
+              onClick={handleAccountSettings}
+              disabled={isFetchingBalances}
+              className={`w-5 h-5 flex-none order-1 flex-grow-0 relative ${
+                isFetchingBalances
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-white/10 cursor-pointer'
+              }`}
+              title={isFetchingBalances ? "Please wait..." : "Account settings"}
+            >
+              <Settings2 className="w-5 h-5 text-white" />
+            </button>
+            <button
+              onClick={() => fetchAllBalances(true)}
+              disabled={isFetchingBalances}
+              className={`w-5 h-5 flex-none order-2 flex-grow-0 relative ${
+                isFetchingBalances
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-white/10 cursor-pointer'
+              }`}
+              title={isFetchingBalances ? "Loading balances..." : "Refresh balances"}
+            >
+              <RefreshCw className={`w-5 h-5 text-white ${isFetchingBalances ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[207px] flex-none order-1 self-stretch flex-grow-0">
+          {/* Content */}
+          <div className="flex flex-col items-start p-0 w-[335px] h-[207px] flex-none order-0 self-stretch flex-grow-0">
+            {filteredTokens.map((token, index) => (
+              <div key={token.symbol}>
+                {/* Token Item */}
+                <div className="box-border flex flex-row justify-between items-center p-[12px_0px] gap-4 w-[335px] h-[69px] flex-none order-0 self-stretch flex-grow-0">
+                  {/* Content */}
+                  <div className="mx-auto flex flex-row items-center p-0 gap-4 w-[242px] h-[45px] flex-none order-0 flex-grow-0">
+                    {/* Token Icon */}
+                    <div className="w-10 h-10 flex-none order-0 flex-grow-0 relative">
+                      <img src={token.icon} alt={token.name} className="w-full h-full rounded-full" />
+                    </div>
+                    
+                    {/* Token Info */}
+                    <div className="flex flex-col items-start p-0 w-[183px] h-[45px] flex-none order-1 flex-grow-0">
+                      {/* Token Symbol and Name */}
+                      <div className="flex flex-row items-center p-0 gap-2 w-[96px] h-6 flex-none order-0 flex-grow-0">
+                        <div className="w-8 h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-center text-white flex-none order-0 flex-grow-0">
+                          {token.symbol}
+                        </div>
+                        <div className="w-1 h-1 bg-white/50 rounded-full flex-none order-1 flex-grow-0"></div>
+                        <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-2 flex-grow-0">
+                          {token.name}
+                        </div>
                       </div>
-                      <div className="text-white/50 text-sm">{token.name}</div>
+                      
+                      {/* Network Info */}
+                      <div className="flex flex-row items-center p-0 gap-2 w-[183px] h-[21px] flex-none order-1 flex-grow-0">
+                        <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-0 flex-grow-0">
+                          {token.name}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  
+                  {/* Balance */}
+                  <div className="flex flex-col items-end p-0 pr-4 w-[80px] h-[45px] flex-none order-1 flex-grow-0">
                     {token.isLoading ? (
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center w-full">
                         <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
                       </div>
                     ) : (
                       <>
-                        <div className="text-white font-medium">{token.balance}</div>
-                        <div className="text-white/50 text-sm">{token.usdValue}</div>
+                        <div className="w-full h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-end justify-end text-white flex-none order-0 flex-grow-0">
+                          {token.balance}
+                        </div>
+                        <div className="w-full h-[21px] font-['General Sans'] font-medium text-[14px] leading-[150%] flex items-end justify-end text-white/50 flex-none order-1 flex-grow-0">
+                          {token.usdValue}
+                        </div>
                       </>
                     )}
                   </div>
                 </div>
-              ))
-            )}
+                
+                {/* Separator Line */}
+                {index < filteredTokens.length - 1 && (
+                  <div className="w-[335px] h-0 border border-white/10 flex-none order-1 self-stretch flex-grow-0"></div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>

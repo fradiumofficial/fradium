@@ -1,4 +1,3 @@
-import ProfileHeader from "~components/header";
 import { ChevronLeft } from "lucide-react";
 import { CDN } from "~lib/constant/cdn";
 import NeoButton from "~components/custom-button";
@@ -43,9 +42,7 @@ function Receive() {
   }, [navigate]);
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
-      <ProfileHeader />
-
+    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
       <div className="flex flex-row items-center px-[24px]">
         <button
             onClick={handleBack}

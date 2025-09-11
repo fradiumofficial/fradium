@@ -1,4 +1,3 @@
-import ProfileHeader from "~components/header";
 import { Search, Settings2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { CDN } from "~lib/constant/cdn";
@@ -92,9 +91,7 @@ function History() {
   const SHOW_EMPTY = filtered.length === 0;
 
   return (
-    <div className="w-[375px] h-[600px] bg-[#25262B] text-white pb-20 flex flex-col">
-      <ProfileHeader />
-
+    <div className="w-[375px] text-white flex flex-col">
       <div className={`relative flex-1 ${SHOW_EMPTY ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <div className="px-4 pb-4 h-full flex flex-col">
           <div className="flex flex-row justify-between pt-3 select-none">
