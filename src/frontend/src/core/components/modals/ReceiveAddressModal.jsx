@@ -42,13 +42,6 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
         }
       });
 
-      // Special handling for Fradium (using solana address for now)
-      if (addresses.solana && addresses.solana.trim() !== "") {
-        newErrors.fradium = null;
-      } else {
-        newErrors.fradium = "Address not available";
-      }
-
       setAddressErrors(newErrors);
     }
   }, [addresses]);
@@ -62,7 +55,6 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
     bitcoin: null,
     ethereum: null,
     solana: null,
-    fradium: null,
     icp_principal: null,
     icp_account: null,
   });
@@ -245,7 +237,6 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
                       { key: "bitcoin", title: "Bitcoin:", address: addresses.bitcoin, error: addressErrors.bitcoin },
                       { key: "ethereum", title: "Ethereum:", address: addresses.ethereum, error: addressErrors.ethereum },
                       { key: "solana", title: "Solana:", address: addresses.solana, error: addressErrors.solana },
-                      { key: "fradium", title: "Fradium:", address: addresses.solana, error: addressErrors.fradium },
                       {
                         key: "icp_principal",
                         title: "ICP Principal:",
