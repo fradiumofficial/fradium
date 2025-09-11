@@ -15,6 +15,8 @@ import { backend as backend } from "declarations/backend";
 import { wallet as wallet } from "declarations/wallet";
 import { fradium_ledger as fradium_ledger } from "declarations/fradium_ledger";
 import { icp_ledger as icp_ledger } from "declarations/icp_ledger";
+import { fradium_index as fradium_index } from "declarations/fradium_index";
+import { icp_index as icp_index } from "declarations/icp_index";
 
 // Global Style
 import "@/core/style/global.css";
@@ -167,25 +169,23 @@ function AnimatedRoutes() {
 }
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <BrowserRouter>
-      <NProgressRouter />
-      <AuthProvider canisters={{ token, backend, wallet, fradium_ledger, icp_ledger }}>
-        <AnimatedRoutes />
-        <Toaster
-          position="bottom-center"
-          toastOptions={{
-            duration: 2000,
-            style: {
-              background: "#23272F",
-              color: "#B0B6BE",
-              border: "1px solid #393E4B",
-              borderRadius: "8px",
-            },
-          }}
-        />
-      </AuthProvider>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
-    </BrowserRouter>
-  </StrictMode>
+  <BrowserRouter>
+    <NProgressRouter />
+    <AuthProvider canisters={{ token, backend, wallet, fradium_ledger, icp_ledger, fradium_index, icp_index }}>
+      <AnimatedRoutes />
+      <Toaster
+        position="bottom-center"
+        toastOptions={{
+          duration: 2000,
+          style: {
+            background: "#23272F",
+            color: "#B0B6BE",
+            border: "1px solid #393E4B",
+            borderRadius: "8px",
+          },
+        }}
+      />
+    </AuthProvider>
+    <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
+  </BrowserRouter>
 );

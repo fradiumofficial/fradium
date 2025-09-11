@@ -71,9 +71,27 @@ export const TOKENS_CONFIG = [
 
 // API Keys for different services
 const ETHERSCAN_API_KEY = process.env.VITE_ETHERSCAN_API_KEY;
+const COINGECKO_API_KEY = process.env.VITE_COINGECKO_API_KEY;
+const COINMARKETCAP_API_KEY = process.env.VITE_COINMARKETCAP_API_KEY;
 
 if (!ETHERSCAN_API_KEY) {
   throw new Error("VITE_ETHERSCAN_API_KEY environment variable is required but not set");
+}
+
+// CoinGecko API key is optional but recommended for higher rate limits
+// Get your free API key at: https://www.coingecko.com/en/api
+// Add it to your .env file as: VITE_COINGECKO_API_KEY=your_api_key_here
+if (!COINGECKO_API_KEY) {
+  console.warn("VITE_COINGECKO_API_KEY not set. Using free tier with rate limits (10-50 calls/minute).");
+  console.warn("Get your free API key at: https://www.coingecko.com/en/api");
+}
+
+// CoinMarketCap API key is optional but recommended for better rate limits
+// Get your free API key at: https://coinmarketcap.com/api/
+// Add it to your .env file as: VITE_COINMARKETCAP_API_KEY=your_api_key_here
+if (!COINMARKETCAP_API_KEY) {
+  console.warn("VITE_COINMARKETCAP_API_KEY not set. Using free tier with rate limits (10,000 calls/month).");
+  console.warn("Get your free API key at: https://coinmarketcap.com/api/");
 }
 
 export const API_URLS = {
@@ -148,10 +166,10 @@ export function detectAddressNetwork(address) {
     return "Solana";
   }
 
-  // ICP Principal (simplified): lowercase, hyphen-separated groups
-  // Example: m5rq4-tzmga-7d5hk-l37qx-42aao-gk3xg-jvocx-tqxeh-26hfr-hcaga-qae
-  if (/^[a-z0-9-]+$/.test(lower) && lower.includes("-")) {
-    const parts = lower.split("-").filter(Boolean);
+  // ICP Principal (simplified): alphanumeric, hyphen-separated groups
+  // Example: nppey-3ctwu-sps4z-cd2gh-fovyr-4lnq6-rq66v-pvtvq-oqal3-bvwhc-nae
+  if (/^[a-zA-Z0-9-]+$/.test(trimmed) && trimmed.includes("-")) {
+    const parts = trimmed.split("-").filter(Boolean);
     if (parts.length >= 5) {
       return "Internet Computer";
     }
@@ -397,7 +415,6 @@ export async function getBalance(tokenId, principal) {
             owner: principal,
             subaccount: [],
           });
-          console.log("ICP balance:", balance);
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
@@ -496,10 +513,23 @@ export async function getUSD(tokenId) {
   // Primary API: CoinGecko
   try {
     if (coinGeckoId) {
-      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`, {
+      // Build URL with API key if available
+      const baseUrl = "https://api.coingecko.com/api/v3/simple/price";
+      const params = new URLSearchParams({
+        ids: coinGeckoId,
+        vs_currencies: "usd",
+      });
+
+      // Add API key if available
+      if (COINGECKO_API_KEY) {
+        params.append("x_cg_demo_api_key", COINGECKO_API_KEY);
+      }
+
+      const response = await fetch(`${baseUrl}?${params.toString()}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
+          ...(COINGECKO_API_KEY && { "x-cg-demo-api-key": COINGECKO_API_KEY }),
         },
       });
 
@@ -515,6 +545,47 @@ export async function getUSD(tokenId) {
     }
   } catch (error) {
     console.warn("CoinGecko API failed:", error);
+  }
+
+  // Fallback API: CoinMarketCap (requires API key, but we can try without)
+  try {
+    const cmcIds = {
+      BTC: "1",
+      ETH: "1027",
+      SOL: "5426",
+      ICP: "8916",
+    };
+
+    const cmcId = cmcIds[token.symbol];
+
+    if (cmcId) {
+      // Build headers with API key if available
+      const headers = {
+        Accept: "application/json",
+      };
+
+      // Add API key if available
+      if (COINMARKETCAP_API_KEY) {
+        headers["X-CMC_PRO_API_KEY"] = COINMARKETCAP_API_KEY;
+      }
+
+      const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail?id=${cmcId}`, {
+        method: "GET",
+        headers: headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`CoinMarketCap API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.data && data.data.statistics && data.data.statistics.price) {
+        return data.data.statistics.price;
+      }
+    }
+  } catch (error) {
+    console.warn("CoinMarketCap API failed:", error);
   }
 
   // Fallback API: CoinPaprika
@@ -548,39 +619,6 @@ export async function getUSD(tokenId) {
     }
   } catch (error) {
     console.warn("CoinPaprika API failed:", error);
-  }
-
-  // Fallback API: CoinMarketCap (requires API key, but we can try without)
-  try {
-    const cmcIds = {
-      BTC: "1",
-      ETH: "1027",
-      SOL: "5426",
-      ICP: "8916",
-    };
-
-    const cmcId = cmcIds[token.symbol];
-
-    if (cmcId) {
-      const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail?id=${cmcId}`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`CoinMarketCap API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.data && data.data.statistics && data.data.statistics.price) {
-        return data.data.statistics.price;
-      }
-    }
-  } catch (error) {
-    console.warn("CoinMarketCap API failed:", error);
   }
 
   // Final fallback: Use cached/default prices or return null

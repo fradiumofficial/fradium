@@ -1,24 +1,141 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TOKENS_CONFIG } from "@/core/lib/tokenUtils";
-import { getETHTransactionHistory, getSolanaTransactionHistory, getBitcoinTransactionHistory, getTransactionHistory } from "@/core/services/historyTransactionService";
+import { TOKENS_CONFIG, formatAmount } from "@/core/lib/tokenUtils";
+import { getETHTransactionHistory, getSolanaTransactionHistory, getBitcoinTransactionHistory, getTransactionHistory, getICRCTransactionHistory } from "@/core/services/historyTransactionService";
 import { useWallet } from "@/core/providers/WalletProvider";
+import { useAuth } from "@/core/providers/AuthProvider";
 import { getExplorerUrl } from "@/core/lib/chainExplorers";
 import { Copy, ExternalLink } from "lucide-react";
 import { copyToClipboard } from "@/core/lib/clipboardUtils";
 
-function getIconByChain(chain) {
+function getIconByChain(chain, tokenType) {
+  // For Internet Computer chain, determine token based on tokenType
+  if (chain.toLowerCase() === "internet computer") {
+    if (tokenType === "icp") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 4); // ICP token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/icp.webp";
+    } else if (tokenType === "fradium") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 5); // Fradium token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/fradium.webp";
+    }
+  }
+
+  // For other chains, find by chain name
   const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
   return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
+}
+
+// Loading skeleton component
+const LoadingSkeleton = () => {
+  console.log("LoadingSkeleton");
+  return (
+    <div className="flex flex-col">
+      <motion.div className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.12 }}>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-48 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="h-4 w-20 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            <div className="h-6 w-16 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <div className="h-px bg-white/10 mx-4" />
+      </motion.div>
+      <motion.div className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.18 }}>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-48 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="h-4 w-20 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            <div className="h-6 w-16 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <div className="h-px bg-white/10 mx-4" />
+      </motion.div>
+      <motion.div className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.24 }}>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-48 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="h-4 w-20 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            <div className="h-6 w-16 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <div className="h-px bg-white/10 mx-4" />
+      </motion.div>
+      <motion.div className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-48 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="h-4 w-20 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            <div className="h-6 w-16 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <div className="h-px bg-white/10 mx-4" />
+      </motion.div>
+      <motion.div className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.36 }}>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-48 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="h-4 w-20 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
+            <div className="h-6 w-16 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        {/* Tidak ada garis di bawah skeleton terakhir */}
+      </motion.div>
+    </div>
+  );
+};
+
+function getTokenSymbol(chain, tokenType) {
+  if (tokenType === "icp") return "ICP";
+  if (tokenType === "fradium") return "FRADIUM";
+  if (chain === "Solana") return "SOL";
+  if (chain === "Bitcoin") return "BTC";
+  if (chain === "Ethereum") return "ETH";
+  if (chain === "Internet Computer") {
+    // For Internet Computer chain, determine token based on tokenType
+    if (tokenType === "icp") return "ICP";
+    if (tokenType === "fradium") return "FRADIUM";
+    return "ICP"; // Default to ICP for Internet Computer
+  }
+  return "TOKEN";
 }
 
 export default function TransactionHistoryPage() {
   const { addresses } = useWallet();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isWaitingForWallet, setIsWaitingForWallet] = useState(true);
   const [error, setError] = useState(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [copiedAddress, setCopiedAddress] = useState(null);
@@ -27,8 +144,9 @@ export default function TransactionHistoryPage() {
   const [currentOffset, setCurrentOffset] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [showFilter, setShowFilter] = useState(false);
+  const [alreadyLoaded, setAlreadyLoaded] = useState(false);
   const [filterOptions, setFilterOptions] = useState({
-    chain: "all", // all, bitcoin, ethereum, solana
+    chain: "all", // all, bitcoin, ethereum, solana, internet_computer
     status: "all", // all, completed, pending, failed
     type: "all", // all, sent, received
   });
@@ -37,19 +155,28 @@ export default function TransactionHistoryPage() {
 
   const handleSearchToggle = () => {
     setShowSearch(!showSearch);
-    if (showSearch) setSearchQuery("");
+    if (showSearch) {
+      setSearchQuery("");
+      setDebouncedSearchQuery("");
+    }
   };
 
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
 
+  // Generate unique transaction ID for expanded state
+  const getTransactionId = (tx) => {
+    return `${tx.hash}-${tx.chain}-${tx.timestamp}-${tx.from}-${tx.to}`;
+  };
+
   // Toggle expand/collapse
-  const toggleExpanded = (txHash) => {
+  const toggleExpanded = (tx) => {
+    const txId = getTransactionId(tx);
     setExpandedItems((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(txHash)) {
-        newSet.delete(txHash);
+      if (newSet.has(txId)) {
+        newSet.delete(txId);
       } else {
-        newSet.add(txHash);
+        newSet.add(txId);
       }
       return newSet;
     });
@@ -72,6 +199,7 @@ export default function TransactionHistoryPage() {
   // Clear all filters
   const clearFilters = () => {
     setSearchQuery("");
+    setDebouncedSearchQuery("");
     setFilterOptions({
       chain: "all",
       status: "all",
@@ -79,136 +207,218 @@ export default function TransactionHistoryPage() {
     });
   };
 
+  // Handle filter change
+  const handleFilterChange = (filterType, value) => {
+    setFilterOptions((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }));
+  };
+
   // Get active filter count
   const getActiveFilterCount = () => {
     let count = 0;
-    if (searchQuery) count++;
+    if (debouncedSearchQuery) count++;
     if (filterOptions.chain !== "all") count++;
     if (filterOptions.status !== "all") count++;
     if (filterOptions.type !== "all") count++;
     return count;
   };
 
+  // Load transaction history function
+  const loadTransactionHistory = async (offset = 0, isLoadMore = false) => {
+    // Check if we have any addresses to load transactions for
+    const ethereumAddress = addresses?.ethereum;
+    const solanaAddress = addresses?.solana;
+    const bitcoinAddress = addresses?.bitcoin;
+    const icpPrincipal = addresses?.icp_principal;
+    const icpAccount = addresses?.icp_account;
+
+    const hasAnyAddress = ethereumAddress && solanaAddress && bitcoinAddress && icpPrincipal && icpAccount;
+
+    if (!hasAnyAddress) {
+      return;
+    }
+    if (alreadyLoaded && !isLoadMore) return;
+
+    if (!isLoadMore) {
+      setAlreadyLoaded(true);
+    }
+
+    try {
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setIsLoading(true);
+        setError(null);
+      }
+      // Track which tokens we're loading
+      const tokensToLoad = [];
+      if (addresses?.ethereum) tokensToLoad.push("ethereum");
+      if (addresses?.solana) tokensToLoad.push("solana");
+      if (addresses?.bitcoin) tokensToLoad.push("bitcoin");
+      if (icpPrincipal && icpAccount) tokensToLoad.push("icp");
+      if (icpPrincipal) tokensToLoad.push("fradium");
+      // Load transactions for all supported networks
+      // Create parallel loading promises for better performance
+      const loadingPromises = [];
+      // Load ETH transactions
+      if (addresses?.ethereum) {
+        loadingPromises.push(
+          getETHTransactionHistory(addresses.ethereum, "sepolia", ITEMS_PER_PAGE).catch((error) => {
+            console.error("Error loading ETH transactions:", error);
+            return [];
+          })
+        );
+      }
+      // Load Solana transactions
+      if (addresses?.solana) {
+        loadingPromises.push(
+          getSolanaTransactionHistory(addresses.solana, "devnet", ITEMS_PER_PAGE).catch((error) => {
+            console.error("Error loading Solana transactions:", error);
+            return [];
+          })
+        );
+      }
+      // Load Bitcoin transactions
+      if (addresses?.bitcoin) {
+        loadingPromises.push(
+          getBitcoinTransactionHistory(addresses.bitcoin, "testnet", ITEMS_PER_PAGE).catch((error) => {
+            console.error("Error loading Bitcoin transactions:", error);
+            return [];
+          })
+        );
+      }
+      // Load ICP transactions
+      if (addresses?.icp_account) {
+        loadingPromises.push(
+          getICRCTransactionHistory("icp", icpPrincipal, addresses.icp_account, ITEMS_PER_PAGE).catch((error) => {
+            console.error("Error loading ICP transactions:", error);
+            return [];
+          })
+        );
+      }
+      // Load Fradium transactions
+      if (icpPrincipal) {
+        console.log("LOADING FRADIUM");
+        loadingPromises.push(
+          getICRCTransactionHistory("fradium", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
+            console.error("Error loading Fradium transactions:", error);
+            return [];
+          })
+        );
+      }
+      // Execute all loading promises in parallel with timeout
+      console.log("LOADING PROMISES", loadingPromises);
+      const allPromise = Promise.all(loadingPromises);
+
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Loading timeout")), 30000));
+
+      // ✅ Pakai race, tapi ngerace sama allPromise (bukan langsung array)
+      const transactionResults = await Promise.race([allPromise, timeoutPromise]);
+      setIsLoading(false);
+      // Flatten all transaction arrays
+      const allTransactions = transactionResults.flat();
+      // Sort all transactions by timestamp (newest first)
+      const sortedTransactions = allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+      // Apply pagination to sorted transactions
+      const startIndex = offset;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const paginatedTransactions = sortedTransactions.slice(startIndex, endIndex);
+      if (isLoadMore) {
+        // When loading more, merge and sort all items to maintain chronological order
+        setTransactions((prev) => {
+          const allItems = [...prev, ...paginatedTransactions].sort((a, b) => b.timestamp - a.timestamp);
+          return allItems;
+        });
+      } else {
+        setTransactions(paginatedTransactions);
+      }
+      // Clear expanded items when loading new data to prevent index mismatch
+      if (!isLoadMore) {
+        setExpandedItems(new Set());
+      }
+      // Update pagination state
+      setTotalCount(sortedTransactions.length);
+      setCurrentOffset(offset + ITEMS_PER_PAGE);
+      setHasMore(offset + ITEMS_PER_PAGE < sortedTransactions.length);
+    } catch (err) {
+      console.error("Error loading transaction history:", err);
+      setError("Failed to load transaction history");
+      setTransactions([]);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   // Load transaction history on component mount
   useEffect(() => {
-    console.log("TransactionHistoryPage useEffect triggered");
-    console.log("addresses:", addresses);
-    console.log("ethereum address:", addresses?.ethereum);
-    console.log("isWaitingForWallet:", isWaitingForWallet);
-    console.log("isLoading:", isLoading);
-
-    const loadTransactionHistory = async (offset = 0, isLoadMore = false) => {
-      const ethereumAddress = addresses?.ethereum;
-      const solanaAddress = addresses?.solana;
-      const bitcoinAddress = addresses?.bitcoin;
-
-      if (!ethereumAddress && !solanaAddress && !bitcoinAddress) {
-        console.log("No wallet addresses found, setting waiting state");
-        setIsWaitingForWallet(true);
-        setIsLoading(false);
-        return;
-      }
-
-      console.log("Wallet addresses found, starting to load transactions");
-      try {
-        if (isLoadMore) {
-          setLoadingMore(true);
-        } else {
-          setIsWaitingForWallet(false);
-          setIsLoading(true);
-          setError(null);
-        }
-
-        // Load transactions for all supported networks
-        console.log(`Loading transactions for all networks - offset: ${offset}, limit: ${ITEMS_PER_PAGE}`);
-
-        const allTransactions = [];
-
-        // Load ETH transactions
-        if (addresses?.ethereum) {
-          console.log("Loading ETH transactions...");
-          const ethTransactions = await getETHTransactionHistory(addresses.ethereum, "sepolia", ITEMS_PER_PAGE);
-          allTransactions.push(...ethTransactions);
-        }
-
-        // Load Solana transactions
-        if (addresses?.solana) {
-          console.log("Loading Solana transactions...");
-          const solTransactions = await getSolanaTransactionHistory(addresses.solana, "devnet", ITEMS_PER_PAGE);
-          allTransactions.push(...solTransactions);
-        }
-
-        // Load Bitcoin transactions
-        if (addresses?.bitcoin) {
-          console.log("Loading Bitcoin transactions...");
-          const btcTransactions = await getBitcoinTransactionHistory(addresses.bitcoin, "testnet", ITEMS_PER_PAGE);
-          allTransactions.push(...btcTransactions);
-        }
-
-        // Sort all transactions by timestamp (newest first)
-        const sortedTransactions = allTransactions.sort((a, b) => b.timestamp - a.timestamp);
-
-        // Apply pagination to sorted transactions
-        const startIndex = offset;
-        const endIndex = startIndex + ITEMS_PER_PAGE;
-        const paginatedTransactions = sortedTransactions.slice(startIndex, endIndex);
-
-        if (isLoadMore) {
-          // When loading more, merge and sort all items to maintain chronological order
-          setTransactions((prev) => {
-            const allItems = [...prev, ...paginatedTransactions].sort((a, b) => b.timestamp - a.timestamp);
-            return allItems;
-          });
-        } else {
-          setTransactions(paginatedTransactions);
-        }
-
-        // Update pagination state
-        setTotalCount(sortedTransactions.length);
-        setCurrentOffset(offset + ITEMS_PER_PAGE);
-        setHasMore(offset + ITEMS_PER_PAGE < sortedTransactions.length);
-
-        console.log(`Fetched ${paginatedTransactions.length} transactions, total: ${sortedTransactions.length}, hasMore: ${offset + ITEMS_PER_PAGE < sortedTransactions.length}`);
-      } catch (err) {
-        console.error("Error loading transaction history:", err);
-        setError("Failed to load transaction history");
-        setTransactions([]);
-      } finally {
-        setIsLoading(false);
-        setLoadingMore(false);
-      }
-    };
-
     loadTransactionHistory();
   }, [addresses]);
+
+  // Reset filters only when addresses change (new wallet connection)
+  useEffect(() => {
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setFilterOptions({
+      chain: "all",
+      status: "all",
+      type: "all",
+    });
+  }, [addresses]);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Filter transactions based on search query and filters
   const filteredTransactions = transactions.filter((tx) => {
     // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const titleMatch = tx.title.toLowerCase().includes(query);
-      const chainMatch = tx.chain.toLowerCase().includes(query);
-      const statusMatch = tx.status.toLowerCase().includes(query);
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
+      const titleMatch = tx.title && tx.title.toLowerCase().includes(query);
+      const chainMatch = tx.chain && tx.chain.toLowerCase().includes(query);
+      const statusMatch = tx.status && tx.status.toLowerCase().includes(query);
       const fromMatch = tx.from && tx.from.toLowerCase().includes(query);
       const toMatch = tx.to && tx.to.toLowerCase().includes(query);
       const hashMatch = tx.hash && tx.hash.toLowerCase().includes(query);
+      const tokenSymbolMatch = getTokenSymbol(tx.chain, tx.tokenType).toLowerCase().includes(query);
 
-      if (!titleMatch && !chainMatch && !statusMatch && !fromMatch && !toMatch && !hashMatch) {
+      if (!titleMatch && !chainMatch && !statusMatch && !fromMatch && !toMatch && !hashMatch && !tokenSymbolMatch) {
         return false;
       }
     }
 
     // Chain filter
     if (filterOptions.chain !== "all") {
-      if (tx.chain.toLowerCase() !== filterOptions.chain.toLowerCase()) {
+      const chainMapping = {
+        bitcoin: "Bitcoin",
+        ethereum: "Ethereum",
+        solana: "Solana",
+        internet_computer: "Internet Computer",
+      };
+
+      const expectedChain = chainMapping[filterOptions.chain];
+      if (tx.chain !== expectedChain) {
         return false;
       }
     }
 
     // Status filter
     if (filterOptions.status !== "all") {
-      if (tx.status.toLowerCase() !== filterOptions.status.toLowerCase()) {
+      const statusMapping = {
+        completed: "Completed",
+        pending: "Pending",
+        failed: "Failed",
+      };
+
+      const expectedStatus = statusMapping[filterOptions.status];
+      if (tx.status !== expectedStatus) {
         return false;
       }
     }
@@ -229,30 +439,6 @@ export default function TransactionHistoryPage() {
     return true;
   });
 
-  // Loading skeleton component
-  const LoadingSkeleton = () => (
-    <div className="flex flex-col">
-      {[...Array(5)].map((_, idx) => (
-        <motion.div key={idx} className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.12 + idx * 0.06 }}>
-          <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
-              <div className="flex flex-col gap-2">
-                <div className="h-4 w-48 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
-                <div className="h-3 w-24 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="h-4 w-20 bg-[#B0B6BE]/20 rounded animate-pulse"></div>
-              <div className="h-6 w-16 bg-[#B0B6BE]/20 rounded-full animate-pulse"></div>
-            </div>
-          </div>
-          {idx !== 4 && <div className="h-px bg-white/10 mx-4" />}
-        </motion.div>
-      ))}
-    </div>
-  );
-
   return (
     <motion.div className="flex flex-col gap-8 max-w-xl mx-auto w-full md:p-0 p-2" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
       {/* Header Section */}
@@ -268,7 +454,7 @@ export default function TransactionHistoryPage() {
           <div className="flex gap-4">
             <button onClick={handleSearchToggle} className="relative p-1 opacity-70 hover:opacity-100 transition-opacity">
               <img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4" />
-              {searchQuery && <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></div>}
+              {debouncedSearchQuery && <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></div>}
             </button>
             <button onClick={() => setShowFilter(!showFilter)} className="relative p-1 opacity-70 hover:opacity-100 transition-opacity">
               <img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4" />
@@ -302,18 +488,19 @@ export default function TransactionHistoryPage() {
                   {/* Chain Filter */}
                   <div className="space-y-2">
                     <label className="text-white/90 text-[13px] font-medium">Chain</label>
-                    <select value={filterOptions.chain} onChange={(e) => setFilterOptions((prev) => ({ ...prev, chain: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#9BE4A0]">
+                    <select value={filterOptions.chain} onChange={(e) => handleFilterChange("chain", e.target.value)} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#9BE4A0]">
                       <option value="all">All Chains</option>
                       <option value="bitcoin">Bitcoin</option>
                       <option value="ethereum">Ethereum</option>
                       <option value="solana">Solana</option>
+                      <option value="internet_computer">Internet Computer</option>
                     </select>
                   </div>
 
                   {/* Status Filter */}
                   <div className="space-y-2">
                     <label className="text-white/90 text-[13px] font-medium">Status</label>
-                    <select value={filterOptions.status} onChange={(e) => setFilterOptions((prev) => ({ ...prev, status: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#9BE4A0]">
+                    <select value={filterOptions.status} onChange={(e) => handleFilterChange("status", e.target.value)} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#9BE4A0]">
                       <option value="all">All Status</option>
                       <option value="completed">Completed</option>
                       <option value="pending">Pending</option>
@@ -324,7 +511,7 @@ export default function TransactionHistoryPage() {
                   {/* Type Filter */}
                   <div className="space-y-2">
                     <label className="text-white/90 text-[13px] font-medium">Type</label>
-                    <select value={filterOptions.type} onChange={(e) => setFilterOptions((prev) => ({ ...prev, type: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#9BE4A0]">
+                    <select value={filterOptions.type} onChange={(e) => handleFilterChange("type", e.target.value)} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#9BE4A0]">
                       <option value="all">All Types</option>
                       <option value="sent">Sent</option>
                       <option value="received">Received</option>
@@ -344,20 +531,7 @@ export default function TransactionHistoryPage() {
           )}
         </AnimatePresence>
 
-        {isWaitingForWallet ? (
-          /* Waiting for Wallet Address */
-          <div className="text-center py-12">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 bg-[#B0B6BE]/10 rounded-full flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
-              </div>
-              <div>
-                <p className="text-white font-medium">Connecting to wallet...</p>
-                <p className="text-[#B0B6BE] text-sm mt-1">Please wait while we connect to your wallet</p>
-              </div>
-            </div>
-          </div>
-        ) : isLoading ? (
+        {isLoading ? (
           /* Loading Transactions with Skeleton */
           <LoadingSkeleton />
         ) : error ? (
@@ -385,9 +559,9 @@ export default function TransactionHistoryPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-white font-medium">{searchQuery || getActiveFilterCount() > 0 ? "No transactions found" : "No transactions yet"}</p>
-                <p className="text-[#B0B6BE] text-sm mt-1">{searchQuery || getActiveFilterCount() > 0 ? "Try adjusting your search or filter criteria" : "Start sending or receiving crypto to see your activity here"}</p>
-                {(searchQuery || getActiveFilterCount() > 0) && (
+                <p className="text-white font-medium">{debouncedSearchQuery || getActiveFilterCount() > 0 ? "No transactions found" : "No transactions yet"}</p>
+                <p className="text-[#B0B6BE] text-sm mt-1">{debouncedSearchQuery || getActiveFilterCount() > 0 ? "Try adjusting your search or filter criteria" : "Start sending or receiving crypto to see your activity here"}</p>
+                {(debouncedSearchQuery || getActiveFilterCount() > 0) && (
                   <button onClick={clearFilters} className="mt-2 px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#9BE4A0] rounded-lg text-white text-sm transition-colors">
                     Clear Filters
                   </button>
@@ -399,13 +573,14 @@ export default function TransactionHistoryPage() {
           /* List items */
           <div className="flex flex-col">
             {filteredTransactions.map((tx, idx) => {
-              const isExpanded = expandedItems.has(tx.hash);
+              const txId = getTransactionId(tx);
+              const isExpanded = expandedItems.has(txId);
 
               return (
-                <motion.div key={tx.hash || idx} className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.12 + idx * 0.06 }}>
-                  <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl transition-colors group-hover:bg-white/[0.04] cursor-pointer" onClick={() => toggleExpanded(tx.hash)}>
+                <motion.div key={`${tx.hash}-${tx.chain}-${tx.timestamp}-${idx}`} className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.12 + idx * 0.06 }}>
+                  <div className="flex items-center justify-between px-3 sm:px-4 py-4 sm:py-5 rounded-xl transition-colors group-hover:bg-white/[0.04] cursor-pointer" onClick={() => toggleExpanded(tx)}>
                     <div className="flex items-center gap-4">
-                      <img src={getIconByChain(tx.chain)} alt={tx.chain} className="w-10 h-10 rounded-full" />
+                      <img src={getIconByChain(tx.chain, tx.tokenType)} alt={tx.chain} className="w-10 h-10 rounded-full" />
                       <div className="flex flex-col">
                         <div className="text-white text-base font-medium leading-tight max-w-[360px] truncate">{tx.title}</div>
                         <div className="text-white/60 text-sm">
@@ -427,7 +602,7 @@ export default function TransactionHistoryPage() {
                       <div className="flex flex-col items-end gap-2">
                         <div className={`text-base font-semibold ${tx.amount < 0 ? "text-[#F1999B]" : "text-[#9BE4A0]"}`}>
                           {tx.amount < 0 ? "- " : "+ "}
-                          {Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} {tx.chain === "Solana" ? "SOL" : tx.chain === "Bitcoin" ? "BTC" : "ETH"}
+                          {formatAmount(Math.abs(tx.amount))} {getTokenSymbol(tx.chain, tx.tokenType)}
                         </div>
                         <div className={`px-3 py-1 rounded-full text-xs ${tx.status === "Completed" ? "bg-[#1C2A22] text-[#9BE4A0]" : "bg-[#2A2A2A] text-white/80"}`}>{tx.status}</div>
                       </div>
@@ -550,12 +725,12 @@ export default function TransactionHistoryPage() {
                           <div className="space-y-1">
                             <div className="text-white/50 text-xs">Amount</div>
                             <div className="text-white text-sm font-medium">
-                              {Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} {tx.chain === "Solana" ? "SOL" : tx.chain === "Bitcoin" ? "BTC" : "ETH"}
+                              {formatAmount(Math.abs(tx.amount))} {getTokenSymbol(tx.chain, tx.tokenType)}
                             </div>
                           </div>
                           <div className="space-y-1">
                             <div className="text-white/50 text-xs">Fee</div>
-                            <div className="text-white text-sm font-medium">{tx.fee ? `${tx.fee.toFixed(6)} ${tx.chain === "Solana" ? "SOL" : tx.chain === "Bitcoin" ? "BTC" : "ETH"}` : "N/A"}</div>
+                            <div className="text-white text-sm font-medium">{tx.fee ? `${formatAmount(tx.fee)} ${getTokenSymbol(tx.chain, tx.tokenType)}` : "N/A"}</div>
                           </div>
                         </div>
                       </div>

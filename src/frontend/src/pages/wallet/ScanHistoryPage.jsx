@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { backend } from "declarations/backend";
 import { Copy, ExternalLink } from "lucide-react";
-import { getChainFromTokenType, getIconByChain } from "@/core/lib/tokenUtils";
+import { getChainFromTokenType, getIconByChain, detectAddressNetwork } from "@/core/lib/tokenUtils";
 import { getExplorerUrl } from "@/core/lib/chainExplorers";
 import { formatDate } from "@/core/lib/dateUtils";
 import { formatAddress } from "@/core/lib/stringUtils";
@@ -84,17 +84,26 @@ export default function ScanHistoryPage() {
         throw new Error(`Failed to fetch total count: ${countResult.Err}`);
       }
 
-      const newItems = historyResult.Ok.map((item, index) => ({
-        id: `${item.address}-${item.created_at}-${index}`,
-        chain: getChainFromTokenType(item.token_type),
-        address: item.address,
-        label: getAnalysisTypeLabel(item.analyzed_type, item.is_safe),
-        date: formatDate(item.created_at),
-        isSafe: item.is_safe,
-        metadata: item.metadata,
-        rawItem: item,
-        timestamp: Number(item.created_at), // Convert BigInt to Number for sorting
-      })).sort((a, b) => b.timestamp - a.timestamp); // Sort by timestamp descending (newest first)
+      const newItems = historyResult.Ok.map((item, index) => {
+        // Try to get chain from token_type first, fallback to address detection
+        let chain = getChainFromTokenType(item.token_type);
+        if (chain === "Unknown") {
+          chain = detectAddressNetwork(item.address);
+          console.log(`Fallback detection for address ${item.address}: ${chain}`);
+        }
+
+        return {
+          id: `${item.address}-${item.created_at}-${index}`,
+          chain: chain,
+          address: item.address,
+          label: getAnalysisTypeLabel(item.analyzed_type, item.is_safe),
+          date: formatDate(item.created_at),
+          isSafe: item.is_safe,
+          metadata: item.metadata,
+          rawItem: item,
+          timestamp: Number(item.created_at), // Convert BigInt to Number for sorting
+        };
+      }).sort((a, b) => b.timestamp - a.timestamp); // Sort by timestamp descending (newest first)
 
       if (isLoadMore) {
         // When loading more, merge and sort all items to maintain chronological order

@@ -1,4 +1,8 @@
 import { API_URLS } from "@/core/lib/tokenUtils";
+import { icp_index } from "declarations/icp_index";
+import { fradium_index } from "declarations/fradium_index";
+import { Principal } from "@dfinity/principal";
+import { jsonStringify } from "@/core/lib/canisterUtils";
 
 // Function to get ETH transaction history from Etherscan API
 export async function getETHTransactionHistory(address, network = "sepolia", limit = 20) {
@@ -10,8 +14,6 @@ export async function getETHTransactionHistory(address, network = "sepolia", lim
 
     // Construct Etherscan API URL with address and pagination
     const url = `${apiUrl}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${limit}&sort=desc`;
-
-    console.log("Fetching from Etherscan API:", url);
 
     const response = await fetch(url, {
       method: "GET",
@@ -31,7 +33,6 @@ export async function getETHTransactionHistory(address, network = "sepolia", lim
     }
 
     if (!data.result || !Array.isArray(data.result)) {
-      console.log("No transactions found or invalid response format");
       return [];
     }
 
@@ -56,7 +57,6 @@ export async function getETHTransactionHistory(address, network = "sepolia", lim
       };
     });
 
-    console.log(`Found ${transactions.length} transactions`);
     return transactions;
   } catch (error) {
     console.error("Error fetching ETH transaction history:", error);
@@ -71,9 +71,6 @@ export async function getSolanaTransactionHistory(address, network = "devnet", l
     if (!rpcUrl) {
       throw new Error(`Unsupported Solana network: ${network}`);
     }
-
-    console.log("Fetching Solana transactions from RPC:", rpcUrl);
-    console.log("Address:", address);
 
     // Get recent signatures for the address
     const signaturesResponse = await fetch(rpcUrl, {
@@ -105,7 +102,6 @@ export async function getSolanaTransactionHistory(address, network = "devnet", l
     }
 
     if (!signaturesData.result || !Array.isArray(signaturesData.result)) {
-      console.log("No Solana transactions found");
       return [];
     }
 
@@ -195,7 +191,6 @@ export async function getSolanaTransactionHistory(address, network = "devnet", l
       };
     });
 
-    console.log(`Found ${transactions.length} Solana transactions`);
     return transactions;
   } catch (error) {
     console.error("Error fetching Solana transaction history:", error);
@@ -211,8 +206,6 @@ export async function getBitcoinTransactionHistory(address, network = "testnet",
       throw new Error(`Unsupported Bitcoin network: ${network}`);
     }
 
-    console.log(`Fetching Bitcoin transaction history for ${address} on ${network}`);
-
     // Get address info and transactions
     const response = await fetch(`${apiUrl}/addrs/${address}?limit=${limit}`);
 
@@ -223,11 +216,8 @@ export async function getBitcoinTransactionHistory(address, network = "testnet",
     const data = await response.json();
 
     if (!data.txs || !Array.isArray(data.txs)) {
-      console.log("No Bitcoin transactions found");
       return [];
     }
-
-    console.log(`Found ${data.txs.length} Bitcoin transactions`);
 
     const transactions = data.txs.map((tx) => {
       // Determine if this is a sent or received transaction
@@ -293,10 +283,156 @@ export async function getBitcoinTransactionHistory(address, network = "testnet",
       };
     });
 
-    console.log(`Processed ${transactions.length} Bitcoin transactions`);
     return transactions;
   } catch (error) {
     console.error("Error fetching Bitcoin transaction history:", error);
+    return [];
+  }
+}
+
+// Function to get ICRC transaction history from index canister
+export async function getICRCTransactionHistory(tokenType, principal, icpAccount = null, limit = 20) {
+  try {
+    if (!principal) {
+      throw new Error("Principal is required for ICRC transaction history");
+    }
+
+    // Validate principal format
+    let principalObj;
+    try {
+      principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
+    } catch (error) {
+      throw new Error(`Invalid principal format: ${error.message}`);
+    }
+
+    // Check if principal is anonymous
+    if (principalObj.isAnonymous()) {
+      throw new Error("Anonymous principal cannot fetch transaction history");
+    }
+
+    let transactions = [];
+
+    switch (tokenType.toLowerCase()) {
+      case "icp":
+        const icpResult = await icp_index.get_account_transactions({
+          account: { owner: principalObj, subaccount: [] },
+          start: [],
+          max_results: limit,
+        });
+
+        // Handle the actual structure from ICP index canister
+        if (icpResult && icpResult.Ok && icpResult.Ok.transactions) {
+          transactions = icpResult.Ok.transactions
+            .map((tx) => {
+              // Extract transfer data from the actual structure
+              const transfer = tx.transaction?.operation?.Transfer;
+
+              if (!transfer) {
+                return null;
+              }
+
+              // ICP: from/to are already strings, not objects
+              const fromPrincipal = transfer.from;
+              const toPrincipal = transfer.to;
+
+              // Use ICP account identifier for comparison (from wallet_addresses)
+              if (!icpAccount) {
+                throw new Error("ICP account identifier is required for ICP transaction comparison");
+              }
+              const isSent = fromPrincipal === icpAccount.toLowerCase();
+              const otherParty = isSent ? toPrincipal : fromPrincipal;
+              const otherPartyStr = otherParty.toString() || "Unknown";
+
+              const processedTx = {
+                hash: tx.id.toString(),
+                chain: "Internet Computer",
+                title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+                amount: isSent ? -Number(transfer.amount?.e8s || 0) / 1e8 : Number(transfer.amount?.e8s || 0) / 1e8, // Convert e8s to ICP
+                status: "Completed",
+                timestamp: Number(tx.transaction.timestamp?.[0]?.timestamp_nanos || 0) / 1000000, // Convert nanoseconds to milliseconds
+                from: fromPrincipal.toString() || "Unknown",
+                to: toPrincipal.toString() || "Unknown",
+                fee: transfer.fee?.e8s ? Number(transfer.fee.e8s) / 1e8 : 0,
+                memo: tx.transaction?.memo || [],
+                kind: "Transfer",
+                tokenType: "icp",
+              };
+
+              return processedTx;
+            })
+            .filter((tx) => tx !== null); // Remove null transactions
+        }
+        break;
+
+      case "fradium":
+        const fradiumResult = await fradium_index.get_account_transactions({
+          account: { owner: principalObj, subaccount: [] },
+          start: [],
+          max_results: limit,
+        });
+
+        // Handle the actual structure from Fradium index canister
+        if (fradiumResult && fradiumResult.Ok && fradiumResult.Ok.transactions) {
+          transactions = fradiumResult.Ok.transactions
+            .map((tx) => {
+              // Extract transfer data from the actual structure (different from ICP)
+              const transfer = tx.transaction?.transfer?.[0];
+
+              if (!transfer) {
+                return null;
+              }
+
+              const fromPrincipal = transfer.from?.owner?.__principal__ || transfer.from?.owner;
+              const toPrincipal = transfer.to?.owner?.__principal__ || transfer.to?.owner;
+
+              const isSent = fromPrincipal.toString() === principalObj.toString();
+              const otherParty = isSent ? toPrincipal.toString() : fromPrincipal.toString();
+              const otherPartyStr = otherParty || "Unknown";
+
+              const processedTx = {
+                hash: tx.id.toString(),
+                chain: "Internet Computer",
+                title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+                amount: isSent ? -Number(transfer.amount || 0) / 1e8 : Number(transfer.amount || 0) / 1e8, // Convert e8s to Fradium
+                status: "Completed",
+                timestamp: Number(tx.transaction.timestamp || 0) / 1000000, // Convert nanoseconds to milliseconds
+                from: fromPrincipal.toString() || "Unknown",
+                to: toPrincipal.toString() || "Unknown",
+                fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e8 : 0,
+                memo: transfer.memo || [],
+                kind: "Transfer",
+                tokenType: "fradium",
+              };
+
+              return processedTx;
+            })
+            .filter((tx) => tx !== null); // Remove null transactions
+        }
+        break;
+
+      default:
+        throw new Error(`Unsupported ICRC token type: ${tokenType}`);
+    }
+
+    // Sort by timestamp (newest first)
+    transactions.sort((a, b) => b.timestamp - a.timestamp);
+
+    return transactions;
+  } catch (error) {
+    console.error(`Error fetching ${tokenType} transaction history:`, error);
+
+    // Handle specific authentication errors
+    if (error.message?.includes("Invalid certificate") || error.message?.includes("Signature verification failed") || error.message?.includes("AgentQueryError")) {
+      console.warn(`Authentication error for ${tokenType} transactions. User may need to re-authenticate.`);
+      return []; // Return empty array instead of throwing
+    }
+
+    // Handle other errors
+    if (error.message?.includes("Anonymous principal")) {
+      console.warn(`Anonymous principal cannot fetch ${tokenType} transactions`);
+      return [];
+    }
+
     return [];
   }
 }
@@ -314,6 +450,11 @@ export async function getTransactionHistory(address, network, limit = 20) {
       case "solana":
       case "devnet":
         return await getSolanaTransactionHistory(address, "devnet", limit);
+      case "internet_computer":
+      case "icp":
+        return await getICRCTransactionHistory("icp", address, limit);
+      case "fradium":
+        return await getICRCTransactionHistory("fradium", address, limit);
       default:
         throw new Error(`Unsupported network: ${network}`);
     }
