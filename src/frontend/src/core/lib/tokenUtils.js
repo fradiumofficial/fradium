@@ -3,6 +3,25 @@ import { icp_ledger } from "declarations/icp_ledger";
 import { fradium_ledger } from "declarations/fradium_ledger";
 import { Principal } from "@dfinity/principal";
 
+// Fallback ICP ledger canister ID if environment variable is not set
+const ICP_LEDGER_CANISTER_ID = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+
+// Helper function to get ICP ledger actor
+async function getIcpLedger() {
+  if (icp_ledger) {
+    return icp_ledger;
+  }
+
+  // If icp_ledger is undefined, try to create it manually
+  try {
+    const { createActor } = await import("declarations/icp_ledger");
+    return createActor(ICP_LEDGER_CANISTER_ID);
+  } catch (error) {
+    console.error("Failed to create ICP ledger actor:", error);
+    return null;
+  }
+}
+
 // Helper function to safely stringify objects that may contain BigInt
 function safeStringify(obj) {
   return JSON.stringify(obj, (key, value) => (typeof value === "bigint" ? value.toString() : value));
@@ -229,7 +248,7 @@ export async function sendToken(tokenId, to, amount, principal) {
     if (decimals === null) {
       switch (token.id) {
         case 4: // ICP
-          decimals = await icp_ledger.icrc1_decimals();
+          decimals = await icp_ledger.decimals();
           break;
         case 5: // Fradium
           decimals = await fradium_ledger.icrc1_decimals();
@@ -247,7 +266,11 @@ export async function sendToken(tokenId, to, amount, principal) {
 
     switch (token.id) {
       case 4: // ICP
-        return await icp_ledger.icrc1_transfer({
+        const icpLedgerActor = await getIcpLedger();
+        if (!icpLedgerActor) {
+          throw new Error("ICP ledger not available");
+        }
+        return await icpLedgerActor.icrc1_transfer({
           from_subaccount: [],
           to: { owner: toPrincipal, subaccount: [] },
           amount: BigInt(amountInSmallestUnit),
@@ -317,7 +340,7 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
       if (decimals === null) {
         switch (token.id) {
           case 4: // ICP
-            decimals = await icp_ledger.icrc1_decimals();
+            decimals = await icp_ledger.decimals();
             break;
           case 5: // Fradium
             decimals = await fradium_ledger.icrc1_decimals();
@@ -335,7 +358,11 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
 
       switch (token.id) {
         case 4: // ICP
-          result = await icp_ledger.icrc1_transfer({
+          const icpLedgerActor = await getIcpLedger();
+          if (!icpLedgerActor) {
+            throw new Error("ICP ledger not available");
+          }
+          result = await icpLedgerActor.icrc1_transfer({
             from_subaccount: [],
             to: { owner: toPrincipal, subaccount: [] },
             amount: BigInt(amountInSmallestUnit),
@@ -411,7 +438,14 @@ export async function getBalance(tokenId, principal) {
     switch (token.id) {
       case 4: // ICP
         try {
-          const balance = await icp_ledger.icrc1_balance_of({
+          // Get ICP ledger actor
+          const icpLedgerActor = await getIcpLedger();
+          if (!icpLedgerActor) {
+            console.warn("ICP ledger not available, returning 0 balance");
+            return "0";
+          }
+
+          const balance = await icpLedgerActor.icrc1_balance_of({
             owner: principal,
             subaccount: [],
           });
@@ -419,7 +453,7 @@ export async function getBalance(tokenId, principal) {
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
           if (decimals === null) {
-            decimals = await icp_ledger.icrc1_decimals();
+            decimals = await icpLedgerActor.decimals();
           }
 
           // Convert from e8s to ICP using dynamic decimals

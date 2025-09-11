@@ -27,6 +27,8 @@ export const idlFactory = ({ IDL }) => {
     'token_symbol' : IDL.Opt(IDL.Text),
     'transfer_fee' : IDL.Opt(Tokens),
     'minting_account' : TextAccountIdentifier,
+    'maximum_number_of_accounts' : IDL.Opt(IDL.Nat64),
+    'accounts_overflow_trim_quantity' : IDL.Opt(IDL.Nat64),
     'transaction_window' : IDL.Opt(Duration),
     'max_message_size_bytes' : IDL.Opt(IDL.Nat64),
     'icrc1_minting_account' : IDL.Opt(Account),
@@ -46,19 +48,6 @@ export const idlFactory = ({ IDL }) => {
   });
   const Archive = IDL.Record({ 'canister_id' : IDL.Principal });
   const Archives = IDL.Record({ 'archives' : IDL.Vec(Archive) });
-  const GetAllowancesArgs = IDL.Record({
-    'prev_spender_id' : IDL.Opt(TextAccountIdentifier),
-    'from_account_id' : TextAccountIdentifier,
-    'take' : IDL.Opt(IDL.Nat64),
-  });
-  const Allowances = IDL.Vec(
-    IDL.Record({
-      'from_account_id' : TextAccountIdentifier,
-      'to_spender_id' : TextAccountIdentifier,
-      'allowance' : Tokens,
-      'expires_at' : IDL.Opt(IDL.Nat64),
-    })
-  );
   const Icrc1Tokens = IDL.Nat;
   const Value = IDL.Variant({
     'Int' : IDL.Int,
@@ -304,10 +293,6 @@ export const idlFactory = ({ IDL }) => {
     'created_at_time' : IDL.Opt(TimeStamp),
     'amount' : Tokens,
   });
-  const TipOfChainRes = IDL.Record({
-    'certification' : IDL.Opt(IDL.Vec(IDL.Nat8)),
-    'tip_index' : BlockIndex,
-  });
   const TransferArgs = IDL.Record({
     'to' : AccountIdentifier,
     'fee' : Tokens,
@@ -343,7 +328,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Record({ 'decimals' : IDL.Nat32 })],
         ['query'],
       ),
-    'get_allowances' : IDL.Func([GetAllowancesArgs], [Allowances], ['query']),
     'icrc10_supported_standards' : IDL.Func(
         [],
         [IDL.Vec(IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text }))],
@@ -379,7 +363,6 @@ export const idlFactory = ({ IDL }) => {
         [TransferFromResult],
         [],
       ),
-    'is_ledger_ready' : IDL.Func([], [IDL.Bool], ['query']),
     'name' : IDL.Func([], [IDL.Record({ 'name' : IDL.Text })], ['query']),
     'query_blocks' : IDL.Func(
         [GetBlocksArgs],
@@ -393,7 +376,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'send_dfx' : IDL.Func([SendArgs], [BlockIndex], []),
     'symbol' : IDL.Func([], [IDL.Record({ 'symbol' : IDL.Text })], ['query']),
-    'tip_of_chain' : IDL.Func([], [TipOfChainRes], ['query']),
     'transfer' : IDL.Func([TransferArgs], [TransferResult], []),
     'transfer_fee' : IDL.Func([TransferFeeArg], [TransferFee], ['query']),
   });
@@ -427,6 +409,8 @@ export const init = ({ IDL }) => {
     'token_symbol' : IDL.Opt(IDL.Text),
     'transfer_fee' : IDL.Opt(Tokens),
     'minting_account' : TextAccountIdentifier,
+    'maximum_number_of_accounts' : IDL.Opt(IDL.Nat64),
+    'accounts_overflow_trim_quantity' : IDL.Opt(IDL.Nat64),
     'transaction_window' : IDL.Opt(Duration),
     'max_message_size_bytes' : IDL.Opt(IDL.Nat64),
     'icrc1_minting_account' : IDL.Opt(Account),
