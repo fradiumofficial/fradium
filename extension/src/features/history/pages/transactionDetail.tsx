@@ -1,4 +1,3 @@
-import ProfileHeader from "~components/header";
 import NeoButton from "~components/custom-button";
 import { ROUTES } from "~lib/constant/routes";
 import { useNavigate, useParams } from "react-router-dom";
@@ -70,8 +69,7 @@ function TransactionDetail() {
 
   if (!tx) {
     return (
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-        <ProfileHeader />
+      <div className="w-[375px] bg-[#25262B] text-white shadow-md overflow-y-auto">
         <div className="m-4 text-center">
           <h1 className="font-semibold text-[20px] text-white mb-4">Transaction Not Found</h1>
           <p className="text-white/50 mb-4">The requested transaction could not be found.</p>
@@ -84,8 +82,7 @@ function TransactionDetail() {
   }
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-      <ProfileHeader />
+    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Transaction Detail</h1>
 

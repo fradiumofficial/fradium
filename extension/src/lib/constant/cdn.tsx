@@ -4,7 +4,9 @@ export const CDN = {
   images: {
     topRight: `${CDN_BASE}/images/top_right.svg`,
     topLeft: `${CDN_BASE}/images/top_left.svg`,
-    welcomeCard: `${CDN_BASE}/images/welcome_card.svg`,
+    welcomeCard: `${CDN_BASE}/images/welcome.svg`,
+    background: `${CDN_BASE}/images/background.png`,
+    backgroundInit: `${CDN_BASE}/images/background_init.png`,
   },
   tokens: {
     bitcoin: `${CDN_BASE}/tokens/bitcoin.svg`,
@@ -41,5 +43,10 @@ export const CDN = {
     qrCode: `${CDN_BASE}/icons/qr_code.svg`,
     copyContent: `${CDN_BASE}/icons/content_copy.svg`,
     search: `${CDN_BASE}/icons/motion-search.webp`,
+    refresh: `${CDN_BASE}/icons/refresh.svg`,
+    managNetwork: `${CDN_BASE}/icons/manage_network.svg`,
+    searchToken: `${CDN_BASE}/icons/search.svg`,
+    sendToken: `${CDN_BASE}/icons/send.svg`,
+    callReceived: `${CDN_BASE}/icons/call_received.svg`,
   }
 }

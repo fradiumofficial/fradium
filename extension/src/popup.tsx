@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom"
 import BottomNavbar from '~components/bottom-app-bar';
+import ProfileHeader from '~components/header';
 import Home from "~features/home/pages/home"
 import AnalyzeAddress from "~features/analyze_address/pages/analyzeAdress"
 import AnalyzeAddressResult from "~features/analyze_address/pages/analyzeAddressResult"
@@ -24,7 +25,7 @@ import ReceiveDetail from '~features/transaction/receiveDetail';
 import Send from '~features/transaction/send';
 
 const AuthOrWelcome: React.FC = () => {
-  const { isAuthenticated, addresses, isLoading } = useWallet() as any
+  const { isAuthenticated, isLoading } = useWallet() as any
   if (isLoading) return null
   if (isAuthenticated) {
     // If user is authenticated, go to home (wallet addresses will be loaded automatically)
@@ -33,20 +34,36 @@ const AuthOrWelcome: React.FC = () => {
   return <Welcome />
 }
 
+const ConditionalHeader: React.FC = () => {
+  const { isAuthenticated, isLoading } = useWallet() as any
+  const location = useLocation()
+
+  if (isLoading || !isAuthenticated || location.pathname === ROUTES.WELCOME) {
+    return null
+  }
+
+  return <ProfileHeader />
+}
+
 function IndexPopup() {
   return (
     <BrowserRouter >
       <AuthProvider>
       <WalletProvider>
       <NetworkProvider>
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex flex-col">
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto">
+      <div className="w-[375px] h-[600px] bg-[#000510] text-white flex flex-col">
+        {/* Header - Fixed at top */}
+        <div className="flex-shrink-0">
+          <ConditionalHeader />
+        </div>
+
+        {/* Main Content Area - With proper spacing for header and bottom bar */}
+        <div className="flex-1 overflow-y-auto pb-20 pt-2">
           <Routes>
             {/* Public routes - no authentication required */}
             <Route path={ROUTES.WELCOME} element={<AuthOrWelcome />}/>
             <Route path="/" element={<Navigate to={ROUTES.WELCOME} replace />} />
-            
+
             {/* Protected routes - authentication required */}
             <Route path={ROUTES.HOME} element={
               <ProtectedRoute>
@@ -117,7 +134,7 @@ function IndexPopup() {
             <Route path="*" element={<Navigate to={ROUTES.WELCOME} replace />} />
           </Routes>
         </div>
-        
+
         {/* Bottom Navigation Bar */}
         <div className="flex-shrink-0">
           <BottomNavbar />

@@ -39,7 +39,7 @@ export default function ManageNetwork({ onClose }: ManageNetworkProps) {
   // };
 
   return (
-    <div className="bg-[#25262B] overflow-hidden w-[344px]">
+    <div className="bg-[#000510] overflow-hidden w-[344px]">
       <div className="px-6 pt-6 pb-2">
         <h2 className="text-white text-[20px] font-semibold">Manage Network</h2>
         <p className="text-white/60 text-[14px] font-normal mt-2">

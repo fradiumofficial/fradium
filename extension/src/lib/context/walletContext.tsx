@@ -12,6 +12,7 @@ import {
   createActor as createWalletActor,
   canisterId as walletCanisterId,
 } from "../../../../src/declarations/wallet"
+import { TOKENS_CONFIG, TokenType } from "~lib/utils/tokenUtils"
 
 interface NetworkFilters {
   Bitcoin: boolean
@@ -34,6 +35,30 @@ interface WalletAddresses {
   solana?: string
   icp_principal?: string
   icp_account?: string
+}
+
+interface BalanceStates {
+  [tokenId: string]: string
+}
+
+interface BalanceLoadingStates {
+  [tokenId: string]: boolean
+}
+
+interface BalanceErrorStates {
+  [tokenId: string]: string | null
+}
+
+interface USDPriceStates {
+  [tokenId: string]: number | null
+}
+
+interface USDPriceLoadingStates {
+  [tokenId: string]: boolean
+}
+
+interface USDPriceErrorStates {
+  [tokenId: string]: string | null
 }
 
 interface WalletContextType {
@@ -67,12 +92,39 @@ interface WalletContextType {
   setNetwork: (network: string) => void
   networkFilters: NetworkFilters
 
+  // Token configuration
+  extensionTokens: Array<{
+    id: string
+    symbol: string
+    name: string
+    chain: string
+    icon: string
+    networkKey: string
+    type: string
+  }>
+
   // Balance management
   hideBalance: boolean
   setHideBalance: (hide: boolean) => void
   networkValues: NetworkValues
   updateNetworkValues: (values: Partial<NetworkValues>) => void
   getNetworkValue: (networkName: string) => string
+
+  // Balance states
+  balances: BalanceStates
+  balanceLoading: BalanceLoadingStates
+  balanceErrors: BalanceErrorStates
+  isRefreshingBalances: boolean
+  fetchAllBalances: () => Promise<void>
+  refreshAllBalances: () => Promise<void>
+
+  // USD Price states
+  usdPrices: USDPriceStates
+  usdPriceLoading: USDPriceLoadingStates
+  usdPriceErrors: USDPriceErrorStates
+  isRefreshingPrices: boolean
+  fetchAllUSDPrices: () => Promise<void>
+  refreshAllUSDPrices: () => Promise<void>
 }
 
 const WalletContext = createContext<WalletContextType | null>(null)
@@ -118,6 +170,58 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     Fradium: true,
     Ethereum: true,
   })
+
+  // Balance states
+  const [balances, setBalances] = useState<BalanceStates>({})
+  const [balanceLoading, setBalanceLoading] = useState<BalanceLoadingStates>({})
+  const [balanceErrors, setBalanceErrors] = useState<BalanceErrorStates>({})
+  const [isRefreshingBalances, setIsRefreshingBalances] = useState(false)
+
+  // USD Price states
+  const [usdPrices, setUsdPrices] = useState<USDPriceStates>({})
+  const [usdPriceLoading, setUsdPriceLoading] = useState<USDPriceLoadingStates>({})
+  const [usdPriceErrors, setUsdPriceErrors] = useState<USDPriceErrorStates>({})
+  const [isRefreshingPrices, setIsRefreshingPrices] = useState(false)
+
+  // Token configuration for balance fetching
+  const EXTENSION_TOKENS = [
+    {
+      id: "bitcoin",
+      symbol: "BTC",
+      name: "Bitcoin",
+      chain: "Bitcoin",
+      icon: TOKENS_CONFIG[TokenType.BITCOIN].icon,
+      networkKey: "btc",
+      type: "native"
+    },
+    {
+      id: "ethereum",
+      symbol: "ETH",
+      name: "Ethereum",
+      chain: "Ethereum",
+      icon: TOKENS_CONFIG[TokenType.ETHEREUM].icon,
+      networkKey: "eth",
+      type: "native"
+    },
+    {
+      id: "solana",
+      symbol: "SOL",
+      name: "Solana",
+      chain: "Solana",
+      icon: TOKENS_CONFIG[TokenType.SOLANA].icon,
+      networkKey: "sol",
+      type: "native"
+    },
+    {
+      id: "fradium",
+      symbol: "FUM",
+      name: "Fradium",
+      chain: "Fradium",
+      icon: TOKENS_CONFIG[TokenType.FUM].icon,
+      networkKey: "fra",
+      type: "native"
+    }
+  ]
 
   // Create authenticated wallet actor when identity changes
   useEffect(() => {
@@ -241,20 +345,148 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     return addresses
   }, [isAuthenticated, addressesLoaded, isFetchingAddresses, identity, walletActor, fetchAddresses, addresses])
 
+  // Individual balance fetching functions - each runs independently
+  const fetchTokenBalance = useCallback(async (token: { id: string; symbol: string; name: string; chain: string; icon: string; networkKey: string; type: string }) => {
+    if (!walletActor || !isAuthenticated || !identity) return
+
+    // Set loading state for this specific token
+    setBalanceLoading(prev => ({ ...prev, [token.id]: true }))
+    setBalanceErrors(prev => ({ ...prev, [token.id]: null }))
+
+    try {
+      let balance: string
+
+      // Fetch balance based on token type
+      switch (token.id) {
+        case "bitcoin":
+          const btcBalance = await walletActor.bitcoin_balance()
+          const btcValue = Number(btcBalance) / 100000000 // Convert satoshi to BTC
+          balance = btcValue.toFixed(8)
+          break
+
+        case "ethereum":
+          const ethBalance = await walletActor.ethereum_balance()
+          // Convert wei to ETH (1 ETH = 10^18 wei)
+          const ethValue = Number(ethBalance) / 1000000000000000000
+          balance = ethValue.toFixed(6)
+          break
+
+        case "solana":
+          const solBalance = await walletActor.solana_balance()
+          const solValue = Number(solBalance) / 1000000000 // Convert lamports to SOL
+          balance = solValue.toFixed(9)
+          break
+
+        case "fradium":
+          // Fradium balance - placeholder for now
+          balance = "0.00"
+          break
+
+        default:
+          balance = "0.000000"
+      }
+
+      setBalances(prev => ({ ...prev, [token.id]: balance }))
+    } catch (error) {
+      console.error(`Error fetching ${token.symbol} balance:`, error)
+      setBalanceErrors(prev => ({ ...prev, [token.id]: error.message || "Failed to fetch balance" }))
+      setBalances(prev => ({ ...prev, [token.id]: "0.000000" }))
+    } finally {
+      setBalanceLoading(prev => ({ ...prev, [token.id]: false }))
+    }
+  }, [walletActor, isAuthenticated, identity])
+
+  // Fetch all balances independently (each token fetches in parallel)
+  const fetchAllBalances = useCallback(async () => {
+    if (!walletActor || !isAuthenticated || !identity) return
+
+    // Start all balance fetches in parallel - they run independently
+    const balancePromises = EXTENSION_TOKENS.map(token => fetchTokenBalance(token))
+    await Promise.allSettled(balancePromises) // Use allSettled so one failure doesn't stop others
+  }, [walletActor, isAuthenticated, identity, fetchTokenBalance])
+
+  // Refresh all balances with loading state management
+  const refreshAllBalances = useCallback(async () => {
+    if (isRefreshingBalances || !walletActor || !isAuthenticated || !identity) return
+
+    setIsRefreshingBalances(true)
+
+    // Set all tokens to loading state
+    const loadingState: BalanceLoadingStates = {}
+    EXTENSION_TOKENS.forEach(token => {
+      loadingState[token.id] = true
+    })
+    setBalanceLoading(loadingState)
+
+    try {
+      // Start all balance fetches in parallel
+      const balancePromises = EXTENSION_TOKENS.map(token => fetchTokenBalance(token))
+      await Promise.allSettled(balancePromises)
+    } finally {
+      setIsRefreshingBalances(false)
+    }
+  }, [isRefreshingBalances, walletActor, isAuthenticated, identity, fetchTokenBalance])
+
+  // USD Price functions (placeholder for now)
+  const fetchTokenUSDPrice = useCallback(async (tokenId: string) => {
+    // Placeholder - implement USD price fetching later
+    setUsdPrices(prev => ({ ...prev, [tokenId]: 0 }))
+  }, [])
+
+  const fetchAllUSDPrices = useCallback(async () => {
+    const pricePromises = EXTENSION_TOKENS.map(token => fetchTokenUSDPrice(token.id))
+    await Promise.allSettled(pricePromises)
+  }, [fetchTokenUSDPrice])
+
+  const refreshAllUSDPrices = useCallback(async () => {
+    if (isRefreshingPrices) return
+
+    setIsRefreshingPrices(true)
+
+    const loadingState: USDPriceLoadingStates = {}
+    EXTENSION_TOKENS.forEach(token => {
+      loadingState[token.id] = true
+    })
+    setUsdPriceLoading(loadingState)
+
+    try {
+      await fetchAllUSDPrices()
+    } finally {
+      setIsRefreshingPrices(false)
+    }
+  }, [isRefreshingPrices, fetchAllUSDPrices])
+
+  // Auto-fetch balances when wallet actor becomes available
   useEffect(() => {
-    if (identity && walletActor) {
-      // Run fetch operations in parallel to prevent blocking
-      Promise.all([fetchWalletAddresses()]).catch((error) => {
+    if (identity && walletActor && isAuthenticated) {
+      // Run all fetch operations in parallel
+      Promise.all([
+        fetchWalletAddresses(),
+        fetchAllBalances(),
+        fetchAllUSDPrices()
+      ]).catch((error) => {
         console.error("Error in parallel fetch operations:", error)
       })
     } else {
-      // Reset address states when user logs out or actor is not available
+      // Reset all states when user logs out or actor is not available
       setAddresses(null)
       setAddressesLoaded(false)
       setHasLoadedAddressesOnce(false)
       setIsFetchingAddresses(false)
+
+      // Reset balance states
+      setBalances({})
+      setBalanceLoading({})
+      setBalanceErrors({})
+      setIsRefreshingBalances(false)
+
+      // Reset USD price states
+      setUsdPrices({})
+      setUsdPriceLoading({})
+      setUsdPriceErrors({})
+      setIsRefreshingPrices(false)
     }
-  }, [identity, walletActor, fetchWalletAddresses])
+  }, [identity, walletActor, isAuthenticated, fetchWalletAddresses, fetchAllBalances, fetchAllUSDPrices])
 
   const walletContextValue = useMemo(
     () => ({
@@ -279,6 +511,22 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       updateNetworkValues,
       getNetworkValue,
       networkFilters,
+      // Token configuration
+      extensionTokens: EXTENSION_TOKENS,
+      // Balance management
+      balances,
+      balanceLoading,
+      balanceErrors,
+      isRefreshingBalances,
+      fetchAllBalances,
+      refreshAllBalances,
+      // USD Price management
+      usdPrices,
+      usdPriceLoading,
+      usdPriceErrors,
+      isRefreshingPrices,
+      fetchAllUSDPrices,
+      refreshAllUSDPrices,
     }),
     [
       isLoading,
@@ -299,6 +547,22 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       updateNetworkValues,
       getNetworkValue,
       networkFilters,
+      // Token configuration
+      EXTENSION_TOKENS,
+      // Balance management
+      balances,
+      balanceLoading,
+      balanceErrors,
+      isRefreshingBalances,
+      fetchAllBalances,
+      refreshAllBalances,
+      // USD Price management
+      usdPrices,
+      usdPriceLoading,
+      usdPriceErrors,
+      isRefreshingPrices,
+      fetchAllUSDPrices,
+      refreshAllUSDPrices,
     ]
   )
 

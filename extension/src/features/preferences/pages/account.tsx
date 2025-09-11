@@ -1,4 +1,3 @@
-import ProfileHeader from "~components/header";
 import LogoutButton from "~components/logout-button";
 import { ROUTES } from "~lib/constant/routes";
 import { useNavigate } from "react-router-dom";
@@ -8,9 +7,7 @@ function Account() {
   const navigate = useNavigate();
 
   return (
-    <div className="w-[375px] h-[600px] bg-[#25262B] text-white overflow-y-auto pb-20">
-      <ProfileHeader />
-
+    <div className="w-[375px] text-white overflow-y-auto">
       <div className="px-4 pt-4">
         {/* Menu Items */}
         <div className="space-y-0">

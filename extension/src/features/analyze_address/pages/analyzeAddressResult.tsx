@@ -1,5 +1,4 @@
 import { SafetyCard } from "~components/custom-card";
-import ProfileHeader from "~components/header";
 import { Wallet } from "lucide-react";
 import NeoButton from "~components/custom-button";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -222,10 +221,7 @@ function AnalyzeAdressResult() {
   const confidencePercentage = getConfidencePercentage();
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
-
-      {/* Header Sections */}
-      <ProfileHeader />
+    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
 
       {/* Analyze Address Section */}
       <div className="m-4">

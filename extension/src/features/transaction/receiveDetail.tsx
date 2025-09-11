@@ -1,4 +1,3 @@
-import ProfileHeader from "~components/header";
 import { ChevronLeft } from "lucide-react";
 import NeoButton from "~components/custom-button";
 import { ROUTES } from "~lib/constant/routes";
@@ -130,9 +129,7 @@ function ReceiveDetail() {
   }
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto relative pb-[100px]">
-      <ProfileHeader />
-
+    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto relative">
       <div className="flex flex-col px-[24px]">
         <div className="flex flex-row items-center">
           <button
