@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom"
 import BottomNavbar from '~components/bottom-app-bar';
 import ProfileHeader from '~components/header';
 import Home from "~features/home/pages/home"
@@ -25,13 +25,24 @@ import ReceiveDetail from '~features/transaction/receiveDetail';
 import Send from '~features/transaction/send';
 
 const AuthOrWelcome: React.FC = () => {
-  const { isAuthenticated, addresses, isLoading } = useWallet() as any
+  const { isAuthenticated, isLoading } = useWallet() as any
   if (isLoading) return null
   if (isAuthenticated) {
     // If user is authenticated, go to home (wallet addresses will be loaded automatically)
     return <Navigate to={ROUTES.HOME} replace />
   }
   return <Welcome />
+}
+
+const ConditionalHeader: React.FC = () => {
+  const { isAuthenticated, isLoading } = useWallet() as any
+  const location = useLocation()
+
+  if (isLoading || !isAuthenticated || location.pathname === ROUTES.WELCOME) {
+    return null
+  }
+
+  return <ProfileHeader />
 }
 
 function IndexPopup() {
@@ -43,11 +54,11 @@ function IndexPopup() {
       <div className="w-[375px] h-[600px] bg-[#000510] text-white flex flex-col">
         {/* Header - Fixed at top */}
         <div className="flex-shrink-0">
-          <ProfileHeader />
+          <ConditionalHeader />
         </div>
 
         {/* Main Content Area - With proper spacing for header and bottom bar */}
-        <div className="flex-1 overflow-y-auto pb-20">
+        <div className="flex-1 overflow-y-auto pb-20 pt-2">
           <Routes>
             {/* Public routes - no authentication required */}
             <Route path={ROUTES.WELCOME} element={<AuthOrWelcome />}/>

@@ -301,7 +301,7 @@ function Send() {
   }, [navigate]);
 
   return (
-    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
+    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto">
       <div className="flex flex-col px-[24px]">
         <div className="flex flex-row items-center mb-4">
           <button

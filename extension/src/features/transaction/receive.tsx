@@ -42,7 +42,7 @@ function Receive() {
   }, [navigate]);
 
   return (
-    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
+    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto">
       <div className="flex flex-row items-center px-[24px]">
         <button
             onClick={handleBack}

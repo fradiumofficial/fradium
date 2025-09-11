@@ -54,8 +54,8 @@ function Welcome() {
   }
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md p-[32px]">
-      <img src={CDN.images.welcomeCard} className="pt-[50px]" alt="welcome" />
+    <div className="w-[375px] space-y-4 text-white shadow-md p-[32px]">
+      <img src={CDN.images.welcomeCard} alt="welcome" />
       <h1 className="text-[20px] font-bold text-center mx-[50px]">
         Step Into Safer Web3 with Fradium
       </h1>

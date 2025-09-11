@@ -4,7 +4,9 @@ export const CDN = {
   images: {
     topRight: `${CDN_BASE}/images/top_right.svg`,
     topLeft: `${CDN_BASE}/images/top_left.svg`,
-    welcomeCard: `${CDN_BASE}/images/welcome_card.svg`,
+    welcomeCard: `${CDN_BASE}/images/welcome.svg`,
+    background: `${CDN_BASE}/images/background.png`,
+    backgroundInit: `${CDN_BASE}/images/background_init.png`,
   },
   tokens: {
     bitcoin: `${CDN_BASE}/tokens/bitcoin.svg`,

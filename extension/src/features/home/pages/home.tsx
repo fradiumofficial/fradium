@@ -1,347 +1,124 @@
 import { Search, Settings2, RefreshCw } from "lucide-react";
 import { CDN } from "~lib/constant/cdn";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
 import { useNetwork } from "~features/network/context/networkContext";
-import { useAuth } from "~lib/context/authContext";
-
-interface TokenBalance {
-  symbol: string;
-  name: string;
-  balance: string;
-  usdValue: string;
-  icon: string;
-  isLoading?: boolean;
-  hasError?: boolean;
-  networkKey: string;
-}
 
 function Home() {
-  const { getNetworkValue, principalText, walletActor, isAuthenticated } = useWallet() as any
-  const { identity } = useAuth();
+  const {
+    getNetworkValue,
+    principalText,
+    balances,
+    balanceLoading,
+    balanceErrors,
+    isRefreshingBalances,
+    refreshAllBalances,
+    usdPrices,
+    usdPriceLoading,
+    usdPriceErrors,
+    hideBalance,
+    setHideBalance,
+    extensionTokens
+  } = useWallet() as any;
+
   const { selectedNetwork } = useNetwork();
   const navigate = useNavigate();
-  const toggleVisibility = () => setHideBalance(!hideBalance);
 
-  // Token configuration
-  const tokenConfig: TokenBalance[] = [
-    {
-      symbol: "BTC",
-      name: "Bitcoin",
-      balance: "0.0000",
-      usdValue: "$0.00",
-      icon: CDN.tokens.bitcoin,
-      isLoading: false,
-      hasError: false,
-      networkKey: "btc"
-    },
-    {
-      symbol: "ETH",
-      name: "Ethereum",
-      balance: "0.0000",
-      usdValue: "$0.00",
-      icon: CDN.tokens.eth,
-      isLoading: false,
-      hasError: false,
-      networkKey: "eth"
-    },
-    {
-      symbol: "SOL",
-      name: "Solana",
-      balance: "0.0000",
-      usdValue: "$0.00",
-      icon: CDN.tokens.solana,
-      isLoading: false,
-      hasError: false,
-      networkKey: "sol"
-    },
-    {
-      symbol: "FUM",
-      name: "Fradium",
-      balance: "0.0000",
-      usdValue: "$0.00",
-      icon: CDN.tokens.fum,
-      isLoading: false,
-      hasError: false,
-      networkKey: "fra"
-    }
-  ];
-
-  const [principal, setPrincipal] = useState<string | null>(null);
-  const [hideBalance, setHideBalance] = useState(false);
-  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>(tokenConfig);
-  const [canisterError, setCanisterError] = useState<string | null>(null);
-  const [canisterOutOfCycles, setCanisterOutOfCycles] = useState(false);
-  const [isFetchingBalances, setIsFetchingBalances] = useState(false);
-
-  useEffect(() => {
-    setPrincipal(principalText || null);
-  }, [principalText]);
-
-  // Get decimal places for each network
-  const getDecimalPlaces = useCallback((networkKey: string) => {
-    switch (networkKey) {
-      case "btc": return 8; // Satoshi to BTC
-      case "eth": return 18; // Wei to ETH
-      case "sol": return 9;  // Lamports to SOL
-      case "fra": return 8;  // FUM decimals
-      default: return 8;
-    }
-  }, []);
-
-  // Helper function to detect out of cycles error
-  const isOutOfCyclesError = useCallback((error: any): boolean => {
-    if (!error) return false;
-
-    const errorMessage = error.message || error.toString();
-    const rejectMessage = error.reject_message || '';
-
-    return (
-      errorMessage.includes('IC0504') ||
-      errorMessage.includes('out of cycles') ||
-      rejectMessage.includes('out of cycles') ||
-      errorMessage.includes('Reject code: 5') ||
-      rejectMessage.includes('Reject code: 5')
-    );
-  }, []);
-
-  // Helper function to handle balance fetch errors
-  const handleBalanceError = useCallback((error: any, tokenSymbol: string) => {
-    console.error(`Error fetching ${tokenSymbol} balance:`, error);
-
-    if (isOutOfCyclesError(error)) {
-      setCanisterOutOfCycles(true);
-      setCanisterError('Wallet canister is currently out of cycles. Please try again later or contact support.');
-      return;
-    }
-
-    // For other errors, just set error on the specific token
-    setTokenBalances(prev => prev.map(token =>
-      token.symbol === tokenSymbol
-        ? { ...token, isLoading: false, hasError: true }
-        : token
-    ));
-  }, [isOutOfCyclesError]);
-
-  // Fetch Bitcoin balance
-  const fetchBitcoinBalance = useCallback(async () => {
-    if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
-
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "btc" 
-        ? { ...token, isLoading: true, hasError: false }
-        : token
-    ));
-
-    try {
-      const btcBalance = await walletActor.bitcoin_balance();
-      const btcValue = Number(btcBalance) / 100000000; // Convert satoshi to BTC
-      const balanceValue = btcValue.toFixed(getDecimalPlaces("btc"));
-
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "btc" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
-            }
-          : token
-      ));
-    } catch (error) {
-      handleBalanceError(error, "BTC");
-    }
-  }, [isAuthenticated, walletActor, identity, getDecimalPlaces, canisterOutOfCycles]);
-
-  // Fetch Ethereum balance
-  const fetchEthereumBalance = useCallback(async () => {
-    if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
-
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "eth" 
-        ? { ...token, isLoading: true, hasError: false }
-        : token
-    ));
-
-    try {
-      const ethBalance = await walletActor.ethereum_balance();
-      const balanceValue = ethBalance; // Already formatted as string
-
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "eth" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
-            }
-          : token
-      ));
-    } catch (error) {
-      handleBalanceError(error, "ETH");
-    }
-  }, [isAuthenticated, walletActor, identity, canisterOutOfCycles]);
-
-  // Fetch Solana balance
-  const fetchSolanaBalance = useCallback(async () => {
-    if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
-
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "sol" 
-        ? { ...token, isLoading: true, hasError: false }
-        : token
-    ));
-
-    try {
-      const solBalance = await walletActor.solana_balance();
-      const solValue = Number(solBalance) / 1000000000; // Convert lamports to SOL
-      const balanceValue = solValue.toFixed(getDecimalPlaces("sol"));
-
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "sol" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
-            }
-          : token
-      ));
-    } catch (error) {
-      handleBalanceError(error, "SOL");
-    }
-  }, [isAuthenticated, walletActor, identity, getDecimalPlaces, canisterOutOfCycles]);
-
-  // Fetch Fradium balance
-  const fetchFradiumBalance = useCallback(async () => {
-    if (!isAuthenticated || !walletActor || !identity || canisterOutOfCycles) return;
-
-    setTokenBalances(prev => prev.map(token => 
-      token.networkKey === "fra" 
-        ? { ...token, isLoading: true, hasError: false }
-        : token
-    ));
-
-    try {
-      // Fradium balance - would need to be implemented
-      const balanceValue = "0.00";
-
-      setTokenBalances(prev => prev.map(token => 
-        token.networkKey === "fra" 
-          ? { 
-              ...token, 
-              balance: balanceValue, 
-              usdValue: "$0.00", 
-              isLoading: false, 
-              hasError: false 
-            }
-          : token
-      ));
-    } catch (error) {
-      handleBalanceError(error, "FUM");
-    }
-  }, [isAuthenticated, walletActor, identity, canisterOutOfCycles]);
-
-  // Reset canister error state (for manual retry)
-  const resetCanisterError = useCallback(() => {
-    setCanisterError(null);
-    setCanisterOutOfCycles(false);
-  }, []);
-
-  // Fetch all token balances individually
-  const fetchAllBalances = useCallback(async (force = false) => {
-    if (!isAuthenticated || !walletActor || canisterOutOfCycles) {
-      setTokenBalances(tokenConfig);
-      return;
-    }
-
-    // Prevent multiple concurrent fetch operations
-    if (isFetchingBalances && !force) {
-      return;
-    }
-
-    setIsFetchingBalances(true);
-
-    try {
-      // Call all fetch functions in parallel - each will update its own loading state
-      await Promise.all([
-        fetchBitcoinBalance(),
-        fetchEthereumBalance(),
-        fetchSolanaBalance(),
-        fetchFradiumBalance()
-      ]);
-    } catch (error) {
-      console.error("Error in parallel balance fetching:", error);
-    } finally {
-      setIsFetchingBalances(false);
-    }
-  }, [isAuthenticated, walletActor, canisterOutOfCycles, isFetchingBalances, fetchBitcoinBalance, fetchEthereumBalance, fetchSolanaBalance, fetchFradiumBalance, tokenConfig]);
-
-  // Reset error state when authentication changes
-  useEffect(() => {
-    if (isAuthenticated) {
-      resetCanisterError();
-    }
-  }, [isAuthenticated, resetCanisterError]);
-
-  // Fetch balances when component mounts or authentication changes
-  useEffect(() => {
-    fetchAllBalances();
-  }, [fetchAllBalances]);
-
-  // Refresh balances when component becomes visible (useful for when returning from other pages)
-  useEffect(() => {
-    let visibilityTimeout: NodeJS.Timeout;
-
-    const handleVisibilityChange = () => {
-      // Clear existing timeout
-      if (visibilityTimeout) {
-        clearTimeout(visibilityTimeout);
-      }
-
-      // Only fetch if document becomes visible and user is authenticated
-      if (!document.hidden && isAuthenticated && walletActor && !isFetchingBalances) {
-        // Add debounce to prevent spam calls
-        visibilityTimeout = setTimeout(() => {
-          fetchAllBalances(false); // Don't force, respect the prevention logic
-        }, 1000); // 1 second debounce
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (visibilityTimeout) {
-        clearTimeout(visibilityTimeout);
-      }
-    };
-  }, [isAuthenticated, walletActor, fetchAllBalances, isFetchingBalances]);
+  // Use principalText directly from wallet context
+  const principal = principalText;
 
   // Filter tokens based on selected network
   const filteredTokens = useMemo(() => {
     if (selectedNetwork === "all") {
-      return tokenBalances;
+      return extensionTokens;
     }
 
     const networkMap = {
       btc: "btc",
-      eth: "eth", 
+      eth: "eth",
       sol: "sol",
       fra: "fra"
     };
 
     const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
-    if (!targetNetwork) return tokenBalances;
+    if (!targetNetwork) return extensionTokens;
 
-    return tokenBalances.filter(token => token.networkKey === targetNetwork);
-  }, [selectedNetwork, tokenBalances]);
+    return extensionTokens.filter(token => token.networkKey === targetNetwork);
+  }, [selectedNetwork, extensionTokens]);
 
-  // Navigation handlers - disabled during balance loading
+  // Debug logging untuk melihat tokens yang tersedia
+  console.log("Extension Tokens:", extensionTokens);
+  console.log("Selected Network:", selectedNetwork);
+  console.log("Filtered Tokens:", filteredTokens);
+
+  // Helper function to format balance display with symbol
+  const formatBalanceDisplay = useCallback((balance: string) => {
+    if (hideBalance) return "••••";
+
+    const numericBalance = parseFloat(balance);
+    if (isNaN(numericBalance)) return `0.00`;
+
+    // Handle zero balance
+    if (numericBalance === 0) return `0.00`;
+
+    // Handle very small balances
+    if (numericBalance < 0.0001) return `<0.0001`;
+
+    let formattedNumber: string;
+
+    // Handle small balances (show 4 decimals for crypto precision)
+    if (numericBalance < 0.01) {
+      formattedNumber = numericBalance.toFixed(4);
+    }
+    // Handle medium balances (show 2 decimals for readability)
+    else if (numericBalance < 1000) {
+      formattedNumber = numericBalance.toFixed(2);
+    }
+    // Handle large balances (use locale string with 2 decimals)
+    else if (numericBalance < 1000000) {
+      formattedNumber = numericBalance.toLocaleString("en-US", { maximumFractionDigits: 2 });
+    }
+    // Handle extremely large balances (compact notation)
+    else {
+      formattedNumber = numericBalance.toLocaleString("en-US", {
+        maximumFractionDigits: 2,
+        notation: "compact",
+        compactDisplay: "short"
+      });
+    }
+
+    return `${formattedNumber}`;
+  }, [hideBalance]);
+
+  // Helper function to format USD value
+  const formatUSDValue = useCallback((tokenId: string, balance: string) => {
+    if (hideBalance) return "••••";
+
+    const usdPrice = usdPrices[tokenId];
+    const isPriceLoading = usdPriceLoading[tokenId];
+    const hasPriceError = usdPriceErrors[tokenId];
+
+    if (isPriceLoading || hasPriceError || !usdPrice) {
+      return "$0.00";
+    }
+
+    const numericBalance = parseFloat(balance);
+    if (isNaN(numericBalance) || numericBalance === 0) {
+      return "$0.00";
+    }
+
+    const usdValue = numericBalance * usdPrice;
+
+    // Format USD value
+    if (usdValue < 0.01) return "<$0.01";
+    if (usdValue < 1) return `$${usdValue.toFixed(4)}`;
+    if (usdValue < 1000) return `$${usdValue.toFixed(2)}`;
+    return `$${usdValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  }, [usdPrices, usdPriceLoading, usdPriceErrors, hideBalance]);
+
+  // Navigation handlers
   const handleAnalyzeAddress = () => {
     navigate(ROUTES.ANALYZE_ADDRESS);
   };
@@ -354,6 +131,12 @@ function Home() {
   const handleAccountSettings = () => {
     navigate(ROUTES.ACCOUNT);
   };
+
+  // Retry balance fetching for a specific token
+  const handleRetryBalance = useCallback((tokenId: string) => {
+    // This will trigger a refresh of all balances
+    refreshAllBalances();
+  }, [refreshAllBalances]);
 
   return (
     <div className="w-[375px] text-white shadow-md overflow-hidden">
@@ -369,14 +152,14 @@ function Home() {
             </div>
             
             {/* Amount and Description */}
-            <div className="flex flex-col items-center p-0 gap-[6px] w-[186px] h-[56px] flex-none order-1 flex-grow-0">
+            <div className="flex flex-col items-center p-0 gap-[4px] w-[200px] h-[60px] flex-none order-1 flex-grow-0">
               {/* Balance Amount */}
               <div className="w-[86px] h-8 font-['General Sans'] font-semibold text-[32px] leading-8 flex items-center text-white flex-none order-0 flex-grow-0">
                 {hideBalance ? "••••" : selectedNetwork === "all" ? getNetworkValue("All Networks") : getNetworkValue(selectedNetwork)}
               </div>
-              
+
               {/* Description */}
-              <div className="w-[200px] h-[18px] font-['General Sans'] font-medium text-[12px] leading-[150%] flex items-center letter-[-0.01em] text-white flex-none order-1 flex-grow-0">
+              <div className="w-[200px] font-['General Sans'] font-medium text-[12px] flex items-center leading-tight letter-[-0.01em] text-white flex-none order-1 flex-grow-0">
                 Top up your wallet to start using it!
               </div>
             </div>
@@ -426,9 +209,9 @@ function Home() {
       {/* Tokens Section */}
       <div className="box-border flex flex-col items-start p-[12px_20px_20px] gap-2 w-[375px] h-[271px] flex-none order-3 self-stretch flex-grow-0 z-[3]">
         {/* Header */}
-        <div className="flex flex-row justify-between items-center p-0 gap-[38px] w-[335px] h-6 flex-none order-0 self-stretch flex-grow-0">
+        <div className="flex flex-row justify-between items-center p-0 h-6 flex-none order-0 self-stretch flex-grow-0">
           {/* Tokens Title */}
-          <div className="mx-auto w-[55px] h-6 font-['General Sans'] font-semibold text-[16px] leading-[150%] flex items-center text-white flex-none order-0 flex-grow-0">
+          <div className="mx-auto w-[55px] h-6 font-['General Sans'] font-semibold text-[16px] flex items-center text-white flex-none order-0 flex-grow-0">
             Tokens
           </div>
           
@@ -436,106 +219,147 @@ function Home() {
           <div className="mx-auto flex flex-row items-center p-0 gap-3 w-[84px] h-5 flex-none order-1 flex-grow-0">
             <button
               onClick={handleAnalyzeAddress}
-              disabled={isFetchingBalances}
+              disabled={isRefreshingBalances}
               className={`w-5 h-5 flex-none order-0 flex-grow-0 relative ${
-                isFetchingBalances
+                isRefreshingBalances
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-white/10 cursor-pointer'
               }`}
-              title={isFetchingBalances ? "Please wait..." : "Analyze address"}
+              title={isRefreshingBalances ? "Please wait..." : "Analyze address"}
             >
               <Search className="w-5 h-5 text-white" />
             </button>
             <button
               onClick={handleAccountSettings}
-              disabled={isFetchingBalances}
+              disabled={isRefreshingBalances}
               className={`w-5 h-5 flex-none order-1 flex-grow-0 relative ${
-                isFetchingBalances
+                isRefreshingBalances
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-white/10 cursor-pointer'
               }`}
-              title={isFetchingBalances ? "Please wait..." : "Account settings"}
+              title={isRefreshingBalances ? "Please wait..." : "Account settings"}
             >
               <Settings2 className="w-5 h-5 text-white" />
             </button>
             <button
-              onClick={() => fetchAllBalances(true)}
-              disabled={isFetchingBalances}
+              onClick={() => refreshAllBalances()}
+              disabled={isRefreshingBalances}
               className={`w-5 h-5 flex-none order-2 flex-grow-0 relative ${
-                isFetchingBalances
+                isRefreshingBalances
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-white/10 cursor-pointer'
               }`}
-              title={isFetchingBalances ? "Loading balances..." : "Refresh balances"}
+              title={isRefreshingBalances ? "Loading balances..." : "Refresh balances"}
             >
-              <RefreshCw className={`w-5 h-5 text-white ${isFetchingBalances ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 text-white ${isRefreshingBalances ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* List */}
-        <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[207px] flex-none order-1 self-stretch flex-grow-0">
+        <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[300px] flex-none order-1 self-stretch flex-grow-0 overflow-y-auto">
           {/* Content */}
-          <div className="flex flex-col items-start p-0 w-[335px] h-[207px] flex-none order-0 self-stretch flex-grow-0">
-            {filteredTokens.map((token, index) => (
-              <div key={token.symbol}>
-                {/* Token Item */}
-                <div className="box-border flex flex-row justify-between items-center p-[12px_0px] gap-4 w-[335px] h-[69px] flex-none order-0 self-stretch flex-grow-0">
-                  {/* Content */}
-                  <div className="mx-auto flex flex-row items-center p-0 gap-4 w-[242px] h-[45px] flex-none order-0 flex-grow-0">
-                    {/* Token Icon */}
-                    <div className="w-10 h-10 flex-none order-0 flex-grow-0 relative">
-                      <img src={token.icon} alt={token.name} className="w-full h-full rounded-full" />
+          <div className="flex flex-col items-start p-0 w-[335px] min-h-[300px] flex-none order-0 self-stretch flex-grow-0">
+            {filteredTokens.map((token, index) => {
+              const balance = balances[token.id] || "0.000000";
+              const isLoading = balanceLoading[token.id];
+              const hasError = balanceErrors[token.id];
+              const usdValue = formatUSDValue(token.id, balance);
+
+              // Debug logging untuk setiap token
+              console.log(`Token ${token.symbol}:`, {
+                id: token.id,
+                balance,
+                isLoading,
+                hasError,
+                usdValue
+              });
+
+              return (
+                <div key={token.id}>
+                  {/* Token Item */}
+                  <div className="box-border flex flex-row justify-between items-center p-[12px_0px] gap-4 w-[335px] h-[69px] flex-none order-0 self-stretch flex-grow-0">
+                    {/* Content */}
+                    <div className="mx-auto flex flex-row items-center p-0 gap-4 w-[242px] h-[45px] flex-none order-0 flex-grow-0">
+                      {/* Token Icon */}
+                      <div className="w-10 h-10 flex-none order-0 flex-grow-0 relative">
+                        <img src={token.icon} alt={token.name} className="w-full h-full rounded-full" />
+                      </div>
+
+                      {/* Token Info */}
+                      <div className="flex flex-col items-start p-0 w-[183px] h-[45px] flex-none order-1 flex-grow-0">
+                        {/* Token Symbol and Name */}
+                        <div className="flex flex-row items-center p-0 gap-2 w-[96px] h-6 flex-none order-0 flex-grow-0">
+                          <div className="w-8 h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-center text-white flex-none order-0 flex-grow-0">
+                            {token.symbol}
+                          </div>
+                          <div className="w-1 h-1 bg-white/50 rounded-full flex-none order-1 flex-grow-0"></div>
+                          <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-2 flex-grow-0">
+                            {token.name}
+                          </div>
+                        </div>
+
+                        {/* Network Info */}
+                        <div className="flex flex-row items-center p-0 gap-2 w-[183px] h-[21px] flex-none order-1 flex-grow-0">
+                          <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-0 flex-grow-0">
+                            {token.name}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    
-                    {/* Token Info */}
-                    <div className="flex flex-col items-start p-0 w-[183px] h-[45px] flex-none order-1 flex-grow-0">
-                      {/* Token Symbol and Name */}
-                      <div className="flex flex-row items-center p-0 gap-2 w-[96px] h-6 flex-none order-0 flex-grow-0">
-                        <div className="w-8 h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-center text-white flex-none order-0 flex-grow-0">
-                          {token.symbol}
+
+                    {/* Balance */}
+                    <div className="flex flex-col items-end p-0 pr-4 w-[80px] h-[45px] flex-none order-1 flex-grow-0">
+                      {isLoading ? (
+                        <div className="flex items-center justify-center w-full">
+                          <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                        <div className="w-1 h-1 bg-white/50 rounded-full flex-none order-1 flex-grow-0"></div>
-                        <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-2 flex-grow-0">
-                          {token.name}
+                      ) : hasError ? (
+                        <div className="flex flex-col items-end">
+                          <div className="w-full h-6 font-['General Sans'] font-medium text-[12px] leading-[150%] flex items-end justify-end text-red-400 flex-none order-0 flex-grow-0">
+                            Error
+                          </div>
+                          <div
+                            className="w-full h-[21px] font-['General Sans'] font-medium text-[10px] leading-[150%] flex items-end justify-end text-red-300 flex-none order-1 flex-grow-0 cursor-pointer hover:text-red-200 transition-colors"
+                            onClick={() => handleRetryBalance(token.id)}
+                          >
+                            Retry
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Network Info */}
-                      <div className="flex flex-row items-center p-0 gap-2 w-[183px] h-[21px] flex-none order-1 flex-grow-0">
-                        <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-0 flex-grow-0">
-                          {token.name}
-                        </div>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="w-full h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-end justify-end text-white flex-none order-0 flex-grow-0">
+                            {formatBalanceDisplay(balance)}
+                          </div>
+                          <div className="w-full h-[21px] font-['General Sans'] font-medium text-[14px] leading-[150%] flex items-end justify-end text-white/50 flex-none order-1 flex-grow-0">
+                            {usdValue}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                  
-                  {/* Balance */}
-                  <div className="flex flex-col items-end p-0 pr-4 w-[80px] h-[45px] flex-none order-1 flex-grow-0">
-                    {token.isLoading ? (
-                      <div className="flex items-center justify-center w-full">
-                        <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-full h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-end justify-end text-white flex-none order-0 flex-grow-0">
-                          {token.balance}
-                        </div>
-                        <div className="w-full h-[21px] font-['General Sans'] font-medium text-[14px] leading-[150%] flex items-end justify-end text-white/50 flex-none order-1 flex-grow-0">
-                          {token.usdValue}
-                        </div>
-                      </>
-                    )}
-                  </div>
+
+                  {/* Separator Line */}
+                  {index < filteredTokens.length - 1 && (
+                    <div className="w-[335px] h-0 border border-white/10 flex-none order-1 self-stretch flex-grow-0"></div>
+                  )}
                 </div>
-                
-                {/* Separator Line */}
-                {index < filteredTokens.length - 1 && (
-                  <div className="w-[335px] h-0 border border-white/10 flex-none order-1 self-stretch flex-grow-0"></div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
+
+          {/* Debug info if no tokens */}
+          {filteredTokens.length === 0 && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="text-[#B0B6BE] text-sm mb-2">No tokens found</div>
+                <div className="text-[#9BEB83] text-xs">
+                  Selected network: {selectedNetwork}<br/>
+                  Available tokens: {extensionTokens.length}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
