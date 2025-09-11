@@ -390,6 +390,8 @@ export async function getBalance(tokenId, principal) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
+  console.log("getBalance called with tokenId:", tokenId, "principal:", principal, "principal type:", typeof principal);
+
   if (token.type === "native") {
     switch (token.id) {
       case 1: // BTC
@@ -411,9 +413,13 @@ export async function getBalance(tokenId, principal) {
     switch (token.id) {
       case 4: // ICP
         try {
-          console.log("Fetching ICP balance for principal:", principal);
+          console.log("Fetching ICP balance for principal:", principal, "type:", typeof principal);
+          // Convert string principal to Principal object if needed
+          const principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
+          console.log("Principal object:", principalObj, "type:", typeof principalObj);
+
           const balance = await icp_ledger.icrc1_balance_of({
-            owner: principal,
+            owner: principalObj,
             subaccount: [],
           });
           console.log("ICP balance raw:", balance, "type:", typeof balance);
@@ -449,8 +455,13 @@ export async function getBalance(tokenId, principal) {
         }
       case 5: // Fradium (FADM)
         try {
+          console.log("Fetching Fradium balance for principal:", principal, "type:", typeof principal);
+          // Convert string principal to Principal object if needed
+          const principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
+          console.log("Principal object:", principalObj, "type:", typeof principalObj);
+
           const balance = await fradium_ledger.icrc1_balance_of({
-            owner: principal,
+            owner: principalObj,
             subaccount: [],
           });
 
