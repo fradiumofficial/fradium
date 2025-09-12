@@ -420,12 +420,16 @@ export async function getBalance(tokenId, principal) {
 
           let balance;
           try {
-            // Try account_balance first (more compatible)
+            // First convert Account to AccountIdentifier
+            const accountIdentifier = await icp_ledger.account_identifier({
+              owner: principalObj,
+              subaccount: [],
+            });
+            console.log("Account identifier:", accountIdentifier, "type:", typeof accountIdentifier);
+            
+            // Then use account_balance with AccountIdentifier
             const tokensResult = await icp_ledger.account_balance({
-              account: {
-                owner: principalObj,
-                subaccount: [],
-              },
+              account: accountIdentifier,
             });
             console.log("ICP balance from account_balance:", tokensResult, "type:", typeof tokensResult);
             // Extract e8s from Tokens interface
