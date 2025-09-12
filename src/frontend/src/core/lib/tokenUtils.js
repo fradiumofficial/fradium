@@ -422,7 +422,7 @@ export async function getBalance(tokenId, principal) {
             owner: principalObj,
             subaccount: [],
           });
-          console.log("ICP balance raw:", balance, "type:", typeof balance);
+          console.log("ICP balance raw:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
@@ -438,7 +438,13 @@ export async function getBalance(tokenId, principal) {
 
           // Convert from e8s to ICP using dynamic decimals
           // balance is a bigint, so we need to convert it properly
-          const balanceNumber = Number(balance);
+          let balanceNumber;
+          if (typeof balance === "bigint") {
+            // For BigInt, convert to string first to avoid precision loss
+            balanceNumber = parseFloat(balance.toString());
+          } else {
+            balanceNumber = Number(balance);
+          }
           const divisor = Math.pow(10, decimals);
           const result = balanceNumber / divisor;
 
@@ -464,6 +470,7 @@ export async function getBalance(tokenId, principal) {
             owner: principalObj,
             subaccount: [],
           });
+          console.log("Fradium balance raw:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
@@ -478,7 +485,13 @@ export async function getBalance(tokenId, principal) {
 
           // Convert from e8s to FADM using dynamic decimals
           // balance is a bigint, so we need to convert it properly
-          const balanceNumber = Number(balance);
+          let balanceNumber;
+          if (typeof balance === "bigint") {
+            // For BigInt, convert to string first to avoid precision loss
+            balanceNumber = parseFloat(balance.toString());
+          } else {
+            balanceNumber = Number(balance);
+          }
           const divisor = Math.pow(10, decimals);
           const result = balanceNumber / divisor;
 
