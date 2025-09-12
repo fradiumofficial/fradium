@@ -50,5 +50,11 @@ export const CDN = {
     callReceived: `${CDN_BASE}/icons/call_received.svg`,
     policyAlert: `${CDN_BASE}/icons/policy_alert.svg`,
     searchAnalyze: `${CDN_BASE}/icons/search_analyze_address.svg`,
+    checkDanger: `${CDN_BASE}/icons/check_circle_danger.svg`,
+    checkSafe: `${CDN_BASE}/icons/check_circle_safe.svg`,
+    activity: `${CDN_BASE}/icons/activity.svg`,
+    riskScore: `${CDN_BASE}/icons/risk.svg`,
+    total: `${CDN_BASE}/icons/total.svg`,
+    transactions: `${CDN_BASE}/icons/transaction.svg`,
   }
 }

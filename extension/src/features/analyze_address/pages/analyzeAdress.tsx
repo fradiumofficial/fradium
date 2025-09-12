@@ -4,6 +4,7 @@ import { ROUTES } from "~lib/constant/routes";
 import { detectTokenType, TokenType } from "~lib/utils/tokenUtils";
 import NeoButton from "~components/custom-button";
 import { CDN } from "~lib/constant/cdn";
+import LocalStorageService from "~service/localStorageService";
 
 // Enhanced address validation function
 const validateAddress = (addr: string): string | null => {
@@ -57,14 +58,27 @@ function AnalyzeAddress() {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    
+
     const validationError = validateAddress(address);
     if (validationError) {
       setAddressError(validationError);
       return;
     }
-    
+
     setAddressError('');
+
+    // Save analysis to local storage
+    const tokenType = LocalStorageService.detectTokenType(address);
+    const now = new Date();
+    LocalStorageService.saveAnalysis({
+      address,
+      tokenType,
+      isSafe: false, // Will be updated when results come in
+      source: 'ai', // Default, will be updated based on actual analysis
+      status: 'in_progress',
+      date: now.toISOString(), // Store as ISO string for better formatting later
+    });
+
     navigate(ROUTES.ANALYZE_PROGRESS, { state: { address, isAnalyzing: true } });
   };
 
@@ -76,8 +90,8 @@ function AnalyzeAddress() {
   };
 
   return (
-    <div className="w-[375px] h-[460px] flex flex-col items-start p-5 gap-7 text-white overflow-y-auto">
-      <div className="w-[335px] h-[376px] flex flex-col items-start gap-5">
+    <div className="w-[375px] flex flex-col items-start p-5 gap-7 text-white overflow-y-auto">
+      <div className="w-[335px] h-[376px] flex flex-col items-start gap-3">
         {/* Card */}
         <div className="w-[335px] h-[298px] box-border flex flex-col items-start p-3 gap-3 bg-white/2 backdrop-blur-[14.5px] rounded-[24px] self-stretch flex-grow-0">
           {/* Content */}

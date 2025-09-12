@@ -82,7 +82,7 @@ function TransactionDetail() {
   }
 
   return (
-    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
+    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto">
       <div className="m-4">
         <h1 className="text-[20px] font-semibold">Transaction Detail</h1>
 

@@ -3,39 +3,24 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 import { ROUTES } from "~lib/constant/routes";
+import { ArrowLeft } from "lucide-react";
+import LocalStorageService, { type LocalAnalysisHistory } from "~service/localStorageService";
+import { CDN } from "~lib/constant/cdn";
 import NeoButton from "~components/custom-button";
-import { Wallet } from "lucide-react";
-import { HistoryService } from "~service/historyService";
-import { useAuth } from "~lib/context/authContext";
 
-type ScanHistoryItem = {
-  id: string;
-  address: string;
-  tokenType: string;
-  isSafe: boolean;
-  source: "ai" | "community";
-  date: string;
-  analysisResult: any;
-};
+type ScanHistoryItem = LocalAnalysisHistory;
 
 function DetailHistory() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { identity } = useAuth();
   const [historyItem, setHistoryItem] = useState<ScanHistoryItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadHistoryDetail = async () => {
+    const loadHistoryDetail = () => {
       if (!id) {
         console.log('DetailHistory: No ID provided');
-        setLoading(false);
-        return;
-      }
-
-      if (!identity) {
-        setError("User not authenticated");
         setLoading(false);
         return;
       }
@@ -45,35 +30,25 @@ function DetailHistory() {
         setLoading(true);
         setError(null);
 
-        // Set identity for the service
-        HistoryService.identity = identity;
+        // Fetch all history from local storage
+        const historyData = LocalStorageService.getHistory();
 
-        // Fetch all history from backend
-        const result = await HistoryService.getAnalyzeHistory();
+        // Find the specific item by ID
+        const item = historyData.find((d) => d.id === id) || null;
 
-        if (result.success && result.data) {
-          // Convert backend data to frontend format
-          const frontendData = HistoryService.convertBackendHistoryToFrontend(result.data);
+        console.log('DetailHistory: History item loaded:', item);
 
-          // Find the specific item by ID
-          const item = frontendData.find((d) => d.id === id) || null;
-
-          console.log('DetailHistory: History item loaded:', item);
-
-          if (item) {
-            console.log('DetailHistory: Regular item details:', {
-              source: item.source,
-              address: item.address,
-              isSafe: item.isSafe
-            });
-          }
-
-          setHistoryItem(item);
-        } else {
-          setError(result.error || "Failed to load history details");
-          // No dummy data fallback - show error state instead
-          setHistoryItem(null);
+        if (item) {
+          console.log('DetailHistory: Item details:', {
+            source: item.source,
+            address: item.address,
+            isSafe: item.isSafe,
+            status: item.status,
+            tokenType: item.tokenType
+          });
         }
+
+        setHistoryItem(item);
       } catch (err) {
         console.error('Error loading history detail:', err);
         setError("Failed to load history details");
@@ -83,11 +58,11 @@ function DetailHistory() {
     };
 
     loadHistoryDetail();
-  }, [id, identity]);
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white shadow-md flex items-center justify-center">
+      <div className="w-[375px] text-white shadow-md flex items-center justify-center">
         <div className="text-center">
           <div className="text-[16px] font-medium mb-2">Loading history details...</div>
           <div className="text-white/60 text-[14px]">Please wait while we fetch the details</div>
@@ -98,7 +73,7 @@ function DetailHistory() {
 
   if (error) {
     return (
-      <div className="w-[375px] bg-[#25262B] text-white shadow-md overflow-y-auto">
+      <div className="w-[375px] text-white shadow-md overflow-y-auto">
         <div className="m-4 text-center">
           <h1 className="font-semibold text-[20px] text-white mb-4">Error Loading History</h1>
           <p className="text-red-400 text-[14px] mb-4">{error}</p>
@@ -122,28 +97,23 @@ function DetailHistory() {
     );
   }
 
-  if (!historyItem) {
-    return (
-      <div className="w-[375px] bg-[#25262B] text-white shadow-md overflow-y-auto">
-        <div className="m-4 text-center">
-          <h1 className="font-semibold text-[20px] text-white mb-4">History Not Found</h1>
-          <p className="text-white/50 mb-4">The requested history item could not be found.</p>
-          <NeoButton
-            icon={Wallet}
-            onClick={() => navigate(ROUTES.SCAN_HISTORY)}
-          >
-            Back to Scan History
-          </NeoButton>
-        </div>
-      </div>
-    );
-  }
-
   // Convert confidence percentage untuk SafetyCard
   const getConfidencePercentage = () => {
+    if (!historyItem?.analysisResult) return 50;
+
+    // If we have direct confidence value from local storage
+    if (historyItem.analysisResult.confidence) {
+      return Math.round(historyItem.analysisResult.confidence);
+    }
+
+    // Fallback for AI data
     if (historyItem.source === "ai" && historyItem.analysisResult.aiData) {
-      return Math.round((historyItem.analysisResult.aiData.confidence_level === "HIGH" ? 95 : historyItem.analysisResult.aiData.confidence_level === "MEDIUM" ? 75 : 50));
-    } else if (historyItem.source === "community" && historyItem.analysisResult.communityData) {
+      return Math.round((historyItem.analysisResult.aiData.confidence_level === "HIGH" ? 95 :
+                        historyItem.analysisResult.aiData.confidence_level === "MEDIUM" ? 75 : 50));
+    }
+
+    // Fallback for community data
+    if (historyItem.source === "community" && historyItem.analysisResult.communityData) {
       // For community, calculate based on vote ratio
       const report = historyItem.analysisResult.communityData.report?.[0];
       if (report) {
@@ -154,17 +124,29 @@ function DetailHistory() {
       }
       return 50; // Default for community
     }
-    return 50;
+
+    return 50; // Default fallback
   };
 
   const confidencePercentage = getConfidencePercentage();
 
   return (
-    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto">
+    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto relative">
 
       {/* Analyze Address Section */}
       <div className="m-4">
-        <h1 className="text-[20px] font-semibold">Detail Scan History</h1>
+        <div className="flex items-center gap-3">
+          {/* Back Arrow Icon */}
+          <button
+            onClick={() => navigate(ROUTES.HOME)}
+            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </button>
+
+          <h1 className="text-[20px] font-semibold">Detail Scan History</h1>
+        </div>
 
         <SafetyCard
           confidence={confidencePercentage}
@@ -172,127 +154,59 @@ function DetailHistory() {
           isSafe={historyItem.isSafe}
         />
 
-        {/* Analysis Source Indicator */}
-        <div className="mt-4 p-3 bg-white/5 rounded">
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${historyItem.source === "community" ? "bg-blue-400" : "bg-purple-400"}`}></div>
-            <span className="text-sm font-medium">
-              Detected by {historyItem.source === "community" ? "Community Analysis" : "AI Analysis"}
-            </span>
+        <div className="flex flex-col items-start p-[0px_8px] gap-4 mt-[14px] flex-none order-2 self-stretch flex-grow-0">
+          <div className="w-[122px] font-['General Sans'] font-semibold text-[16px] leading-[120%] text-white flex-none order-0 flex-grow-0">
+            Address Details
+          </div>
+          <div className="text-[14px] font-extralight text-white/50 mb-[10px]">
+            {historyItem.address}
           </div>
         </div>
 
-        <div>
-          <h1 className="text-[20px] font-semibold mt-[20px]">Address</h1>
-          <p className="text-[14px] font-regular text-white/50">{historyItem.address}</p>
+        {/* Address Details Section */}
+        <div className="flex flex-col items-start p-[0px_8px] gap-4 mt-[14px] h-[102px] flex-none order-2 self-stretch flex-grow-0">
+          {/* Address Details Title */}
+          <div className="w-[122px] h-[19px] font-['General Sans'] font-semibold text-[16px] leading-[120%] text-white flex-none order-0 flex-grow-0">
+            Address Details
+          </div>
+
+          {/* Cards Container */}
+          <div className="flex flex-row flex-wrap items-center content-start p-0 gap-[10px] h-[67px] flex-none order-1 self-stretch flex-grow-0">
+            {/* Ransomware Card */}
+            <div className="flex flex-col justify-center items-start p-[12px_16px] gap-[6px] h-[67px] bg-white/5 backdrop-blur-[5px] rounded-[12px] flex-none order-0 flex-grow-1">
+              {/* Ransomware Probability Value */}
+              <div className="w-[74px] h-[19px] font-['General Sans'] font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-[#E49B9C] flex-none order-0 flex-grow-0">
+                {getConfidencePercentage()}%
+              </div>
+
+              {/* Ransomware Label with Icon */}
+              <div className="flex flex-row items-center p-0 gap-[6px] h-[18px] flex-none order-1 flex-grow-0">
+                {/* Speedometer Icon Container */}
+                <img src={CDN.icons.riskScore} alt="Ransomware" />
+                <div className="w-[91px] h-[18px] font-['General Sans'] font-normal text-[14px] leading-[130%] text-white/60 flex-none order-1 flex-grow-0">
+                  Ransomware
+                </div>
+              </div>
+            </div>
+
+            {/* Confidence Level Card */}
+            <div className="flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 backdrop-blur-[5px] rounded-[12px]">
+              {/* Confidence Level Value */}
+              <div className="w-[40px] h-[19px] font-['General Sans'] font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-white flex-none order-0 flex-grow-0">
+                {historyItem.analysisResult.aiData?.confidence_level || "N/A"}
+              </div>
+
+              {/* Confidence Level Label with Icon */}
+              <div className="flex flex-row items-center p-0 gap-[6px] h-[18px] flex-none order-1 flex-grow-0">
+                {/* Align Bottom Icon Container */}
+                <img src={CDN.icons.total} alt="Confidence Level" />
+                <div className="w-[110px] h-[18px] font-['General Sans'] font-extralight text-[14px] leading-[130%] text-white/60 flex-none order-1 flex">
+                  Confidence Level
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Detail Scan History</h1>
-        
-        {/* Render different details based on analysis source */}
-        {historyItem.source === "ai" && (historyItem.analysisResult.ai_data || historyItem.analysisResult.aiData) ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult.ai_data?.confidence || historyItem.analysisResult.aiData?.confidence_level || "N/A"}
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Confidence Level</p>
-              </div>
-            </div>
-
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult.ai_data?.risk_level || historyItem.analysisResult.risk_level || "N/A"}
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Risk Level</p>
-              </div>
-            </div>
-
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult.final_status || "N/A"}
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Analysis Status</p>
-              </div>
-            </div>
-          </div>
-        ) : historyItem.source === "community" && (historyItem.analysisResult.community_data || historyItem.analysisResult.communityData) ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult.community_data?.report?.[0]?.voted_by?.length ||
-                 historyItem.analysisResult.communityData?.report?.[0]?.voted_by?.length || "0"}
-              </p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Total Voters</p>
-              </div>
-            </div>
-
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult.community_data?.report?.[0] ?
-                  `${historyItem.analysisResult.community_data.report[0].votes_yes} Yes / ${historyItem.analysisResult.community_data.report[0].votes_no} No` :
-                  historyItem.analysisResult.communityData?.report?.[0] ?
-                  `${historyItem.analysisResult.communityData.report[0].votes_yes} Yes / ${historyItem.analysisResult.communityData.report[0].votes_no} No` :
-                  "N/A"
-                }
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Vote Results</p>
-              </div>
-            </div>
-
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult.final_status || "N/A"}
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Analysis Status</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Fallback for data with different structure
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult?.source || "N/A"}
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Analysis Source</p>
-              </div>
-            </div>
-
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult?.final_status || "N/A"}
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Status</p>
-              </div>
-            </div>
-
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {historyItem.analysisResult?.risk_level || "N/A"}
-              </p>
-              <div className="flex flex-row">
-                <p className="font-normal text-[14px] text-white/60 ps-1">Risk Level</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Action Button */}
-      <div className="p-4">
-        <NeoButton onClick={() => navigate(ROUTES.HOME)}>
-          Complete
-        </NeoButton>
       </div>
     </div>
   );

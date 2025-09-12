@@ -25,11 +25,36 @@ const tokenInfoCache = new Map();
  * Fetch JSON from API with error handling
  */
 async function fetchJson(url: string, headers: Record<string, string> = {}) {
-  const res = await fetch(url, { headers });
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  try {
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const errorText = await res.text();
+      if (res.status === 401) {
+        throw new Error("API authentication failed. Please check your API key.");
+      } else if (res.status === 403) {
+        throw new Error("API access forbidden. Your API key may not have the required permissions.");
+      } else if (res.status === 429) {
+        throw new Error("API rate limit exceeded. Please try again later.");
+      } else {
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+    }
+    return res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      // If it's already our custom error, rethrow it
+      if (error.message.includes("API authentication") ||
+          error.message.includes("API access forbidden") ||
+          error.message.includes("rate limit")) {
+        throw error;
+      }
+      // If it's a network error, provide a more user-friendly message
+      if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+        throw new Error("Network error: Please check your internet connection and try again.");
+      }
+    }
+    throw error;
   }
-  return res.json();
 }
 
 /**
@@ -44,7 +69,20 @@ async function fetchPage(address: string, action: string, startBlock: number, et
   if (typeof data.message === "string" && data.message.includes("No transactions found")) {
     return [];
   }
-  throw new Error(`Etherscan API error: ${data.message || "unknown"}`);
+
+  // Handle specific Etherscan error messages
+  const message = data.message || "unknown";
+  if (message.includes("NOTOK")) {
+    throw new Error("Etherscan API request failed. Please check your API key and try again.");
+  } else if (message.includes("Invalid API Key")) {
+    throw new Error("Invalid Etherscan API key. Please check your API key configuration.");
+  } else if (message.includes("API Key not found")) {
+    throw new Error("Etherscan API key not found. Please set PLASMO_PUBLIC_ETHERSCAN_API_KEY environment variable.");
+  } else if (message.includes("Max rate limit reached")) {
+    throw new Error("Etherscan API rate limit exceeded. Please try again later.");
+  } else {
+    throw new Error(`Etherscan API error: ${message}`);
+  }
 }
 
 /**
@@ -73,7 +111,12 @@ async function fetchAllPages(action: string, address: string, etherscanApiKey: s
  */
 async function getAllTransactions(address: string, apis: any = {}) {
   const env = process.env;
-  const etherscanApiKey = apis.etherscanApiKey || env.VITE_ETHERSCAN_API_KEY || "";
+  const etherscanApiKey = apis.etherscanApiKey || env.PLASMO_PUBLIC_ETHERSCAN_API_KEY || "";
+
+  // Check if API key is available
+  if (!etherscanApiKey || etherscanApiKey === "your_etherscan_api_key_here") {
+    throw new Error("Etherscan API key is required but not configured. Please set PLASMO_PUBLIC_ETHERSCAN_API_KEY environment variable.");
+  }
 
   const ethTxs = await fetchAllPages("txlist", address, etherscanApiKey);
   const erc20Txs = await fetchAllPages("tokentx", address, etherscanApiKey);
@@ -286,7 +329,7 @@ export async function extractEthereumFeatures(address: string, options: any = {}
 
     const env = process.env;
     const apis = {
-      etherscanApiKey: options.etherscanApiKey || env.VITE_ETHERSCAN_API_KEY || "",
+      etherscanApiKey: options.etherscanApiKey || env.PLASMO_PUBLIC_ETHERSCAN_API_KEY || "",
       cryptocompareApiKey: options.cryptocompareApiKey || env.VITE_CRYPTOCOMPARE_API_KEY || "",
       moralisApiKey: options.moralisApiKey || env.VITE_MORALIS_API_KEY || "",
     };

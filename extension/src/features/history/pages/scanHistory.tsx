@@ -3,77 +3,44 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useState, useEffect } from "react";
 import { CDN } from "~lib/constant/cdn";
-import { HistoryService } from "~service/historyService";
-import { useAuth } from "~lib/context/authContext";
-
-type ScanHistoryItem = {
-  id: string;
-  address: string;
-  tokenType: string;
-  isSafe: boolean;
-  source: "ai" | "community";
-  date: string;
-  analysisResult: any;
-};
+import LocalStorageService, { type LocalAnalysisHistory } from "~service/localStorageService";
 
 function ScanHistory() {
   const navigate = useNavigate();
-  const { identity } = useAuth();
-  const [scanItems, setScanItems] = useState<ScanHistoryItem[]>([]);
+  const [scanItems, setScanItems] = useState<LocalAnalysisHistory[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredItems, setFilteredItems] = useState<ScanHistoryItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<LocalAnalysisHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Load scan history on component mount
   useEffect(() => {
-    const loadHistory = async () => {
-      if (!identity) {
-        setError("User not authenticated");
-        setIsLoading(false);
-        return;
-      }
-
+    const loadHistory = () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Set identity for the service
-        HistoryService.identity = identity;
-
-        // Fetch history from backend
-        const result = await HistoryService.getAnalyzeHistory();
-
-        if (result.success && result.data) {
-          // Convert backend data to frontend format
-          const frontendData = HistoryService.convertBackendHistoryToFrontend(result.data);
-          setScanItems(frontendData);
-        } else {
-          setError(result.error || "Failed to load history");
-          // No dummy data fallback - show empty state instead
-          setScanItems([]);
-        }
+        // Fetch history from local storage
+        const history = LocalStorageService.getHistory();
+        setScanItems(history);
       } catch (err) {
         console.error("Error loading scan history:", err);
         setError("Failed to load scan history");
+        setScanItems([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadHistory();
-  }, [identity]);
+  }, []);
 
   // Filter items based on search term
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredItems(scanItems);
     } else {
-      const filtered = scanItems.filter(
-        (item) =>
-          item.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.tokenType.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const filtered = LocalStorageService.searchHistory(searchTerm);
       setFilteredItems(filtered);
     }
   }, [scanItems, searchTerm]);
@@ -84,16 +51,35 @@ function ScanHistory() {
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
+  // Format date in custom format: DD/MM/YY, HH.MM
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear().toString().slice(-2); // Last 2 digits of year
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+
+      return `${day}/${month}/${year}, ${hours}.${minutes}`;
+    } catch (error) {
+      // Fallback if date parsing fails
+      return 'Invalid Date';
+    }
+  };
+
   // Get subtitle based on analysis result
-  const getSubtitle = (item: ScanHistoryItem) => {
+  const getSubtitle = (item: LocalAnalysisHistory) => {
     const riskStatus = item.isSafe ? "Safe" : "Risk Detected";
-    const source = item.source === "ai" ? "AI" : "Community";
-    return `${riskStatus} - ${source}`;
+    const source = item.source === "ai" ? "AI" :
+                  item.source === "ai_and_community" ? "AI + Community" : "Community";
+    const status = item.status === "completed" ? "" : `(${item.status})`;
+    return `${riskStatus} - ${source} ${status}`.trim();
   };
 
   // Handle item click to navigate to detail
-  const handleItemClick = (item: ScanHistoryItem) => {
-    console.log('HIAHSIDHAISDhi',item);
+  const handleItemClick = (item: LocalAnalysisHistory) => {
+    console.log('Analysis item clicked:', item);
     navigate(ROUTES.DETAIL_HISTORY.replace(":id", item.id));
   };
 
@@ -101,7 +87,7 @@ function ScanHistory() {
 
   return (
     <div
-      className={`w-[375px] bg-[#25262B] text-white flex flex-col`}
+      className={`w-[375px] space-y-4 text-white shadow-md overflow-y-auto`}
     >
       {/* Content wrapper fills remaining height */}
       <div
@@ -221,7 +207,11 @@ function ScanHistory() {
                           </div>
                           <div
                             className={`text-[12px] mt-1 ${
-                              item.isSafe ? "text-green-400" : "text-red-400"
+                              item.status === "in_progress"
+                                ? "text-yellow-400"
+                                : item.isSafe
+                                  ? "text-green-400"
+                                  : "text-red-400"
                             }`}
                           >
                             {getSubtitle(item)}
@@ -229,7 +219,7 @@ function ScanHistory() {
                         </div>
                       </div>
                       <div className="text-white/60 text-[14px] mt-1">
-                        {item.date}
+                        {formatDate(item.date)}
                       </div>
                     </div>
                     <div className="mt-4 h-px w-full bg-white/10" />

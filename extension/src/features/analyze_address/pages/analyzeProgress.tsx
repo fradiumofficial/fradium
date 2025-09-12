@@ -6,6 +6,7 @@ import type { AnalysisResult, CommunityAnalysisResult } from "~types/analyze_mod
 import { useAuth } from "~lib/context/authContext";
 import AIAnalyzeService from "../../../service/aiAnalyzeService";
 import type { CombinedAnalysisResult } from "../../../service/types";
+import LocalStorageService from "~service/localStorageService";
 
 // Remove the old backend import as we're using the new service
 
@@ -20,11 +21,11 @@ export default function AnalysisProgress() {
   const isAnalyzing = location.state?.isAnalyzing;
 
   const analysisSteps = [
-    "Analyzing Community Reports...",
-    "Validating Address Safety...",
-    "Processing AI Analysis...",
-    "Checking Transaction Patterns...",
-    "Finalizing Risk Assessment..."
+    "Check if this address Already Flagged...",
+    "Analyzing Address with AI...",
+    "Analyzing Transaction Patterns...",
+    "Checking Transaction History...",
+    "Cross-referencing with Known Threats"
   ];
 
   useEffect(() => {
@@ -89,13 +90,34 @@ export default function AnalysisProgress() {
         if (error instanceof Error) {
           if (error.message.includes("not supported")) {
             errorMessage = error.message;
+          } else if (error.message.includes("API key")) {
+            errorMessage = "API configuration required. Please contact support to configure the necessary API keys for blockchain analysis.";
           } else if (error.message.includes("Connection") || error.message.includes("network")) {
             errorMessage = "Connection error. Please check your internet connection and try again.";
           } else if (error.message.includes("Invalid address")) {
             errorMessage = error.message;
+          } else if (error.message.includes("Etherscan")) {
+            errorMessage = "Blockchain data service temporarily unavailable. This may be due to high traffic or service maintenance.";
           } else {
             errorMessage = "Service temporarily unavailable. Please try again later.";
           }
+        }
+
+        // Update the analysis as failed in local storage
+        const history = LocalStorageService.getHistory();
+        const existingAnalysis = history.find(item =>
+          item.address === address && item.status === 'in_progress'
+        );
+
+        if (existingAnalysis) {
+        LocalStorageService.updateAnalysis(existingAnalysis.id, {
+          status: 'failed' as const,
+          date: new Date().toISOString(),
+          analysisResult: {
+            description: errorMessage,
+            riskLevel: 'Unknown'
+          }
+        });
         }
 
         navigate(ROUTES.ANALYZE_ADDRESS, {
@@ -120,11 +142,29 @@ export default function AnalysisProgress() {
     // Set a maximum timeout to prevent infinite loading
     const maxTimeout = setTimeout(() => {
       clearInterval(stepInterval);
+
+      // Update the analysis as failed due to timeout
+      const history = LocalStorageService.getHistory();
+      const existingAnalysis = history.find(item =>
+        item.address === address && item.status === 'in_progress'
+      );
+
+      if (existingAnalysis) {
+        LocalStorageService.updateAnalysis(existingAnalysis.id, {
+          status: 'failed' as const,
+          date: new Date().toISOString(),
+          analysisResult: {
+            description: "Analysis timed out. Please try again.",
+            riskLevel: 'Unknown'
+          }
+        });
+      }
+
       // If still on this page after 5 minutes, go back to address form
       navigate(ROUTES.ANALYZE_ADDRESS, {
-        state: { 
+        state: {
           error: "Analysis timed out. Please try again.",
-          address 
+          address
         }
       });
     }, 300000); // 5 minutes
@@ -136,66 +176,97 @@ export default function AnalysisProgress() {
   }, [isAnalyzing, address, navigate, analysisSteps.length, isAuthenticated, identity]);
 
   return (
-    <div className="w-[400px] h-[570px] space-y-4 bg-[#25262B] text-white shadow-md">
-      <div className="px-4 py-12 w-full h-full flex flex-col items-center shadow-lg relative overflow-hidden">
-        {/* Animated circles background (CSS-based to avoid runtime issues) */}
-        <div className="mb-8 flex items-center justify-center w-full h-48 z-10 mx-auto relative">
-          <div className="relative w-48 h-48">
-            <div className="absolute inset-0 rounded-full border-2 border-[#99E39E]/50 bg-[#99E39E]/10 animate-ping" />
-            <div className="absolute inset-4 rounded-full border-2 border-[#99E39E]/70 bg-[#99E39E]/15 animate-pulse" />
-            <div className="absolute inset-8 rounded-full border-2 border-[#99E39E]/90 bg-[#99E39E]/25" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <img src={CDN.icons.search} alt="Analysis in Progress" className="w-24 h-24 object-contain" draggable="false" />
-            </div>
-          </div>
-        </div>
+    <div className="w-[375px] flex flex-col items-center p-[20px_20px_36px] gap-8 text-white overflow-y-auto">
+      {/* Animated Circles */}
+      <div className="w-[180px] h-[180px] relative flex-none flex-grow-0">
+        {/* Ellipse 40 - Outer circle */}
+        <div className="absolute w-[180px] h-[180px] left-[0.42px] top-[0.42px] rounded-full"
+             style={{background: 'linear-gradient(180deg, rgba(153, 227, 158, 0.04) 0%, rgba(153, 227, 158, 0.02) 100%)'}} />
 
+        {/* Ellipse 39 - Middle circle */}
+        <div className="absolute w-[146.04px] h-[146.04px] left-[17.41px] top-[17.41px] rounded-full -rotate-90"
+             style={{background: 'linear-gradient(180deg, rgba(153, 227, 158, 0.07) 0%, rgba(153, 227, 158, 0.035) 100%)'}} />
+
+        {/* Ellipse 38 - Inner circle */}
+        <div className="absolute w-[113.77px] h-[113.77px] left-[33.54px] top-[33.54px] rounded-full"
+             style={{background: 'linear-gradient(180deg, rgba(153, 227, 158, 0.1) 0%, rgba(153, 227, 158, 0.05) 100%)'}} />
+
+        {/* Image */}
+        <div className="absolute w-[84.91px] h-[84.91px] left-[47.97px] top-[47.55px] flex items-center justify-center"
+             style={{filter: 'drop-shadow(-4.24528px 4.24528px 16.9811px rgba(0, 0, 0, 0.25))'}}>
+          <img src={CDN.icons.search} alt="Analysis in Progress" className="w-[84.91px] h-[84.91px] object-contain" draggable="false" />
+        </div>
+      </div>
+
+      {/* Text Section */}
+      <div className="w-[335px] flex flex-col items-center gap-3 flex-none flex-grow-0">
         {/* Show the address being analyzed */}
         {address && (
-          <div className="text-[#B0B6BE] text-xs mb-4 text-center tracking-wide px-4">
-            <div className="bg-white/5 p-2 rounded font-mono text-[10px] break-all">
-              Analyzing: {address}
-            </div>
+          <div className="w-[335px] font-sans font-normal text-[12px] leading-[140%] text-center tracking-[0.08em] text-white/60 flex-none flex-grow-0">
+            TYPICALLY TAKES 2 MINS, HANG ON
           </div>
         )}
 
-        <div className="text-[#B0B6BE] text-xs mb-2 text-center tracking-wide uppercase z-10">
-          TYPICALLY TAKES 2 MINS, HANG ON
-        </div>
-        <div className="text-[#99E39E] text-lg font-bold mb-4 text-center z-10">
+        <div className="w-[335px] font-sans font-semibold text-[14px] leading-[140%] text-center uppercase text-[#99E39E] flex-none flex-grow-0"
+             style={{textShadow: '0px 8px 20px rgba(0, 0, 0, 0.8)'}}>
           ADDRESS ANALYSIS IS IN PROGRESS...
         </div>
-        <div className="text-[#B0B6BE] text-sm text-center space-y-1 z-10">
-          {analysisSteps.map((step, index) => (
-            <div
-              key={index}
-              className={`transition-all duration-500 relative ${
-                index === currentStep 
-                  ? "text-[#99E39E] font-medium opacity-100 scale-[1.03]" 
-                  : index < currentStep 
-                    ? "text-[#B0B6BE] opacity-70" 
-                    : "text-[#B0B6BE] opacity-40"
-              }`}
-            >
-              <div className="relative flex items-center justify-center">
-                <span className="relative z-10">{step}</span>
-                {index === currentStep && (
-                  <div className="absolute inset-0 bg-[#99E39E]/10 rounded-md animate-pulse" />
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
 
-        {/* Cancel button */}
-        <div className="mt-8 z-10">
-          <button
-            onClick={() => navigate(ROUTES.ANALYZE_ADDRESS)}
-            className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded transition-colors text-sm"
+        {/* Address Display */}
+        {address && (
+          <div className="w-[335px] font-mono text-[10px] text-center text-white/60 bg-white/5 p-2 rounded">
+            Analyzing: {address}
+          </div>
+        )}
+      </div>
+
+      {/* Steps Section */}
+      <div className="w-[335px] flex flex-col items-start gap-1 flex-none flex-grow-0">
+        {analysisSteps.map((step, index) => (
+          <div
+            key={index}
+            className={`w-[335px] font-sans font-normal text-[14px] leading-[140%] text-center transition-all duration-500 flex-none flex-grow-0 ${
+              index === currentStep
+                ? "text-[#99E39E] font-medium opacity-100"
+                : index < currentStep
+                  ? "text-white/60 opacity-80"
+                  : "text-white/60 opacity-40"
+            }`}
           >
+            {step}
+          </div>
+        ))}
+      </div>
+
+      {/* Cancel Button */}
+      <div className="flex-none flex-grow-0">
+        <button
+          onClick={() => {
+            // Update the analysis as cancelled in local storage
+            const history = LocalStorageService.getHistory();
+            const existingAnalysis = history.find(item =>
+              item.address === address && item.status === 'in_progress'
+            );
+
+            if (existingAnalysis) {
+              LocalStorageService.updateAnalysis(existingAnalysis.id, {
+                status: 'failed' as const,
+                date: new Date().toISOString(),
+                analysisResult: {
+                  description: "Analysis cancelled by user",
+                  riskLevel: 'Unknown'
+                }
+              });
+            }
+
+            navigate(ROUTES.ANALYZE_ADDRESS);
+          }}
+          className="w-[141px] h-[37px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] flex-none flex-grow-0"
+        >
+          <span className="w-[101px] h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent flex-none flex-grow-0">
             Cancel Analysis
-          </button>
-        </div>
+          </span>
+        </button>
       </div>
     </div>
   );
