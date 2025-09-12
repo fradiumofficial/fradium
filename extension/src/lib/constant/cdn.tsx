@@ -40,7 +40,7 @@ export const CDN = {
     x: `${CDN_BASE}/icons/XLogo.svg`,
     arrowForward: `${CDN_BASE}/icons/arrow_forward.svg`,
     sendCoin: `${CDN_BASE}/icons/send_coin.svg`,
-    qrCode: `${CDN_BASE}/icons/qr_code.svg`,
+    qrCode: `${CDN_BASE}/icons/qrcode.svg`,
     copyContent: `${CDN_BASE}/icons/content_copy.svg`,
     search: `${CDN_BASE}/icons/motion-search.webp`,
     refresh: `${CDN_BASE}/icons/refresh.svg`,
@@ -48,5 +48,7 @@ export const CDN = {
     searchToken: `${CDN_BASE}/icons/search.svg`,
     sendToken: `${CDN_BASE}/icons/send.svg`,
     callReceived: `${CDN_BASE}/icons/call_received.svg`,
+    policyAlert: `${CDN_BASE}/icons/policy_alert.svg`,
+    searchAnalyze: `${CDN_BASE}/icons/search_analyze_address.svg`,
   }
 }
