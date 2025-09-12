@@ -138,6 +138,53 @@ function Home() {
     refreshAllBalances();
   }, [refreshAllBalances]);
 
+  // Calculate USD breakdown for all tokens
+  const usdBreakdown = useMemo(() => {
+    const breakdown = extensionTokens.map(token => {
+      const balance = balances[token.id] || "0";
+      const usdPrice = usdPrices[token.id];
+      const numericBalance = parseFloat(balance);
+
+      if (!usdPrice || isNaN(numericBalance) || numericBalance === 0) {
+        return {
+          symbol: token.symbol,
+          usdValue: 0,
+          percentage: 0
+        };
+      }
+
+      const usdValue = numericBalance * usdPrice;
+      return {
+        symbol: token.symbol,
+        usdValue,
+        percentage: 0 // Will be calculated after total
+      };
+    });
+
+    // Calculate total and percentages
+    const totalUSD = breakdown.reduce((sum, item) => sum + item.usdValue, 0);
+
+    // Debug logging for USD breakdown
+    console.log("USD Breakdown:", breakdown);
+    console.log("Total USD:", totalUSD);
+
+    return breakdown.map(item => ({
+      ...item,
+      percentage: totalUSD > 0 ? (item.usdValue / totalUSD) * 100 : 0
+    }));
+  }, [extensionTokens, balances, usdPrices]);
+
+  // Format USD value for display
+  const formatUSDDisplay = useCallback((value: number) => {
+    if (hideBalance) return "••••";
+
+    if (value === 0) return "$0.00";
+    if (value < 0.01) return "<$0.01";
+    if (value < 1) return `$${value.toFixed(4)}`;
+    if (value < 1000) return `$${value.toFixed(2)}`;
+    return `$${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  }, [hideBalance]);
+
   return (
     <div className="w-[375px] text-white shadow-md overflow-hidden">
       {/* Content Container */}
@@ -151,16 +198,39 @@ function Home() {
               Total Portfolio Value
             </div>
             
-            {/* Amount and Description */}
+            {/* Amount and Breakdown */}
             <div className="flex flex-col items-center p-0 gap-[4px] w-[200px] h-[60px] flex-none order-1 flex-grow-0">
               {/* Balance Amount */}
               <div className="w-[86px] h-8 font-['General Sans'] font-semibold text-[32px] leading-8 flex items-center text-white flex-none order-0 flex-grow-0">
                 {hideBalance ? "••••" : selectedNetwork === "all" ? getNetworkValue("All Networks") : getNetworkValue(selectedNetwork)}
               </div>
 
-              {/* Description */}
-              <div className="w-[200px] font-['General Sans'] font-medium text-[12px] flex items-center leading-tight letter-[-0.01em] text-white flex-none order-1 flex-grow-0">
-                Top up your wallet to start using it!
+              {/* USD Breakdown */}
+              <div className="flex flex-row items-center justify-center gap-2 w-[200px] flex-none order-1 flex-grow-0">
+                {(() => {
+                  const tokensWithValue = usdBreakdown.filter(item => item.usdValue > 0);
+                  return tokensWithValue.length > 0 ? (
+                    tokensWithValue
+                      .slice(0, 3) // Show max 3 tokens
+                      .map((item, index) => (
+                        <div key={item.symbol} className="flex items-center gap-1">
+                          <span className="font-['General Sans'] font-medium text-[10px] leading-tight text-white/80">
+                            {item.symbol}
+                          </span>
+                          <span className="font-['General Sans'] font-semibold text-[10px] leading-tight text-white">
+                            {formatUSDDisplay(item.usdValue)}
+                          </span>
+                          {index < Math.min(tokensWithValue.length, 3) - 1 && (
+                            <span className="text-white/60 text-[8px]">•</span>
+                          )}
+                        </div>
+                      ))
+                  ) : (
+                    <span className="font-['General Sans'] font-medium text-[10px] leading-tight text-white/70">
+                      Add funds to get started
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           </div>
