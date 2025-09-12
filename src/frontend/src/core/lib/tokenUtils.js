@@ -418,11 +418,33 @@ export async function getBalance(tokenId, principal) {
           const principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
           console.log("Principal object:", principalObj, "type:", typeof principalObj);
 
-          const balance = await icp_ledger.icrc1_balance_of({
-            owner: principalObj,
-            subaccount: [],
-          });
-          console.log("ICP balance raw:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
+          let balance;
+          try {
+            // Try account_balance first (more compatible)
+            const tokensResult = await icp_ledger.account_balance({
+              account: {
+                owner: principalObj,
+                subaccount: [],
+              },
+            });
+            console.log("ICP balance from account_balance:", tokensResult, "type:", typeof tokensResult);
+            // Extract e8s from Tokens interface
+            balance = tokensResult.e8s;
+            console.log("ICP balance e8s:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
+          } catch (error) {
+            console.error("Error calling account_balance:", error);
+            // Try icrc1_balance_of as fallback
+            try {
+              balance = await icp_ledger.icrc1_balance_of({
+                owner: principalObj,
+                subaccount: [],
+              });
+              console.log("ICP balance from icrc1_balance_of:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
+            } catch (altError) {
+              console.error("Both methods failed:", altError);
+              throw error; // Throw original error
+            }
+          }
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
