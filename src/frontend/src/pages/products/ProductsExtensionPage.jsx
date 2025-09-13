@@ -79,7 +79,7 @@ const ProductsExtension = () => {
             {/* Option 1: Right-Click Quick Scan */}
             <div className="bg-[#000000]/50 bg-opacity-90 backdrop-blur-sm rounded-2xl p-8 border border-[#333333] shadow-lg">
               <h3 className="text-[24px] font-medium mb-6 text-white">
-                Option 1: <span className="text-[#8B5CF6]">Right-Click Quick Scan</span>
+                Option 1: <span className="text-[#8791E1]">Right-Click</span> Quick Scan
               </h3>
 
               <div className="space-y-8">
