@@ -4,6 +4,7 @@ export const TokenType = Object.freeze({
   BITCOIN: "Bitcoin",
   ETHEREUM: "Ethereum", 
   SOLANA: "Solana",
+  ICP: "ICP",
   FUM: "Fradium",
   UNKNOWN: "Unknown",
 });
@@ -49,6 +50,20 @@ export const TOKENS_CONFIG = {
       base: "lamport",
       display: "SOL",
       factor: 1000000000,
+    },
+  },
+  [TokenType.ICP]: {
+    id: "icp",
+    name: "ICP",
+    symbol: "Internet Computer",
+    displayName: "Internet Computer",
+    description: "ICP • Internet Computer",
+    icon: CDN.tokens.icp,
+    decimals: 8,
+    unitConversion: {
+      base: "e8s",
+      display: "ICP",
+      factor: 100000000,
     },
   },
   [TokenType.FUM]: {
@@ -161,6 +176,8 @@ export function getTokenImageURL(chain: string) {
       return CDN.tokens.bitcoin;
     case TokenType.SOLANA:
       return CDN.tokens.solana;
+    case TokenType.ICP:
+      return CDN.tokens.icp;
     case TokenType.FUM:
       return CDN.tokens.fum;
     default:

@@ -112,6 +112,40 @@ function Receive() {
           </div>
         </div>
 
+        {/* ICP Principal */}
+        <h1 className="text-[14px] font-medium text-white mb-[6px]">ICP Principal:</h1>
+        <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between mb-[16px]">
+          <input 
+            type="text" 
+            placeholder={isFetchingAddresses ? "Loading..." : "ICP Principal will appear here"} 
+            className="bg-transparent outline-none flex-1 text-sm" 
+            value={localAddresses?.icp_principal || ""} 
+            readOnly 
+            disabled={!localAddresses?.icp_principal} 
+          />
+          <div className="flex flex-row gap-[12px]">
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.icp_principal, network: "icp_principal" } })} />
+            <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.icp_principal)} />
+          </div>
+        </div>
+
+        {/* ICP Account */}
+        <h1 className="text-[14px] font-medium text-white mb-[6px]">ICP Account:</h1>
+        <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between mb-[16px]">
+          <input 
+            type="text" 
+            placeholder={isFetchingAddresses ? "Loading..." : "ICP Account will appear here"} 
+            className="bg-transparent outline-none flex-1 text-sm" 
+            value={localAddresses?.icp_account || ""} 
+            readOnly 
+            disabled={!localAddresses?.icp_account} 
+          />
+          <div className="flex flex-row gap-[12px]">
+            <img src={CDN.icons.qrCode} alt="QR Code" className="w-5 h-5 cursor-pointer" onClick={() => navigate(ROUTES.RECEIVE_DETAIL, { state: { address: localAddresses?.icp_account, network: "icp_account" } })} />
+            <img src={CDN.icons.copyContent} alt="Copy" className="w-5 h-5 cursor-pointer" onClick={() => copy(localAddresses?.icp_account)} />
+          </div>
+        </div>
+
         <div>
         <NeoButton onClick={() => navigate(ROUTES.HOME)}>
           Done

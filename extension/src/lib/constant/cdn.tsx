@@ -18,6 +18,7 @@ export const CDN = {
     ethereumDark: `${CDN_BASE}/tokens/ethereum-dark.svg`,
     solanaDark: `${CDN_BASE}/tokens/solana-dark.svg`,
     fradiumDark: `${CDN_BASE}/tokens/fradium-dark.svg`,
+    icp: `${CDN_BASE}/tokens/icp.webp`,
   },
   icons: {
     analyzeAddress: `${CDN_BASE}/icons/analyze-address.png`,

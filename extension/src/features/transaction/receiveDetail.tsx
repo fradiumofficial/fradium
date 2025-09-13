@@ -102,7 +102,7 @@ function ReceiveDetail() {
   // Early returns for invalid states
   if (!isAuthenticated) {
     return (
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex items-center justify-center p-[24px]">
+      <div className="w-[375px] h-[600px] text-white flex items-center justify-center p-[24px]">
         <div className="text-center">
           <p className="text-white/70 mb-4">
             Please authenticate to view address details
@@ -117,7 +117,7 @@ function ReceiveDetail() {
 
   if (!address || !network) {
     return (
-      <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex items-center justify-center p-[24px]">
+      <div className="w-[375px] h-[600px] text-white flex items-center justify-center p-[24px]">
         <div className="text-center">
           <p className="text-white/70 mb-4">Invalid address information</p>
           <NeoButton onClick={() => handleNavigate(ROUTES.RECEIVE)}>
@@ -129,7 +129,7 @@ function ReceiveDetail() {
   }
 
   return (
-    <div className="w-[375px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto relative">
+    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto relative">
       <div className="flex flex-col px-[24px]">
         <div className="flex flex-row items-center">
           <button

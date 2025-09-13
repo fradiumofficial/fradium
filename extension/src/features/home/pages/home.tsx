@@ -40,7 +40,8 @@ function Home() {
       btc: "btc",
       eth: "eth",
       sol: "sol",
-      fra: "fra"
+      fra: "fra",
+      icp: "icp"
     };
 
     const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
@@ -147,6 +148,8 @@ function Home() {
         return "Ethereum";
       case "FUM":
         return "Fradium";
+      case "ICP":
+        return "Internet Computer";
       default:
         return token?.name || "";
     }
@@ -341,9 +344,9 @@ function Home() {
         </div>
 
         {/* List */}
-        <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[300px] flex-none order-1 self-stretch flex-grow-0 overflow-y-auto">
+        <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[180px] flex-none order-1 self-stretch flex-grow-0 overflow-y-auto">
           {/* Content */}
-          <div className="flex flex-col items-start p-0 w-[335px] min-h-[300px] flex-none order-0 self-stretch flex-grow-0">
+          <div className="flex flex-col items-start p-0 w-[335px] flex-none order-0 self-stretch flex-grow-0">
             {filteredTokens.map((token, index) => {
               const balance = balances[token.id] || "0.000000";
               const isLoading = balanceLoading[token.id];

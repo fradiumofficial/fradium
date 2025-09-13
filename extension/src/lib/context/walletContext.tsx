@@ -213,6 +213,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       type: "native"
     },
     {
+      id: "icp",
+      symbol: "ICP",
+      name: "Internet Computer",
+      chain: "Internet Computer",
+      icon: TOKENS_CONFIG[TokenType.ICP].icon,
+      networkKey: "icp",
+      type: "native"
+    },
+    {
       id: "fradium",
       symbol: "FUM",
       name: "Fradium",
@@ -375,6 +384,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           const solBalance = await walletActor.solana_balance()
           const solValue = Number(solBalance) / 1000000000 // Convert lamports to SOL
           balance = solValue.toFixed(9)
+          break
+
+        case "icp":
+          // ICP balance - placeholder for now
+          balance = "0.00"
           break
 
         case "fradium":
