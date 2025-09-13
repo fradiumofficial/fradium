@@ -1,30 +1,73 @@
-import { ShieldAlert } from "lucide-react";
-import SidebarButton from "@/core/components/SidebarButton";
+import React from "react";
+import ButtonGreen from "@/core/components/ButtonGreen";
+import Footer from "@/core/components/Footer";
 import { useNavigate } from "react-router-dom";
+
+const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
+const ICON_401 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/401.png";
 
 export default function UnauthorizedPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-screen mb-48 w-full bg-[#000510] overflow-hidden">
-      {/* Glow background – lebih ke atas */}
-      <img src="/assets/images/glow.png" alt="Glow" className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 md:w-[1100px] md:h-[1100px] w-[400px] h-[400px] opacity-80 blur-2xl pointer-events-none select-none" />
-
-      {/* 404 asset – lebih ke atas */}
-      <img src="/assets/401.png" alt="404" className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 md:w-[420px] w-[230px] pointer-events-none select-none" />
-
-      {/* Hero kiri */}
-      <img src="/assets/images/hero_kiri.png" alt="Hero Kiri" className="absolute left-0 top-1/2 -translate-y-1/2 md:max-w-[33vw] max-w-[40vw] w-full min-w-0 pointer-events-none select-none" />
-
-      {/* Hero kanan */}
-      <img src="/assets/images/hero_kanan.png" alt="Hero Kanan" className="absolute right-0 top-1/2 -translate-y-1/2 md:max-w-[33vw] max-w-[40vw] w-full min-w-0 pointer-events-none select-none" />
-
-      {/* Center Content Overlay – ikut naik supaya tetap di tengah 404 */}
-      <div className="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center justify-center px-4">
-        <h1 className="text-[#99E39E] md:text-4xl text-2xl md:mb-2 mb-1 font-medium">Oops! you dont have Access</h1>
-        <p className="text-[#B0B6BE] text-center max-w-xl md:mb-12 mb-6 md:text-lg text-base">Sorry, this page you are looking for doesn’t exist or has been removed</p>
-        <SidebarButton onClick={() => navigate("/")}>&larr; Back to Homepage</SidebarButton>
+    <section className="relative bg-[#000510] w-full overflow-hidden">
+      {/* Top content before background */}
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 mt-8 text-center">
+        {/* <p className="text-[14px] font-medium tracking-[0.28em] text-[#C1FFC5]">UNAUTHORIZED ACCESS</p> */}
       </div>
-    </div>
+
+      {/* Background section */}
+      <div className="relative mx-auto mt-4 overflow-hidden min-h-[600px] md:min-h-[700px]">
+        {/* Background layer */}
+        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+          <img
+            src={BACKGROUND_URL}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            loading="lazy"
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
+
+        {/* Content over background */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center min-h-[600px] md:min-h-[700px] px-4">
+          {/* 401 Icon */}
+          <div className="mb-8">
+            <img
+              src={ICON_401}
+              alt="401"
+              className="w-[200px] md:w-[300px] h-auto pointer-events-none select-none"
+            />
+          </div>
+
+          {/* Error message */}
+          <h1 className="text-[#99E39E] text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-4">
+            Oops! you dont have Access
+          </h1>
+          <p className="text-[#B0B6BE] text-center max-w-2xl text-sm md:text-base mb-8">
+            Sorry, this page you are looking for doesn't exist or has been removed
+          </p>
+
+          {/* Back to Homepage button */}
+          <div className="">
+            <ButtonGreen
+              size="md"
+              fontWeight="medium"
+              fullWidth
+              onClick={() => navigate("/")}
+            >
+              ← Back to Homepage
+            </ButtonGreen>
+          </div>
+        </div>
+
+        {/* Fade to base color */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#000510]" />
+      </div>
+
+      <Footer />
+    </section>
   );
 }
