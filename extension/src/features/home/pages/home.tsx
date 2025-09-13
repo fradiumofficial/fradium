@@ -1,10 +1,11 @@
-import { Search, Settings2, RefreshCw } from "lucide-react";
+// Icons replaced with CDN assets to match design
 import { CDN } from "~lib/constant/cdn";
 import { useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
 import { useNetwork } from "~features/network/context/networkContext";
+import { Search, Settings2 } from "lucide-react";
 
 function Home() {
   const {
@@ -137,6 +138,19 @@ function Home() {
     // This will trigger a refresh of all balances
     refreshAllBalances();
   }, [refreshAllBalances]);
+
+  const getNetworkSubtitle = useCallback((token: any) => {
+    switch ((token?.symbol || "").toUpperCase()) {
+      case "BTC":
+        return "Bitcoin";
+      case "ETH":
+        return "Ethereum";
+      case "FUM":
+        return "Fradium";
+      default:
+        return token?.name || "";
+    }
+  }, []);
 
   // Calculate USD breakdown for all tokens
   const usdBreakdown = useMemo(() => {
@@ -279,18 +293,18 @@ function Home() {
       {/* Tokens Section */}
       <div className="box-border flex flex-col items-start p-[12px_20px_20px] gap-2 w-[375px] h-[271px] flex-none order-3 self-stretch flex-grow-0 z-[3]">
         {/* Header */}
-        <div className="flex flex-row justify-between items-center p-0 h-6 flex-none order-0 self-stretch flex-grow-0">
+        <div className="flex flex-row items-center justify-between w-full">
           {/* Tokens Title */}
-          <div className="mx-auto w-[55px] h-6 font-['General Sans'] font-semibold text-[16px] flex items-center text-white flex-none order-0 flex-grow-0">
+          <div className="h-6 font-['General Sans'] font-semibold text-[16px] flex items-center text-white">
             Tokens
           </div>
-          
+
           {/* Icon Section */}
-          <div className="mx-auto flex flex-row items-center p-0 gap-3 w-[84px] h-5 flex-none order-1 flex-grow-0">
+          <div className="flex flex-row items-center gap-3 h-5">
             <button
               onClick={handleAnalyzeAddress}
               disabled={isRefreshingBalances}
-              className={`w-5 h-5 flex-none order-0 flex-grow-0 relative ${
+              className={`${
                 isRefreshingBalances
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-white/10 cursor-pointer'
@@ -302,7 +316,7 @@ function Home() {
             <button
               onClick={handleAccountSettings}
               disabled={isRefreshingBalances}
-              className={`w-5 h-5 flex-none order-1 flex-grow-0 relative ${
+              className={`${
                 isRefreshingBalances
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-white/10 cursor-pointer'
@@ -314,14 +328,14 @@ function Home() {
             <button
               onClick={() => refreshAllBalances()}
               disabled={isRefreshingBalances}
-              className={`w-5 h-5 flex-none order-2 flex-grow-0 relative ${
+              className={`${
                 isRefreshingBalances
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-white/10 cursor-pointer'
               }`}
               title={isRefreshingBalances ? "Loading balances..." : "Refresh balances"}
             >
-              <RefreshCw className={`w-5 h-5 text-white ${isRefreshingBalances ? 'animate-spin' : ''}`} />
+              <img src={CDN.icons.refresh} alt="Refresh" className={`w-5 h-5 ${isRefreshingBalances ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -371,8 +385,8 @@ function Home() {
 
                         {/* Network Info */}
                         <div className="flex flex-row items-center p-0 gap-2 w-[183px] h-[21px] flex-none order-1 flex-grow-0">
-                          <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-0 flex-grow-0">
-                            {token.name}
+                          <div className="font-['General Sans'] font-normal text-[14px] leading-[150%] text-white/50">
+                            {getNetworkSubtitle(token)}
                           </div>
                         </div>
                       </div>

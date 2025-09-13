@@ -82,7 +82,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: "Wallet", label: "Wallet", icon: WalletIcon, path: ROUTES.HOME },
+  { id: "Transaction", label: "Transaction", icon: WalletIcon, path: ROUTES.HOME },
   {
     id: "AI Analyzer",
     label: "AI Analyzer",
@@ -134,8 +134,7 @@ const BottomNavbar: React.FC = () => {
         {navItems.map((item, index) => {
           const pathname = location.pathname
           let isActive = false
-          if (item.id === "Wallet") {
-            // Wallet is active for both "/" and "/home" paths
+          if (item.id === "Transaction") {
             isActive = pathname === "/" || pathname === ROUTES.HOME
           } else if (item.id === "AI Analyzer") {
             isActive = isAnalyzerPath(pathname)
@@ -163,7 +162,7 @@ const BottomNavbar: React.FC = () => {
               }`}>
               {/* Ikon */}
               <div className="flex flex-col items-center gap-1 w-6 h-6">
-                {item.id === "Wallet" ? (
+                {item.id === "Transaction" ? (
                   <WalletIcon
                     isActive={isActive}
                     className="transition-all duration-300 ease-in-out hover:scale-110"

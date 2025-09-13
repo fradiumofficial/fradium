@@ -23,6 +23,7 @@ import Receive from '~features/transaction/receive';
 import ProtectedRoute from '~components/protected-route';
 import ReceiveDetail from '~features/transaction/receiveDetail';
 import Send from '~features/transaction/send';
+import Setting from '~features/preferences/pages/setting';
 
 const AuthOrWelcome: React.FC = () => {
   const { isAuthenticated, isLoading } = useWallet() as any
@@ -128,6 +129,11 @@ function IndexPopup() {
             <Route path={ROUTES.RECEIVE_DETAIL} element={
               <ProtectedRoute>
                 <ReceiveDetail />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.SETTING} element={
+              <ProtectedRoute>
+                <Setting />
               </ProtectedRoute>
             } />
             {/* Fallback route */}

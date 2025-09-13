@@ -1,9 +1,7 @@
-import { Check, ChevronDown, Copy, ArrowLeft, ChevronUp } from "lucide-react";
+import { Check, ChevronDown, Copy, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import AllNetwork from "~features/network/pages/all_network";
 import { CDN } from "~lib/constant/cdn";
-import { ROUTES } from "~lib/constant/routes";
 import { useNetwork } from "~features/network/context/networkContext";
 import { useWallet } from "~lib/context/walletContext";
 

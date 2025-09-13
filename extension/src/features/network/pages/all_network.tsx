@@ -77,39 +77,38 @@ export default function AllNetwork({
         }}
       />
 
-      {/* Glassmorphism dropdown translated from provided CSS */}
-      <div className="absolute left-[96px] top-[60px] w-[260px] h-[256px]">
-        <div className="flex flex-col items-start p-3 gap-2 w-full h-full bg-black/50 border border-white/15 backdrop-blur-[13.5px] rounded-[20px] shadow-xl">
-          {/* Title: Choose Network */}
-          <div className="flex items-center px-2 py-1">
-            <h2 className="text-white text-[12px] leading-[120%] font-normal">Choose Network</h2>
-          </div>
-
+      {/* Glassmorphism dropdown */}
+      <div className="absolute right-3 top-[56px] w-[296px]">
+        <div className="flex flex-col p-3 gap-2 w-full bg-white/[0.04] border border-white/15 backdrop-blur-[16px] rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.55)]">
           {/* List */}
-          <div className="flex flex-col items-start w-[236px] flex-1 overflow-auto gap-2">
-            {networks.map((n) => {
+          <div className="flex flex-col w-full max-h-[360px] overflow-auto">
+            {networks.map((n, idx) => {
               const isActive = n.key === selectedNetwork;
               return (
-                <button
-                  key={n.key}
-                  onClick={() => {
-                    setSelectedNetwork(n.key);
-                    onClose();
-                  }}
-                  className={`flex w-[236px] h-[45px] items-center justify-between rounded-[18px] ${
-                    isActive ? "bg-white/10" : "bg-white/5"
-                  } backdrop-blur-[10px] px-[14px] py-3 text-left`}
-                >
-                  <div className="flex items-center gap-2">
-                    {isActive ? (
-                      <Check className="w-5 h-5 text-[#9BE4A0]" />
-                    ) : (
-                      <img src={n.icon} alt="icon" className="w-5 h-5 rounded-full" />
-                    )}
-                    <span className="text-white text-[14px] leading-[130%] font-normal">{n.name}</span>
-                  </div>
-                  <span className="text-white/50 text-[14px] leading-[150%] font-medium">{n.amount}</span>
-                </button>
+                <div key={n.key}>
+                  <button
+                    onClick={() => {
+                      setSelectedNetwork(n.key);
+                      onClose();
+                    }}
+                    className={`flex w-full h-[52px] items-center justify-between px-4 ${
+                      isActive ? "bg-white/10 rounded-2xl" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isActive ? (
+                        <Check className="w-5 h-5 text-[#9BE4A0]" />
+                      ) : (
+                        <img src={n.icon} alt="icon" className="w-5 h-5 rounded-full" />
+                      )}
+                      <span className="text-white text-[16px] leading-[130%] font-normal">{n.name}</span>
+                    </div>
+                    <span className="text-white/60 text-[16px] leading-[150%] font-medium">{n.amount}</span>
+                  </button>
+                  {idx < networks.length - 1 && (
+                    <div className="mx-3 h-px bg-white/10" />
+                  )}
+                </div>
               );
             })}
           </div>
@@ -117,12 +116,10 @@ export default function AllNetwork({
           {/* Manage Networks */}
           <button
             onClick={() => setManageOpen(true)}
-            className="flex w-[236px] h-[44px] items-center justify-between rounded-[18px] bg-white/5 backdrop-blur-[10px] px-2 py-3 text-left"
+            className="mt-1 flex w-full h-[48px] items-center gap-3 rounded-2xl bg-white/5 px-4 hover:bg-white/10 transition-colors"
           >
-            <div className="flex items-center gap-2 w-full">
-              <img src={CDN.icons.construction} className="w-5 h-5" alt="manage" />
-              <span className="text-[#99E39E] text-[14px] leading-[130%] font-medium">Manage Networks</span>
-            </div>
+            <img src={CDN.icons.managNetwork} className="w-5 h-5" alt="manage" />
+            <span className="text-[#99E39E] text-[16px] leading-[130%] font-medium">Manage Networks</span>
           </button>
         </div>
       </div>

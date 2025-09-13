@@ -56,5 +56,7 @@ export const CDN = {
     riskScore: `${CDN_BASE}/icons/risk.svg`,
     total: `${CDN_BASE}/icons/total.svg`,
     transactions: `${CDN_BASE}/icons/transaction.svg`,
+    clipboard: `${CDN_BASE}/icons/content_copy.svg`,
+    help: `${CDN_BASE}/icons/help.svg`,
   }
 }
