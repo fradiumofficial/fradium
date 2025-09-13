@@ -1,5 +1,6 @@
 import React from "react";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import Footer from "../../core/components/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/providers/AuthProvider.jsx";
 
@@ -8,7 +9,7 @@ const HOW_IT_WORKS_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-as
 const LOGO_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/logo.png";
 const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
 const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp";
-const MACBOOK_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/cover-macbook.webp";
+
 
 const Home = () => {
   const { isAuthenticated, handleLogin } = useAuth();
@@ -145,7 +146,7 @@ const Home = () => {
       </div>
 
       {/* Background ketiga paling bawah, konten akan diletakkan di atasnya */}
-      <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[760px] overflow-hidden">
+      <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img
             src={BACKGROUND_URL_3}
@@ -160,8 +161,8 @@ const Home = () => {
         {/* Fade dari warna dasar ke background-3 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
 
-        {/* Wrapper konten (kosong untuk sekarang) */}
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-10 pb-16">
+        {/* Wrapper konten */}
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-10 pb-24 md:pb-32">
           {/* Hero di atas background ketiga */}
           <div className="flex flex-col items-center justify-center text-center">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white">
@@ -178,19 +179,11 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Visual Macbook */}
-          <div className="mt-8 flex items-center justify-center">
-            <img
-              src={MACBOOK_IMG}
-              alt="Fradium on Macbook"
-              decoding="async"
-              loading="eager"
-              draggable={false}
-              className="w-full max-w-5xl select-none"
-            />
-          </div>
         </div>
+
+
       </div>
+      <Footer />
     </section>
   );
 };
