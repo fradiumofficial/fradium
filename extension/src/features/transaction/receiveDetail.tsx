@@ -192,20 +192,20 @@ function ReceiveDetail() {
         </div>
 
         {/* Action Buttons */}
-        <NeoButton
+        <button
           onClick={handleCopyAddress}
-          className="text-sm font-medium transition-colors w-full"
+          className="w-full h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] mt-2 self-stretch flex-grow-0"
         >
           {copiedAddress ? (
-            <>
+            <span className="font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent">
               Copied!
-            </>
+            </span>
           ) : (
-            <>
+            <span className="font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent">
               Copy Address
-            </>
+            </span>
           )}
-        </NeoButton>
+        </button>
       </div>
     </div>
   );
