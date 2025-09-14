@@ -13,6 +13,7 @@ import {
   canisterId as walletCanisterId,
 } from "../../../../src/declarations/wallet"
 import { TOKENS_CONFIG, TokenType } from "~lib/utils/tokenUtils"
+import { fetchUsdPrices } from "~service/priceService"
 
 // Resolve canister ID for extension builds where env injection may be missing
 const EFFECTIVE_WALLET_CANISTER_ID =
@@ -458,14 +459,27 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // USD Price functions (placeholder for now)
   const fetchTokenUSDPrice = useCallback(async (tokenId: string) => {
-    // Placeholder - implement USD price fetching later
-    setUsdPrices(prev => ({ ...prev, [tokenId]: 0 }))
+    try {
+      const result = await fetchUsdPrices([tokenId])
+      setUsdPrices(prev => ({ ...prev, [tokenId]: result[tokenId] ?? 0 }))
+    } catch {
+      setUsdPrices(prev => ({ ...prev, [tokenId]: 0 }))
+    } finally {
+      setUsdPriceLoading(prev => ({ ...prev, [tokenId]: false }))
+    }
   }, [])
 
   const fetchAllUSDPrices = useCallback(async () => {
-    const pricePromises = EXTENSION_TOKENS.map(token => fetchTokenUSDPrice(token.id))
-    await Promise.allSettled(pricePromises)
-  }, [fetchTokenUSDPrice])
+    try {
+      const ids = EXTENSION_TOKENS.map(t => t.id)
+      const result = await fetchUsdPrices(ids)
+      setUsdPrices(prev => ({ ...prev, ...result }))
+    } catch {
+      // keep previous prices
+    } finally {
+      setUsdPriceLoading({})
+    }
+  }, [])
 
   const refreshAllUSDPrices = useCallback(async () => {
     if (isRefreshingPrices) return

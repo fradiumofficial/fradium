@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useState, useEffect } from "react";
 import { CDN } from "~lib/constant/cdn";
+import { getTokenImageURL } from "~lib/utils/tokenUtils";
 import LocalStorageService, { type LocalAnalysisHistory } from "~service/localStorageService";
 
 function ScanHistory() {
@@ -20,7 +21,6 @@ function ScanHistory() {
         setIsLoading(true);
         setError(null);
 
-        // Fetch history from local storage
         const history = LocalStorageService.getHistory();
         setScanItems(history);
       } catch (err) {
@@ -193,12 +193,11 @@ function ScanHistory() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center">
                         <img
-                          src={CDN.tokens[item.tokenType.toLowerCase() as keyof typeof CDN.tokens]}
+                          src={getTokenImageURL(item.tokenType)}
                           alt={item.tokenType}
                           className="w-10 h-10 rounded-full"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              CDN.tokens.unknown;
+                            (e.target as HTMLImageElement).src = CDN.tokens.unknown
                           }}
                         />
                         <div className="ml-3">

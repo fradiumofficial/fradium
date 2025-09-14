@@ -61,6 +61,21 @@ function Home() {
   console.log("Selected Network:", selectedNetwork);
   console.log("Filtered Tokens:", filteredTokens);
 
+  // Total USD across filtered tokens using balances and usdPrices
+  const totalUsd = useMemo(() => {
+    try {
+      return (filteredTokens || []).reduce((sum: number, token: any) => {
+        const balanceStr = balances?.[token.id] ?? "0";
+        const price = usdPrices?.[token.id] ?? 0;
+        const qty = parseFloat(balanceStr);
+        if (!isFinite(qty) || qty <= 0 || !isFinite(price) || price <= 0) return sum;
+        return sum + qty * price;
+      }, 0);
+    } catch {
+      return 0;
+    }
+  }, [filteredTokens, balances, usdPrices]);
+
   // Helper function to format balance display with symbol
   const formatBalanceDisplay = useCallback((balance: string) => {
     if (hideBalance) return "••••";
@@ -183,9 +198,9 @@ function Home() {
     }
   }, []);
 
-  // Calculate USD breakdown for all tokens
+  // Calculate USD breakdown for currently filtered tokens
   const usdBreakdown = useMemo(() => {
-    const breakdown = extensionTokens.map(token => {
+    const breakdown = (filteredTokens || []).map(token => {
       const balance = balances[token.id] || "0";
       const usdPrice = usdPrices[token.id];
       const numericBalance = parseFloat(balance);
@@ -217,7 +232,7 @@ function Home() {
       ...item,
       percentage: totalUSD > 0 ? (item.usdValue / totalUSD) * 100 : 0
     }));
-  }, [extensionTokens, balances, usdPrices]);
+  }, [filteredTokens, balances, usdPrices]);
 
   // Format USD value for display
   const formatUSDDisplay = useCallback((value: number) => {
@@ -237,21 +252,21 @@ function Home() {
         {/* Card */}
         <div className="box-border flex flex-col items-center p-[20px_16px_16px] gap-5 w-[335px] h-[188px] bg-gradient-to-br from-[#7C72FE] via-[#5A52C6] via-[#534BBA] to-[#433BA6] shadow-[0px_0px_0px_1px_#7C77C4,0px_5px_18px_-4px_rgba(74,66,170,0.6)] rounded-[28px] flex-none order-0 self-stretch flex-grow-0">
           {/* Text Section */}
-          <div className="flex flex-col items-center p-0 gap-[10px] w-[200px] h-[87px] flex-none order-0 flex-grow-0">
+          <div className="flex flex-col items-center p-0 gap-[10px] w-full h-[87px] flex-none order-0 flex-grow-0">
             {/* Total Portfolio Value */}
             <div className="w-[135px] h-[21px] font-['General Sans'] font-medium text-[14px] leading-[150%] flex items-center letter-[-0.01em] text-white flex-none order-0 flex-grow-0">
               Total Portfolio Value
             </div>
             
             {/* Amount and Breakdown */}
-            <div className="flex flex-col items-center p-0 gap-[4px] w-[200px] h-[60px] flex-none order-1 flex-grow-0">
-              {/* Balance Amount */}
-              <div className="w-[86px] h-8 font-['General Sans'] font-semibold text-[32px] leading-8 flex items-center text-white flex-none order-0 flex-grow-0">
-                {hideBalance ? "••••" : selectedNetwork === "all" ? getNetworkValue("All Networks") : getNetworkValue(selectedNetwork)}
+            <div className="flex flex-col items-center p-0 gap-[4px] w-full h-[60px] flex-none order-1 flex-grow-0">
+              {/* Total USD Amount based on balances */}
+              <div className="w-full h-8 font-['General Sans'] font-semibold text-[32px] leading-8 flex items-center justify-center text-white flex-none order-0 flex-grow-0 text-center">
+                {hideBalance ? "••••" : formatUSDDisplay(totalUsd)}
               </div>
 
               {/* USD Breakdown */}
-              <div className="flex flex-row items-center justify-center gap-2 w-[200px] flex-none order-1 flex-grow-0">
+              <div className="flex flex-row items-center justify-center gap-2 w-full flex-none order-1 flex-grow-0 text-center">
                 {(() => {
                   const tokensWithValue = usdBreakdown.filter(item => item.usdValue > 0);
                   return tokensWithValue.length > 0 ? (
