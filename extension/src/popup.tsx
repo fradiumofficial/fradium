@@ -23,6 +23,8 @@ import Receive from '~features/transaction/receive';
 import ProtectedRoute from '~components/protected-route';
 import ReceiveDetail from '~features/transaction/receiveDetail';
 import Send from '~features/transaction/send';
+import SendSuccess from '~features/transaction/sendSuccess';
+import SendConfirm from '~features/transaction/sendConfirm';
 import Setting from '~features/preferences/pages/setting';
 
 const AuthOrWelcome: React.FC = () => {
@@ -124,6 +126,16 @@ function IndexPopup() {
             <Route path={ROUTES.SEND} element={
               <ProtectedRoute>
                 <Send />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.SEND_CONFIRM} element={
+              <ProtectedRoute>
+                <SendConfirm />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.SEND_SUCCESS} element={
+              <ProtectedRoute>
+                <SendSuccess />
               </ProtectedRoute>
             } />
             <Route path={ROUTES.RECEIVE_DETAIL} element={

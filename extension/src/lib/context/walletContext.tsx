@@ -457,18 +457,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isRefreshingBalances, walletActor, isAuthenticated, identity, fetchTokenBalance])
 
-  // USD Price functions (placeholder for now)
-  const fetchTokenUSDPrice = useCallback(async (tokenId: string) => {
-    try {
-      const result = await fetchUsdPrices([tokenId])
-      setUsdPrices(prev => ({ ...prev, [tokenId]: result[tokenId] ?? 0 }))
-    } catch {
-      setUsdPrices(prev => ({ ...prev, [tokenId]: 0 }))
-    } finally {
-      setUsdPriceLoading(prev => ({ ...prev, [tokenId]: false }))
-    }
-  }, [])
-
   const fetchAllUSDPrices = useCallback(async () => {
     try {
       const ids = EXTENSION_TOKENS.map(t => t.id)

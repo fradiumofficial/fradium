@@ -1,24 +1,14 @@
 import NeoButton from "~components/custom-button";
 import { ROUTES } from "~lib/constant/routes";
 import { useNavigate, useParams } from "react-router-dom";
-type TransactionHistoryItem = {
-  id: string;
-  tokenType: string;
-  direction: "Receive" | "Send";
-  amount: number;
-  status: "Completed" | "Pending" | "Failed";
-  toAddress?: string;
-  fromAddress?: string;
-  transactionId?: string;
-  timestamp: number;
-  note?: string;
-};
+import { TxHistoryService, type TxHistoryItem } from "~service/txHistoryService";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 
 function TransactionDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [tx, setTx] = useState<TransactionHistoryItem | null>(null);
+  const [tx, setTx] = useState<TxHistoryItem | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,38 +16,13 @@ function TransactionDetail() {
       setLoading(false);
       return;
     }
-    // Dummy lookup
-    const dummy: TransactionHistoryItem[] = [
-      {
-        id: "tx_1",
-        tokenType: "Bitcoin",
-        direction: "Receive",
-        amount: 0.0123,
-        status: "Completed",
-        toAddress: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-        fromAddress: "bc1qexamplefrom0000000000000000000000000",
-        transactionId: "abcd1234",
-        timestamp: Date.now() - 1000 * 60 * 60,
-        note: "Payment received",
-      },
-      {
-        id: "tx_2",
-        tokenType: "Solana",
-        direction: "Send",
-        amount: 2.5,
-        status: "Pending",
-        toAddress: "3h2qExampleSolanaTo1111111111111111111111",
-        fromAddress: "9k3wExampleSolanaFrom2222222222222222222",
-        transactionId: "efgh5678",
-        timestamp: Date.now() - 1000 * 60 * 30,
-      },
-    ];
-    const item = dummy.find((d) => d.id === id) || null;
+    // Load from local tx storage
+    const item = TxHistoryService.getAll().find((d) => d.id === id) || null;
     setTx(item);
     setLoading(false);
   }, [id]);
 
-  const labelForToken = (t: string) => (t === 'Bitcoin' ? 'BTC' : t === 'Solana' ? 'SOL' : t);
+  const labelForToken = (t: string) => (t === 'Bitcoin' ? 'BTC' : t === 'Solana' ? 'SOL' : t === 'Ethereum' ? 'ETH' : t);
 
   if (loading) {
     return (
@@ -82,56 +47,66 @@ function TransactionDetail() {
   }
 
   return (
-    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto">
+    <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto relative">
       <div className="m-4">
-        <h1 className="text-[20px] font-semibold">Transaction Detail</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(ROUTES.HISTORY)}
+            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </button>
+          <h1 className="text-[20px] font-semibold">Transaction Detail</h1>
+        </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="bg-white/5 p-4 rounded">
-            <div className="text-white/60 text-xs">Direction</div>
-            <div className="text-white text-base mt-1">{tx.direction}</div>
-          </div>
-          <div className="bg-white/5 p-4 rounded">
-            <div className="text-white/60 text-xs">Status</div>
-            <div className="text-white text-base mt-1">{tx.status}</div>
-          </div>
-          <div className="bg-white/5 p-4 rounded">
+        {/* Primary info cards */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px]">
             <div className="text-white/60 text-xs">Amount</div>
             <div className="text-white text-base mt-1">{tx.amount} {labelForToken(tx.tokenType)}</div>
           </div>
-          <div className="bg-white/5 p-4 rounded">
+          <div className="flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px]">
+            <div className="text-white/60 text-xs">Status</div>
+            <div className="text-white text-base mt-1">{tx.status}</div>
+          </div>
+          <div className="flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px]">
             <div className="text-white/60 text-xs">Token</div>
             <div className="text-white text-base mt-1">{tx.tokenType}</div>
           </div>
-          <div className="bg-white/5 p-4 rounded col-span-2">
-            <div className="text-white/60 text-xs">From</div>
-            <div className="text-white text-sm mt-1 break-all">{tx.fromAddress || '-'}</div>
+          <div className="flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px]">
+            <div className="text-white/60 text-xs">Direction</div>
+            <div className="text-white text-base mt-1">{tx.direction}</div>
           </div>
-          <div className="bg-white/5 p-4 rounded col-span-2">
-            <div className="text-white/60 text-xs">To</div>
-            <div className="text-white text-sm mt-1 break-all">{tx.toAddress}</div>
+        </div>
+
+        {/* Destination & metadata */}
+        <div className="mt-4 space-y-3">
+          <div className="bg-white/5 p-4 rounded">
+            <div className="text-white/60 text-xs">Destination Address</div>
+            <div className="text-white text-sm mt-1 break-all">{tx.toAddress || '-'}</div>
           </div>
-          <div className="bg-white/5 p-4 rounded col-span-2">
+          <div className="bg-white/5 p-4 rounded">
             <div className="text-white/60 text-xs">Transaction ID</div>
-            <div className="text-white text-sm mt-1 break-all">{tx.transactionId || '-'}</div>
+            <div className="text-white text-sm mt-1 break-all">{tx.txId || '-'}</div>
           </div>
-          <div className="bg-white/5 p-4 rounded col-span-2">
+          <div className="bg-white/5 p-4 rounded">
             <div className="text-white/60 text-xs">Timestamp</div>
             <div className="text-white text-sm mt-1">{new Date(tx.timestamp).toLocaleString()}</div>
           </div>
-          {tx.note ? (
-            <div className="bg-white/5 p-4 rounded col-span-2">
-              <div className="text-white/60 text-xs">Note</div>
-              <div className="text-white text-sm mt-1">{tx.note}</div>
-            </div>
-          ) : null}
         </div>
       </div>
 
       <div className="p-4">
-        <NeoButton onClick={() => navigate(ROUTES.HISTORY)}>
-          Back
-        </NeoButton>
+        <button
+          type="button"
+          onClick={() => navigate(ROUTES.HISTORY)}
+          className="w-full h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] mt-2"
+        >
+          <span className="w-auto h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent">
+            Back
+          </span>
+        </button>
       </div>
     </div>
   );

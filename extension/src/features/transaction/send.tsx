@@ -1,10 +1,11 @@
 import { ChevronLeft, Info, AlertCircle, CheckCircle, Loader2, ChevronDown } from "lucide-react";
 import { CDN } from "~lib/constant/cdn";
-import { ROUTES } from "~lib/constant/routes";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "~lib/context/walletContext";
 import { useAuth } from "~lib/context/authContext";
+import { ROUTES } from "~lib/constant/routes";
+import { TxHistoryService } from "~service/txHistoryService";
 
 type NetworkKey = "btc" | "eth" | "sol";
 
@@ -31,6 +32,9 @@ function Send() {
   // Validation state
   const [addressError, setAddressError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
+
+  // Conservative gas buffer for ETH (Sepolia). Adjust if needed.
+  const ETH_GAS_BUFFER = 0.0022; // ~0.0021255 observed in error
 
   // Network options
   const networkOptions = [
@@ -60,7 +64,7 @@ function Send() {
   const getDecimalPlaces = useCallback(() => {
     switch (selectedNetwork) {
       case "btc": return 8; // Satoshi to BTC
-      case "eth": return 6; // Display ETH as 6 decimals (converted from wei)
+      case "eth": return 6; // ETH displayed with up to 6 decimals
       case "sol": return 9;  // Lamports to SOL
       default: return 8;
     }
@@ -82,9 +86,15 @@ function Send() {
           break;
         case "eth":
           const ethBalance = await walletActor.ethereum_balance();
-          // Convert wei (returned as string) to ETH
-          const ethValue = Number(ethBalance) / 1000000000000000000;
-          balanceValue = ethValue.toFixed(getDecimalPlaces());
+          // Convert wei (string/bigint-like) to ETH precisely using BigInt math then format
+          const wei = BigInt(ethBalance.toString());
+          const WEI_PER_ETH = 1000000000000000000n;
+          const whole = wei / WEI_PER_ETH;
+          const frac = wei % WEI_PER_ETH;
+          const fracStr = frac.toString().padStart(18, '0');
+          const display = `${whole}.${fracStr}`;
+          const num = parseFloat(display);
+          balanceValue = num.toFixed(getDecimalPlaces());
           break;
         case "sol":
           const solBalance = await walletActor.solana_balance();
@@ -190,6 +200,15 @@ function Send() {
       return false;
     }
 
+    // For ETH, ensure user leaves some balance for gas fees
+    if (selectedNetwork === "eth") {
+      const maxSendable = Math.max(0, balanceNum - ETH_GAS_BUFFER);
+      if (numAmount > maxSendable) {
+        setAmountError(`Leave ~${ETH_GAS_BUFFER} ETH for gas. Max: ${maxSendable.toFixed(6)} ETH`);
+        return false;
+      }
+    }
+
     setAmountError(null);
     return true;
   }, [balance, getCurrencySymbol]);
@@ -233,59 +252,13 @@ function Send() {
       return;
     }
 
-    // Validate all inputs
+    // Validate input before analysis
     const isAddressValid = validateAddress(recipientAddress);
     const isAmountValid = validateAmount(amount);
+    if (!isAddressValid || !isAmountValid) return;
 
-    if (!isAddressValid || !isAmountValid) {
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      let txResult: string;
-
-      const blockchainAmount = convertToBlockchainUnits(amount);
-
-      switch (selectedNetwork) {
-        case "btc":
-          const btcRequest = {
-            destination_address: recipientAddress,
-            amount_in_satoshi: blockchainAmount
-          };
-          txResult = await walletActor.bitcoin_send(btcRequest);
-          break;
-
-        case "eth":
-          txResult = await walletActor.ethereum_send(recipientAddress, blockchainAmount);
-          break;
-
-        case "sol":
-          txResult = await walletActor.solana_send(recipientAddress, blockchainAmount);
-          break;
-
-        default:
-          throw new Error("Network not supported for sending");
-      }
-
-      setSuccess(`Transaction successful! TX: ${txResult}`);
-
-      // Reset form
-      setRecipientAddress("");
-      setAmount("");
-
-      // Refresh balance
-      await fetchBalance();
-
-    } catch (error) {
-      console.error("Send transaction failed:", error);
-      setError(error instanceof Error ? error.message : "Transaction failed");
-    } finally {
-      setIsLoading(false);
-    }
+    // Navigate to analyze flow first
+    navigate(ROUTES.ANALYZE_PROGRESS, { state: { address: recipientAddress, isAnalyzing: true, sendContext: { amount, selectedNetwork } } });
   }, [walletActor, identity, recipientAddress, amount, selectedNetwork, validateAddress, validateAmount, convertToBlockchainUnits, fetchBalance]);
 
   // Handle back navigation
@@ -419,6 +392,11 @@ function Send() {
             <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               {amountError}
+            </p>
+          )}
+          {selectedNetwork === "eth" && !amountError && (
+            <p className="text-white/50 text-xs mt-1">
+              Tip: Leave about {ETH_GAS_BUFFER} ETH for gas fees.
             </p>
           )}
         </div>

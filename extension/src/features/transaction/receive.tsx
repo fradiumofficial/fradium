@@ -65,6 +65,47 @@ function Receive() {
     } catch {}
   }, [fetchWalletAddresses])
 
+  // Reusable green copy button (centers icon and shows check for 3s after click)
+  const CopyButton: React.FC<{ text?: string }> = ({ text }) => {
+    const [copied, setCopied] = useState(false)
+
+    const handleClick = async () => {
+      if (!text) return
+      try {
+        await navigator.clipboard.writeText(text)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 3000)
+      } catch {}
+    }
+
+    const mask = copied ? CDN.icons.checkSafe : CDN.icons.copyContent
+
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={!text}
+        aria-label="Copy address"
+        className="w-5 h-5 inline-flex items-center justify-center rounded cursor-pointer disabled:opacity-50"
+      >
+        <span
+          className="w-5 h-5"
+          style={{
+            backgroundColor: "#D0FFD3",
+            WebkitMaskImage: `url(${mask})`,
+            maskImage: `url(${mask})`,
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
+          }}
+        />
+      </button>
+    )
+  }
+
   // Handle back navigation
   const handleBack = useCallback(() => {
     navigate(ROUTES.HOME)
@@ -133,12 +174,7 @@ function Receive() {
                 })
               }
             />
-            <img
-              src={CDN.icons.copyContent}
-              alt="Copy"
-              className="w-5 h-5 cursor-pointer"
-              onClick={() => copy(localAddresses?.bitcoin)}
-            />
+            <CopyButton text={localAddresses?.bitcoin} />
           </div>
         </div>
 
@@ -173,12 +209,7 @@ function Receive() {
                 })
               }
             />
-            <img
-              src={CDN.icons.copyContent}
-              alt="Copy"
-              className="w-5 h-5 cursor-pointer"
-              onClick={() => copy(localAddresses?.ethereum)}
-            />
+            <CopyButton text={localAddresses?.ethereum} />
           </div>
         </div>
 
@@ -208,12 +239,7 @@ function Receive() {
                 })
               }
             />
-            <img
-              src={CDN.icons.copyContent}
-              alt="Copy"
-              className="w-5 h-5 cursor-pointer"
-              onClick={() => copy(localAddresses?.solana)}
-            />
+            <CopyButton text={localAddresses?.solana} />
           </div>
         </div>
 
@@ -248,12 +274,7 @@ function Receive() {
                 })
               }
             />
-            <img
-              src={CDN.icons.copyContent}
-              alt="Copy"
-              className="w-5 h-5 cursor-pointer"
-              onClick={() => copy(localAddresses?.icp_principal)}
-            />
+            <CopyButton text={localAddresses?.icp_principal} />
           </div>
         </div>
 
@@ -288,12 +309,7 @@ function Receive() {
                 })
               }
             />
-            <img
-              src={CDN.icons.copyContent}
-              alt="Copy"
-              className="w-5 h-5 cursor-pointer"
-              onClick={() => copy(localAddresses?.icp_account)}
-            />
+            <CopyButton text={localAddresses?.icp_account} />
           </div>
         </div>
 

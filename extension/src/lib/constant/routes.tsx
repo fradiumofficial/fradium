@@ -21,6 +21,8 @@ export const ROUTES = {
   MANAGE_NETWORK: '/manage-network',
   RECEIVE: '/receive',
   SEND: '/send',
+  SEND_SUCCESS: '/send-success',
+  SEND_CONFIRM: '/send-confirm',
   CONFIRMATION_BALANCE: '/confirmation-balance',
   RECEIVE_DETAIL: '/receive-detail',
   }

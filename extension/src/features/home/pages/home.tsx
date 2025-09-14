@@ -76,43 +76,23 @@ function Home() {
     }
   }, [filteredTokens, balances, usdPrices]);
 
-  // Helper function to format balance display with symbol
-  const formatBalanceDisplay = useCallback((balance: string) => {
+  // Helper function to format balance display per token (ETH uses up to 6 decimals, trim zeros)
+  const formatTokenBalance = useCallback((tokenId: string, balance: string) => {
     if (hideBalance) return "••••";
 
     const numericBalance = parseFloat(balance);
-    if (isNaN(numericBalance)) return `0.00`;
+    if (!isFinite(numericBalance)) return "0.00";
+    if (numericBalance === 0) return "0.00";
 
-    // Handle zero balance
-    if (numericBalance === 0) return `0.00`;
+    const smallThreshold = 0.000001; // 1e-6
+    const maxFrac = tokenId === "ethereum" ? 6 : 4;
 
-    // Handle very small balances
-    if (numericBalance < 0.0001) return `<0.0001`;
-
-    let formattedNumber: string;
-
-    // Handle small balances (show 4 decimals for crypto precision)
-    if (numericBalance < 0.01) {
-      formattedNumber = numericBalance.toFixed(4);
-    }
-    // Handle medium balances (show 2 decimals for readability)
-    else if (numericBalance < 1000) {
-      formattedNumber = numericBalance.toFixed(2);
-    }
-    // Handle large balances (use locale string with 2 decimals)
-    else if (numericBalance < 1000000) {
-      formattedNumber = numericBalance.toLocaleString("en-US", { maximumFractionDigits: 2 });
-    }
-    // Handle extremely large balances (compact notation)
-    else {
-      formattedNumber = numericBalance.toLocaleString("en-US", {
-        maximumFractionDigits: 2,
-        notation: "compact",
-        compactDisplay: "short"
-      });
+    if (numericBalance < smallThreshold) {
+      const th = smallThreshold.toLocaleString("en-US", { maximumFractionDigits: maxFrac });
+      return `<${th}`;
     }
 
-    return `${formattedNumber}`;
+    return new Intl.NumberFormat("en-US", { maximumFractionDigits: maxFrac }).format(numericBalance);
   }, [hideBalance]);
 
   // Helper function to format USD value
@@ -473,7 +453,7 @@ function Home() {
                       ) : (
                         <>
                           <div className="w-full h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-end justify-end text-white flex-none order-0 flex-grow-0">
-                            {formatBalanceDisplay(balance)}
+                            {formatTokenBalance(token.id, balance)}
                           </div>
                           <div className="w-full h-[21px] font-['General Sans'] font-medium text-[14px] leading-[150%] flex items-end justify-end text-white/50 flex-none order-1 flex-grow-0">
                             {usdValue}

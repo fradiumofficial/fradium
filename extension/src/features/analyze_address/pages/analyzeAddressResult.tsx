@@ -1,4 +1,3 @@
-import { SafetyResultCard } from "~components/card";
 import { ArrowLeftIcon, Wallet } from "lucide-react";
 import NeoButton from "~components/custom-button";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,6 +13,7 @@ function AnalyzeAdressResult() {
   const navigate = useNavigate();
   const result = location.state?.result as AnalysisResult;
   const address = location.state?.address as string;
+  const sendContext = location.state?.sendContext as { amount?: string; selectedNetwork?: 'btc'|'eth'|'sol' } | undefined;
 
   // Inisialisasi state dengan nilai yang benar langsung
   const [isAddressSafe, setIsAddressSafe] = useState<boolean>(() => {
@@ -251,15 +251,15 @@ function AnalyzeAdressResult() {
         />
 
         {/* Address Details Section */}
-        <div className="w-[335px] h-[179px] flex flex-col items-start gap-4 flex-none flex-grow-0">
+        <div className="w-[335px] h-auto flex flex-col items-start gap-4 flex-none flex-grow-0">
           <div className="w-[122px] h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none flex-grow-0">
             Address Details
           </div>
 
           {/* Statistics Cards Grid */}
-          <div className="w-[335px] h-[144px] flex flex-row flex-wrap items-start content-start gap-[10px] flex-none flex-grow-0">
+          <div className="w-[335px] h-auto flex flex-row flex-wrap items-start content-start gap-[10px] flex-none flex-grow-0">
             {/* Card 1 - Transactions */}
-            <div className="w-[158px] h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+            <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
               <div className="w-[26px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-white flex-none flex-grow-0">
                 {getTransactionCount()}
               </div>
@@ -272,7 +272,7 @@ function AnalyzeAdressResult() {
             </div>
 
             {/* Card 2 - Confidence Level */}
-            <div className="w-[159px] h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+            <div className="w-[159px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
               <div className={`w-[72px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] flex-none flex-grow-0 ${
                 getConfidenceLevel() === 'HIGH' ? 'text-green-400' :
                 getConfidenceLevel() === 'MEDIUM' ? 'text-yellow-400' : 'text-red-400'
@@ -288,7 +288,7 @@ function AnalyzeAdressResult() {
             </div>
 
             {/* Card 3 - Risk Level */}
-            <div className="w-[158px] h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+            <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
               <div className={`w-[43px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] flex-none flex-grow-0 ${
                 getRiskLevel() === 'LOW' ? 'text-green-400' :
                 getRiskLevel() === 'MEDIUM' ? 'text-yellow-400' : 'text-red-400'
@@ -304,8 +304,8 @@ function AnalyzeAdressResult() {
             </div>
 
             {/* Card 4 - Data Source */}
-            <div className="w-[159px] h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
-              <div className="w-[83px] h-[19px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.02em] text-white flex-none flex-grow-0">
+            <div className="w-[159px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+              <div className="w-full min-h-[19px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.02em] text-white flex-none flex-grow-0 break-words">
                 {getDataSource()}
               </div>
               <div className="w-[100px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
@@ -319,14 +319,14 @@ function AnalyzeAdressResult() {
         </div>
 
         {/* Security Checks Section */}
-        <div className="w-[335px] h-[143px] flex flex-col items-start gap-4 flex-none flex-grow-0">
+        <div className="w-[335px] flex flex-col items-start gap-4 flex-none flex-grow-0">
           <div className="w-[180px] h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none flex-grow-0">
             {isAddressSafe ? 'Security Checks Passed' : 'Security Warnings'}
           </div>
 
           {/* Security Check Card */}
           <div
-            className="w-[335px] h-[108px] box-border flex flex-col items-start p-4 gap-[17px] rounded-[12px] flex-none flex-grow-0"
+            className="w-[335px] box-border flex flex-col items-start p-4 gap-[17px] rounded-[12px] flex-none flex-grow-0"
             style={{
               background: isAddressSafe
                 ? 'radial-gradient(69.63% 230.37% at -11.33% 50%, #1A4A1B 0%, rgba(153, 227, 158, 0.21) 30.29%, rgba(255, 255, 255, 0.03) 100%)'
@@ -334,7 +334,7 @@ function AnalyzeAdressResult() {
               borderLeft: `1px solid ${isAddressSafe ? '#9BE4A0' : '#E3999E'}`
             }}
           >
-            <div className="w-[303px] h-[76px] flex flex-col items-start gap-2 flex-none flex-grow-0">
+            <div className="w-[303px] flex flex-col items-start gap-2 flex-none flex-grow-0">
               {checkItems.slice(0, 3).map((item, index) => (
                 <div key={index} className="w-[303px] h-[20px] flex flex-row items-center gap-2 flex-none flex-grow-0">
                   <img
@@ -342,7 +342,7 @@ function AnalyzeAdressResult() {
                     alt="Check"
                     className="w-[20px] h-[20px] flex-none flex-grow-0"
                   />
-                  <div className="w-[218px] h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  <div className="w-[218px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
                     {item}
                   </div>
                 </div>
@@ -353,15 +353,34 @@ function AnalyzeAdressResult() {
       </div>
 
       {/* Action Button */}
-      <div className="flex-none flex-grow-0 mt-4">
-        <button
-          onClick={() => navigate(ROUTES.ANALYZE_ADDRESS)}
-          className="w-[335px] h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] flex-none flex-grow-0"
-        >
-          <span className="w-[112px] h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent flex-none flex-grow-0">
-            Go Analyze Other
-          </span>
-        </button>
+      <div className="flex-none flex-grow-0 mt-4 space-y-2 w-full">
+        {sendContext?.amount && sendContext?.selectedNetwork ? (
+          <>
+            <button
+              onClick={() => navigate(ROUTES.SEND_CONFIRM, { state: { recipientAddress: address, amount: sendContext.amount, selectedNetwork: sendContext.selectedNetwork } })}
+              className="w-[335px] h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] flex-none flex-grow-0"
+            >
+              <span className="w-auto h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent flex-none flex-grow-0">
+                Continue to Confirmation
+              </span>
+            </button>
+            <button
+              onClick={() => navigate(ROUTES.SEND)}
+              className="w-[335px] h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] border border-white/15 rounded-[99px]"
+            >
+              <span className="w-auto h-[17px] font-sans font-medium text-[14px]">Cancel</span>
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => navigate(ROUTES.ANALYZE_ADDRESS)}
+            className="w-[335px] h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] flex-none flex-grow-0"
+          >
+            <span className="w-[112px] h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent flex-none flex-grow-0">
+              Go Analyze Other
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

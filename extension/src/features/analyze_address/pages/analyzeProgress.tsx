@@ -19,6 +19,7 @@ export default function AnalysisProgress() {
   // Get data from navigation state
   const address = location.state?.address;
   const isAnalyzing = location.state?.isAnalyzing;
+  const sendContext = location.state?.sendContext; // { amount, selectedNetwork }
 
   const analysisSteps = [
     "Check if this address Already Flagged...",
@@ -79,7 +80,8 @@ export default function AnalysisProgress() {
             result,
             address,
             analysisSource: analysisResult.analysisSource,
-            finalStatus: analysisResult.finalStatus
+            finalStatus: analysisResult.finalStatus,
+            sendContext
           }
         });
       } catch (error) {

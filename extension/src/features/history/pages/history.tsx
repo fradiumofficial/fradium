@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CDN } from "~lib/constant/cdn";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
+import { TxHistoryService, type TxHistoryItem } from "~service/txHistoryService";
 
 type TransactionHistoryItem = {
   id: string;
@@ -21,42 +22,11 @@ function History() {
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
 
   useEffect(() => {
-    // Dummy data fallback
-    const dummy: TransactionHistoryItem[] = [
-      {
-        id: "tx_1",
-        tokenType: "Bitcoin",
-        direction: "Receive",
-        amount: 0.0123,
-        status: "Completed",
-        toAddress: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-        fromAddress: "bc1qexamplefrom0000000000000000000000000",
-        timestamp: Date.now() - 1000 * 60 * 60,
-      },
-      {
-        id: "tx_2",
-        tokenType: "Solana",
-        direction: "Send",
-        amount: 2.5,
-        status: "Pending",
-        toAddress: "3h2qExampleSolanaTo1111111111111111111111",
-        fromAddress: "9k3wExampleSolanaFrom2222222222222222222",
-        timestamp: Date.now() - 1000 * 60 * 30,
-      },
-      {
-        id: "tx_3",
-        tokenType: "Fradium",
-        direction: "Receive",
-        amount: 1500,
-        status: "Completed",
-        toAddress: "fdm1exampleto33333333333333333",
-        fromAddress: "fdm1examplefrom444444444444444",
-        timestamp: Date.now() - 1000 * 60 * 5,
-      },
-    ];
-    const sorted = [...dummy].sort((a, b) => b.timestamp - a.timestamp);
-    setTransactions(sorted);
-  }, []);
+    // Load from local tx storage
+    const list = TxHistoryService.getAll() as any as TransactionHistoryItem[]
+    const sorted = [...list].sort((a, b) => b.timestamp - a.timestamp)
+    setTransactions(sorted)
+  }, [])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
