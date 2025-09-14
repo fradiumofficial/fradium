@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ButtonA from "@/core/components/SidebarButton";
+import ButtonGreen from "@/core/components/ButtonGreen";
 import { chatbot } from "declarations/chatbot";
 
 const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
@@ -27,7 +28,7 @@ const ChatBubble = ({ type, message, time, isLink, isList }) => {
     return (
       <div className="flex items-end gap-3 self-end">
         <div className="flex flex-col items-end">
-          <div className="bg-[#A259FF] text-white px-5 py-2.5 rounded-2xl rounded-br-md text-base max-w-2xl mb-1 shadow-lg border border-[#A259FF]">
+          <div className="bg-[#823EFD] text-white px-5 py-2.5 rounded-2xl rounded-br-md text-base max-w-2xl mb-1 shadow-lg border border-[#823EFD]">
             {isLink ? (
               <a href={message} className="underline text-white" target="_blank" rel="noopener noreferrer">
                 {message}
@@ -48,7 +49,7 @@ const ChatBubble = ({ type, message, time, isLink, isList }) => {
         <img src="logo.svg" alt="Fradium" className="w-10 h-10" />
       </div>
       <div>
-        <div className="bg-[#23272f] text-white px-5 py-3 rounded-2xl rounded-tl-md text-base max-w-2xl mb-1 shadow-lg border border-[#FFFFFF1A]">
+        <div className="bg-[#FFFFFF0D] text-white px-5 py-3 rounded-2xl rounded-tl-md text-base max-w-2xl mb-1 shadow-lg border border-[#FFFFFF1A]">
           {isList ? (
             <ol className="list-decimal ml-5">
               {message.map((item, idx) => (
@@ -194,7 +195,7 @@ const Assistant = () => {
     <section className="relative bg-[#000510] w-full overflow-hidden">
       {/* Background layer */}
       <div className="absolute inset-0 z-0 pointer-events-none select-none">
-        <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
+        <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-contain" />
       </div>
 
       <div className="relative z-10">
@@ -205,7 +206,7 @@ const Assistant = () => {
             <div className="flex items-center justify-between px-3 pt-2 pb-1">
               <div>
                 <div className="text-base font-normal text-white mb-0.5">Fradium Assistant</div>
-                <div className="text-[#B0B6BE] text-xs">Tanya apa saja tentang Fradium</div>
+                <div className="text-[#B0B6BE] text-xs">Ask anything about Fradium</div>
               </div>
               <button onClick={handleClear} size="sm" className="!bg-transparent text-xs !text-[#ffffff] !shadow-none hover:!bg-[#23272f] px-2 py-1 flex items-center gap-2">
                 <img src="/assets/icons/Trash.svg" alt="Clear" className="w-4 h-4" />
@@ -222,9 +223,9 @@ const Assistant = () => {
             {/* Input */}
             <div className="flex items-center gap-2 bg-[#23272f] rounded-xs border border-[#23272f] px-3 py-3 mx-2 mt-2">
               <input type="text" placeholder="Tulis pesan..." className="flex-1 bg-transparent outline-none border-none text-white text-xs placeholder-[#B0B6BE] py-1" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} disabled={loading} />
-              <ButtonA size="sm" className="" onClick={handleSend} disabled={loading || !input.trim()}>
+              <ButtonGreen size="sm" className="!rounded-full !px-3 !py-3" onClick={handleSend} disabled={loading || !input.trim()}>
                 <img src="/assets/icons/submit.svg" alt="Send" className="w-5 h-5" />
-              </ButtonA>
+              </ButtonGreen>
             </div>
             {/* Suggested Question */}
             <div className="w-full rounded-xl border border-white/10 bg-[#000000]/60 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-3 mt-3 mx-0">
@@ -282,14 +283,14 @@ const Assistant = () => {
         </div>
 
         {/* DESKTOP ONLY */}
-        <div className="hidden md:flex h-screen mb-32 overflow-hidden pt-[110px] px-0 md:px-8 flex-col md:flex-row gap-x-8">
+        <div className="hidden md:flex h-screen overflow-hidden pt-[110px] px-0 md:px-8 flex-col md:flex-row gap-x-8">
           {/* Left: Chat Area */}
-          <div className="flex-1 mx-auto rounded-[16px] border border-white/10 bg-[#000000]/60 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)]">
+          <div className="flex-1 mx-auto rounded-[16px] border border-white/10 bg-[#000000]/50 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)]">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-base md:text-xl font-normal text-white mb-1">Fradium Assistant</div>
-                <div className="text-[#B0B6BE] text-sm">Tanya apa saja tentang Fradium</div>
+                <div className="text-[#B0B6BE] text-sm">Ask anything about Fradium</div>
               </div>
               <button onClick={handleClear} size="sm" className="!bg-transparent text-sm !text-[#ffffff] !shadow-none hover:!bg-[#23272f] px-3 py-2 flex items-center gap-2">
                 <img src="/assets/icons/Trash.svg" alt="Clear" className="w-5 h-5" />
@@ -305,25 +306,25 @@ const Assistant = () => {
               <div ref={chatEndRef} />
             </div>
             {/* Input */}
-            <div className="flex items-center gap-2 mt-auto bg-[#23272f] rounded-md border border-[#2C3240] px-4 py-4 shadow-inner">
+            <div className="flex items-center gap-2 mt-auto bg-[#FFFFFF1A] rounded-3xl border border-[#2C3240] px-4 py-2 shadow-inner">
               <input
                 type="text"
-                placeholder="Tulis pesan..."
+                placeholder="Message Fradium Assistant..."
                 className="flex-1 bg-transparent outline-none border-none text-white text-base placeholder-[#B0B6BE] py-2"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={loading}
               />
-              <ButtonA size="sm" className="" onClick={handleSend} disabled={loading || !input.trim()}>
+              <ButtonGreen size="sm" className="!rounded-full !px-3 !py-3" onClick={handleSend} disabled={loading || !input.trim()}>
                 <img src="/assets/icons/submit.svg" alt="Send" />
-              </ButtonA>
+              </ButtonGreen>
             </div>
           </div>
           {/* Right: Suggested Question */}
           <div className="w-full md:w-[340px] mx-auto rounded-[16px] border border-white/10 bg-[#000000]/60 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)] md:mt-0 overflow-hidden">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-lg font-semibold text-white">Suggested Question</div>
+              <div className="text-lg font-medium text-white">Suggested Question</div>
             </div>
             <div className="border-b border-[#23272f] mb-4" />
             <ul className="flex flex-col gap-2 overflow-y-auto pr-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
@@ -378,7 +379,7 @@ const Assistant = () => {
       </div>
 
       {/* bottom fade */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#000510]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[600px] bg-gradient-to-b from-transparent to-[#000510]" />
     </section>
   );
 };
