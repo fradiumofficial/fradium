@@ -7,7 +7,7 @@ mod feature_calculator;
 mod models;
 mod prediction;
 
-use candid::{Principal, CandidType};
+use candid::Principal;
 use crate::shared_models::RansomwareResult;
 use ic_cdk_macros::query;
 

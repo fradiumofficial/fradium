@@ -1,6 +1,7 @@
 import { detectAddressNetwork } from "@/core/lib/tokenUtils.js";
 import { extractFeatures as extractBitcoinFeatures } from "./bitcoinAnalyzeService.js";
 import { extractFeatures as extractEthereumFeatures } from "./ethereumAnalyzeService.js";
+import SolanaAnalyzeService from "./solanaAnalyzeService.js";
 import { ai } from "declarations/ai";
 import { backend } from "declarations/backend";
 
@@ -35,6 +36,7 @@ export class AIAnalyzeService {
       let aiResult = null;
       let aiSupported = true;
 
+      console.log("Starting AI Analysis for network:", network);
       try {
         switch (network) {
           case "Bitcoin":
@@ -44,6 +46,8 @@ export class AIAnalyzeService {
             aiResult = await this.analyzeEthereumAddress(trimmedAddress, options);
             break;
           case "Solana":
+            aiResult = await this.analyzeSolanaAddress(trimmedAddress, options);
+            break;
           case "Internet Computer":
           default:
             console.log(`AI Analysis not supported for ${network} - skipping to community analysis`);
@@ -206,6 +210,8 @@ export class AIAnalyzeService {
       const featuresPairs = Object.entries(features).map(([k, v]) => [k, Number(v)]);
       const txCount = this.getTxCountFromFeaturesETH(features);
 
+      console.log("Ethereum Features:", featuresPairs, address, txCount);
+
       // Call Rust AI canister
       const ransomwareReport = await ai.analyze_eth_address(featuresPairs, address, txCount);
 
@@ -233,6 +239,44 @@ export class AIAnalyzeService {
     } catch (error) {
       console.error("Ethereum analysis error:", error);
       throw new Error(`Ethereum analysis failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Analyze Solana address
+   */
+  static async analyzeSolanaAddress(address, options = {}) {
+    try {
+      console.log(`Analyzing Solana address: ${address}`);
+      const features = await SolanaAnalyzeService.extractFeatures(address, options);
+      const featuresPairs = Object.entries(features).map(([k, v]) => [k, Number(v)]);
+      const txCount = SolanaAnalyzeService.getTxCountFromFeatures(features);
+
+      console.log("Solana Features:", JSON.stringify(featuresPairs));
+      console.log("Solana Address:", address);
+      console.log("Solana Tx Count:", txCount);
+
+      const ransomwareReport = await ai.analyze_sol_address(featuresPairs, address, txCount);
+
+      console.log("Solana Report:", JSON.stringify(ransomwareReport));
+
+      if ("Ok" in ransomwareReport) {
+        const result = ransomwareReport.Ok;
+        const transformedResult = this.transformRansomwareResult(result);
+        return {
+          success: true,
+          network: "Solana",
+          address: address,
+          result: transformedResult,
+          features: features,
+          type: "ai",
+          timestamp: new Date().toISOString(),
+        };
+      }
+      throw new Error("Solana AI analysis failed");
+    } catch (error) {
+      console.error("Solana analysis error:", error);
+      throw new Error(`Solana analysis failed: ${error.message}`);
     }
   }
 
@@ -398,7 +442,7 @@ export class AIAnalyzeService {
    * @returns {Array<string>} List of supported networks
    */
   static getSupportedNetworks() {
-    return ["Bitcoin", "Ethereum"];
+    return ["Bitcoin", "Ethereum", "Solana"];
   }
 
   /**

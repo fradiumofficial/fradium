@@ -390,8 +390,6 @@ export async function getBalance(tokenId, principal) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
-  console.log("getBalance called with tokenId:", tokenId, "principal:", principal, "principal type:", typeof principal);
-
   if (token.type === "native") {
     switch (token.id) {
       case 1: // BTC
@@ -413,42 +411,12 @@ export async function getBalance(tokenId, principal) {
     switch (token.id) {
       case 4: // ICP
         try {
-          console.log("Fetching ICP balance for principal:", principal, "type:", typeof principal);
-          // Convert string principal to Principal object if needed
-          const principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
-          console.log("Principal object:", principalObj, "type:", typeof principalObj);
-
-          let balance;
-          try {
-            // First convert Account to AccountIdentifier
-            const accountIdentifier = await icp_ledger.account_identifier({
-              owner: principalObj,
-              subaccount: [],
-            });
-            console.log("Account identifier:", accountIdentifier, "type:", typeof accountIdentifier);
-            
-            // Then use account_balance with AccountIdentifier
-            const tokensResult = await icp_ledger.account_balance({
-              account: accountIdentifier,
-            });
-            console.log("ICP balance from account_balance:", tokensResult, "type:", typeof tokensResult);
-            // Extract e8s from Tokens interface
-            balance = tokensResult.e8s;
-            console.log("ICP balance e8s:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
-          } catch (error) {
-            console.error("Error calling account_balance:", error);
-            // Try icrc1_balance_of as fallback
-            try {
-              balance = await icp_ledger.icrc1_balance_of({
-                owner: principalObj,
-                subaccount: [],
-              });
-              console.log("ICP balance from icrc1_balance_of:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
-            } catch (altError) {
-              console.error("Both methods failed:", altError);
-              throw error; // Throw original error
-            }
-          }
+          console.log("Fetching ICP balance for principal:", principal);
+          const balance = await icp_ledger.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+          console.log("ICP balance raw:", balance, "type:", typeof balance);
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
@@ -464,13 +432,7 @@ export async function getBalance(tokenId, principal) {
 
           // Convert from e8s to ICP using dynamic decimals
           // balance is a bigint, so we need to convert it properly
-          let balanceNumber;
-          if (typeof balance === "bigint") {
-            // For BigInt, convert to string first to avoid precision loss
-            balanceNumber = parseFloat(balance.toString());
-          } else {
-            balanceNumber = Number(balance);
-          }
+          const balanceNumber = Number(balance);
           const divisor = Math.pow(10, decimals);
           const result = balanceNumber / divisor;
 
@@ -487,16 +449,10 @@ export async function getBalance(tokenId, principal) {
         }
       case 5: // Fradium (FADM)
         try {
-          console.log("Fetching Fradium balance for principal:", principal, "type:", typeof principal);
-          // Convert string principal to Principal object if needed
-          const principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
-          console.log("Principal object:", principalObj, "type:", typeof principalObj);
-
           const balance = await fradium_ledger.icrc1_balance_of({
-            owner: principalObj,
+            owner: principal,
             subaccount: [],
           });
-          console.log("Fradium balance raw:", balance, "type:", typeof balance, "isBigInt:", typeof balance === "bigint");
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
@@ -511,13 +467,7 @@ export async function getBalance(tokenId, principal) {
 
           // Convert from e8s to FADM using dynamic decimals
           // balance is a bigint, so we need to convert it properly
-          let balanceNumber;
-          if (typeof balance === "bigint") {
-            // For BigInt, convert to string first to avoid precision loss
-            balanceNumber = parseFloat(balance.toString());
-          } else {
-            balanceNumber = Number(balance);
-          }
+          const balanceNumber = Number(balance);
           const divisor = Math.pow(10, decimals);
           const result = balanceNumber / divisor;
 
