@@ -1,6 +1,6 @@
 // Icons replaced with CDN assets to match design
 import { CDN } from "~lib/constant/cdn";
-import { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
@@ -21,7 +21,13 @@ function Home() {
     usdPriceErrors,
     hideBalance,
     setHideBalance,
-    extensionTokens
+    extensionTokens,
+    // Add loading/fetching helpers
+    isAuthenticated,
+    walletActor,
+    fetchAllBalances,
+    fetchAllUSDPrices,
+    fetchWalletAddresses
   } = useWallet() as any;
 
   const { selectedNetwork } = useNetwork();
@@ -139,6 +145,28 @@ function Home() {
     // This will trigger a refresh of all balances
     refreshAllBalances();
   }, [refreshAllBalances]);
+
+  // Determine if any token balance is currently loading
+  const isAnyBalanceLoading = useMemo(() => {
+    return (extensionTokens || []).some((t: any) => balanceLoading?.[t.id]);
+  }, [extensionTokens, balanceLoading]);
+
+  // Kick off initial fetches when authenticated actor is ready and nothing has loaded yet
+  React.useEffect(() => {
+    if (!isAuthenticated || !walletActor) return;
+
+    const anyLoaded = (extensionTokens || []).some((t: any) => balances?.[t.id] !== undefined);
+    const anyLoading = (extensionTokens || []).some((t: any) => balanceLoading?.[t.id]);
+
+    if (!anyLoaded && !anyLoading) {
+      // Fire in parallel, context functions already handle per-token loading state
+      Promise.allSettled([
+        fetchWalletAddresses?.(),
+        fetchAllBalances?.(),
+        fetchAllUSDPrices?.(),
+      ]).catch(() => {});
+    }
+  }, [isAuthenticated, walletActor, extensionTokens, balances, balanceLoading, fetchWalletAddresses, fetchAllBalances, fetchAllUSDPrices]);
 
   const getNetworkSubtitle = useCallback((token: any) => {
     switch ((token?.symbol || "").toUpperCase()) {
@@ -342,6 +370,20 @@ function Home() {
             </button>
           </div>
         </div>
+
+        {/* Global balance loading indicator */}
+        {(isAnyBalanceLoading || isRefreshingBalances) && (
+          <div className="flex items-center gap-2 mt-2 mb-1">
+            <img
+              src={CDN.icons.refresh}
+              alt="Loading"
+              className={`w-4 h-4 ${isRefreshingBalances ? 'animate-spin' : ''}`}
+            />
+            <span className="text-white/60 text-xs">
+              {isRefreshingBalances ? 'Refreshing balances…' : 'Fetching balances…'}
+            </span>
+          </div>
+        )}
 
         {/* List */}
         <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[180px] flex-none order-1 self-stretch flex-grow-0 overflow-y-auto">

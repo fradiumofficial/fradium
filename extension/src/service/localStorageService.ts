@@ -20,6 +20,79 @@ class LocalStorageService {
   private static readonly STORAGE_KEY = 'fradium_analysis_history';
   private static readonly MAX_HISTORY_ITEMS = 100;
 
+  // Wallet addresses cache (per principal)
+  private static readonly WALLET_ADDR_PREFIX = 'fradium:wallet_addresses:';
+  private static readonly DEFAULT_ADDR_TTL_MS = 1000 * 60 * 60; // 1 hour
+
+  // Shape of addresses we store
+  static readonly emptyWalletAddresses = {
+    bitcoin: undefined as string | undefined,
+    ethereum: undefined as string | undefined,
+    solana: undefined as string | undefined,
+    icp_principal: undefined as string | undefined,
+    icp_account: undefined as string | undefined,
+  };
+
+  private static walletKey(principal: string) {
+    return `${this.WALLET_ADDR_PREFIX}${principal}`;
+  }
+
+  static saveWalletAddresses(
+    principal: string,
+    addresses: Partial<typeof LocalStorageService.emptyWalletAddresses>,
+    ttlMs: number = LocalStorageService.DEFAULT_ADDR_TTL_MS
+  ): boolean {
+    try {
+      if (!principal || !addresses) return false;
+      const hasAny = Object.values(addresses).some(Boolean);
+      if (!hasAny) return false;
+      const payload = {
+        data: addresses,
+        ts: Date.now(),
+        ttlMs,
+      };
+      localStorage.setItem(this.walletKey(principal), JSON.stringify(payload));
+      return true;
+    } catch (error) {
+      console.error('Failed to save wallet addresses to local storage:', error);
+      return false;
+    }
+  }
+
+  static getWalletAddresses(
+    principal: string
+  ): Partial<typeof LocalStorageService.emptyWalletAddresses> | null {
+    try {
+      if (!principal) return null;
+      const raw = localStorage.getItem(this.walletKey(principal));
+      if (!raw) return null;
+      const payload = JSON.parse(raw) as {
+        data: Partial<typeof LocalStorageService.emptyWalletAddresses>;
+        ts: number;
+        ttlMs?: number;
+      };
+      if (!payload || !payload.data || !payload.ts) return null;
+      const ttl = payload.ttlMs ?? LocalStorageService.DEFAULT_ADDR_TTL_MS;
+      const isExpired = Date.now() - payload.ts > ttl;
+      if (isExpired) return null;
+      return payload.data;
+    } catch (error) {
+      console.error('Failed to read wallet addresses from local storage:', error);
+      return null;
+    }
+  }
+
+  static clearWalletAddresses(principal: string): boolean {
+    try {
+      if (!principal) return false;
+      localStorage.removeItem(this.walletKey(principal));
+      return true;
+    } catch (error) {
+      console.error('Failed to clear wallet addresses from local storage:', error);
+      return false;
+    }
+  }
+
   // Save analysis to local storage
   static saveAnalysis(analysis: Omit<LocalAnalysisHistory, 'id'>): string {
     try {

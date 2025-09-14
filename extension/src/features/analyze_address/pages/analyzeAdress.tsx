@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { detectTokenType, TokenType } from "~lib/utils/tokenUtils";
-import NeoButton from "~components/custom-button";
 import { CDN } from "~lib/constant/cdn";
 import LocalStorageService from "~service/localStorageService";
 

@@ -14,6 +14,18 @@ import {
 } from "../../../../src/declarations/wallet"
 import { TOKENS_CONFIG, TokenType } from "~lib/utils/tokenUtils"
 
+// Resolve canister ID for extension builds where env injection may be missing
+const EFFECTIVE_WALLET_CANISTER_ID =
+  walletCanisterId ||
+  // Common env prefixes across toolchains
+  (typeof process !== "undefined" && (
+    (process as any).env?.VITE_CANISTER_ID_WALLET ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_WALLET ||
+    (process as any).env?.CANISTER_ID_WALLET
+  )) ||
+  // As a last resort, fall back to mainnet canister ID in canister_ids.json
+  "v3x23-lyaaa-aaaam-aej2a-cai"
+
 interface NetworkFilters {
   Bitcoin: boolean
   Solana: boolean
@@ -234,7 +246,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Create authenticated wallet actor when identity changes
   useEffect(() => {
-    if (identity && walletCanisterId) {
+    if (identity && EFFECTIVE_WALLET_CANISTER_ID) {
       try {
         const agent = new HttpAgent({
           identity,
@@ -250,7 +262,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           })
         }
 
-        const actor = createWalletActor(walletCanisterId, {
+        const actor = createWalletActor(EFFECTIVE_WALLET_CANISTER_ID, {
           agent: agent as any,
         })
 
@@ -310,7 +322,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Fetch addresses using authenticated actor
   const fetchAddresses = useCallback(async () => {
-    if (!walletActor || addressesLoaded || isFetchingAddresses) return;
+    if (!walletActor || isFetchingAddresses) return;
 
     setIsFetchingAddresses(true)
     console.log("Fetching addresses...")
@@ -334,7 +346,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsFetchingAddresses(false)
     }
-  }, [walletActor, addressesLoaded, isFetchingAddresses])
+  }, [walletActor, isFetchingAddresses])
 
   // Function to get loading state for addresses
   const getAddressesLoadingState = useCallback(() => {
@@ -343,7 +355,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Fetch wallet addresses using authenticated actor
   const fetchWalletAddresses = useCallback(async (): Promise<WalletAddresses | null> => {
-    if (!isAuthenticated || addressesLoaded || isFetchingAddresses || !identity || !walletActor) return addresses
+    if (!isAuthenticated || !identity || !walletActor) return addresses
 
     console.log("WalletContext: Fetching wallet addresses via authenticated actor...")
     console.log("WalletContext: isAuthenticated:", isAuthenticated)
@@ -352,15 +364,18 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     // Call fetchAddresses and return current addresses state
     await fetchAddresses?.()
     return addresses
-  }, [isAuthenticated, addressesLoaded, isFetchingAddresses, identity, walletActor, fetchAddresses, addresses])
+  }, [isAuthenticated, identity, walletActor, fetchAddresses, addresses])
 
   // Individual balance fetching functions - each runs independently
   const fetchTokenBalance = useCallback(async (token: { id: string; symbol: string; name: string; chain: string; icon: string; networkKey: string; type: string }) => {
-    if (!walletActor || !isAuthenticated || !identity) return
-
-    // Set loading state for this specific token
+    // Ensure loading is reflected even if we need to bail out
     setBalanceLoading(prev => ({ ...prev, [token.id]: true }))
     setBalanceErrors(prev => ({ ...prev, [token.id]: null }))
+
+    if (!walletActor || !isAuthenticated || !identity) {
+      setBalanceLoading(prev => ({ ...prev, [token.id]: false }))
+      return
+    }
 
     try {
       let balance: string
@@ -470,18 +485,21 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isRefreshingPrices, fetchAllUSDPrices])
 
-  // Auto-fetch balances when wallet actor becomes available
+  // Auto-fetch when actor becomes available (run once per session)
   useEffect(() => {
-    if (identity && walletActor && isAuthenticated) {
-      // Run all fetch operations in parallel
-      Promise.all([
-        fetchWalletAddresses(),
-        fetchAllBalances(),
-        fetchAllUSDPrices()
-      ]).catch((error) => {
-        console.error("Error in parallel fetch operations:", error)
-      })
-    } else {
+    if (identity && walletActor && isAuthenticated && !hasLoadedAddressesOnce) {
+      (async () => {
+        try {
+          await Promise.all([
+            fetchAddresses?.(),
+            fetchAllBalances?.(),
+            fetchAllUSDPrices?.()
+          ])
+        } catch (error) {
+          console.error("Error in parallel fetch operations:", error)
+        }
+      })()
+    } else if (!identity || !walletActor || !isAuthenticated) {
       // Reset all states when user logs out or actor is not available
       setAddresses(null)
       setAddressesLoaded(false)
@@ -500,7 +518,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       setUsdPriceErrors({})
       setIsRefreshingPrices(false)
     }
-  }, [identity, walletActor, isAuthenticated, fetchWalletAddresses, fetchAllBalances, fetchAllUSDPrices])
+  }, [identity, walletActor, isAuthenticated, hasLoadedAddressesOnce, fetchAddresses, fetchAllBalances, fetchAllUSDPrices])
 
   const walletContextValue = useMemo(
     () => ({

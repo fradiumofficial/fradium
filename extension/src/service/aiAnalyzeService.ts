@@ -1,16 +1,13 @@
-// AI Analyze Service for Browser Extension
-// TypeScript version of the original aiAnalyze.js
-
 import { detectTokenType } from '~lib/utils/tokenUtils';
 import { extractBitcoinFeatures } from './bitcoinAnalyzeService';
 import { extractEthereumFeatures } from './ethereumAnalyzeService';
 import { extractSolanaFeatures } from './solanaAnalyzeService';
-import { ai } from '../../../src/declarations/ai';
-import { backend } from '../../../src/declarations/backend';
+import { createActor as createAiActor, canisterId as aiCanisterId } from '../../../src/declarations/ai';
+import { createActor as createBackendActor, canisterId as backendCanisterId } from '../../../src/declarations/backend';
+import { HttpAgent } from '@dfinity/agent';
 import { HistoryService } from './historyService';
 import type {
   RansomwareResult,
-  CommunityAnalysisResult,
   AnalysisResult,
   AIAnalysisResult,
   CombinedAnalysisResult,
@@ -25,6 +22,79 @@ import type {
  * Detects address type and routes to appropriate analyzer
  */
 export class AIAnalyzeService {
+  private static backendActorSingleton: any | null = null;
+  private static aiActorSingleton: any | null = null;
+  // Resolve canister IDs with fallbacks for extension builds
+  private static readonly EFFECTIVE_BACKEND_CANISTER_ID =
+    backendCanisterId ||
+    // Vite/Plasmo style env
+    (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.VITE_CANISTER_ID_BACKEND) ||
+    (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.PLASMO_PUBLIC_CANISTER_ID_BACKEND) ||
+    // Next/Node style env
+    (typeof process !== 'undefined' && (
+      (process as any).env?.VITE_CANISTER_ID_BACKEND ||
+      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_BACKEND ||
+      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_BACKEND ||
+      (process as any).env?.CANISTER_ID_BACKEND
+    )) ||
+    // mainnet fallback from canister_ids.json
+    'oqcob-6iaaa-aaaar-qbr7q-cai';
+
+  private static readonly EFFECTIVE_AI_CANISTER_ID =
+    aiCanisterId ||
+    // Vite/Plasmo style env
+    (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.VITE_CANISTER_ID_AI) ||
+    (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.PLASMO_PUBLIC_CANISTER_ID_AI) ||
+    // Next/Node style env
+    (typeof process !== 'undefined' && (
+      (process as any).env?.VITE_CANISTER_ID_AI ||
+      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_AI ||
+      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_AI ||
+      (process as any).env?.CANISTER_ID_AI
+    )) ||
+    // mainnet fallback from canister_ids.json
+    'zkoni-faaaa-aaaar-qbsaa-cai';
+
+  private static createAgent(identity?: any) {
+    const agent = new HttpAgent({ identity });
+    if (process.env.DFX_NETWORK !== 'ic') {
+      agent.fetchRootKey().catch((err) => {
+        console.warn('Unable to fetch root key. Check local replica');
+        console.error(err);
+      });
+    }
+    return agent as any;
+  }
+
+  private static getBackendActor(identity?: any) {
+    if (this.backendActorSingleton) return this.backendActorSingleton;
+    const canisterId = this.EFFECTIVE_BACKEND_CANISTER_ID;
+    if (!canisterId) {
+      throw new Error('Backend canister ID not configured');
+    }
+    const agent = this.createAgent(identity);
+    const actor = createBackendActor?.(canisterId, { agent });
+    if (!actor) {
+      throw new Error('Failed to create backend actor');
+    }
+    this.backendActorSingleton = actor;
+    return actor;
+  }
+
+  private static getAiActor(identity?: any) {
+    if (this.aiActorSingleton) return this.aiActorSingleton;
+    const canisterId = this.EFFECTIVE_AI_CANISTER_ID;
+    if (!canisterId) {
+      throw new Error('AI canister ID not configured');
+    }
+    const agent = this.createAgent(identity);
+    const actor = createAiActor?.(canisterId, { agent });
+    if (!actor) {
+      throw new Error('Failed to create AI actor');
+    }
+    this.aiActorSingleton = actor;
+    return actor;
+  }
   /**
    * Analyze an address and return risk assessment
    * New flow: Community Analysis first, then AI Analysis if community is safe
@@ -143,8 +213,9 @@ export class AIAnalyzeService {
       const features = await extractBitcoinFeatures(address);
       console.log(`Extracted ${features.length} features for Bitcoin address`);
 
-      // Call AI canister - following the correct backend call pattern
-      const ransomwareReport = await ai.analyze_btc_address(features, address, features.length);
+      // Call AI canister via safe actor
+      const aiActor = this.getAiActor();
+      const ransomwareReport = await aiActor.analyze_btc_address(features, address, features.length);
 
       console.log("Bitcoin AI Report:", ransomwareReport);
 
@@ -194,8 +265,9 @@ export class AIAnalyzeService {
       const featuresPairs: [string, number][] = Object.entries(features).map(([k, v]) => [k, typeof v === 'number' ? v : 0]);
       const txCount = this.getTxCountFromFeaturesETH(features);
 
-      // Call AI canister
-      const ransomwareReport = await ai.analyze_eth_address(featuresPairs, address, txCount);
+      // Call AI canister via safe actor
+      const aiActor = this.getAiActor();
+      const ransomwareReport = await aiActor.analyze_eth_address(featuresPairs, address, txCount);
 
       console.log('Ethereum AI Report:', ransomwareReport);
 
@@ -292,7 +364,12 @@ export class AIAnalyzeService {
     try {
       console.log(`Performing community analysis for address: ${address}`);
 
-      const communityResult = await backend.analyze_address(address);
+      const identity = HistoryService.identity;
+      const backendActor = this.getBackendActor(identity || undefined);
+      if (!backendActor || typeof (backendActor as any).analyze_address !== 'function') {
+        throw new Error('Backend actor not initialized correctly (analyze_address missing)');
+      }
+      const communityResult = await backendActor.analyze_address(address);
 
       if ('Err' in communityResult) {
         throw new Error(`Community analysis failed: ${communityResult.Err}`);

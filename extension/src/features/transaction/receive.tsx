@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { CDN } from "~lib/constant/cdn"
 import { ROUTES } from "~lib/constant/routes"
 import { useWallet } from "~lib/context/walletContext"
+import LocalStorageService from "~service/localStorageService"
 
 function Receive() {
   const navigate = useNavigate()
@@ -13,7 +14,9 @@ function Receive() {
     isFetchingAddresses,
     addressesLoaded,
     getAddressesLoadingState,
-    isAuthenticated
+    isAuthenticated,
+    principalText,
+    fetchWalletAddresses
   } = useWallet()
 
   const [localAddresses, setLocalAddresses] = useState<{
@@ -24,6 +27,12 @@ function Receive() {
     icp_account?: string
   } | null>(null)
 
+  // Load from LocalStorageService
+  const loadCache = useCallback(() => {
+    if (!principalText) return null
+    return LocalStorageService.getWalletAddresses(principalText)
+  }, [principalText])
+
   const copy = async (text?: string) => {
     if (!text) return
     try {
@@ -31,12 +40,30 @@ function Receive() {
     } catch {}
   }
 
-  // Update local addresses when context addresses change
+  // Hydrate from cache on mount or when user changes
+  useEffect(() => {
+    const cached = loadCache()
+    if (cached) {
+      setLocalAddresses((prev) => prev ?? cached)
+    }
+  }, [loadCache])
+
+  // Update local state and persist when context addresses change
   useEffect(() => {
     if (addresses) {
       setLocalAddresses(addresses)
+      if (principalText) {
+        LocalStorageService.saveWalletAddresses(principalText, addresses)
+      }
     }
-  }, [addresses])
+  }, [addresses, principalText])
+
+  // Manual refresh from canister
+  const refreshAddresses = useCallback(async () => {
+    try {
+      await fetchWalletAddresses?.()
+    } catch {}
+  }, [fetchWalletAddresses])
 
   // Handle back navigation
   const handleBack = useCallback(() => {
@@ -67,6 +94,13 @@ function Receive() {
                 ? "Addresses loaded"
                 : "No addresses available"}
           </span>
+          <button
+            onClick={refreshAddresses}
+            disabled={!isAuthenticated || isFetchingAddresses}
+            className="text-xs text-white/80 hover:text-white disabled:opacity-50"
+          >
+            Refresh
+          </button>
         </div>
         {/* Bitcoin */}
         <h1 className="text-[14px] font-medium text-white mb-[6px]">
