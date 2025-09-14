@@ -78,105 +78,111 @@ const ProductsExtension = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Option 1: Right-Click Quick Scan */}
             <div className="bg-[#000000]/50 bg-opacity-90 backdrop-blur-sm rounded-2xl p-8 border border-[#333333] shadow-lg">
-              <h3 className="text-[24px] font-medium mb-6 text-white">
-                Option 1: <span className="text-[#8791E1]">Right-Click</span> Quick Scan
+              <h3 className="text-[24px] font-medium text-white">
+                Option 1:
               </h3>
+              <div className="mb-6">
+                <span className="text-[#8791E1] text-[32px]">Right-Click</span> <span className="text-white text-[32px]">Quick Scan</span>
+              </div>
 
-              <div className="space-y-8">
+              <div className="space-y-16">
                 {/* Step 1 */}
-                <div className="relative pl-20">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[13px] font-semibold tracking-[0.08em]">02</div>
-                    <div className="w-px h-14 md:h-16 bg-white/30 mt-2"></div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">01</div>
+                    <div className="w-px h-12 md:h-14 bg-white/30"></div>
                   </div>
                   <p className="text-[#B7C0CD] text-[17px] leading-relaxed">Highlight any wallet address on a webpage</p>
                 </div>
 
                 {/* Step 2 */}
-                <div className="relative pl-20">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[13px] font-semibold tracking-[0.08em]">02</div>
-                    <div className="w-px h-14 md:h-16 bg-white/30 mt-2"></div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">02</div>
+                    <div className="w-px h-12 md:h-14 bg-white/30"></div>
                   </div>
                   <p className="text-[#B7C0CD] text-[17px] leading-relaxed">Right-click and select “Scan with Fradium.”</p>
                 </div>
 
                 {/* Step 3 */}
-                <div className="relative pl-20">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[13px] font-semibold tracking-[0.08em]">02</div>
-                    <div className="w-px h-14 md:h-16 bg-white/30 mt-2"></div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">03</div>
+                    <div className="w-px h-12 md:h-14 bg-white/30"></div>
                   </div>
                   <p className="text-[#B7C0CD] text-[17px] leading-relaxed">The extension runs checks in the background (blacklists, scam history, risk patterns)</p>
                 </div>
 
                 {/* Final Step */}
-                <div className="relative pl-20">
-                  <div className="absolute left-1 top-0 flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full bg-[#74F490] text-[#04381F] flex items-center justify-center shadow-[0_0_0_2px_rgba(116,244,144,0.25)]">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <div className="relative pl-14">
+                  <div className="absolute left-0 top-0 flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-[#74F490] text-[#04381F] flex items-center justify-center shadow-[0_0_0_2px_rgba(116,244,144,0.25)]">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-[#74F490] text-[17px] font-semibold leading-relaxed">View instant result in a popover: risk level (e.g., Safe/Warning/High Risk), key flags, and a link to the full report</p>
+                  <p className="text-[#74F490] text-[17px] font-medium leading-relaxed">View instant result in a popover: risk level (e.g., Safe/Warning/High Risk), key flags, and a link to the full report</p>
                 </div>
               </div>
             </div>
 
             {/* Option 2: Scan from the Extension */}
             <div className="bg-[#000000]/50 bg-opacity-90 backdrop-blur-sm rounded-2xl p-8 border border-[#333333] shadow-lg">
-              <h3 className="text-[24px] font-medium mb-6 text-white">
-                Option 2: <span className="text-white">Scan from the <span className="text-[#8B5CF6]">Extension</span></span>
+              <h3 className="text-[24px] font-medium text-white">
+                Option 2:
               </h3>
+              <div className="mb-6">
+                <span className="text-white text-[32px]">Scan from the</span> <span className="text-[#8791E1] text-[32px]">Extension</span>
+              </div>
 
-              <div className="space-y-10">
+              <div className="space-y-16">
                 {/* Step 1 */}
-                <div className="relative pl-16">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">02</div>
-                    <div className="w-px h-12 md:h-14 bg-white/30 mt-2"></div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">01</div>
+                    <div className="w-px h-12 md:h-14 bg-white/30"></div>
                   </div>
                   <p className="text-[#B7C0CD] text-[17px] leading-relaxed">Open the Fradium icon in your browser toolbar.</p>
                 </div>
 
                 {/* Step 2 */}
-                <div className="relative pl-16">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">02</div>
-                    <div className="w-px h-12 md:h-14 bg-white/30 mt-2"></div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">02</div>
+                    <div className="w-px h-12 md:h-14 bg-white/30"></div>
                   </div>
                   <p className="text-[#B7C0CD] text-[17px] leading-relaxed">Choose Analyze Address</p>
                 </div>
 
                 {/* Step 3 */}
-                <div className="relative pl-16">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">02</div>
-                    <div className="w-px h-12 md:h-14 bg-white/30 mt-2"></div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">03</div>
+                    <div className="w-px h-12 md:h-14 bg-white/30"></div>
                   </div>
                   <p className="text-[#B7C0CD] text-[17px] leading-relaxed">Paste the wallet/contract address (or supported explorer URL)</p>
                 </div>
 
                 {/* Step 4 */}
-                <div className="relative pl-16">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">02</div>
-                    <div className="w-px h-12 md:h-14 bg-white/30 mt-2"></div>
+                    <div className="w-8 h-8 rounded-full border-2 border-white/90 text-white/95 flex items-center justify-center text-[12px] font-semibold tracking-[0.08em]">04</div>
+                    <div className="w-px h-12 md:h-14 bg-white/30"></div>
                   </div>
                   <p className="text-[#B7C0CD] text-[17px] leading-relaxed">Click Analyze to run the risk evaluation</p>
                 </div>
 
                 {/* Final Step */}
-                <div className="relative pl-16">
+                <div className="relative pl-14">
                   <div className="absolute left-0 top-0 flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full bg-[#74F490] text-[#04381F] flex items-center justify-center shadow-[0_0_0_2px_rgba(116,244,144,0.25)]">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="w-8 h-8 rounded-full bg-[#74F490] text-[#04381F] flex items-center justify-center shadow-[0_0_0_2px_rgba(116,244,144,0.25)]">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-[#74F490] text-[17px] font-semibold leading-relaxed">Review results in the panel: risk score, evidence (labels, transactions, reports), and recommended next steps</p>
+                  <p className="text-[#74F490] text-[17px] font-medium leading-relaxed">Review results in the panel: risk score, evidence (labels, transactions, reports), and recommended next steps</p>
                 </div>
               </div>
             </div>
