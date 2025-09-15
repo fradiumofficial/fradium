@@ -2,9 +2,12 @@ import { ArrowLeft, Copy, ArrowRight } from "lucide-react"
 
 import { CDN } from "~lib/constant/cdn"
 import { useAuth } from "~lib/context/authContext"
+import { ROUTES } from "~lib/constant/routes"
+import { useNavigate } from "react-router-dom"
 
 function Setting() {
   const { identity } = useAuth()
+  const navigate = useNavigate()
   const principalText = identity?.getPrincipal?.().toText?.() ?? ""
   const shortPrincipal = principalText
     ? `${principalText.slice(0, 4)}...${principalText.slice(-3)}`
@@ -79,6 +82,7 @@ function Setting() {
 
                 <button
                   type="button"
+                  onClick={() => navigate(ROUTES.MANAGE_NETWORK)}
                   className="justify-self-end inline-flex items-center gap-1 text-[12px] text-[#99E39E] hover:text-[#7DD488]"
                 >
                   Manage

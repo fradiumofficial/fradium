@@ -26,6 +26,7 @@ import Send from '~features/transaction/send';
 import SendSuccess from '~features/transaction/sendSuccess';
 import SendConfirm from '~features/transaction/sendConfirm';
 import Setting from '~features/preferences/pages/setting';
+import ManageNetwork from '~features/network/pages/manage_network';
 
 const AuthOrWelcome: React.FC = () => {
   const { isAuthenticated, isLoading } = useWallet() as any
@@ -146,6 +147,11 @@ function IndexPopup() {
             <Route path={ROUTES.SETTING} element={
               <ProtectedRoute>
                 <Setting />
+              </ProtectedRoute>
+            } />
+            <Route path={ROUTES.MANAGE_NETWORK} element={
+              <ProtectedRoute>
+                <ManageNetwork />
               </ProtectedRoute>
             } />
             {/* Fallback route */}
