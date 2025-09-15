@@ -1,8 +1,8 @@
 {
   "name": "fradium-wallet-extension",
-  "displayName": "Fradium Wallet extension",
+  "displayName": "Fradium - The Trust Layer for Web3 Transaction",
   "version": "0.0.1",
-  "description": "The Trust Layer for Web3 Transaction",
+  "description": "Advanced fraud detection and prevention for crypto transactions. Analyze addresses, smart contracts, and ransomware",
   "author": "FradiumOfficial",
   "scripts": {
     "dev": "plasmo dev",
