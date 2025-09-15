@@ -7,7 +7,7 @@ import { useAuth } from "~lib/context/authContext";
 import { ROUTES } from "~lib/constant/routes";
 import { TxHistoryService } from "~service/txHistoryService";
 
-type NetworkKey = "btc" | "eth" | "sol";
+type NetworkKey = "btc" | "eth" | "sol" | "icp" | "fra";
 
 function Send() {
   const navigate = useNavigate();
@@ -41,6 +41,8 @@ function Send() {
     { key: "btc" as NetworkKey, name: "Bitcoin", symbol: "BTC", icon: CDN.tokens.bitcoin },
     { key: "eth" as NetworkKey, name: "Ethereum", symbol: "ETH", icon: CDN.tokens.eth },
     { key: "sol" as NetworkKey, name: "Solana", symbol: "SOL", icon: CDN.tokens.solana },
+    { key: "icp" as NetworkKey, name: "Internet Computer", symbol: "ICP", icon: CDN.tokens.icp },
+    { key: "fra" as NetworkKey, name: "Fradium", symbol: "FUM", icon: CDN.tokens.fradiumDark },
   ];
 
   // Get current network info
@@ -66,6 +68,8 @@ function Send() {
       case "btc": return 8; // Satoshi to BTC
       case "eth": return 6; // ETH displayed with up to 6 decimals
       case "sol": return 9;  // Lamports to SOL
+      case "icp": return 8;  // ICP uses 8 decimal places
+      case "fra": return 8;  // Fradium uses 8 decimal places
       default: return 8;
     }
   }, [selectedNetwork]);
@@ -100,6 +104,66 @@ function Send() {
           const solBalance = await walletActor.solana_balance();
           const solValue = Number(solBalance) / 1000000000; // Convert lamports to SOL
           balanceValue = solValue.toFixed(getDecimalPlaces());
+          break;
+        case "icp":
+          try {
+            // Import ICP ledger actor dynamically
+            const { createActor: createIcpLedgerActor, canisterId: icpLedgerCanisterId } = await import("../../../../src/declarations/icp_ledger");
+            const { HttpAgent } = await import("@dfinity/agent");
+
+            const agent = new HttpAgent({ identity }) as any;
+            if (process.env.DFX_NETWORK !== "ic") {
+              try { await agent.fetchRootKey() } catch {}
+            }
+
+            const icpActor = createIcpLedgerActor(icpLedgerCanisterId, { agent });
+            const owner = identity.getPrincipal();
+            const icpRaw = await icpActor.icrc1_balance_of({ owner, subaccount: [] });
+
+            let decimals = 8;
+            try {
+              const decimalsResult = await icpActor.icrc1_decimals?.();
+              if (decimalsResult && typeof decimalsResult === 'object') {
+                decimals = (decimalsResult as any).decimals || 8;
+              }
+            } catch {}
+
+            const icpValue = Number(icpRaw) / Math.pow(10, decimals);
+            balanceValue = icpValue.toFixed(getDecimalPlaces());
+          } catch (error) {
+            console.error("Error fetching ICP balance:", error);
+            balanceValue = "0.00000000";
+          }
+          break;
+        case "fra":
+          try {
+            // Import Fradium ledger actor dynamically
+            const { createActor: createFradiumLedgerActor, canisterId: fradiumLedgerCanisterId } = await import("../../../../src/declarations/fradium_ledger");
+            const { HttpAgent } = await import("@dfinity/agent");
+
+            const agent = new HttpAgent({ identity }) as any;
+            if (process.env.DFX_NETWORK !== "ic") {
+              try { await agent.fetchRootKey() } catch {}
+            }
+
+            const fradiumActor = createFradiumLedgerActor(fradiumLedgerCanisterId, { agent });
+            const owner = identity.getPrincipal();
+            const fumRaw = await fradiumActor.icrc1_balance_of({ owner, subaccount: [] });
+
+            let decimals = 8;
+            try {
+              const decimalsResult = await fradiumActor.icrc1_decimals?.();
+              if (decimalsResult && typeof decimalsResult === 'object') {
+                decimals = (decimalsResult as any).decimals || 8;
+              }
+            } catch {}
+
+            const fumValue = Number(fumRaw) / Math.pow(10, decimals);
+            balanceValue = fumValue.toFixed(getDecimalPlaces());
+          } catch (error) {
+            console.error("Error fetching Fradium balance:", error);
+            balanceValue = "0.00000000";
+          }
           break;
       }
 
@@ -174,6 +238,30 @@ function Send() {
           return false;
         }
         break;
+      case "icp":
+        // ICP Principal/Account validation
+        if (address.length < 27 || address.length > 64) {
+          setAddressError("Invalid ICP Principal or Account ID format");
+          return false;
+        }
+        // Additional validation for ICP format (basic check)
+        if (!address.includes('-') && !address.startsWith('aaaaa-aa')) {
+          setAddressError("Invalid ICP address format");
+          return false;
+        }
+        break;
+      case "fra":
+        // Fradium Principal/Account validation (similar to ICP)
+        if (address.length < 27 || address.length > 64) {
+          setAddressError("Invalid Fradium Principal or Account ID format");
+          return false;
+        }
+        // Additional validation for Fradium format (basic check)
+        if (!address.includes('-') && !address.startsWith('aaaaa-aa')) {
+          setAddressError("Invalid Fradium address format");
+          return false;
+        }
+        break;
     }
 
     setAddressError(null);
@@ -240,6 +328,10 @@ function Send() {
         return BigInt(Math.floor(amount * Math.pow(10, 18))); // ETH to wei
       case "sol":
         return BigInt(Math.floor(amount * 1000000000)); // SOL to lamports
+      case "icp":
+        return BigInt(Math.floor(amount * Math.pow(10, 8))); // ICP to smallest unit (8 decimals)
+      case "fra":
+        return BigInt(Math.floor(amount * Math.pow(10, 8))); // Fradium to smallest unit (8 decimals)
       default:
         return BigInt(0);
     }
