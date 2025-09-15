@@ -75,15 +75,13 @@ jobs:
       - name: Build extension (MV3 prod)
         run: pnpm build
 
-      # FIX: repack the build so manifest.json is at root of .zip
       - name: Repackage extension zip
         run: |
-          cd build/chrome-mv3-prod
-          zip -r ../chrome-mv3-prod-fixed.zip .
+          cd extension/build/chrome-mv3-prod
+          zip -r ../fradium-extension-${{ github.ref_name }}.zip ./*
 
-      # Optional: keep artifact for debugging
       - name: Upload packaged zip
         uses: actions/upload-artifact@v4
         with:
           name: fradium-extension-${{ github.ref_name }}
-          path: extension/build/chrome-mv3-prod-fixed.zip
+          path: extension/build/fradium-extension-${{ github.ref_name }}.zip
