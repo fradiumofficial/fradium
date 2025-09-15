@@ -80,7 +80,7 @@ jobs:
       - name: Upload packaged zip 
         uses: actions/upload-artifact@v4
         with:
-          name: fradium-extension-${{ steps.envsel.outputs.env_name }}-${{ github.ref_name }}
+          name: fradium-extension-${{ github.ref_name }}
           path: extension/build/chrome-mv3-prod.zip
 
       # - name: Publish to web store (production only)
