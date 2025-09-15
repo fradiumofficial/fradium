@@ -146,6 +146,15 @@ function Home() {
     return (extensionTokens || []).some((t: any) => balanceLoading?.[t.id]);
   }, [extensionTokens, balanceLoading]);
 
+  // Detect initial loading before first balances arrive from canisters
+  const hasAnyBalanceLoaded = useMemo(() => {
+    return (extensionTokens || []).some((t: any) => balances?.[t.id] !== undefined);
+  }, [extensionTokens, balances]);
+
+  const isInitialLoading = useMemo(() => {
+    return !hasAnyBalanceLoaded && (isAnyBalanceLoading || isRefreshingBalances);
+  }, [hasAnyBalanceLoaded, isAnyBalanceLoading, isRefreshingBalances]);
+
   // Kick off initial fetches when authenticated actor is ready and nothing has loaded yet
   React.useEffect(() => {
     if (!isAuthenticated || !walletActor) return;
@@ -242,35 +251,49 @@ function Home() {
             <div className="flex flex-col items-center p-0 gap-[4px] w-full h-[60px] flex-none order-1 flex-grow-0">
               {/* Total USD Amount based on balances */}
               <div className="w-full h-8 font-['General Sans'] font-semibold text-[32px] leading-8 flex items-center justify-center text-white flex-none order-0 flex-grow-0 text-center">
-                {hideBalance ? "••••" : formatUSDDisplay(totalUsd)}
+                {isInitialLoading ? (
+                  <span className="inline-block w-[160px] h-7 rounded bg-white/20 animate-pulse" />
+                ) : (
+                  hideBalance ? "••••" : formatUSDDisplay(totalUsd)
+                )}
               </div>
 
               {/* USD Breakdown */}
               <div className="flex flex-row items-center justify-center gap-2 w-full flex-none order-1 flex-grow-0 text-center">
-                {(() => {
-                  const tokensWithValue = usdBreakdown.filter(item => item.usdValue > 0);
-                  return tokensWithValue.length > 0 ? (
-                    tokensWithValue
-                      .slice(0, 3) // Show max 3 tokens
-                      .map((item, index) => (
-                        <div key={item.symbol} className="flex items-center gap-1">
-                          <span className="font-['General Sans'] font-medium text-[10px] leading-tight text-white/80">
-                            {item.symbol}
-                          </span>
-                          <span className="font-['General Sans'] font-semibold text-[10px] leading-tight text-white">
-                            {formatUSDDisplay(item.usdValue)}
-                          </span>
-                          {index < Math.min(tokensWithValue.length, 3) - 1 && (
-                            <span className="text-white/60 text-[8px]">•</span>
-                          )}
-                        </div>
-                      ))
-                  ) : (
-                    <span className="font-['General Sans'] font-medium text-[10px] leading-tight text-white/70">
-                      Add funds to get started
-                    </span>
-                  );
-                })()}
+                {isInitialLoading ? (
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-3 bg-white/15 rounded animate-pulse" />
+                    <span className="w-12 h-3 bg-white/15 rounded animate-pulse" />
+                    <span className="w-1 h-1 bg-white/15 rounded" />
+                    <span className="w-8 h-3 bg-white/15 rounded animate-pulse" />
+                    <span className="w-12 h-3 bg-white/15 rounded animate-pulse" />
+                  </div>
+                ) : (
+                  (() => {
+                    const tokensWithValue = usdBreakdown.filter(item => item.usdValue > 0);
+                    return tokensWithValue.length > 0 ? (
+                      tokensWithValue
+                        .slice(0, 3) // Show max 3 tokens
+                        .map((item, index) => (
+                          <div key={item.symbol} className="flex items-center gap-1">
+                            <span className="font-['General Sans'] font-medium text-[10px] leading-tight text-white/80">
+                              {item.symbol}
+                            </span>
+                            <span className="font-['General Sans'] font-semibold text-[10px] leading-tight text-white">
+                              {formatUSDDisplay(item.usdValue)}
+                            </span>
+                            {index < Math.min(tokensWithValue.length, 3) - 1 && (
+                              <span className="text-white/60 text-[8px]">•</span>
+                            )}
+                          </div>
+                        ))
+                    ) : (
+                      <span className="font-['General Sans'] font-medium text-[10px] leading-tight text-white/70">
+                        Add funds to get started
+                      </span>
+                    );
+                  })()
+                )}
               </div>
             </div>
           </div>
@@ -370,7 +393,29 @@ function Home() {
         <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[180px] flex-none order-1 self-stretch flex-grow-0 overflow-y-auto">
           {/* Content */}
           <div className="flex flex-col items-start p-0 w-[335px] flex-none order-0 self-stretch flex-grow-0">
-            {filteredTokens.map((token, index) => {
+            {isInitialLoading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index}>
+                  <div className="box-border flex flex-row justify-between items-center p-[12px_0px] gap-4 w-[335px] h-[69px]">
+                    <div className="mx-auto flex flex-row items-center p-0 gap-4 w-[242px] h-[45px]">
+                      <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />
+                      <div className="flex flex-col items-start gap-2 w-[183px]">
+                        <div className="w-24 h-4 bg-white/15 rounded animate-pulse" />
+                        <div className="w-36 h-3 bg-white/10 rounded animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end p-0 pr-4 w-[80px] h-[45px]">
+                      <div className="w-16 h-4 bg-white/15 rounded animate-pulse" />
+                      <div className="w-12 h-3 bg-white/10 rounded mt-2 animate-pulse" />
+                    </div>
+                  </div>
+                  {index < 3 && (
+                    <div className="w-[335px] h-0 border border-white/10" />
+                  )}
+                </div>
+              ))
+            ) : (
+            filteredTokens.map((token, index) => {
               const balance = balances[token.id] || "0.000000";
               const isLoading = balanceLoading[token.id];
               const hasError = balanceErrors[token.id];
@@ -455,7 +500,7 @@ function Home() {
                   )}
                 </div>
               );
-            })}
+            }))}
           </div>
 
           {/* Debug info if no tokens */}

@@ -12,7 +12,12 @@ import {
   createActor as createWalletActor,
   canisterId as walletCanisterId,
 } from "../../../../src/declarations/wallet"
+import { createActor as createIcpLedgerActor, canisterId as icpLedgerCanisterId } from "../../../../src/declarations/icp_ledger"
+import { createActor as createFradiumLedgerActor, canisterId as fradiumLedgerCanisterId } from "../../../../src/declarations/fradium_ledger"
 import { TOKENS_CONFIG, TokenType } from "~lib/utils/tokenUtils"
+import { createActor as createIcpIndexActor, canisterId as icpIndexCanisterId } from "../../../../src/declarations/icp_index"
+import { createActor as createFradiumIndexActor, canisterId as fradiumIndexCanisterId } from "../../../../src/declarations/fradium_index"
+import { Principal } from "@dfinity/principal"
 import { fetchUsdPrices } from "~service/priceService"
 
 // Resolve canister ID for extension builds where env injection may be missing
@@ -26,6 +31,29 @@ const EFFECTIVE_WALLET_CANISTER_ID =
   )) ||
   // As a last resort, fall back to mainnet canister ID in canister_ids.json
   "v3x23-lyaaa-aaaam-aej2a-cai"
+
+// Resolve ICP and Fradium ledger canister IDs for extension builds
+const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
+  icpLedgerCanisterId ||
+  (typeof process !== "undefined" && (
+    (process as any).env?.VITE_CANISTER_ID_ICP_LEDGER ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_ICP_LEDGER ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_ICP_LEDGER ||
+    (process as any).env?.CANISTER_ID_ICP_LEDGER
+  )) ||
+  // ICP mainnet ledger as final fallback
+  "ryjl3-tyaaa-aaaaa-aaaba-cai"
+
+const EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID =
+  fradiumLedgerCanisterId ||
+  (typeof process !== "undefined" && (
+    (process as any).env?.VITE_CANISTER_ID_FRADIUM_LEDGER ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
+    (process as any).env?.CANISTER_ID_FRADIUM_LEDGER
+  )) ||
+  // Project mainnet value from canister_ids.json
+  "sr4wk-4qaaa-aaaae-qfdta-cai"
 
 interface NetworkFilters {
   Bitcoin: boolean
@@ -138,6 +166,10 @@ interface WalletContextType {
   isRefreshingPrices: boolean
   fetchAllUSDPrices: () => Promise<void>
   refreshAllUSDPrices: () => Promise<void>
+
+  // ICRC actions
+  sendIcrcTransfer: (token: "icp" | "fradium", toPrincipalText: string, amount: number) => Promise<{ success: boolean; error?: string }>
+  fetchIcrcHistory: (token: "icp" | "fradium", limit?: number) => Promise<any[]>
 }
 
 const WalletContext = createContext<WalletContextType | null>(null)
@@ -403,13 +435,49 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           break
 
         case "icp":
-          // ICP balance - placeholder for now
-          balance = "0.00"
+          try {
+            const resolvedId = EFFECTIVE_ICP_LEDGER_CANISTER_ID
+            if (!resolvedId) throw new Error("ICP ledger canister ID not configured")
+            const agent = new HttpAgent({ identity })
+            if (process.env.DFX_NETWORK !== "ic") {
+              try { await agent.fetchRootKey() } catch {}
+            }
+            const icpActor = createIcpLedgerActor(resolvedId as any, { agent: agent as any }) as any
+            const owner = identity.getPrincipal()
+            const icpRaw = await icpActor.icrc1_balance_of({ owner, subaccount: [] })
+            let decimals = 8
+            try {
+              decimals = (await icpActor.icrc1_decimals?.()) ?? (await icpActor.decimals?.()) ?? 8
+            } catch {}
+            const icpValue = Number(icpRaw) / Math.pow(10, Number(decimals))
+            balance = icpValue.toFixed(6)
+          } catch (e) {
+            console.warn("Failed to fetch ICP balance:", e)
+            balance = "0.000000"
+          }
           break
 
         case "fradium":
-          // Fradium balance - placeholder for now
-          balance = "0.00"
+          try {
+            const resolvedId = EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID
+            if (!resolvedId) throw new Error("Fradium ledger canister ID not configured")
+            const agent = new HttpAgent({ identity })
+            if (process.env.DFX_NETWORK !== "ic") {
+              try { await agent.fetchRootKey() } catch {}
+            }
+            const fradiumActor = createFradiumLedgerActor(resolvedId as any, { agent: agent as any }) as any
+            const owner = identity.getPrincipal()
+            const fumRaw = await fradiumActor.icrc1_balance_of({ owner, subaccount: [] })
+            let decimals = 8
+            try {
+              decimals = (await fradiumActor.icrc1_decimals?.()) ?? 8
+            } catch {}
+            const fumValue = Number(fumRaw) / Math.pow(10, Number(decimals))
+            balance = fumValue.toFixed(6)
+          } catch (e) {
+            console.warn("Failed to fetch Fradium balance:", e)
+            balance = "0.000000"
+          }
           break
 
         default:
@@ -487,6 +555,70 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isRefreshingPrices, fetchAllUSDPrices])
 
+  // Send ICRC transfer (ICP or Fradium)
+  const sendIcrcTransfer = useCallback(async (token: "icp" | "fradium", toPrincipalText: string, amount: number) => {
+    try {
+      if (!identity) throw new Error("Not authenticated")
+      const owner = identity.getPrincipal()
+      const to = Principal.fromText(toPrincipalText)
+      const agent = new HttpAgent({ identity })
+      if (process.env.DFX_NETWORK !== "ic") {
+        try { await agent.fetchRootKey() } catch {}
+      }
+
+      const actor = token === "icp"
+        ? (createIcpLedgerActor(icpLedgerCanisterId as any, { agent: agent as any }) as any)
+        : (createFradiumLedgerActor(fradiumLedgerCanisterId as any, { agent: agent as any }) as any)
+
+      // decimals -> convert to e8s
+      let decimals = 8
+      try { decimals = (await actor.icrc1_decimals?.()) ?? (await actor.decimals?.()) ?? 8 } catch {}
+      const amountE8s = BigInt(Math.floor(amount * Math.pow(10, Number(decimals))))
+
+      const res = await actor.icrc1_transfer({
+        from_subaccount: [],
+        to: { owner: to, subaccount: [] },
+        amount: amountE8s,
+        fee: [],
+        memo: [],
+        created_at_time: []
+      })
+      if (res && res.Err) throw new Error(JSON.stringify(res.Err))
+      // Kickoff a background refresh
+      refreshAllBalances().catch(() => {})
+      return { success: true }
+    } catch (e: any) {
+      return { success: false, error: e?.message || String(e) }
+    }
+  }, [identity, refreshAllBalances])
+
+  // Fetch ICRC history via index canisters (raw entries)
+  const fetchIcrcHistory = useCallback(async (token: "icp" | "fradium", limit = 20) => {
+    try {
+      if (!identity) return []
+      const agent = new HttpAgent({ identity })
+      if (process.env.DFX_NETWORK !== "ic") {
+        try { await agent.fetchRootKey() } catch {}
+      }
+      const owner = identity.getPrincipal()
+      if (token === "icp") {
+        if (!icpIndexCanisterId) return []
+        const indexActor = createIcpIndexActor(icpIndexCanisterId as any, { agent: agent as any }) as any
+        const res = await indexActor.get_account_transactions({ account: { owner, subaccount: [] }, start: [], max_results: BigInt(limit) })
+        if (res && res.Ok && res.Ok.transactions) return res.Ok.transactions
+        return []
+      } else {
+        if (!fradiumIndexCanisterId) return []
+        const indexActor = createFradiumIndexActor(fradiumIndexCanisterId as any, { agent: agent as any }) as any
+        const res = await indexActor.get_account_transactions({ account: { owner, subaccount: [] }, start: [], max_results: BigInt(limit) })
+        if (res && res.Ok && res.Ok.transactions) return res.Ok.transactions
+        return []
+      }
+    } catch {
+      return []
+    }
+  }, [identity])
+
   // Auto-fetch when actor becomes available (run once per session)
   useEffect(() => {
     if (identity && walletActor && isAuthenticated && !hasLoadedAddressesOnce) {
@@ -561,6 +693,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isRefreshingPrices,
       fetchAllUSDPrices,
       refreshAllUSDPrices,
+      // ICRC actions
+      sendIcrcTransfer,
+      fetchIcrcHistory,
     }),
     [
       isLoading,
@@ -597,6 +732,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       isRefreshingPrices,
       fetchAllUSDPrices,
       refreshAllUSDPrices,
+      sendIcrcTransfer,
+      fetchIcrcHistory,
     ]
   )
 
