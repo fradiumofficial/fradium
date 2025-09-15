@@ -3,16 +3,17 @@ import { useNavigate } from "react-router";
 
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
-import { Search, AlertTriangle, CheckCircle, Clock, Eye, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, Clock, Eye, ArrowUpDown, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { backend } from "declarations/backend";
 import { toast } from "react-toastify";
+import Footer from "../../core/components/Footer.jsx";
 
 import Card from "@/core/components/Card";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 
-const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
-const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp";
+const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/dao-1.webp";
+const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/dao-2.webp";
 
 export default function ReportPage() {
   const navigate = useNavigate();
@@ -206,6 +207,7 @@ export default function ReportPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredAndSortedData.slice(startIndex, endIndex);
 
+
   // Handle sort change
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -352,7 +354,7 @@ export default function ReportPage() {
         </div>
 
         {/* Rest of Content - overlap up to blend with background-1 */}
-        <div className={`relative md:px-6 overflow-hidden -mt-10 md:-mt-6 min-h-[900px] md:min-h-[1000px] pb-24 md:pb-40 transition-all duration-700 ease-out ${pageTransitionClass}`}>
+        <div className={`relative md:px-6 overflow-hidden -mt-10 md:-mt-6 min-h-[900px] md:min-h-[1000px] transition-all duration-700 ease-out ${pageTransitionClass}`}>
           <div className="absolute inset-0 z-0 pointer-events-none select-none">
             <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
           </div>
@@ -383,57 +385,50 @@ export default function ReportPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 xl:grid-cols-1 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 gap-4 sm:gap-6">
                     {currentData.map((report, index) => (
-                      <div key={report.id}>
-                        <div className="rounded-xl p-4">
-                          {/* Card Header */}
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-                                <span className="font-mono text-base sm:text-lg font-semibold truncate">{report.shortAddress}</span>
-                                <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)} self-start`}>
-                                  {getStatusIcon(report.status)}
-                                  <span>{report.status}</span>
+                      <div key={report.report_id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)]">
+                        {/* Card Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1 min-w-0">
+                            {/* Network and Address */}
+                            <div className="flex ml-4 mb-2">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs font-bold">₿</span>
                                 </div>
+                                <span className="text-sm text-gray-300">{report.chain} Network</span>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-400">
-                                <span>{report.category}</span>
-                                <span className="hidden sm:inline">•</span>
-                                <span>Reported {report.dateReported}</span>
+                              <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full ml-4 text-xs font-medium border ${getStatusColor(report.status)}`}>
+                                {getStatusIcon(report.status)}
+                                <span>{report.status}</span>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Vote Information */}
-                          <div className="mb-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">{report.chain} Network</span>
-                              <span className="text-sm font-semibold">{report.totalVotes.toLocaleString()} votes</span>
+                              <span className="font-mono text-lg font-semibold text-white">{report.shortAddress}</span>
                             </div>
-                            <div className="mb-2">
-                              <div className="flex justify-between text-xs mb-1">
-                                <span className="text-red-400">Unsafe: {report.yesPercentage}%</span>
-                                <span className="text-green-400">Safe: {report.noPercentage}%</span>
-                              </div>
-                              <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                                <div className="bg-red-400 h-2 rounded-full" style={{ width: `${report.yesPercentage}%` }} />
-                              </div>
+
+                            <div className="flex items-center space-x-2 text-sm text-gray-400 mb-4">
+                              <span>{report.category}</span>
+                              <span>•</span>
+                              <span>Reported {report.dateReported}</span>
                             </div>
                           </div>
 
-                          {/* Card Footer */}
-                          <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                            <div className="flex items-center space-x-4 text-xs text-gray-400">
-                              <span>ID: #{report.id.toString().padStart(4, "0")}</span>
-                              <span>Evidence: {report.evidence.length}</span>
-                            </div>
-                            <Button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm" onClick={() => navigate(`/reports/${report.id}`)}>
-                              <Eye className="w-3 h-3 mr-2" />
-                              <span className="hidden sm:inline">View Details</span>
-                              <span className="sm:hidden">View</span>
-                            </Button>
-                          </div>
+                          <Button className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 text-white text-sm px-4 py-2 !rounded-full" onClick={() => navigate(`/reports/${report.id}`)}>
+                            View Details
+                            <ArrowUpRight className="w-3 h-3 ml-2" />
+                          </Button>
+                        </div>
+
+                        {/* Vote Information */}
+                        <div className="flex justify-between text-xs mb-2">
+                          <span className="text-red-400">Unsafe: {report.yesPercentage}%</span>
+                          <span className="text-green-400">Safe: {report.noPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                          <div className="bg-red-400 h-2 rounded-full" style={{ width: `${report.yesPercentage}%` }} />
                         </div>
                       </div>
                     ))}
@@ -512,6 +507,7 @@ export default function ReportPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import Footer from "../../core/components/Footer.jsx";
 import { useNavigate } from "react-router-dom";
@@ -29,22 +29,31 @@ const Home = () => {
     }
   };
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  const appear = isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2";
+
   return (
     <section className="relative bg-[#000510] w-full overflow-hidden">
       {/* Tagline di atas background */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-16 mt-8 text-center sm:pt-24">
+      <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-16 mt-8 text-center sm:pt-24 transition-all duration-700 ease-out ${appear}`}>
         <p className="text-[14px] font-medium tracking-[0.28em] text-[#C1FFC5]">REINVENTED BLOCKCHAIN SECURITY</p>
       </div>
 
       {/* Hero background dimulai di bawah tagline, mengikuti pola layering dari App.jsx */}
-      <div className="relative mx-auto mt-4 overflow-hidden">
+      <div className={`relative mx-auto mt-4 overflow-hidden transition-all duration-700 ease-out ${appear}`}>
         {/* Background layer */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
         </div>
 
         {/* Content di atas background */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center">
+        <div className={`relative z-10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-out ${appear}`}>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white">
             Protect every transaction.
             <br className="hidden sm:block" />
@@ -53,7 +62,7 @@ const Home = () => {
           <p className="mx-auto mt-6 max-w-3xl text-gray-300 text-sm md:text-base">Here is Your Digital Asset Guardian to Analyse, Protect, Transact with Confidence.</p>
         </div>
         {/* Row pertama: dua card */}
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-14">
+        <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-14 transition-all duration-700 ease-out ${appear}`}>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
             {/* Card kiri: About Fradium Web3 Security */}
             <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
@@ -84,7 +93,7 @@ const Home = () => {
       </div>
 
       {/* Background kedua di bawah background pertama, dengan jarak margin-8 */}
-      <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[760px] overflow-hidden">
+      <div className={`relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[760px] overflow-hidden transition-all duration-700 ease-out ${appear}`}>
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL_2} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
         </div>
@@ -92,7 +101,7 @@ const Home = () => {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
 
         {/* Row kedua: kolom kiri panjang, kolom kanan dua kartu setengah tinggi */}
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-6 pb-12">
+        <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-6 pb-12 transition-all duration-700 ease-out ${appear}`}>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-12 md:gap-4">
             {/* Kolom kiri (panjang) */}
             <div className="md:col-span-5">
@@ -146,7 +155,7 @@ const Home = () => {
       </div>
 
       {/* Background ketiga paling bawah, konten akan diletakkan di atasnya */}
-      <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
+      <div className={`relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible transition-all duration-700 ease-out ${appear}`}>
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img
             src={BACKGROUND_URL_3}
@@ -162,7 +171,7 @@ const Home = () => {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
 
         {/* Wrapper konten */}
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-10 pb-24 md:pb-32">
+        <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-10 pb-24 md:pb-32 transition-all duration-700 ease-out ${appear}`}>
           {/* Hero di atas background ketiga */}
           <div className="flex flex-col items-center justify-center text-center">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white">
