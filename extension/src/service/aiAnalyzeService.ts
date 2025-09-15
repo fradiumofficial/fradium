@@ -5,7 +5,6 @@ import { extractSolanaFeatures } from './solanaAnalyzeService';
 import { createActor as createAiActor, canisterId as aiCanisterId } from '../../../src/declarations/ai';
 import { createActor as createBackendActor, canisterId as backendCanisterId } from '../../../src/declarations/backend';
 import { HttpAgent } from '@dfinity/agent';
-import { HistoryService } from './historyService';
 import type {
   RansomwareResult,
   AnalysisResult,
@@ -364,8 +363,7 @@ export class AIAnalyzeService {
     try {
       console.log(`Performing community analysis for address: ${address}`);
 
-      const identity = HistoryService.identity;
-      const backendActor = this.getBackendActor(identity || undefined);
+      const backendActor = this.getBackendActor();
       if (!backendActor || typeof (backendActor as any).analyze_address !== 'function') {
         throw new Error('Backend actor not initialized correctly (analyze_address missing)');
       }
@@ -539,66 +537,13 @@ export class AIAnalyzeService {
    * @param network - Network type
    */
   private static async saveAnalysisToHistory(
-    address: string,
-    result: AIAnalysisResult | CombinedAnalysisResult,
-    network: SupportedNetwork
+    _address: string,
+    _result: AIAnalysisResult | CombinedAnalysisResult,
+    _network: SupportedNetwork
   ): Promise<void> {
-    try {
-      // Prepare metadata based on analysis type and result
-      let metadata = '';
-      let analyzedType: 'AIAnalysis' | 'CommunityVote' = 'AIAnalysis';
-
-      if ('analysisSource' in result) {
-        // Combined analysis result
-        const combinedResult = result as CombinedAnalysisResult;
-
-        if (combinedResult.analysisSource === 'community' || combinedResult.finalStatus === 'unsafe_by_community') {
-          analyzedType = 'CommunityVote';
-          metadata = JSON.stringify({
-            analysis_type: 'community_analysis',
-            final_status: combinedResult.finalStatus,
-            community_result: combinedResult.result,
-            ai_result: combinedResult.aiAnalysis,
-            timestamp: Date.now()
-          });
-        } else {
-          analyzedType = 'AIAnalysis';
-          metadata = JSON.stringify({
-            analysis_type: 'ai_analysis',
-            final_status: combinedResult.finalStatus,
-            ai_result: combinedResult.result,
-            community_result: combinedResult.communityAnalysis,
-            timestamp: Date.now()
-          });
-        }
-      } else {
-        // AI analysis result only
-        const aiResult = result as AIAnalysisResult;
-        metadata = JSON.stringify({
-          analysis_type: 'ai_only_analysis',
-          ai_result: aiResult.result,
-          timestamp: Date.now()
-        });
-      }
-
-      // Convert network to token type
-      const tokenType = this.networkToTokenType(network);
-
-      // Save to history using the HistoryService
-      const authenticatedBackend = HistoryService.createAuthenticatedBackend(HistoryService.identity);
-      await HistoryService.createAnalyzeHistory(authenticatedBackend, {
-        address,
-        is_safe: result.result.isSafe,
-        analyzed_type: analyzedType,
-        metadata,
-        token_type: tokenType
-      });
-
-      console.log('Analysis result saved to history successfully');
-    } catch (error) {
-      console.error('Failed to save analysis to history:', error);
-      // Don't throw error - history saving failure shouldn't break the analysis
-    }
+    // History persistence via backend has been disabled in the extension build
+    // after removing historyService. This is intentionally a no-op.
+    return;
   }
 
   /**
