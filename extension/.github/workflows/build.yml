@@ -1,0 +1,93 @@
+name: "Build & Release on Tag"
+
+on:
+  push:
+    tags:
+      - "v*-development"
+      - "v*-production"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    env:
+      TAG_NAME: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2.4.0
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+          cache-dependency-path: extension/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Determine environment from tag
+        id: envsel
+        shell: bash
+        run: |
+          if [[ "${TAG_NAME}" == *"-production" ]]; then
+            echo "env_name=production" >> $GITHUB_OUTPUT
+          elif [[ "${TAG_NAME}" == *"-development" ]]; then
+            echo "env_name=development" >> $GITHUB_OUTPUT
+          else
+            echo "Unsupported tag suffix. Use -development or -production" >&2
+            exit 1
+          fi
+
+      - name: Create .env.production from secrets
+        shell: bash
+        run: |
+          if [[ "${{ steps.envsel.outputs.env_name }}" == "production" ]]; then
+            echo "PLASMO_PUBLIC_ETHERSCAN_API_KEY=${{ secrets.ETHERSCAN_KEY_PROD }}" >> .env.production
+            echo "VITE_CRYPTOCOMPARE_API_KEY=${{ secrets.CRYPTOCOMPARE_KEY_PROD }}" >> .env.production
+            echo "VITE_MORALIS_API_KEY=${{ secrets.MORALIS_KEY_PROD }}" >> .env.production
+          else
+            echo "PLASMO_PUBLIC_ETHERSCAN_API_KEY=${{ secrets.ETHERSCAN_KEY_DEV }}" >> .env.production
+            echo "VITE_CRYPTOCOMPARE_API_KEY=${{ secrets.CRYPTOCOMPARE_KEY_DEV }}" >> .env.production
+            echo "VITE_MORALIS_API_KEY=${{ secrets.MORALIS_KEY_DEV }}" >> .env.production
+          fi
+
+      - name: Set extension/package.json version from tag
+        shell: bash
+        run: |
+          BASE_VERSION=$(echo "${TAG_NAME}" | sed -E 's/^v([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+          if [[ -z "${BASE_VERSION}" ]]; then
+            echo "Failed to parse version from tag ${TAG_NAME}" >&2
+            exit 1
+          fi
+          echo "Setting extension/package.json version to ${BASE_VERSION}"
+          jq --arg v "${BASE_VERSION}" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
+
+      - name: Build extension (MV3 prod)
+        run: pnpm build
+
+      - name: Package extension
+        run: pnpm package
+
+      - name: Upload packaged zip 
+        uses: actions/upload-artifact@v4
+        with:
+          name: fradium-extension-${{ steps.envsel.outputs.env_name }}-${{ github.ref_name }}
+          path: extension/build/chrome-mv3-prod.zip
+
+      # - name: Publish to web store (production only)
+      #   if: contains(github.ref_name, '-production')
+      #   uses: PlasmoHQ/bpp@v3
+      #   with:
+      #     keys: ${{ secrets.SUBMIT_KEYS }}
+      #     artifact: extension/build/chrome-mv3-prod.zip
+
+

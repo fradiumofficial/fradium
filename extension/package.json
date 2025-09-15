@@ -34,12 +34,28 @@
     "prettier": "3.2.4",
     "typescript": "5.3.3"
   },
-  "manifest": {
-    "host_permissions": [
-      "https://*.ic0.app/*",
-      "https://*.icp0.io/*",
-      "https://*.icp-api.io/*",
-      "https://fradium.io/"
-    ]
-  }
+  "permissions": [
+    "storage"
+  ],
+"manifest": {
+  "host_permissions": [
+    "https://*.ic0.app/*",
+    "https://*.icp0.io/*",
+    "https://*.icp-api.io/*",
+    "https://fradium.io/*",
+    "https://api.etherscan.io/*",
+    "https://api-sepolia.etherscan.io/*",
+    "https://api.blockcypher.com/*",
+    "https://api.devnet.solana.com/*",
+    "https://api.mainnet-beta.solana.com/*",
+    "https://api.coingecko.com/*",
+    "https://deep-index.moralis.io/*",
+    "https://min-api.cryptocompare.com/*",
+    "https://coins.llama.fi/*",
+    "https://mempool.space/*",
+    "https://cdn.jsdelivr.net/*",
+    "https://fonts.googleapis.com/*",
+    "https://fonts.gstatic.com/*"
+  ]
+}
 }
