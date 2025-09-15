@@ -27,12 +27,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
           cache-dependency-path: extension/pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: extension
         run: pnpm install
 
       - name: Determine environment from tag
