@@ -22,6 +22,7 @@ function Home() {
     hideBalance,
     setHideBalance,
     extensionTokens,
+    networkFilters,
     // Add loading/fetching helpers
     isAuthenticated,
     walletActor,
@@ -36,10 +37,20 @@ function Home() {
   // Use principalText directly from wallet context
   const principal = principalText;
 
-  // Filter tokens based on selected network
+  // Filter tokens based on selected network and network filters
   const filteredTokens = useMemo(() => {
     if (selectedNetwork === "all") {
-      return extensionTokens;
+      // When "all" is selected, filter based on networkFilters
+      return extensionTokens.filter(token => {
+        switch (token.networkKey) {
+          case "btc": return networkFilters?.Bitcoin ?? true;
+          case "eth": return networkFilters?.Ethereum ?? true;
+          case "sol": return networkFilters?.Solana ?? true;
+          case "fra": return networkFilters?.Fradium ?? true;
+          case "icp": return networkFilters?.ICP ?? true;
+          default: return true;
+        }
+      });
     }
 
     const networkMap = {
@@ -53,8 +64,22 @@ function Home() {
     const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
     if (!targetNetwork) return extensionTokens;
 
+    // Check if the selected network is enabled in filters
+    const isNetworkEnabled = (() => {
+      switch (selectedNetwork) {
+        case "btc": return networkFilters?.Bitcoin ?? true;
+        case "eth": return networkFilters?.Ethereum ?? true;
+        case "sol": return networkFilters?.Solana ?? true;
+        case "fra": return networkFilters?.Fradium ?? true;
+        case "icp": return networkFilters?.ICP ?? true;
+        default: return true;
+      }
+    })();
+
+    if (!isNetworkEnabled) return [];
+
     return extensionTokens.filter(token => token.networkKey === targetNetwork);
-  }, [selectedNetwork, extensionTokens]);
+  }, [selectedNetwork, extensionTokens, networkFilters]);
 
   // Debug logging untuk melihat tokens yang tersedia
   console.log("Extension Tokens:", extensionTokens);

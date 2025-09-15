@@ -1,14 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CDN } from "~lib/constant/cdn";
+import { useWallet } from "~lib/context/walletContext";
 
 export default function ManageNetwork() {
   const navigate = useNavigate();
-  const [btc, setBtc] = useState(true);
-  const [eth, setEth] = useState(true);
-  const [sol, setSol] = useState(true);
-  const [fra, setFra] = useState(true);
+  const { networkFilters, updateNetworkFilters } = useWallet() as any;
+
+  // Local state for UI updates (will sync with networkFilters on save)
+  const [btc, setBtc] = useState(networkFilters?.Bitcoin ?? true);
+  const [eth, setEth] = useState(networkFilters?.Ethereum ?? true);
+  const [sol, setSol] = useState(networkFilters?.Solana ?? true);
+  const [fra, setFra] = useState(networkFilters?.Fradium ?? true);
+  const [icp, setIcp] = useState(networkFilters?.ICP ?? true);
+
+  // Sync local state with networkFilters when they change
+  useEffect(() => {
+    if (networkFilters) {
+      setBtc(networkFilters.Bitcoin ?? true);
+      setEth(networkFilters.Ethereum ?? true);
+      setSol(networkFilters.Solana ?? true);
+      setFra(networkFilters.Fradium ?? true);
+      setIcp(networkFilters.ICP ?? true);
+    }
+  }, [networkFilters]);
+
+  // Save function to persist changes
+  const handleSave = () => {
+    const updatedFilters = {
+      Bitcoin: btc,
+      Ethereum: eth,
+      Solana: sol,
+      Fradium: fra,
+      ICP: icp,
+    };
+    updateNetworkFilters(updatedFilters);
+    // Navigate back after saving
+    navigate(-1);
+  };
 
   return (
     <div className="w-[375px]">
@@ -172,6 +202,42 @@ export default function ManageNetwork() {
                 </span>
               </label>
             </div>
+            <div className="mt-2 h-px w-full bg-white/10" />
+          </div>
+
+          {/* ICP */}
+          <div className="py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img
+                  src={CDN.tokens.icp}
+                  className="w-6 h-6"
+                  alt="icp"
+                />
+                <span className="text-white text-[14px] font-normal">
+                  Internet Computer
+                </span>
+              </div>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={icp}
+                  onChange={(e) => setIcp(e.target.checked)}
+                />
+                <span
+                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
+                    icp ? "bg-[#37C058]" : "bg-white/20"
+                  }`}
+                >
+                  <span
+                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                      icp ? "translate-x-7" : ""
+                    }`}
+                  ></span>
+                </span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -179,7 +245,8 @@ export default function ManageNetwork() {
         <div className="mt-10 mb-6">
           <button
             type="button"
-            className="w-full h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] mt-2 self-stretch flex-grow-0"
+            onClick={handleSave}
+            className="w-full h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] mt-2 self-stretch flex-grow-0 hover:opacity-90 transition-opacity"
           >
             <span className="w-auto h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent">
               Save

@@ -63,7 +63,7 @@ export default function AllNetwork({
       case "eth": return networkFilters?.Ethereum ?? true;
       case "sol": return networkFilters?.Solana ?? true;
       case "fra": return networkFilters?.Fradium ?? true;
-      case "icp": return true;
+      case "icp": return networkFilters?.ICP ?? true;
       default: return true;
     }
   }).map(network => {

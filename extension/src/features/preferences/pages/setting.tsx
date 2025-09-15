@@ -1,9 +1,9 @@
-import { ArrowLeft, Copy, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRight, Copy } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import { CDN } from "~lib/constant/cdn"
-import { useAuth } from "~lib/context/authContext"
 import { ROUTES } from "~lib/constant/routes"
-import { useNavigate } from "react-router-dom"
+import { useAuth } from "~lib/context/authContext"
 
 function Setting() {
   const { identity } = useAuth()
@@ -24,8 +24,13 @@ function Setting() {
   return (
     <div className="w-[375px] max-w-full text-white overflow-y-auto m-4">
       <div className="flex flex-row pt-4 items-center gap-2">
-        <ArrowLeft className="w-5 h-5" />
-        <h1 className="text-white text-[20px] font-semibold">Setting</h1>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="p-1 rounded hover:bg-white/5 active:bg-white/10"
+          aria-label="Back">
+          <ArrowLeft className="w-5 h-5 text-white" />
+        </button>
       </div>
 
       <p className="text-white/70 text-[14px] font-normal pt-4">
@@ -38,7 +43,9 @@ function Setting() {
           <h2 className="text-base font-semibold mb-2">General</h2>
           <div className="grid grid-cols-[1fr,auto] gap-x-4 gap-y-2 items-center mb-[12px]">
             <div className="flex items-center gap-2">
-              <span className="text-white text-[12px] font-extralight">Your Principal</span>
+              <span className="text-white text-[12px] font-extralight">
+                Your Principal
+              </span>
               <img src={CDN.icons.help} className="w-4 h-4 text-green-400" />
             </div>
             <div className="flex items-center gap-2 min-w-0">
@@ -50,16 +57,19 @@ function Setting() {
                 onClick={copyPrincipal}
                 className="p-0.5 rounded hover:bg-white/5 active:bg-white/10"
                 aria-label="Copy principal"
-                title="Copy"
-              >
+                title="Copy">
                 <Copy className="w-4 h-4 text-[#99E39E]" />
               </button>
             </div>
 
-            <span className="text-white text-[12px] font-extralight">Session Duration</span>
+            <span className="text-white text-[12px] font-extralight">
+              Session Duration
+            </span>
             <span className="text-white text-[12px] font-extralight"> </span>
 
-            <span className="text-white/50 text-[12px] font-extralight">Expires in - minutes</span>
+            <span className="text-white/50 text-[12px] font-extralight">
+              Expires in - minutes
+            </span>
             <span className="text-white text-[12px] font-extralight"> </span>
           </div>
 
@@ -71,8 +81,13 @@ function Setting() {
 
               <div className="grid grid-cols-[1fr,auto] items-center gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-white text-[12px] font-extralight">Active Networks</span>
-                  <img src={CDN.icons.help} className="w-4 h-4 text-green-400" />
+                  <span className="text-white text-[12px] font-extralight">
+                    Active Networks
+                  </span>
+                  <img
+                    src={CDN.icons.help}
+                    className="w-4 h-4 text-green-400"
+                  />
                   <div className="ml-2 flex items-center gap-2">
                     <img src={CDN.tokens.bitcoinDark} className="w-5 h-5" />
                     <img src={CDN.tokens.ethereumDark} className="w-5 h-5" />
@@ -83,8 +98,7 @@ function Setting() {
                 <button
                   type="button"
                   onClick={() => navigate(ROUTES.MANAGE_NETWORK)}
-                  className="justify-self-end inline-flex items-center gap-1 text-[12px] text-[#99E39E] hover:text-[#7DD488]"
-                >
+                  className="justify-self-end inline-flex items-center gap-1 text-[12px] text-[#99E39E] hover:text-[#7DD488]">
                   Manage
                   <ArrowRight className="w-4 h-4" />
                 </button>

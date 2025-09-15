@@ -60,6 +60,7 @@ interface NetworkFilters {
   Solana: boolean
   Fradium: boolean
   Ethereum: boolean
+  ICP: boolean
 }
 
 interface NetworkValues {
@@ -132,6 +133,7 @@ interface WalletContextType {
   network: string
   setNetwork: (network: string) => void
   networkFilters: NetworkFilters
+  updateNetworkFilters: (filters: NetworkFilters) => void
 
   // Token configuration
   extensionTokens: Array<{
@@ -209,12 +211,54 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     Ethereum: 0,
   })
 
-  const [networkFilters] = useState<NetworkFilters>({
+  // Initialize network filters with default values
+  const [networkFilters, setNetworkFilters] = useState<NetworkFilters>({
     Bitcoin: true,
     Solana: true,
     Fradium: true,
     Ethereum: true,
-  })
+    ICP: true,
+  });
+
+  // Load network filters from storage on mount
+  useEffect(() => {
+    const loadNetworkFilters = () => {
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          // For extension environment, load from chrome storage
+          chrome.storage.local.get(['networkFilters'], (result) => {
+            if (result.networkFilters) {
+              setNetworkFilters(result.networkFilters);
+            }
+          });
+        } else {
+          // For development, load from localStorage
+          const stored = localStorage.getItem('networkFilters');
+          if (stored) {
+            setNetworkFilters(JSON.parse(stored));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading network filters:', error);
+      }
+    };
+
+    loadNetworkFilters();
+  }, []);
+
+  // Function to update and persist network filters
+  const updateNetworkFilters = useCallback((filters: NetworkFilters) => {
+    setNetworkFilters(filters);
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.set({ networkFilters: filters });
+      } else {
+        localStorage.setItem('networkFilters', JSON.stringify(filters));
+      }
+    } catch (error) {
+      console.error('Error saving network filters:', error);
+    }
+  }, []);
 
   // Balance states
   const [balances, setBalances] = useState<BalanceStates>({})
@@ -677,6 +721,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       updateNetworkValues,
       getNetworkValue,
       networkFilters,
+      updateNetworkFilters,
       // Token configuration
       extensionTokens: EXTENSION_TOKENS,
       // Balance management
@@ -716,6 +761,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       updateNetworkValues,
       getNetworkValue,
       networkFilters,
+      updateNetworkFilters,
       // Token configuration
       EXTENSION_TOKENS,
       // Balance management
