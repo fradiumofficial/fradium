@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: extension
@@ -72,16 +74,23 @@ jobs:
           echo "Setting extension/package.json version to ${BASE_VERSION}"
           jq --arg v "${BASE_VERSION}" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
 
-      - name: Build extension (MV3 prod)
-        run: pnpm build
+      - name: Build & package extension (plasmo)
+        run: pnpm run package
 
-      - name: Repackage extension zip
+      - name: Locate packaged zip
+        id: findzip
+        shell: bash
         run: |
-          cd build/chrome-mv3-prod
-          zip -r ../fradium-extension-${{ github.ref_name }}.zip ./*
+          ZIP_PATH=$(ls -1 build/**/*.zip build/*.zip 2>/dev/null | head -n 1)
+          if [[ -z "$ZIP_PATH" ]]; then
+            echo "No zip file found in build directory" >&2
+            find build -maxdepth 3 -type f -print || true
+            exit 1
+          fi
+          echo "zip_path=$ZIP_PATH" >> $GITHUB_OUTPUT
 
-      - name: Upload packaged zip
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: fradium-extension-${{ github.ref_name }}
-          path: extension/build/fradium-extension-${{ github.ref_name }}.zip
+          path: extension/${{ steps.findzip.outputs.zip_path }}
