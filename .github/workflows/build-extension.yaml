@@ -32,6 +32,7 @@ jobs:
           cache-dependency-path: extension/pnpm-lock.yaml
 
       - name: Install dependencies
+        working-directory: extension
         run: pnpm install
 
       - name: Determine environment from tag
