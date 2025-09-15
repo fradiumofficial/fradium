@@ -1,5 +1,6 @@
 import { wallet } from "declarations/wallet";
 import { icp_ledger } from "declarations/icp_ledger";
+import { icp_index } from "declarations/icp_index";
 import { fradium_ledger } from "declarations/fradium_ledger";
 import { Principal } from "@dfinity/principal";
 
@@ -417,7 +418,7 @@ export async function getBalance(tokenId, principal) {
       case 4: // ICP
         try {
           console.log("Fetching ICP balance for principal:", principal);
-          const balance = await icp_ledger.icrc1_balance_of({
+          const balance = await icp_index.icrc1_balance_of({
             owner: principal,
             subaccount: [],
           });
