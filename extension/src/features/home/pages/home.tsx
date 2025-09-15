@@ -6,6 +6,7 @@ import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
 import { useNetwork } from "~features/network/context/networkContext";
 import { Search, Settings2 } from "lucide-react";
+import AllNetwork from "~features/network/pages/all_network";
 
 function Home() {
   const {
@@ -38,6 +39,12 @@ function Home() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Dropdown and settings state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hideZeroValue, setHideZeroValue] = useState(false);
+  const [isNetworkPopupOpen, setIsNetworkPopupOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Use principalText directly from wallet context
   const principal = principalText;
@@ -97,8 +104,17 @@ function Home() {
       );
     }
 
+    // Filter by hide zero value setting
+    if (hideZeroValue) {
+      tokens = tokens.filter(token => {
+        const balance = balances[token.id] || "0";
+        const numericBalance = parseFloat(balance);
+        return numericBalance > 0;
+      });
+    }
+
     return tokens;
-  }, [selectedNetwork, extensionTokens, networkFilters, searchQuery]);
+  }, [selectedNetwork, extensionTokens, networkFilters, searchQuery, hideZeroValue, balances]);
 
   // Debug logging untuk melihat tokens yang tersedia
   console.log("Extension Tokens:", extensionTokens);
@@ -172,9 +188,6 @@ function Home() {
   const handleSendClick = () => {
     navigate(ROUTES.SEND);
   };
-  const handleAccountSettings = () => {
-    navigate(ROUTES.ACCOUNT);
-  };
 
   // Search handlers
   const handleSearchToggle = () => {
@@ -213,6 +226,38 @@ function Home() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isSearchExpanded]);
+
+  // Dropdown handlers
+  const handleDropdownToggle = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleHideZeroValueToggle = () => {
+    setHideZeroValue(!hideZeroValue);
+    setIsDropdownOpen(false);
+  };
+
+  const handleManageNetwork = () => {
+    setIsNetworkPopupOpen(true);
+    setIsDropdownOpen(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   // Retry balance fetching for a specific token
   const handleRetryBalance = useCallback((tokenId: string) => {
@@ -443,18 +488,55 @@ function Home() {
               >
                 <Search className="w-5 h-5 text-white" />
               </button>
-              <button
-                onClick={handleAccountSettings}
-                disabled={isRefreshingBalances}
-                className={`${
-                  isRefreshingBalances
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/10 cursor-pointer'
-                }`}
-                title={isRefreshingBalances ? "Please wait..." : "Account settings"}
-              >
-                <Settings2 className="w-5 h-5 text-white" />
-              </button>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={handleDropdownToggle}
+                  disabled={isRefreshingBalances}
+                  className={`${
+                    isRefreshingBalances
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-white/10 cursor-pointer'
+                  }`}
+                  title={isRefreshingBalances ? "Please wait..." : "Settings"}
+                >
+                  <Settings2 className="w-5 h-5 text-white" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 top-8 w-48 bg-white/10 backdrop-blur-[16px] border border-white/15 rounded-[16px] shadow-[0_12px_40px_rgba(0,0,0,0.55)] z-50">
+                    <div className="py-2">
+                      {/* Hide Zero Value Option */}
+                      <button
+                        onClick={handleHideZeroValueToggle}
+                        className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+                      >
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                          hideZeroValue ? 'bg-[#37C058] border-[#37C058]' : 'border-white/40'
+                        }`}>
+                          {hideZeroValue && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-sm">Hide Zero Value</span>
+                      </button>
+
+                      {/* Manage Network Option */}
+                      <button
+                        onClick={handleManageNetwork}
+                        className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+                      >
+                        <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                        </svg>
+                        <span className="text-sm">Manage Network</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => refreshAllBalances()}
                 disabled={isRefreshingBalances}
@@ -642,6 +724,12 @@ function Home() {
           )}
         </div>
       </div>
+
+      {/* Network Management Popup */}
+      <AllNetwork
+        isOpen={isNetworkPopupOpen}
+        onClose={() => setIsNetworkPopupOpen(false)}
+      />
     </div>
   );
 }
