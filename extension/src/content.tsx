@@ -20,7 +20,7 @@ import Receive from "~features/transaction/receive"
 import ReceiveDetail from "~features/transaction/receiveDetail"
 
 export const config: PlasmoCSConfig = {
-  matches: ["https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io/"]
+  matches: ["https://fradium.io/"]
 }
 
 /**
