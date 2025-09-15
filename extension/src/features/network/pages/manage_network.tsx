@@ -11,7 +11,7 @@ export default function ManageNetwork() {
   const [fra, setFra] = useState(true);
 
   return (
-    <div className="overflow-hidden w-[375px]">
+    <div className="w-[375px]">
       <div className="px-6 pt-6 pb-2">
         <div className="flex items-center gap-3">
           <button
