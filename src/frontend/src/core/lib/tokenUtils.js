@@ -417,7 +417,6 @@ export async function getBalance(tokenId, principal) {
       case 4: // ICP
         try {
           console.log("Fetching ICP balance for principal:", principal);
-          throw new Error("test");
           const balance = await icp_ledger.icrc1_balance_of({
             owner: principal,
             subaccount: [],
