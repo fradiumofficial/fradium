@@ -1,6 +1,6 @@
 // Icons replaced with CDN assets to match design
 import { CDN } from "~lib/constant/cdn";
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { useWallet } from "~lib/context/walletContext";
@@ -34,14 +34,22 @@ function Home() {
   const { selectedNetwork } = useNetwork();
   const navigate = useNavigate();
 
+  // Search functionality state
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
   // Use principalText directly from wallet context
   const principal = principalText;
 
-  // Filter tokens based on selected network and network filters
+  // Filter tokens based on selected network, network filters, and search query
   const filteredTokens = useMemo(() => {
+    let tokens = extensionTokens;
+
+    // First filter by network selection
     if (selectedNetwork === "all") {
       // When "all" is selected, filter based on networkFilters
-      return extensionTokens.filter(token => {
+      tokens = tokens.filter(token => {
         switch (token.networkKey) {
           case "btc": return networkFilters?.Bitcoin ?? true;
           case "eth": return networkFilters?.Ethereum ?? true;
@@ -51,35 +59,46 @@ function Home() {
           default: return true;
         }
       });
+    } else {
+      // Filter by selected network
+      const networkMap = {
+        btc: "btc",
+        eth: "eth",
+        sol: "sol",
+        fra: "fra",
+        icp: "icp"
+      };
+
+      const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
+      if (targetNetwork) {
+        // Check if the selected network is enabled in filters
+        const isNetworkEnabled = (() => {
+          switch (selectedNetwork) {
+            case "btc": return networkFilters?.Bitcoin ?? true;
+            case "eth": return networkFilters?.Ethereum ?? true;
+            case "sol": return networkFilters?.Solana ?? true;
+            case "fra": return networkFilters?.Fradium ?? true;
+            case "icp": return networkFilters?.ICP ?? true;
+            default: return true;
+          }
+        })();
+
+        if (!isNetworkEnabled) return [];
+        tokens = tokens.filter(token => token.networkKey === targetNetwork);
+      }
     }
 
-    const networkMap = {
-      btc: "btc",
-      eth: "eth",
-      sol: "sol",
-      fra: "fra",
-      icp: "icp"
-    };
+    // Then filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      tokens = tokens.filter(token =>
+        token.symbol.toLowerCase().includes(query) ||
+        token.name.toLowerCase().includes(query)
+      );
+    }
 
-    const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
-    if (!targetNetwork) return extensionTokens;
-
-    // Check if the selected network is enabled in filters
-    const isNetworkEnabled = (() => {
-      switch (selectedNetwork) {
-        case "btc": return networkFilters?.Bitcoin ?? true;
-        case "eth": return networkFilters?.Ethereum ?? true;
-        case "sol": return networkFilters?.Solana ?? true;
-        case "fra": return networkFilters?.Fradium ?? true;
-        case "icp": return networkFilters?.ICP ?? true;
-        default: return true;
-      }
-    })();
-
-    if (!isNetworkEnabled) return [];
-
-    return extensionTokens.filter(token => token.networkKey === targetNetwork);
-  }, [selectedNetwork, extensionTokens, networkFilters]);
+    return tokens;
+  }, [selectedNetwork, extensionTokens, networkFilters, searchQuery]);
 
   // Debug logging untuk melihat tokens yang tersedia
   console.log("Extension Tokens:", extensionTokens);
@@ -147,9 +166,6 @@ function Home() {
   }, [usdPrices, usdPriceLoading, usdPriceErrors, hideBalance]);
 
   // Navigation handlers
-  const handleAnalyzeAddress = () => {
-    navigate(ROUTES.ANALYZE_ADDRESS);
-  };
   const handleReceiveClick = () => {
     navigate(ROUTES.RECEIVE);
   };
@@ -159,6 +175,44 @@ function Home() {
   const handleAccountSettings = () => {
     navigate(ROUTES.ACCOUNT);
   };
+
+  // Search handlers
+  const handleSearchToggle = () => {
+    setIsSearchExpanded(!isSearchExpanded);
+    if (isSearchExpanded) {
+      // Clear search when collapsing
+      setSearchQuery("");
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setIsSearchExpanded(false);
+      setSearchQuery("");
+    }
+  };
+
+  // Close search when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchExpanded(false);
+        setSearchQuery("");
+      }
+    };
+
+    if (isSearchExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchExpanded]);
 
   // Retry balance fetching for a specific token
   const handleRetryBalance = useCallback((tokenId: string) => {
@@ -367,50 +421,96 @@ function Home() {
       {/* Tokens Section */}
       <div className="box-border flex flex-col items-start p-[12px_20px_20px] gap-2 w-[375px] h-[271px] flex-none order-3 self-stretch flex-grow-0 z-[3]">
         {/* Header */}
-        <div className="flex flex-row items-center justify-between w-full">
-          {/* Tokens Title */}
-          <div className="h-6 font-['General Sans'] font-semibold text-[16px] flex items-center text-white">
-            Tokens
+        <div className="flex flex-col w-full gap-3">
+          {/* Title and Icons Row */}
+          <div className="flex flex-row items-center justify-between w-full">
+            {/* Tokens Title */}
+            <div className="h-6 font-['General Sans'] font-semibold text-[16px] flex items-center text-white">
+              Tokens
+            </div>
+
+            {/* Icon Section */}
+            <div className="flex flex-row items-center gap-3 h-5">
+              <button
+                onClick={handleSearchToggle}
+                disabled={isRefreshingBalances}
+                className={`${
+                  isRefreshingBalances
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-white/10 cursor-pointer'
+                } transition-colors`}
+                title={isSearchExpanded ? "Close search" : "Search tokens"}
+              >
+                <Search className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={handleAccountSettings}
+                disabled={isRefreshingBalances}
+                className={`${
+                  isRefreshingBalances
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-white/10 cursor-pointer'
+                }`}
+                title={isRefreshingBalances ? "Please wait..." : "Account settings"}
+              >
+                <Settings2 className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={() => refreshAllBalances()}
+                disabled={isRefreshingBalances}
+                className={`${
+                  isRefreshingBalances
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-white/10 cursor-pointer'
+                }`}
+                title={isRefreshingBalances ? "Loading balances..." : "Refresh balances"}
+              >
+                <img src={CDN.icons.refresh} alt="Refresh" className={`w-5 h-5 ${isRefreshingBalances ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
 
-          {/* Icon Section */}
-          <div className="flex flex-row items-center gap-3 h-5">
-            <button
-              onClick={handleAnalyzeAddress}
-              disabled={isRefreshingBalances}
-              className={`${
-                isRefreshingBalances
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-white/10 cursor-pointer'
-              }`}
-              title={isRefreshingBalances ? "Please wait..." : "Analyze address"}
-            >
-              <Search className="w-5 h-5 text-white" />
-            </button>
-            <button
-              onClick={handleAccountSettings}
-              disabled={isRefreshingBalances}
-              className={`${
-                isRefreshingBalances
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-white/10 cursor-pointer'
-              }`}
-              title={isRefreshingBalances ? "Please wait..." : "Account settings"}
-            >
-              <Settings2 className="w-5 h-5 text-white" />
-            </button>
-            <button
-              onClick={() => refreshAllBalances()}
-              disabled={isRefreshingBalances}
-              className={`${
-                isRefreshingBalances
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-white/10 cursor-pointer'
-              }`}
-              title={isRefreshingBalances ? "Loading balances..." : "Refresh balances"}
-            >
-              <img src={CDN.icons.refresh} alt="Refresh" className={`w-5 h-5 ${isRefreshingBalances ? 'animate-spin' : ''}`} />
-            </button>
+          {/* Expandable Search Row */}
+          <div
+            ref={searchContainerRef}
+            className={`flex flex-col gap-2 transition-all duration-300 ease-in-out overflow-hidden ${
+              isSearchExpanded ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <div className="relative w-full">
+              <div className="w-full h-[44px] box-border flex flex-col items-start p-[12px_20px] gap-4 bg-white/5 border border-white/10 rounded-[99px]">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-white/60" />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search tokens..."
+                  className="w-full pl-6 pr-4 font-sans font-normal text-[14px] leading-[140%] text-white/60 bg-transparent border-none outline-none"
+                  autoFocus={isSearchExpanded}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/60 hover:text-white transition-colors"
+                    title="Clear search"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Search Results Count */}
+            {searchQuery && (
+              <div className="text-xs text-white/60">
+                {filteredTokens.length} token{filteredTokens.length !== 1 ? 's' : ''} found
+              </div>
+            )}
           </div>
         </div>
 
@@ -474,7 +574,7 @@ function Home() {
                             {token.symbol}
                           </div>
                           <div className="w-1 h-1 bg-white/50 rounded-full flex-none order-1 flex-grow-0"></div>
-                          <div className="w-11 h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-2 flex-grow-0">
+                          <div className="w-[150px] h-[21px] font-['General Sans'] font-normal text-[14px] leading-[150%] flex items-center text-white/50 flex-none order-2 flex-grow-0">
                             {token.name}
                           </div>
                         </div>
