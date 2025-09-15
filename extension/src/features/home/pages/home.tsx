@@ -46,9 +46,6 @@ function Home() {
   const [isNetworkPopupOpen, setIsNetworkPopupOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Use principalText directly from wallet context
-  const principal = principalText;
-
   // Filter tokens based on selected network, network filters, and search query
   const filteredTokens = useMemo(() => {
     let tokens = extensionTokens;
@@ -464,7 +461,7 @@ function Home() {
       </div>
 
       {/* Tokens Section */}
-      <div className="box-border flex flex-col items-start p-[12px_20px_20px] gap-2 w-[375px] h-[271px] flex-none order-3 self-stretch flex-grow-0 z-[3]">
+      <div className="box-border flex flex-col items-start p-[12px_20px_20px] gap-2 w-[375px] flex-none order-3 self-stretch flex-grow-0 z-[3]">
         {/* Header */}
         <div className="flex flex-col w-full gap-3">
           {/* Title and Icons Row */}
@@ -597,7 +594,7 @@ function Home() {
         </div>
 
         {/* List */}
-        <div className="flex flex-col items-center p-0 gap-1 w-[335px] h-[180px] flex-none order-1 self-stretch flex-grow-0 overflow-y-auto">
+        <div className="flex flex-col items-center p-0 gap-1 w-[335px] flex-none order-1 self-stretch flex-grow-0 overflow-y-auto">
           {/* Content */}
           <div className="flex flex-col items-start p-0 w-[335px] flex-none order-0 self-stretch flex-grow-0">
             {isInitialLoading ? (
@@ -710,18 +707,6 @@ function Home() {
             }))}
           </div>
 
-          {/* Debug info if no tokens */}
-          {filteredTokens.length === 0 && (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="text-[#B0B6BE] text-sm mb-2">No tokens found</div>
-                <div className="text-[#9BEB83] text-xs">
-                  Selected network: {selectedNetwork}<br/>
-                  Available tokens: {extensionTokens.length}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
