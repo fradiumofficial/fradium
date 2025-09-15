@@ -391,15 +391,20 @@ export async function getBalance(tokenId, principal) {
   if (!token) throw new Error("Token not found: " + tokenId);
 
   if (token.type === "native") {
-    switch (token.id) {
-      case 1: // BTC
-        return await wallet.bitcoin_balance();
-      case 2: // ETH
-        return await wallet.ethereum_balance();
-      case 3: // SOL
-        return await wallet.solana_balance();
-      default:
-        throw new Error("Native token not supported");
+    try {
+      switch (token.id) {
+        case 1: // BTC
+          return await wallet.bitcoin_balance();
+        case 2: // ETH
+          return await wallet.ethereum_balance();
+        case 3: // SOL
+          return await wallet.solana_balance();
+        default:
+          throw new Error("Native token not supported");
+      }
+    } catch (error) {
+      console.error(`Error fetching ${token.symbol} balance:`, error);
+      throw new Error(`Failed to fetch ${token.symbol} balance: ${error.message || "Unknown error"}`);
     }
   }
 
@@ -412,6 +417,7 @@ export async function getBalance(tokenId, principal) {
       case 4: // ICP
         try {
           console.log("Fetching ICP balance for principal:", principal);
+          throw new Error("test");
           const balance = await icp_ledger.icrc1_balance_of({
             owner: principal,
             subaccount: [],
@@ -445,7 +451,7 @@ export async function getBalance(tokenId, principal) {
           return result.toString();
         } catch (error) {
           console.error("Error fetching ICP balance:", error);
-          return "0";
+          throw new Error(`Failed to fetch ICP balance: ${error.message || "Unknown error"}`);
         }
       case 5: // Fradium (FADM)
         try {
@@ -480,7 +486,7 @@ export async function getBalance(tokenId, principal) {
           return result.toString();
         } catch (error) {
           console.error("Error fetching Fradium balance:", error);
-          return "0";
+          throw new Error(`Failed to fetch Fradium balance: ${error.message || "Unknown error"}`);
         }
       default:
         throw new Error("ICRC token not supported");
@@ -545,6 +551,12 @@ export async function getUSD(tokenId) {
 
   const coinGeckoId = coinGeckoIds[token.symbol];
 
+  // Special handling for Fradium token - return 0 directly since it's not available on major APIs
+  if (token.symbol === "FADM") {
+    console.log("Fradium token detected, returning default price 0");
+    return 0;
+  }
+
   // Primary API: CoinGecko
   try {
     if (coinGeckoId) {
@@ -580,6 +592,7 @@ export async function getUSD(tokenId) {
     }
   } catch (error) {
     console.warn("CoinGecko API failed:", error);
+    // Don't throw here, try fallback APIs
   }
 
   // Fallback API: CoinMarketCap (requires API key, but we can try without)
@@ -621,6 +634,7 @@ export async function getUSD(tokenId) {
     }
   } catch (error) {
     console.warn("CoinMarketCap API failed:", error);
+    // Don't throw here, try fallback APIs
   }
 
   // Fallback API: CoinPaprika
@@ -654,12 +668,13 @@ export async function getUSD(tokenId) {
     }
   } catch (error) {
     console.warn("CoinPaprika API failed:", error);
+    // Don't throw here, try fallback
   }
 
-  // Final fallback: Use cached/default prices or return null
+  // Final fallback: Use cached/default prices or return 0
   console.warn(`All price APIs failed for ${token.symbol}, using fallback`);
 
-  // For tokens not supported by major APIs, return a default price or null
+  // For tokens not supported by major APIs, return a default price or 0
   const fallbackPrices = {
     BTC: 0,
     ETH: 0,
@@ -668,7 +683,13 @@ export async function getUSD(tokenId) {
     FADM: 0, // Placeholder price for Fradium
   };
 
-  return fallbackPrices[token.symbol] || null;
+  const fallbackPrice = fallbackPrices[token.symbol];
+  if (fallbackPrice === undefined) {
+    console.warn(`No fallback price available for ${token.symbol}, returning 0`);
+    return 0;
+  }
+
+  return fallbackPrice;
 }
 
 // Function to get USD prices for multiple tokens at once

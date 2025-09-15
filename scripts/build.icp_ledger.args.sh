@@ -3,6 +3,7 @@
 dfx identity get-principal --identity minter 2>/dev/null || dfx identity new minter --storage-mode=plaintext
 
 MINTER_ACCOUNT_ID=$(dfx ledger account-id --identity minter)
+DEPLOY_ID=$(dfx ledger account-id)
 
 ARGS_FILE="$(jq -re .canisters.icp_ledger.init_arg_file dfx.json)"
 mkdir -p "$(dirname "$ARGS_FILE")"
@@ -14,7 +15,7 @@ cat <<EOF >"$ARGS_FILE"
       minting_account = "$MINTER_ACCOUNT_ID";
       initial_values = vec {
         record {
-          "$MINTER_ACCOUNT_ID";
+          "$DEPLOY_ID";
           record {
             e8s = 100_000_000_000 : nat64;
           };

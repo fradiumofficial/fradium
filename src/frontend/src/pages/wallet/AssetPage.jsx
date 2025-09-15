@@ -429,7 +429,7 @@ export default function AssetsPage() {
                         delay: index * 0.05,
                         ease: "easeOut",
                       }}>
-                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={usdPriceErrors[token.id]} hideBalance={hideBalance} />
+                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={!!balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={!!usdPriceErrors[token.id]} hideBalance={hideBalance} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
