@@ -11,12 +11,12 @@ import { HttpAgent } from "@dfinity/agent"
 import {
   createActor as createWalletActor,
   canisterId as walletCanisterId,
-} from "../../../../src/declarations/wallet"
-import { createActor as createIcpLedgerActor, canisterId as icpLedgerCanisterId } from "../../../../src/declarations/icp_ledger"
-import { createActor as createFradiumLedgerActor, canisterId as fradiumLedgerCanisterId } from "../../../../src/declarations/fradium_ledger"
+} from "../../declarations/wallet"
+import { createActor as createIcpLedgerActor, canisterId as icpLedgerCanisterId } from "../../declarations/icp_ledger"
+import { createActor as createFradiumLedgerActor, canisterId as fradiumLedgerCanisterId } from "../../declarations/fradium_ledger"
 import { TOKENS_CONFIG, TokenType } from "~lib/utils/tokenUtils"
-import { createActor as createIcpIndexActor, canisterId as icpIndexCanisterId } from "../../../../src/declarations/icp_index"
-import { createActor as createFradiumIndexActor, canisterId as fradiumIndexCanisterId } from "../../../../src/declarations/fradium_index"
+import { createActor as createIcpIndexActor, canisterId as icpIndexCanisterId } from "../../declarations/icp_index"
+import { createActor as createFradiumIndexActor, canisterId as fradiumIndexCanisterId } from "../../declarations/fradium_index"
 import { Principal } from "@dfinity/principal"
 import { fetchUsdPrices } from "~service/priceService"
 

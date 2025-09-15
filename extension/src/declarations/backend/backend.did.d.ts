@@ -95,9 +95,11 @@ export type Result_3 = { 'Ok' : Array<GetMyVotesParams> } |
   { 'Err' : string };
 export type Result_4 = { 'Ok' : Array<GetMyReportsParams> } |
   { 'Err' : string };
-export type Result_5 = { 'Ok' : Array<AnalyzeHistory> } |
+export type Result_5 = { 'Ok' : bigint } |
   { 'Err' : string };
-export type Result_6 = { 'Ok' : GetAnalyzeAddressResult } |
+export type Result_6 = { 'Ok' : Array<AnalyzeHistory> } |
+  { 'Err' : string };
+export type Result_7 = { 'Ok' : GetAnalyzeAddressResult } |
   { 'Err' : string };
 export type Time = bigint;
 export type TokenType = { 'Fradium' : null } |
@@ -118,15 +120,16 @@ export interface Voter {
 export interface _SERVICE {
   'admin_change_report_deadline' : ActorMethod<[ReportId, Time], Result>,
   'admin_delete_report' : ActorMethod<[ReportId], Result>,
-  'analyze_address' : ActorMethod<[string], Result_6>,
+  'analyze_address' : ActorMethod<[string], Result_7>,
   'check_faucet_claim' : ActorMethod<[], Result>,
   'claim_faucet' : ActorMethod<[], Result>,
   'create_analyze_history' : ActorMethod<
     [CreateAnalyzeHistoryParams],
-    Result_5
+    Result_6
   >,
   'create_report' : ActorMethod<[CreateReportParams], Result>,
-  'get_analyze_history' : ActorMethod<[], Result_5>,
+  'get_analyze_history' : ActorMethod<[bigint, bigint], Result_6>,
+  'get_analyze_history_count' : ActorMethod<[], Result_5>,
   'get_my_reports' : ActorMethod<[], Result_4>,
   'get_my_votes' : ActorMethod<[], Result_3>,
   'get_report' : ActorMethod<[ReportId], Result_2>,

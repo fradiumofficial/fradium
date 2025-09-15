@@ -10,10 +10,8 @@ export { idlFactory } from "./ai.did.js";
  * beginning in dfx 0.15.0
  */
 export const canisterId =
-  process.env.PLASMO_PUBLIC_CANISTER_ID_AI;
+  process.env.CANISTER_ID_AI;
 
-console.log('anjay mabar canisterid', canisterId);
-console.log('anjay mabar idlFactory', process.env);
 export const createActor = (canisterId, options = {}) => {
   const agent = options.agent || new HttpAgent({ ...options.agentOptions });
 

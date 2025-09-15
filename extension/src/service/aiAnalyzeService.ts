@@ -2,8 +2,8 @@ import { detectTokenType } from '~lib/utils/tokenUtils';
 import { extractBitcoinFeatures } from './bitcoinAnalyzeService';
 import { extractEthereumFeatures } from './ethereumAnalyzeService';
 import { extractSolanaFeatures } from './solanaAnalyzeService';
-import { createActor as createAiActor, canisterId as aiCanisterId } from '../../../src/declarations/ai';
-import { createActor as createBackendActor, canisterId as backendCanisterId } from '../../../src/declarations/backend';
+import { createActor as createAiActor, canisterId as aiCanisterId } from '../declarations/ai';
+import { createActor as createBackendActor, canisterId as backendCanisterId } from '../declarations/backend';
 import { HttpAgent } from '@dfinity/agent';
 import type {
   RansomwareResult,

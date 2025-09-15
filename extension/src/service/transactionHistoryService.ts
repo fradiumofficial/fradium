@@ -2,8 +2,8 @@
 // Adapted from src/frontend/src/core/services/historyTransactionService.js
 
 import { Principal } from '@dfinity/principal'
-import { icp_index } from '../../../src/declarations/icp_index'
-import { fradium_index } from '../../../src/declarations/fradium_index'
+import { icp_index } from '../declarations/icp_index'
+import { fradium_index } from '../declarations/fradium_index'
 
 export type NetworkKey = 'ethereum' | 'bitcoin' | 'solana' | 'icp' | 'fradium' | 'internet_computer'
 

@@ -108,7 +108,7 @@ function Send() {
         case "icp":
           try {
             // Import ICP ledger actor dynamically
-            const { createActor: createIcpLedgerActor, canisterId: icpLedgerCanisterId } = await import("../../../../src/declarations/icp_ledger");
+            const { createActor: createIcpLedgerActor, canisterId: icpLedgerCanisterId } = await import("../../declarations/icp_ledger");
             const { HttpAgent } = await import("@dfinity/agent");
 
             const agent = new HttpAgent({ identity }) as any;
@@ -138,7 +138,7 @@ function Send() {
         case "fra":
           try {
             // Import Fradium ledger actor dynamically
-            const { createActor: createFradiumLedgerActor, canisterId: fradiumLedgerCanisterId } = await import("../../../../src/declarations/fradium_ledger");
+            const { createActor: createFradiumLedgerActor, canisterId: fradiumLedgerCanisterId } = await import("../../declarations/fradium_ledger");
             const { HttpAgent } = await import("@dfinity/agent");
 
             const agent = new HttpAgent({ identity }) as any;
