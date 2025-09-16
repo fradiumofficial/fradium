@@ -241,6 +241,8 @@ class LocalStorageService {
       return 'Ethereum';
     } else if (address.length >= 32 && address.length <= 44 && /^[A-HJ-NP-Z0-9]+$/i.test(address)) {
       return 'Solana';
+      } else if (address.startsWith('fra') || address.startsWith('FUM')) {
+      return 'Fradium';
     } else {
       return 'Unknown';
     }

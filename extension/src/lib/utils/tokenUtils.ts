@@ -169,18 +169,25 @@ function capitalize(s: string) {
 }
 
 export function getTokenImageURL(chain: string) {
-  switch (capitalize(chain)) {
-    case TokenType.ETHEREUM:
+  if (!chain) return CDN.tokens.unknown;
+
+  const normalizedChain = chain.toLowerCase();
+
+  switch (normalizedChain) {
+    case 'ethereum':
       return CDN.tokens.eth;
-    case TokenType.BITCOIN:
+    case 'bitcoin':
       return CDN.tokens.bitcoin;
-    case TokenType.SOLANA:
+    case 'solana':
       return CDN.tokens.solana;
-    case TokenType.ICP:
+    case 'internet computer':
+    case 'icp':
       return CDN.tokens.icp;
-    case TokenType.FUM:
+    case 'fradium':
+    case 'fum':
       return CDN.tokens.fum;
     default:
+      console.warn(`Unknown token type for icon: "${chain}" (normalized: "${normalizedChain}"), falling back to unknown icon`);
       return CDN.tokens.unknown;
   }
 }

@@ -1,8 +1,7 @@
-import { ArrowLeftIcon, Gauge, Wallet } from "lucide-react"
+import { ArrowLeftIcon, Gauge } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
-import NeoButton from "~components/custom-button"
 import { SafetyCard } from "~components/custom-card"
 import { CDN } from "~lib/constant/cdn"
 import { ROUTES } from "~lib/constant/routes"
@@ -92,41 +91,14 @@ function AnalyzeAdressResult() {
     }
   }, [result])
 
-  // Function to calculate time ago from timestamp
-  const getTimeAgo = (timestamp: string) => {
-    const now = Date.now()
-    const timeDiff = now - Number(timestamp) / 1000000 // Convert nanoseconds to milliseconds
-    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
-    const hours = Math.floor(
-      (timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-    )
-
-    if (days > 0) {
-      return `${days} day${days > 1 ? "s" : ""} ago`
-    } else if (hours > 0) {
-      return `${hours} hour${hours > 1 ? "s" : ""} ago`
-    } else {
-      return "Just now"
-    }
-  }
-
-  // Function to calculate risk score based on votes
-  const calculateRiskScore = (votesYes: string, votesNo: string) => {
-    const totalVotes = Number(votesYes) + Number(votesNo)
-    if (totalVotes === 0) return "0/100"
-
-    const yesPercentage = (Number(votesYes) / totalVotes) * 100
-    return `${Math.round(yesPercentage)}/100`
-  }
-
   const getSecurityCheckItems = () => {
     const isCommunitySource = result?.source === "community"
 
     if (isAddressSafe) {
       return [
-        "No suspicious transaction patterns detected",
-        "Transaction volume within normal range",
-        "No connections to known malicious addresses",
+        "No suspicious transaction detected",
+        "Transaction is in normal range",
+        "No connections to malicious addresses",
         "Address activity appears legitimate"
       ]
     } else {
@@ -271,8 +243,6 @@ function AnalyzeAdressResult() {
           confidence={confidencePercentage}
           title="Address"
           isSafe={isAddressSafe}
-          analysisSource={result?.source}
-          finalStatus={result?.finalStatus}
           description={result?.description}
         />
 
@@ -366,8 +336,8 @@ function AnalyzeAdressResult() {
 
         {/* Security Checks Section */}
         <div className="w-[335px] flex flex-col items-start gap-4 flex-none flex-grow-0">
-          <div className="w-[180px] h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none flex-grow-0">
-            {isAddressSafe ? "Security Checks Passed" : "Security Warnings"}
+          <div className="h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none ">
+            Security Checks
           </div>
 
           {/* Security Check Card */}
@@ -393,11 +363,67 @@ function AnalyzeAdressResult() {
                     alt="Check"
                     className="w-[20px] h-[20px] flex-none flex-grow-0"
                   />
-                  <div className="w-[218px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  <div className="font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
                     {item}
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Analysis Source Section */}
+        <div className="w-[335px] flex flex-col items-start gap-4 flex-none flex-grow-0">
+          <div className="h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none">
+            Analysis Source
+          </div>
+
+          {/* Analysis Source Card */}
+          <div
+            className="w-[335px] box-border flex flex-col items-start p-4 gap-4 rounded-[12px] flex-none flex-grow-0 bg-white/5"
+          >
+            <div className="w-[303px] flex flex-col items-start gap-3 flex-none flex-grow-0">
+              <div className="w-[303px] flex flex-row items-center gap-3 flex-none flex-grow-0">
+                <div className="flex-shrink-0">
+                  <div className={`w-3 h-3 rounded-full ${
+                    result.source === 'ai' ? 'bg-blue-400' :
+                    result.source === 'community' ? 'bg-purple-400' :
+                    result.source === 'ai_and_community' ? 'bg-green-400' : 'bg-gray-400'
+                  }`}></div>
+                </div>
+                <div className="flex flex-col items-start gap-1 flex-grow">
+                  <div className="font-sans font-medium text-[14px] leading-[130%] text-white flex-none flex-grow-0">
+                    {result.source === 'ai' ? 'AI Analysis' :
+                     result.source === 'community' ? 'Community Vote' :
+                     result.source === 'ai_and_community' ? 'AI + Community Analysis' :
+                     'Unknown Source'}
+                  </div>
+                  <div className="font-sans font-normal text-[12px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                    {result.source === 'ai' ? 'Analyzed using advanced AI algorithms' :
+                     result.source === 'community' ? 'Validated by community voting' :
+                     result.source === 'ai_and_community' ? 'Combined AI and community validation' :
+                     'Analysis source unknown'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Analysis details for combined analysis */}
+              {result.source === 'ai_and_community' && (
+                <div className="w-[303px] flex flex-row items-center gap-4 flex-none flex-grow-0 pt-2 border-t border-white/10">
+                  <div className="flex flex-row items-center gap-2 flex-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                    <div className="font-sans font-normal text-[12px] leading-[130%] text-white/60">
+                      AI Analysis
+                    </div>
+                  </div>
+                  <div className="flex flex-row items-center gap-2 flex-1">
+                    <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                    <div className="font-sans font-normal text-[12px] leading-[130%] text-white/60">
+                      Community Vote
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

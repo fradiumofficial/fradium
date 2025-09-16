@@ -59,5 +59,6 @@ export const CDN = {
     transactions: `${CDN_BASE}/icons/transaction.svg`,
     clipboard: `${CDN_BASE}/icons/content_copy.svg`,
     help: `${CDN_BASE}/icons/help.svg`,
+    settingGreen: `${CDN_BASE}/icons/discover_tune.svg`,
   }
 }
