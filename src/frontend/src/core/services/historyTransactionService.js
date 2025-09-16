@@ -1,6 +1,7 @@
 import { API_URLS } from "@/core/lib/tokenUtils";
 import { icp_index } from "declarations/icp_index";
 import { fradium_index } from "declarations/fradium_index";
+import { ckbtc_index } from "declarations/ckbtc_index";
 import { Principal } from "@dfinity/principal";
 import { jsonStringify } from "@/core/lib/canisterUtils";
 
@@ -410,6 +411,52 @@ export async function getICRCTransactionHistory(tokenType, principal, icpAccount
         }
         break;
 
+      case "ckbtc":
+        const ckbtcResult = await ckbtc_index.get_account_transactions({
+          account: { owner: principalObj, subaccount: [] },
+          start: [],
+          max_results: limit,
+        });
+
+        // Handle the actual structure from ckBTC index canister (similar to Fradium)
+        if (ckbtcResult && ckbtcResult.Ok && ckbtcResult.Ok.transactions) {
+          transactions = ckbtcResult.Ok.transactions
+            .map((tx) => {
+              // Extract transfer data from the actual structure (similar to Fradium)
+              const transfer = tx.transaction?.transfer?.[0];
+
+              if (!transfer) {
+                return null;
+              }
+
+              const fromPrincipal = transfer.from?.owner?.__principal__ || transfer.from?.owner;
+              const toPrincipal = transfer.to?.owner?.__principal__ || transfer.to?.owner;
+
+              const isSent = fromPrincipal.toString() === principalObj.toString();
+              const otherParty = isSent ? toPrincipal.toString() : fromPrincipal.toString();
+              const otherPartyStr = otherParty || "Unknown";
+
+              const processedTx = {
+                hash: tx.id.toString(),
+                chain: "Internet Computer",
+                title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+                amount: isSent ? -Number(transfer.amount || 0) / 1e8 : Number(transfer.amount || 0) / 1e8, // Convert e8s to ckBTC
+                status: "Completed",
+                timestamp: Number(tx.transaction.timestamp || 0) / 1000000, // Convert nanoseconds to milliseconds
+                from: fromPrincipal.toString() || "Unknown",
+                to: toPrincipal.toString() || "Unknown",
+                fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e8 : 0,
+                memo: transfer.memo || [],
+                kind: "Transfer",
+                tokenType: "ckbtc",
+              };
+
+              return processedTx;
+            })
+            .filter((tx) => tx !== null); // Remove null transactions
+        }
+        break;
+
       default:
         throw new Error(`Unsupported ICRC token type: ${tokenType}`);
     }
@@ -455,6 +502,8 @@ export async function getTransactionHistory(address, network, limit = 20) {
         return await getICRCTransactionHistory("icp", address, limit);
       case "fradium":
         return await getICRCTransactionHistory("fradium", address, limit);
+      case "ckbtc":
+        return await getICRCTransactionHistory("ckbtc", address, limit);
       default:
         throw new Error(`Unsupported network: ${network}`);
     }

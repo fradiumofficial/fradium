@@ -2,11 +2,82 @@ import { wallet } from "declarations/wallet";
 import { icp_ledger } from "declarations/icp_ledger";
 import { icp_index } from "declarations/icp_index";
 import { fradium_ledger } from "declarations/fradium_ledger";
+import { ckbtc_ledger } from "declarations/ckbtc_ledger";
+import { ckbtc_minter } from "declarations/ckbtc_minter";
 import { Principal } from "@dfinity/principal";
 
 // Helper function to safely stringify objects that may contain BigInt
 function safeStringify(obj) {
   return JSON.stringify(obj, (key, value) => (typeof value === "bigint" ? value.toString() : value));
+}
+
+// Helper functions for localStorage caching (similar to WalletProvider)
+function getBalanceCacheKey(principal, tokenId) {
+  return principal ? `balanceCache_${principal}_${tokenId}` : `balanceCache_default_${tokenId}`;
+}
+
+function loadBalanceFromStorage(principal, tokenId) {
+  const key = getBalanceCacheKey(principal, tokenId);
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Check if cache is still valid (cache for 5 minutes)
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+        console.log(`Balance loaded from localStorage cache for token ${tokenId}:`, parsed.balance);
+        return parsed.balance;
+      } else {
+        // Cache expired, remove it
+        localStorage.removeItem(key);
+      }
+    }
+  } catch (error) {
+    console.error("Error loading balance from localStorage:", error);
+  }
+  return null;
+}
+
+function saveBalanceToStorage(principal, tokenId, balance) {
+  const key = getBalanceCacheKey(principal, tokenId);
+  try {
+    const cacheData = {
+      balance: balance,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(key, JSON.stringify(cacheData));
+    console.log(`Balance saved to localStorage cache for token ${tokenId}:`, balance);
+  } catch (error) {
+    console.error("Error saving balance to localStorage:", error);
+  }
+}
+
+function clearBalanceCache(principal, tokenId = null) {
+  try {
+    if (tokenId !== null) {
+      // Clear cache for specific token
+      const key = getBalanceCacheKey(principal, tokenId);
+      localStorage.removeItem(key);
+      console.log(`Balance cache cleared for token ${tokenId}`);
+    } else {
+      // Clear all balance cache for this principal
+      const principalString = principal?.toString() || null;
+      if (principalString) {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(`balanceCache_${principalString}_`)) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => {
+          localStorage.removeItem(key);
+          console.log(`Balance cache cleared:`, key);
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error clearing balance cache:", error);
+  }
 }
 
 // --- Mainnet tokens ---
@@ -67,6 +138,18 @@ export const TOKENS_CONFIG = [
     // Token type
     type: "icrc",
     canisterId: "sr4wk-4qaaa-aaaae-qfdta-cai",
+  },
+  {
+    id: 6,
+    name: "ckBTC Testnet4",
+    symbol: "ckBTC",
+    chain: "Internet Computer",
+    decimals: null,
+    imageUrl: "assets/images/coins/ckbtc.webp",
+    mainnet: false,
+    // Token type
+    type: "icrc",
+    canisterId: "mc6ru-gyaaa-aaaar-qaaaq-cai",
   },
 ];
 
@@ -235,6 +318,10 @@ export async function sendToken(tokenId, to, amount, principal) {
         case 5: // Fradium
           decimals = await fradium_ledger.icrc1_decimals();
           break;
+        case 6: // ckBTC
+          decimals = await ckbtc_ledger.icrc1_decimals();
+          decimals = 8; // ckBTC typically has 8 decimals like BTC
+          break;
         default:
           throw new Error("Unknown ICRC token for decimals");
       }
@@ -259,6 +346,16 @@ export async function sendToken(tokenId, to, amount, principal) {
 
       case 5: // Fradium
         return await fradium_ledger.icrc1_transfer({
+          from_subaccount: [],
+          to: { owner: toPrincipal, subaccount: [] },
+          amount: BigInt(amountInSmallestUnit),
+          fee: [],
+          memo: [],
+          created_at_time: [],
+        });
+
+      case 6: // ckBTC
+        return await ckbtc_ledger.icrc1_transfer({
           from_subaccount: [],
           to: { owner: toPrincipal, subaccount: [] },
           amount: BigInt(amountInSmallestUnit),
@@ -323,6 +420,10 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
           case 5: // Fradium
             decimals = await fradium_ledger.icrc1_decimals();
             break;
+          case 6: // ckBTC
+            // decimals = await ckbtc_ledger.icrc1_decimals();
+            decimals = 8; // ckBTC typically has 8 decimals like BTC
+            break;
           default:
             throw new Error("Unknown ICRC token for decimals");
         }
@@ -348,6 +449,17 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
 
         case 5: // Fradium
           result = await fradium_ledger.icrc1_transfer({
+            from_subaccount: [],
+            to: { owner: toPrincipal, subaccount: [] },
+            amount: BigInt(amountInSmallestUnit),
+            fee: [],
+            memo: [],
+            created_at_time: [],
+          });
+          break;
+
+        case 6: // ckBTC
+          result = await ckbtc_ledger.icrc1_transfer({
             from_subaccount: [],
             to: { owner: toPrincipal, subaccount: [] },
             amount: BigInt(amountInSmallestUnit),
@@ -387,9 +499,12 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
   }
 }
 
-export async function getBalance(tokenId, principal) {
+export async function getBalance(tokenId, principal, useCache = true) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
+
+  // Get principal string for caching
+  const principalString = principal?.toString() || null;
 
   if (token.type === "native") {
     try {
@@ -488,6 +603,56 @@ export async function getBalance(tokenId, principal) {
           console.error("Error fetching Fradium balance:", error);
           throw new Error(`Failed to fetch Fradium balance: ${error.message || "Unknown error"}`);
         }
+      case 6: // ckBTC
+        try {
+          // Trigger balance refresh on ckBTC minter before reading ledger balance
+          try {
+            const result = await ckbtc_minter.update_balance({ owner: [principal], subaccount: [] });
+            console.log("ckBTC update_balance result:", result);
+          } catch (e) {
+            // Ignore refresh errors like AlreadyProcessing/NoNewUtxos and proceed to read balance
+            console.warn("ckBTC update_balance warning:", e);
+          }
+
+          console.log("Fetching ckBTC balance from blockchain for principal:", principal);
+          const balance = await ckbtc_ledger.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+          console.log("ckBTC balance raw:", balance, "type:", typeof balance);
+
+          // Get decimals dynamically from ledger if token.decimals is null
+          let decimals = token.decimals;
+          if (decimals === null) {
+            // decimals = await ckbtc_ledger.icrc1_decimals();
+            decimals = 8; // ckBTC typically has 8 decimals like BTC
+          }
+          console.log("ckBTC decimals:", decimals, "type:", typeof decimals);
+
+          // Convert from e8s to ckBTC using dynamic decimals
+          // balance is a bigint, so we need to convert it properly
+          const balanceNumber = Number(balance);
+          const divisor = Math.pow(10, decimals);
+          const result = balanceNumber / divisor;
+
+          // Handle edge cases
+          if (isNaN(result) || !isFinite(result)) {
+            console.warn("Invalid balance calculation for ckBTC:", { balance, balanceNumber, decimals, divisor, result });
+            return "0";
+          }
+
+          const resultString = result.toString();
+
+          // Save to cache if useCache is enabled
+          if (useCache && principalString) {
+            saveBalanceToStorage(principalString, tokenId, resultString);
+          }
+
+          return resultString;
+        } catch (error) {
+          console.error("Error fetching ckBTC balance:", error);
+          throw new Error(`Failed to fetch ckBTC balance: ${error.message || "Unknown error"}`);
+        }
       default:
         throw new Error("ICRC token not supported");
     }
@@ -547,6 +712,7 @@ export async function getUSD(tokenId) {
     SOL: "solana",
     ICP: "internet-computer",
     FADM: "fradium", // Note: Fradium might not be on CoinGecko, we'll handle this
+    ckBTC: "bitcoin", // ckBTC uses BTC price
   };
 
   const coinGeckoId = coinGeckoIds[token.symbol];
@@ -681,6 +847,7 @@ export async function getUSD(tokenId) {
     SOL: 0,
     ICP: 0,
     FADM: 0, // Placeholder price for Fradium
+    ckBTC: 0, // ckBTC uses BTC price, fallback to 0
   };
 
   const fallbackPrice = fallbackPrices[token.symbol];
@@ -691,6 +858,9 @@ export async function getUSD(tokenId) {
 
   return fallbackPrice;
 }
+
+// Export cache management functions
+export { clearBalanceCache };
 
 // Function to get USD prices for multiple tokens at once
 export async function getUSDPrices(tokenIds) {

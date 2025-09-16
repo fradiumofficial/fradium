@@ -23,6 +23,15 @@ bitcoin-mining:
 bitcoin-balance:
 	bitcoin-cli -conf="$(CURDIR)/bitcoin.conf" getbalance
 
+# Pakai scantxoutset untuk balance address spesifik
+bitcoin-balanceof:
+	@if [ -z "$(address)" ]; then \
+		echo "Usage: make bitcoin-balanceof address=<btc_address>"; exit 1; \
+	fi
+	@echo "Checking balance for: $(address)"
+	@bitcoin-cli -conf="$(CURDIR)/bitcoin.conf" scantxoutset start "[\"addr($(address))\"]" 2>/dev/null | \
+	{ command -v jq >/dev/null 2>&1 && jq -r '.total_amount' || python3 -c "import sys, json; j=json.load(sys.stdin); print(j.get('total_amount',0))"; }
+
 bitcoin-newwallet:
 	bitcoin-cli -conf="$(CURDIR)/bitcoin.conf" -named createwallet wallet_name="fradium" load_on_startup=true
 
@@ -42,21 +51,6 @@ bitcoin-send:
 bitcoin-mine:
 	bitcoin-cli -conf="$(CURDIR)/bitcoin.conf" generatetoaddress 1 mtbZzVBwLnDmhH4pE9QynWAgh6H3aC1E6M
 
-deploy-backend:
-	dfx deploy backend
-
-deploy-token:
-	chmod +x "$(CURDIR)/scripts/deploy.fradium_token.sh"
-	"$(CURDIR)/scripts/deploy.fradium_token.sh"
-
-deploy-ai:
-	cargo build --release --target wasm32-unknown-unknown --package ransomware_detector
-	candid-extractor "target/wasm32-unknown-unknown/release/ransomware_detector.wasm" > "src/ai/detector_service/src/ransomware_detector.did"
-
-deploy-solana:
-	cd "src/solana" && ./build.sh
-	candid-extractor "target/wasm32-unknown-unknown/release/solana.wasm" > "src/solana/solana.did"
-
 icp-transfer:
 	chmod +x "$(CURDIR)/scripts/icp.transfer_token.sh"
 	"$(CURDIR)/scripts/icp.transfer_token.sh" $(address) $(amount)
@@ -72,3 +66,23 @@ fradium-transfer:
 fradium-balance:
 	chmod +x "$(CURDIR)/scripts/fradium.check_balance.sh"
 	"$(CURDIR)/scripts/fradium.check_balance.sh"
+
+ckbtc-transfer:
+	chmod +x "$(CURDIR)/scripts/ckbtc.transfer_token.sh"
+	"$(CURDIR)/scripts/ckbtc.transfer_token.sh" $(address) $(amount)
+
+ckbtc-balance:
+	chmod +x "$(CURDIR)/scripts/ckbtc.check_balance.sh"
+	"$(CURDIR)/scripts/ckbtc.check_balance.sh"
+
+bitcoin-kyt:
+	dfx canister call ckbtc_kyt set_api_key '(record { api_key = "" })'
+
+kill-port:
+	@echo "Killing process on port 4943..."
+	@PID=$$(lsof -t -i :4943); \
+	if [ -n "$$PID" ]; then \
+		kill -9 $$PID && echo "Port 4943 has been freed (PID $$PID killed)."; \
+	else \
+		echo "No process found on port 4943."; \
+	fi

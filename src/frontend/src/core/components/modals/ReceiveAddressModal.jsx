@@ -250,6 +250,13 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
                         address: addresses.icp_account,
                         error: addressErrors.icp_account,
                       },
+                      {
+                        key: "ckbtc",
+                        title: "ckBTC (BTC deposit):",
+                        description: "Send BTC to this address to mint ckBTC on Internet Computer.",
+                        address: addresses.ckbtc,
+                        error: addressErrors.ckbtc,
+                      },
                     ].map((item) => (
                       <AddressItem key={item.key} title={item.title} description={item.description} address={item.address} error={item.error} onCopy={copyToClipboard} onQrClick={handleQrClick} />
                     ))}

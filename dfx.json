@@ -22,7 +22,7 @@
       "build": "scripts/build.wallet.sh",
       "_mainnet_init_arg": "(variant { Mainnet })",
       "init_arg": "(variant { Local })",
-      "dependencies": ["sol_rpc", "evm_rpc"],
+      "dependencies": ["sol_rpc", "evm_rpc", "ckbtc_minter"],
       "metadata": [
         {
           "name": "candid:service"
@@ -111,6 +111,58 @@
       "remote": {
         "id": {
           "ic": "qhbym-qaaaa-aaaaa-aaafq-cai"
+        }
+      }
+    },
+    "ckbtc_ledger": {
+      "type": "custom",
+      "build": "scripts/build.ckbtc_ledger.sh",
+      "candid": "target/ic/ckbtc_ledger.did",
+      "wasm": "target/ic/ckbtc_ledger.wasm",
+      "specified_id": "mc6ru-gyaaa-aaaar-qaaaq-cai",
+      "init_arg_file": "target/ic/ckbtc_ledger.args.did",
+      "remote": {
+        "id": {
+          "ic": "mc6ru-gyaaa-aaaar-qaaaq-cai"
+        }
+      }
+    },
+    "ckbtc_index": {
+      "type": "custom",
+      "build": "scripts/build.ckbtc_index.sh",
+      "candid": "target/ic/ckbtc_index.did",
+      "wasm": "target/ic/ckbtc_index.wasm",
+      "init_arg_file": "target/ic/ckbtc_index.args.did",
+      "specified_id": "mm444-5iaaa-aaaar-qaabq-cai",
+      "remote": {
+        "id": {
+          "ic": "mm444-5iaaa-aaaar-qaabq-cai"
+        }
+      }
+    },
+    "ckbtc_kyt": {
+      "type": "custom",
+      "build": "scripts/build.ckbtc_kyt.sh",
+      "candid": "target/ic/ckbtc_kyt.did",
+      "wasm": "target/ic/ckbtc_kyt.wasm",
+      "init_arg_file": "target/ic/ckbtc_kyt.args.did",
+      "specified_id": "pvm5g-xaaaa-aaaar-qaaia-cai",
+      "remote": {
+        "id": {
+          "ic": "pvm5g-xaaaa-aaaar-qaaia-cai"
+        }
+      }
+    },
+    "ckbtc_minter": {
+      "type": "custom",
+      "build": "scripts/build.ckbtc_minter.sh",
+      "candid": "target/ic/ckbtc_minter.did",
+      "wasm": "target/ic/ckbtc_minter.wasm",
+      "init_arg_file": "target/ic/ckbtc_minter.args.did",
+      "specified_id": "ml52i-qqaaa-aaaar-qaaba-cai",
+      "remote": {
+        "id": {
+          "ic": "ml52i-qqaaa-aaaar-qaaba-cai"
         }
       }
     },

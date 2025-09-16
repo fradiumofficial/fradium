@@ -17,6 +17,9 @@ function getIconByChain(chain, tokenType) {
     } else if (tokenType === "fradium") {
       const token = TOKENS_CONFIG.find((t) => t.id === 5); // Fradium token
       return token ? `/${token.imageUrl}` : "/assets/images/coins/fradium.webp";
+    } else if (tokenType === "ckbtc") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 6); // ckBTC token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/ckbtc.webp";
     }
   }
 
@@ -116,6 +119,7 @@ const LoadingSkeleton = () => {
 function getTokenSymbol(chain, tokenType) {
   if (tokenType === "icp") return "ICP";
   if (tokenType === "fradium") return "FRADIUM";
+  if (tokenType === "ckbtc") return "ckBTC";
   if (chain === "Solana") return "SOL";
   if (chain === "Bitcoin") return "BTC";
   if (chain === "Ethereum") return "ETH";
@@ -123,6 +127,7 @@ function getTokenSymbol(chain, tokenType) {
     // For Internet Computer chain, determine token based on tokenType
     if (tokenType === "icp") return "ICP";
     if (tokenType === "fradium") return "FRADIUM";
+    if (tokenType === "ckbtc") return "ckBTC";
     return "ICP"; // Default to ICP for Internet Computer
   }
   return "TOKEN";
@@ -258,6 +263,7 @@ export default function TransactionHistoryPage() {
       if (addresses?.bitcoin) tokensToLoad.push("bitcoin");
       if (icpPrincipal && icpAccount) tokensToLoad.push("icp");
       if (icpPrincipal) tokensToLoad.push("fradium");
+      if (icpPrincipal) tokensToLoad.push("ckbtc");
       // Load transactions for all supported networks
       // Create parallel loading promises for better performance
       console.log("LOADING PROMISES 1");
@@ -304,6 +310,17 @@ export default function TransactionHistoryPage() {
         loadingPromises.push(
           getICRCTransactionHistory("fradium", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
             console.error("Error loading Fradium transactions:", error);
+            return [];
+          })
+        );
+      }
+
+      // Load ckBTC transactions
+      if (icpPrincipal) {
+        console.log("LOADING CKBTC");
+        loadingPromises.push(
+          getICRCTransactionHistory("ckbtc", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
+            console.error("Error loading ckBTC transactions:", error);
             return [];
           })
         );
@@ -387,7 +404,7 @@ export default function TransactionHistoryPage() {
       const fromMatch = tx.from && tx.from.toLowerCase().includes(query);
       const toMatch = tx.to && tx.to.toLowerCase().includes(query);
       const hashMatch = tx.hash && tx.hash.toLowerCase().includes(query);
-      const tokenSymbolMatch = getTokenSymbol(tx.chain, tx.tokenType).toLowerCase().includes(query);
+      const tokenSymbolMatch = getTokenSymbol(tx.chain, tx.tokenType).toLowerCase().includes(query) || (tx.tokenType === "ckbtc" && "ckbtc".includes(query.toLowerCase()));
 
       if (!titleMatch && !chainMatch && !statusMatch && !fromMatch && !toMatch && !hashMatch && !tokenSymbolMatch) {
         return false;
