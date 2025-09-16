@@ -74,23 +74,26 @@ jobs:
           echo "Setting extension/package.json version to ${BASE_VERSION}"
           jq --arg v "${BASE_VERSION}" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
 
-      - name: Build & package extension (plasmo)
-        run: pnpm run package
+      - name: Build extension (plasmo)
+        run: pnpm build
 
-      - name: Locate packaged zip
-        id: findzip
+      - name: Create zip from build output
+        id: makezip
         shell: bash
         run: |
-          ZIP_PATH=$(ls -1 build/**/*.zip build/*.zip 2>/dev/null | head -n 1)
-          if [[ -z "$ZIP_PATH" ]]; then
-            echo "No zip file found in build directory" >&2
-            find build -maxdepth 3 -type f -print || true
+          mkdir -p build
+          ZIP_NAME="fradium-extension-${{ steps.envsel.outputs.env_name }}-${TAG_NAME}.zip"
+          if [[ -d build/chrome-mv3-prod ]]; then
+            (cd build && zip -r "$ZIP_NAME" chrome-mv3-prod >/dev/null)
+          else
+            echo "Expected directory build/chrome-mv3-prod not found" >&2
+            find build -maxdepth 2 -type d -print || true
             exit 1
           fi
-          echo "zip_path=$ZIP_PATH" >> $GITHUB_OUTPUT
+          echo "zip_path=build/$ZIP_NAME" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: fradium-extension-${{ github.ref_name }}
-          path: extension/${{ steps.findzip.outputs.zip_path }}
+          path: extension/${{ steps.makezip.outputs.zip_path }}

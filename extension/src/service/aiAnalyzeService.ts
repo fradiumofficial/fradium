@@ -547,22 +547,6 @@ export class AIAnalyzeService {
   }
 
   /**
-   * Convert network type to token type for backend
-   */
-  private static networkToTokenType(network: SupportedNetwork): 'Bitcoin' | 'Ethereum' | 'Solana' | 'Fradium' | 'Unknown' {
-    switch (network) {
-      case 'Bitcoin':
-        return 'Bitcoin';
-      case 'Ethereum':
-        return 'Ethereum';
-      case 'Solana':
-        return 'Solana';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  /**
    * Get supported networks
    * @returns SupportedNetwork[] List of supported networks
    */

@@ -364,7 +364,7 @@ function Send() {
         <div className="flex flex-row items-center mb-4">
           <button
             onClick={handleBack}
-            className="p-1 hover:bg-white/10 rounded"
+            className="p-1 hover:bg-white/10 rounded transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/20"
             aria-label="Go back"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -403,7 +403,7 @@ function Send() {
             <button
               type="button"
               onClick={() => setIsNetworkDropdownOpen(!isNetworkDropdownOpen)}
-              className="w-full bg-white/10 border border-white/10 p-3 text-white rounded flex items-center justify-between hover:bg-white/5 transition-colors"
+              className="w-full bg-white/10 border border-white/10 p-3 text-white rounded flex items-center justify-between hover:bg-white/5 transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/20"
             >
               <div className="flex items-center gap-3">
                 <img
@@ -424,7 +424,7 @@ function Send() {
                     key={network.key}
                     type="button"
                     onClick={() => handleNetworkSelect(network.key)}
-                    className={`w-full p-3 text-left hover:bg-white/10 transition-colors flex items-center gap-3 first:rounded-t last:rounded-b ${
+                    className={`w-full p-3 text-left hover:bg-white/10 transition-colors duration-200 flex items-center gap-3 first:rounded-t last:rounded-b cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/20 ${
                       selectedNetwork === network.key ? 'bg-[#9BE4A0]/20 border-l-2 border-[#9BE4A0]' : ''
                     }`}
                   >
@@ -521,7 +521,7 @@ function Send() {
           type="button"
           onClick={handleSend}
           disabled={isLoading || !recipientAddress || !amount}
-          className="w-full h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] mt-2 self-stretch flex-grow-0 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] mt-2 self-stretch flex-grow-0 hover:shadow-[0px_8px_12px_-4px_rgba(153,227,158,0.9),0px_0px_0px_1px_#C0DDB5] hover:from-[#A8E8A8] hover:to-[#5BBF65] active:scale-95 transition-all duration-200 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#99E39E] focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:transform-none disabled:active:scale-100"
         >
           {isLoading ? (
             <span className="flex items-center gap-2">
