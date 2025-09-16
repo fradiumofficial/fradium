@@ -670,8 +670,9 @@ function Home() {
                     {/* Balance */}
                     <div className="flex flex-col items-end p-0 pr-4 w-[80px] h-[45px] flex-none order-1 flex-grow-0">
                       {isLoading ? (
-                        <div className="flex items-center justify-center w-full">
-                          <div className="w-4 h-4 border-2 border-[#9BE4A0] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="w-16 h-4 bg-white/15 rounded animate-pulse"></div>
+                          <div className="w-12 h-3 bg-white/10 rounded animate-pulse"></div>
                         </div>
                       ) : hasError ? (
                         <div className="flex flex-col items-end">

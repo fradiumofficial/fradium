@@ -1,8 +1,8 @@
 {
   "name": "fradium-wallet-extension",
-  "displayName": "Fradium Wallet extension",
-  "version": "0.0.1",
-  "description": "The Trust Layer for Web3 Transaction",
+  "displayName": "Fradium - The Trust Layer for Web3 Transaction",
+  "version": "1.1.6",
+  "description": "Advanced fraud detection and prevention for crypto transactions. Analyze addresses, smart contracts, and ransomware",
   "author": "FradiumOfficial",
   "scripts": {
     "dev": "plasmo dev",
@@ -13,14 +13,15 @@
     "@dfinity/agent": "^3.2.4",
     "@dfinity/auth-client": "^3.2.4",
     "@dfinity/principal": "^3.2.4",
-    "axios": "^1.11.0",
+    "axios": "^1.12.2",
     "dotenv": "^17.2.2",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
+    "qrcode": "^1.5.4",
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-router-dom": "^7.8.2",
+    "react-router-dom": "^7.9.1",
     "tailwindcss": "3.4.1"
   },
   "devDependencies": {
@@ -34,11 +35,28 @@
     "prettier": "3.2.4",
     "typescript": "5.3.3"
   },
+  "permissions": [
+    "storage"
+  ],
   "manifest": {
     "host_permissions": [
       "https://*.ic0.app/*",
       "https://*.icp0.io/*",
-      "https://*.icp-api.io/*"
+      "https://*.icp-api.io/*",
+      "https://fradium.io/*",
+      "https://api.etherscan.io/*",
+      "https://api-sepolia.etherscan.io/*",
+      "https://api.blockcypher.com/*",
+      "https://api.devnet.solana.com/*",
+      "https://api.mainnet-beta.solana.com/*",
+      "https://api.coingecko.com/*",
+      "https://deep-index.moralis.io/*",
+      "https://min-api.cryptocompare.com/*",
+      "https://coins.llama.fi/*",
+      "https://mempool.space/*",
+      "https://cdn.jsdelivr.net/*",
+      "https://fonts.googleapis.com/*",
+      "https://fonts.gstatic.com/*"
     ]
   }
 }

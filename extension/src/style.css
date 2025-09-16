@@ -8,3 +8,24 @@
   all: initial;
   box-sizing: border-box;
 }
+
+/* Global interactive element enhancements */
+button, [role="button"], [onclick], input[type="button"], input[type="submit"] {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+button:focus, [role="button"]:focus, input[type="button"]:focus, input[type="submit"]:focus {
+  outline: 2px solid #99E39E;
+  outline-offset: 2px;
+}
+
+button:disabled, [role="button"]:disabled, input[type="button"]:disabled, input[type="submit"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Smooth scrolling for all elements */
+* {
+  scroll-behavior: smooth;
+}

@@ -1,5 +1,5 @@
-import { createActor as createWalletActor, canisterId as walletCanisterId } from "../../src/declarations/wallet"
-import { backend } from "../../src/declarations/backend"
+import { createActor as createWalletActor, canisterId as walletCanisterId } from "./declarations/wallet"
+import { backend } from "./declarations/backend"
 import { HttpAgent } from "@dfinity/agent"
 
 // Background script will receive identity from UI/popup

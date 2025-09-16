@@ -130,6 +130,21 @@ function DetailHistory() {
 
   const confidencePercentage = getConfidencePercentage();
 
+  // Get risk level as readable text
+  const getRiskLevel = () => {
+    if (!historyItem?.analysisResult) return "Unknown";
+
+    if (historyItem.analysisResult.riskLevel) {
+      return historyItem.analysisResult.riskLevel;
+    } else if ((historyItem.source === "ai" || historyItem.source === "ai_and_community") && historyItem.analysisResult.aiData) {
+      const probability = historyItem.analysisResult.aiData.ransomware_probability || 0;
+      if (probability >= 0.8) return "HIGH";
+      if (probability >= 0.5) return "MEDIUM";
+      return "LOW";
+    }
+    return "Unknown";
+  };
+
   return (
     <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto relative">
 
@@ -138,7 +153,7 @@ function DetailHistory() {
         <div className="flex items-center gap-3">
           {/* Back Arrow Icon */}
           <button
-            onClick={() => navigate(ROUTES.HOME)}
+            onClick={() => navigate(-1)}
             className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
             aria-label="Go back"
           >
@@ -189,19 +204,19 @@ function DetailHistory() {
               </div>
             </div>
 
-            {/* Confidence Level Card */}
+            {/* Risk Level Card */}
             <div className="flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 backdrop-blur-[5px] rounded-[12px]">
-              {/* Confidence Level Value */}
+              {/* Risk Level Value */}
               <div className="w-[40px] h-[19px] font-['General Sans'] font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-white flex-none order-0 flex-grow-0">
-                {historyItem.analysisResult.aiData?.confidence_level || "N/A"}
+                {getRiskLevel()}
               </div>
 
               {/* Confidence Level Label with Icon */}
               <div className="flex flex-row items-center p-0 gap-[6px] h-[18px] flex-none order-1 flex-grow-0">
                 {/* Align Bottom Icon Container */}
-                <img src={CDN.icons.total} alt="Confidence Level" />
+                <img src={CDN.icons.total} alt="Risk Level" />
                 <div className="w-[110px] h-[18px] font-['General Sans'] font-extralight text-[14px] leading-[130%] text-white/60 flex-none order-1 flex">
-                  Confidence Level
+                  Risk Level
                 </div>
               </div>
             </div>

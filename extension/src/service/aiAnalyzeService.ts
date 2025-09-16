@@ -2,8 +2,8 @@ import { detectTokenType } from '~lib/utils/tokenUtils';
 import { extractBitcoinFeatures } from './bitcoinAnalyzeService';
 import { extractEthereumFeatures } from './ethereumAnalyzeService';
 import { extractSolanaFeatures } from './solanaAnalyzeService';
-import { createActor as createAiActor, canisterId as aiCanisterId } from '../../../src/declarations/ai';
-import { createActor as createBackendActor, canisterId as backendCanisterId } from '../../../src/declarations/backend';
+import { createActor as createAiActor, canisterId as aiCanisterId } from '../declarations/ai';
+import { createActor as createBackendActor, canisterId as backendCanisterId } from '../declarations/backend';
 import { HttpAgent } from '@dfinity/agent';
 import type {
   RansomwareResult,
@@ -544,22 +544,6 @@ export class AIAnalyzeService {
     // History persistence via backend has been disabled in the extension build
     // after removing historyService. This is intentionally a no-op.
     return;
-  }
-
-  /**
-   * Convert network type to token type for backend
-   */
-  private static networkToTokenType(network: SupportedNetwork): 'Bitcoin' | 'Ethereum' | 'Solana' | 'Fradium' | 'Unknown' {
-    switch (network) {
-      case 'Bitcoin':
-        return 'Bitcoin';
-      case 'Ethereum':
-        return 'Ethereum';
-      case 'Solana':
-        return 'Solana';
-      default:
-        return 'Unknown';
-    }
   }
 
   /**

@@ -4,9 +4,12 @@ interface SafetyCardProps {
   confidence: number
   title: string
   isSafe: boolean
+  analysisSource?: string
+  finalStatus?: string
+  description?: string
 }
 
-export function SafetyCard({ confidence, title, isSafe }: SafetyCardProps) {
+export function SafetyCard({ confidence, title, isSafe, analysisSource, finalStatus, description }: SafetyCardProps) {
   return (
     <div
       className={`rounded-2xl shadow-lg max-w-md bg-gradient-to-tr
@@ -23,21 +26,29 @@ export function SafetyCard({ confidence, title, isSafe }: SafetyCardProps) {
         </div>
 
         {/* Text Section */}
-        <div className="flex flex-col">
+        <div className="flex flex-col w-full">
           <h3 className="text-[14px] font-semibold uppercase tracking-wider">
             {isSafe ? `${title} IS SAFE` : `${title} IS NOT SAFE`}
           </h3>
-          <p className="text-[12px] font-medium text-white">
-            Confidence: {confidence}%
-          </p>
+          <div className="flex flex-row items-center gap-2 mt-1">
+            <p className="text-[12px] font-medium text-white">
+              Confidence: {confidence}%
+            </p>
+            <span className="text-white/40 text-[12px]">•</span>
+            <p className="text-white/60 text-[12px]">
+              {finalStatus === "safe_by_both" ? "Analyzed by AI & COMMUNITY" :
+               finalStatus === "unsafe_by_ai" ? "Analyzed by AI" :
+               finalStatus === "unsafe_by_community" ? "Analyzed by COMMUNITY" :
+               `Analyzed by ${analysisSource?.toUpperCase() || 'AI'}`}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Description */}
       <div className="mt-4">
         <p className="text-white/70 font-extralight text-[14px]">
-          This bitcoin address appears to be clean with no suspicious activity
-          detected in our comprehensive database
+          {description || "This address has been analyzed for security risks and potential threats."}
         </p>
       </div>
     </div>

@@ -19,15 +19,20 @@ type TokenType =
    Unknown;
  };
 type Time = int;
-type Result_6 = 
+type Result_7 = 
  variant {
    Err: text;
    Ok: GetAnalyzeAddressResult;
  };
-type Result_5 = 
+type Result_6 = 
  variant {
    Err: text;
    Ok: vec AnalyzeHistory;
+ };
+type Result_5 = 
+ variant {
+   Err: text;
+   Ok: nat;
  };
 type Result_4 = 
  variant {
@@ -151,12 +156,13 @@ service : {
   admin_change_report_deadline: (report_id: ReportId, new_deadline: Time) ->
    (Result);
   admin_delete_report: (report_id: ReportId) -> (Result);
-  analyze_address: (address: text) -> (Result_6);
+  analyze_address: (address: text) -> (Result_7);
   check_faucet_claim: () -> (Result);
   claim_faucet: () -> (Result);
-  create_analyze_history: (params: CreateAnalyzeHistoryParams) -> (Result_5);
+  create_analyze_history: (params: CreateAnalyzeHistoryParams) -> (Result_6);
   create_report: (params: CreateReportParams) -> (Result);
-  get_analyze_history: () -> (Result_5);
+  get_analyze_history: (offset: nat, limit: nat) -> (Result_6);
+  get_analyze_history_count: () -> (Result_5);
   get_my_reports: () -> (Result_4);
   get_my_votes: () -> (Result_3);
   get_report: (report_id: ReportId) -> (Result_2) query;

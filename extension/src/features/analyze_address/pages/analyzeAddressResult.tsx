@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, Wallet } from "lucide-react"
+import { ArrowLeftIcon, Gauge, Wallet } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
@@ -163,28 +163,16 @@ function AnalyzeAdressResult() {
       (result.source === "ai" || result.source === "ai_and_community") &&
       result.aiData
     ) {
-      return Math.round(
-        result.aiData.confidence_level === "HIGH"
-          ? 95
-          : result.aiData.confidence_level === "MEDIUM"
-            ? 75
-            : 50
-      )
+      // Use real confidence value from AI analysis (like frontend)
+      return result.aiData.ransomware_probability * 100
     } else if (
       (result.source === "community" || result.source === "ai_and_community") &&
       result.communityData
     ) {
-      // For community, calculate based on vote ratio
-      const report = result.communityData.report?.[0]
-      if (report) {
-        const totalVotes = Number(report.votes_yes) + Number(report.votes_no)
-        if (totalVotes > 0) {
-          return Math.round((Number(report.votes_yes) / totalVotes) * 100)
-        }
-      }
-      return 50 // Default for community
+      // Use static confidence values based on safety (like frontend)
+      return result.isSafe ? 85 : 75
     }
-    return 50
+    return 50 // Default fallback
   }
 
   const confidencePercentage = getConfidencePercentage()
@@ -210,21 +198,6 @@ function AnalyzeAdressResult() {
     return "0"
   }
 
-  // Get confidence level as readable text
-  const getConfidenceLevel = () => {
-    if (
-      (result.source === "ai" || result.source === "ai_and_community") &&
-      result.aiData
-    ) {
-      return result.aiData.confidence_level || "Unknown"
-    } else if (result.confidence) {
-      if (result.confidence >= 90) return "HIGH"
-      if (result.confidence >= 70) return "MEDIUM"
-      return "LOW"
-    }
-    return "Unknown"
-  }
-
   // Get risk level as readable text
   const getRiskLevel = () => {
     if (result.riskLevel) {
@@ -239,6 +212,24 @@ function AnalyzeAdressResult() {
       return "LOW"
     }
     return "Unknown"
+  }
+
+  // Get risk score from stats
+  const getRiskScore = () => {
+    if (result.stats?.riskScore) {
+      return result.stats.riskScore
+    } else if (
+      (result.source === "ai" || result.source === "ai_and_community") &&
+      result.aiData
+    ) {
+      return `${Math.round(result.aiData.ransomware_probability * 100)}/100`
+    } else if (
+      (result.source === "community" || result.source === "ai_and_community") &&
+      result.communityData
+    ) {
+      return isAddressSafe ? "15/100" : "85/100"
+    }
+    return "50/100"
   }
 
   // Get data source information
@@ -280,6 +271,9 @@ function AnalyzeAdressResult() {
           confidence={confidencePercentage}
           title="Address"
           isSafe={isAddressSafe}
+          analysisSource={result?.source}
+          finalStatus={result?.finalStatus}
+          description={result?.description}
         />
 
         {/* Address Details Section */}
@@ -311,13 +305,13 @@ function AnalyzeAdressResult() {
             <div className="w-[159px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
               <div
                 className={`w-[72px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] flex-none flex-grow-0 ${
-                  getConfidenceLevel() === "HIGH"
+                  getConfidencePercentage() >= 80
                     ? "text-green-400"
-                    : getConfidenceLevel() === "MEDIUM"
+                    : getConfidencePercentage() >= 60
                       ? "text-yellow-400"
                       : "text-red-400"
                 }`}>
-                {getConfidenceLevel()}
+                {getConfidencePercentage()}%
               </div>
               <div className="w-[104px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
                 <img
@@ -355,19 +349,15 @@ function AnalyzeAdressResult() {
               </div>
             </div>
 
-            {/* Card 4 - Data Source */}
-            <div className="w-[159px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
-              <div className="w-full min-h-[19px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.02em] text-white flex-none flex-grow-0 break-words">
-                {getDataSource()}
+            {/* Card 4 - Risk Score */}
+            <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+              <div className="w-[60px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-[#9BE4A0] flex-none flex-grow-0">
+                {getRiskScore()}
               </div>
-              <div className="w-[100px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
-                <img
-                  src={CDN.icons.activity}
-                  alt="Data Source"
-                  className="w-[16px] h-[16px] flex-none flex-grow-0"
-                />
-                <div className="w-[78px] h-[18px] font-sans font-normal text-[12px] leading-[130%] text-white/60 flex-none flex-grow-0">
-                  Data Source
+              <div className="h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
+                <Gauge className="w-[16px] h-[16px] flex-none flex-grow-0 text-white/60" />
+                <div className="h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  Risk Score
                 </div>
               </div>
             </div>
