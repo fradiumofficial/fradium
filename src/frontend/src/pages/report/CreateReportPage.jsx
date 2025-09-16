@@ -56,6 +56,34 @@ export default function CreateReportPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [files, setFiles] = useState([]);
 
+  // Toast helper styled with Fradium design system
+  const showFileTooLargeToast = (tooLargeFiles) => {
+    toast.error(
+      (
+        <div className="text-left">
+          <div className="font-medium mb-1">Ukuran file terlalu besar</div>
+          <div className="text-sm text-white/90">Batas maksimal 2MB per file. File berikut melebihi batas:</div>
+          <ul className="mt-2 list-disc list-inside text-sm">
+            {tooLargeFiles.map((f, i) => (
+              <li key={i}>
+                <span className="font-medium">{f.name}</span>
+                <span className="text-white/80"> — {formatFileSize(f.size)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ),
+      {
+        icon: <AlertTriangle className="text-red-400" />,
+        className:
+          "!bg-[#0B0F14] !text-white !border !border-red-400/25 !rounded-2xl !backdrop-blur-md shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
+        progressClassName: "!bg-red-400",
+        closeOnClick: true,
+        autoClose: 4800,
+      }
+    );
+  };
+
   // What happened options for dropdown
   const whatHappenedOptions = [
     { value: "phishing", label: "Phishing" },
@@ -367,11 +395,16 @@ export default function CreateReportPage() {
       maxFiles: 5,
     });
 
-    if (validation.errors.length > 0) {
+    // Custom nice popup when files exceed max size
+    const MAX_SIZE = FILE_SIZE_LIMITS.MEDIUM;
+    const tooLarge = selectedFiles.filter((f) => f.size > MAX_SIZE);
+    if (tooLarge.length > 0) {
+      showFileTooLargeToast(tooLarge);
       return;
     }
 
-    if (validation.invalid.length > 0) {
+    if (validation.errors.length > 0 || validation.invalid.length > 0) {
+      toast.error("File tidak valid. Pastikan tipe gambar (PNG/JPG) dan ukuran ≤ 2MB.");
       return;
     }
 
@@ -421,7 +454,6 @@ export default function CreateReportPage() {
               </Select>
               {errors.whatHappened && <p className="text-red-400 text-sm mt-1">{errors.whatHappened}</p>}
             </div>
-
             {/* Evidence Fields */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -431,7 +463,7 @@ export default function CreateReportPage() {
               {files.length > 0 && (
                 <div className="space-y-3 mb-4">
                   {files.map((file, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-3 bg-white/5 border border-white/20 rounded-md">
+                    <div key={index} className="flex items-center space-x-3 p-3 bg-white/5 border border-white/20 rounded-xl">
                       {file.preview ? (
                         <div className="h-10 w-10 rounded overflow-hidden flex-shrink-0">
                           <img src={file.preview || "/placeholder.svg"} alt={file.name} className="h-full w-full object-cover" />
@@ -575,7 +607,7 @@ export default function CreateReportPage() {
             {/* Page Title */}
             <div className="mb-8 sm:mb-8">
               <h1 className="text-3xl sm:text-4xl font-medium mb-4">Create New Report</h1>
-              <p className="text-lg sm:text-lg text-gray-300">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
+              <p className="text-lg sm:text-base text-gray-300">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
             </div>
 
             {/* Login Required Alert */}
@@ -597,14 +629,12 @@ export default function CreateReportPage() {
               {/* Left Sidebar - Steps */}
               <div className="hidden lg:block lg:col-span-1">
                 <div className="space-y-4">
-                  <h3 className={`text-lg font-semibold mb-6 ${!isAuthenticated ? "text-white/50" : "text-white"}`}>Progress</h3>
-
                   <div className="space-y-4">
                     {steps.map((step, index) => (
                       <div key={step.id}>
                         <button onClick={() => goToStep(step.id)} disabled={!isAuthenticated} className={`w-full text-left pl-4 transition-colors duration-300 ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : currentStep === step.id ? "text-white" : currentStep > step.id ? "text-[#99e39e]" : "text-gray-400 hover:text-gray-300"}`}>
                           <div className="flex items-center space-x-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${currentStep === step.id ? "bg-[#99e39e] text-black" : currentStep > step.id ? "bg-[#99e39e] text-black" : "bg-white/10 text-gray-400"}`}>{currentStep > step.id ? <Check className="w-4 h-4" /> : step.id}</div>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors duration-300 ${currentStep === step.id ? "bg-[#99e39e] text-black" : currentStep > step.id ? "bg-[#99e39e] text-black" : "bg-white/10 text-gray-400"}`}>{currentStep > step.id ? <Check className="w-4 h-4" /> : step.id}</div>
                             <div className="flex-1 min-w-0">
                               <div className={`font-medium transition-colors duration-300 ${currentStep === step.id ? "text-white" : currentStep > step.id ? "text-[#99e39e]" : "text-gray-400"}`}>{step.title}</div>
                               <div className="text-xs text-gray-400 mt-1">{step.description}</div>
