@@ -85,11 +85,10 @@ export default function ScanHistoryPage() {
       }
 
       const newItems = historyResult.Ok.map((item, index) => {
-        // Try to get chain from token_type first, fallback to address detection
-        let chain = getChainFromTokenType(item.token_type);
-        if (chain === "Unknown") {
+        // token_type kini string langsung nama chain/token; gunakan sebagai chain dasar
+        let chain = typeof item.token_type === "string" && item.token_type ? item.token_type : getChainFromTokenType(item.token_type);
+        if (!chain || chain === "Unknown") {
           chain = detectAddressNetwork(item.address);
-          console.log(`Fallback detection for address ${item.address}: ${chain}`);
         }
 
         return {
@@ -294,6 +293,7 @@ export default function ScanHistoryPage() {
                       <option value="bitcoin">Bitcoin</option>
                       <option value="ethereum">Ethereum</option>
                       <option value="solana">Solana</option>
+                      <option value="internet computer">Internet Computer</option>
                     </select>
                   </div>
 

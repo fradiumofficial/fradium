@@ -953,7 +953,7 @@ persistent actor Fradium {
         analyzed_type = #CommunityVote;
         created_at = Time.now();
         metadata = debug_show(foundReport);
-        token_type = #Bitcoin;
+        token_type = "Bitcoin";
       };
         
       let existingHistory = switch (analyzeAddressStore.get(caller)) {

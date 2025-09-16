@@ -13,7 +13,7 @@ type Result = variant { Ok : RansomwareResult; Err : text };
 service : () -> {
   analyze_btc_address : (vec float32, text, nat32) -> (Result);
   analyze_eth_address : (vec record { text; float64 }, text, nat32) -> (Result);
-  analyze_icp_address : (text) -> (Result);
+  analyze_icp_address : (vec record { text; float64 }, text, nat32) -> (Result);
   analyze_sol_address : (vec record { text; float64 }, text, nat32) -> (Result);
   get_icp_api_health : () -> (text) query;
 }

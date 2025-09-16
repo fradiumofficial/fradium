@@ -27,7 +27,6 @@ function getIconByChain(chain, tokenType) {
 
 // Loading skeleton component
 const LoadingSkeleton = () => {
-  console.log("LoadingSkeleton");
   return (
     <div className="flex flex-col">
       <motion.div className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.12 }}>
@@ -261,6 +260,7 @@ export default function TransactionHistoryPage() {
       if (icpPrincipal) tokensToLoad.push("fradium");
       // Load transactions for all supported networks
       // Create parallel loading promises for better performance
+      console.log("LOADING PROMISES 1");
       const loadingPromises = [];
       // Load ETH transactions
       if (addresses?.ethereum) {

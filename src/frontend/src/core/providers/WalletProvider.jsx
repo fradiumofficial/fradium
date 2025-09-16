@@ -35,7 +35,7 @@ export const WalletProvider = ({ children }) => {
     "Internet Computer": true,
   });
 
-  // Address states for receive modal
+  // Address states for receive modal (simple)
   const [addresses, setAddresses] = useState({
     bitcoin: "",
     ethereum: "",
@@ -44,8 +44,7 @@ export const WalletProvider = ({ children }) => {
     icp_account: "",
   });
   const [addressesLoading, setAddressesLoading] = useState(false);
-  const [addressesLoaded, setAddressesLoaded] = useState(false);
-  const [hasLoadedAddressesOnce, setHasLoadedAddressesOnce] = useState(false);
+  const [addressesReady, setAddressesReady] = useState(false);
 
   // Balance states
   const [balances, setBalances] = useState({});
@@ -59,15 +58,58 @@ export const WalletProvider = ({ children }) => {
   const [usdPriceErrors, setUsdPriceErrors] = useState({});
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
 
-  // Memoize user principal string to prevent unnecessary re-renders
+  // Memoize user principal string (robust: coba dari identity lalu user.identity)
   const userPrincipalString = useMemo(() => {
-    return user?.identity?.getPrincipal()?.toString();
-  }, [user?.identity]);
+    try {
+      const principal = (typeof identity?.getPrincipal === "function" ? identity.getPrincipal() : null) || (typeof user?.identity?.getPrincipal === "function" ? user.identity.getPrincipal() : null);
+      return principal?.toString() || null;
+    } catch (_e) {
+      return null;
+    }
+  }, [identity, user]);
 
   // Function to get localStorage key for user's network filters
   const getNetworkFiltersKey = useCallback(() => {
     return userPrincipalString ? `networkFilters_${userPrincipalString}` : "networkFilters_default";
   }, [userPrincipalString]);
+
+  // Function to get localStorage key for user's wallet addresses
+  const getAddressesKey = useCallback(() => {
+    if (!userPrincipalString) {
+      throw new Error("Principal ID is required for wallet addresses cache");
+    }
+    return `walletAddresses_${userPrincipalString}`;
+  }, [userPrincipalString]);
+
+  // Function to save wallet addresses to localStorage
+  const saveAddressesToStorage = useCallback(
+    (addresses) => {
+      const key = getAddressesKey();
+      try {
+        localStorage.setItem(key, JSON.stringify(addresses));
+        console.log("Wallet addresses saved to localStorage for principal:", userPrincipalString);
+      } catch (error) {
+        console.error("Error saving wallet addresses to localStorage:", error);
+      }
+    },
+    [getAddressesKey, userPrincipalString]
+  );
+
+  // Function to load wallet addresses from localStorage
+  const loadAddressesFromStorage = useCallback(() => {
+    const key = getAddressesKey();
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsedAddresses = JSON.parse(saved);
+        console.log("Wallet addresses loaded from localStorage for principal:", userPrincipalString);
+        return parsedAddresses;
+      }
+    } catch (error) {
+      console.error("Error loading wallet addresses from localStorage:", error);
+    }
+    return null;
+  }, [getAddressesKey, userPrincipalString]);
 
   // Function to save network filters to localStorage
   const saveNetworkFilters = useCallback(
@@ -192,36 +234,49 @@ export const WalletProvider = ({ children }) => {
 
   // Network values are now calculated dynamically from balances and USD prices
 
-  // Function to fetch wallet addresses
+  // Simple fetch addresses:
+  // 1) Cek localStorage by principal -> pakai jika ada
+  // 2) Jika tidak ada -> fetch dari wallet.wallet_addresses lalu simpan ke localStorage
   const fetchAddresses = useCallback(async () => {
-    if (!wallet || addressesLoaded) return;
+    if (!wallet || !userPrincipalString) {
+      console.log("fetchAddresses skipped:", { wallet: !!wallet, userPrincipalString: !!userPrincipalString });
+      return;
+    }
 
     try {
       setAddressesLoading(true);
-      const result = await wallet.wallet_addresses();
 
+      const cached = loadAddressesFromStorage();
+      if (cached) {
+        setAddresses(cached);
+        setAddressesReady(true);
+        return;
+      }
+
+      const result = await wallet.wallet_addresses();
       const newAddresses = {
-        bitcoin: result.bitcoin,
-        ethereum: result.ethereum,
-        solana: result.solana,
-        icp_principal: result.icp_principal,
-        icp_account: result.icp_account,
+        bitcoin: result?.bitcoin || "",
+        ethereum: result?.ethereum || "",
+        solana: result?.solana || "",
+        icp_principal: result?.icp_principal || "",
+        icp_account: result?.icp_account || "",
       };
 
+      saveAddressesToStorage(newAddresses);
       setAddresses(newAddresses);
-      setAddressesLoaded(true);
-      setHasLoadedAddressesOnce(true);
+      setAddressesReady(true);
     } catch (error) {
       console.error("Error fetching addresses:", error);
+      // Jangan set fallback kosong; biarkan addressesReady tetap false agar UI menunggu/menampilkan error
     } finally {
       setAddressesLoading(false);
     }
-  }, [addressesLoaded]);
+  }, [wallet, userPrincipalString, loadAddressesFromStorage, saveAddressesToStorage]);
 
-  // Function to get loading state for addresses
+  // Function to get loading state for addresses (simple)
   const getAddressesLoadingState = useCallback(() => {
-    return addressesLoading && !hasLoadedAddressesOnce;
-  }, [addressesLoading, hasLoadedAddressesOnce]);
+    return !userPrincipalString || addressesLoading || !addressesReady;
+  }, [userPrincipalString, addressesLoading, addressesReady]);
 
   // Function to fetch balance for a specific token
   const fetchTokenBalance = useCallback(
@@ -343,8 +398,33 @@ export const WalletProvider = ({ children }) => {
       setUsdPriceLoading({});
       setUsdPriceErrors({});
       setIsRefreshingPrices(false);
+      // Reset address states when user logs out
+      setAddresses({
+        bitcoin: "",
+        ethereum: "",
+        solana: "",
+        icp_principal: "",
+        icp_account: "",
+      });
+      setAddressesReady(false);
     }
   }, [identity, fetchAllBalances, fetchAddresses, fetchAllUSDPrices]);
+
+  // Clear addresses cache when user changes (principal changes)
+  useEffect(() => {
+    if (userPrincipalString) {
+      // Clear any old cache when principal changes
+      const oldKeys = Object.keys(localStorage).filter((key) => key.startsWith("walletAddresses_") && !key.includes(userPrincipalString));
+      oldKeys.forEach((key) => {
+        try {
+          localStorage.removeItem(key);
+          console.log("Cleared old wallet addresses cache:", key);
+        } catch (error) {
+          console.error("Error clearing old cache:", error);
+        }
+      });
+    }
+  }, [userPrincipalString]);
 
   // Helper function to add new address to existing wallet
 
@@ -404,8 +484,6 @@ export const WalletProvider = ({ children }) => {
       // Address related
       addresses,
       addressesLoading,
-      addressesLoaded,
-      hasLoadedAddressesOnce,
       fetchAddresses,
       getAddressesLoadingState,
       // Balance related
@@ -423,7 +501,7 @@ export const WalletProvider = ({ children }) => {
       fetchAllUSDPrices,
       refreshAllUSDPrices,
     }),
-    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, calculateNetworkValue, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices]
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, calculateNetworkValue, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;

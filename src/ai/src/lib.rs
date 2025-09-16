@@ -150,11 +150,20 @@ async fn analyze_sol_address(
 }
 
 #[update]
-async fn analyze_icp_address(address: String) -> Result<RansomwareResult, String> { // <-- ADD THIS FUNCTION
+async fn analyze_icp_address(
+    features: Vec<(String, f64)>,
+    address: String,
+    transaction_count: u32,
+) -> Result<RansomwareResult, String> {
     match address_detector::detect_address_type(&address) {
         address_detector::AddressType::InternetComputer => {
-            ic_cdk::println!("Address detected as ICP Principal. Routing to ICP analyzer...");
-            icp::analyze_icp_principal(&address).await
+            ic_cdk::println!("Address detected as ICP Principal. Predicting with provided features...");
+            // Convert Vec<(String, f64)> to HashMap<String, f64>
+            let mut features_map = std::collections::HashMap::new();
+            for (key, value) in features {
+                features_map.insert(key, value);
+            }
+            icp::analyze_icp_features(features_map, &address, transaction_count)
         }
         _ => Err("This endpoint only accepts valid ICP principals.".to_string()),
     }
