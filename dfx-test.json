@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "canisters": {
+    "backend": {
+      "main": "src/backend/main.mo",
+      "type": "motoko",
+      "dependencies": [
+        "fradium_token",
+        "fradium_ledger"
+      ]
+    },
+    "fradium_token": {
+      "main": "src/mock_token/main.mo",
+      "type": "motoko"
+    },
+    "fradium_ledger": {
+      "main": "src/mock_token/main.mo",
+      "type": "motoko"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": "mops sources"
+    }
+  }
+}
