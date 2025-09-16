@@ -102,9 +102,9 @@ function Account() {
           >
             <div className="flex items-center">
               <img
-                src={CDN.icons.setting}
+                src={CDN.icons.settingGreen}
                 alt="Setting"
-                className="w-5 h-5 mr-4"
+                className="w-5 h-5 mr-4 text-[#99E39E]"
               />
               <span className="text-white text-[16px]">Setting</span>
             </div>

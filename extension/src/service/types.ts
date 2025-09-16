@@ -57,7 +57,7 @@ export interface AIAnalysisResult {
   address: string;
   result: AnalysisResult;
   features?: any;
-  type: 'ai' | 'community';
+  type: 'ai' | 'community' | 'basic';
   timestamp: string;
 }
 
@@ -72,6 +72,9 @@ export interface AnalysisOptions {
   includeCommunity?: boolean;
   timeout?: number;
   maxRetries?: number;
+  etherscanApiKey?: string;
+  cryptocompareApiKey?: string;
+  moralisApiKey?: string;
 }
 
 export type SupportedNetwork = 'Bitcoin' | 'Ethereum' | 'Solana' | 'Internet Computer';

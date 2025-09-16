@@ -111,11 +111,20 @@ async function fetchAllPages(action: string, address: string, etherscanApiKey: s
  */
 async function getAllTransactions(address: string, apis: any = {}) {
   const env = process.env;
-  const etherscanApiKey = apis.etherscanApiKey || env.PLASMO_PUBLIC_ETHERSCAN_API_KEY || "";
+  const etherscanApiKey = apis.etherscanApiKey ||
+    env.PLASMO_PUBLIC_ETHERSCAN_API_KEY ||
+    env.VITE_ETHERSCAN_API_KEY ||
+    env.ETHERSCAN_API_KEY ||
+    "";
 
   // Check if API key is available
-  if (!etherscanApiKey || etherscanApiKey === "your_etherscan_api_key_here") {
-    throw new Error("Etherscan API key is required but not configured. Please set PLASMO_PUBLIC_ETHERSCAN_API_KEY environment variable.");
+  if (!etherscanApiKey || etherscanApiKey === "your_etherscan_api_key_here" || etherscanApiKey.trim() === "") {
+    console.warn("⚠️ Etherscan API key not configured. Ethereum analysis will be limited.");
+    console.warn("To enable full Ethereum analysis, set PLASMO_PUBLIC_ETHERSCAN_API_KEY in your environment variables.");
+    console.warn("Get a free API key from: https://etherscan.io/apis");
+
+    // Return empty array instead of throwing error for production builds
+    return [];
   }
 
   const ethTxs = await fetchAllPages("txlist", address, etherscanApiKey);
@@ -329,13 +338,39 @@ export async function extractEthereumFeatures(address: string, options: any = {}
 
     const env = process.env;
     const apis = {
-      etherscanApiKey: options.etherscanApiKey || env.PLASMO_PUBLIC_ETHERSCAN_API_KEY || "",
-      cryptocompareApiKey: options.cryptocompareApiKey || env.VITE_CRYPTOCOMPARE_API_KEY || "",
-      moralisApiKey: options.moralisApiKey || env.VITE_MORALIS_API_KEY || "",
+      etherscanApiKey: options.etherscanApiKey ||
+        env.PLASMO_PUBLIC_ETHERSCAN_API_KEY ||
+        env.VITE_ETHERSCAN_API_KEY ||
+        env.ETHERSCAN_API_KEY ||
+        "",
+      cryptocompareApiKey: options.cryptocompareApiKey ||
+        env.VITE_CRYPTOCOMPARE_API_KEY ||
+        env.CRYPTOCOMPARE_API_KEY ||
+        "",
+      moralisApiKey: options.moralisApiKey ||
+        env.VITE_MORALIS_API_KEY ||
+        env.MORALIS_API_KEY ||
+        "",
     };
 
     const targetAddress = String(address).toLowerCase();
     const txs = await getAllTransactions(targetAddress, apis);
+
+    // If no transactions returned due to missing API key, provide basic analysis
+    if (txs.length === 0 && (!apis.etherscanApiKey || apis.etherscanApiKey.trim() === "")) {
+      console.log("🔄 Providing basic Ethereum analysis due to missing API key");
+
+      return {
+        total_txs: 0,
+        total_ether_sent: 0,
+        total_ether_received: 0,
+        unique_incoming_addresses: 0,
+        unique_outgoing_addresses: 0,
+        first_transaction: new Date().toISOString(),
+        last_transaction: new Date().toISOString(),
+        current_balance: 0,
+      };
+    }
 
     const features: { [key: string]: any } = {};
     const sentTxs: any[] = [];

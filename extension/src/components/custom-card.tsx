@@ -4,12 +4,10 @@ interface SafetyCardProps {
   confidence: number
   title: string
   isSafe: boolean
-  analysisSource?: string
-  finalStatus?: string
   description?: string
 }
 
-export function SafetyCard({ confidence, title, isSafe, analysisSource, finalStatus, description }: SafetyCardProps) {
+export function SafetyCard({ confidence, title, isSafe, description }: SafetyCardProps) {
   return (
     <div
       className={`rounded-2xl shadow-lg max-w-md bg-gradient-to-tr
@@ -33,13 +31,6 @@ export function SafetyCard({ confidence, title, isSafe, analysisSource, finalSta
           <div className="flex flex-row items-center gap-2 mt-1">
             <p className="text-[12px] font-medium text-white">
               Confidence: {confidence}%
-            </p>
-            <span className="text-white/40 text-[12px]">•</span>
-            <p className="text-white/60 text-[12px]">
-              {finalStatus === "safe_by_both" ? "Analyzed by AI & COMMUNITY" :
-               finalStatus === "unsafe_by_ai" ? "Analyzed by AI" :
-               finalStatus === "unsafe_by_community" ? "Analyzed by COMMUNITY" :
-               `Analyzed by ${analysisSource?.toUpperCase() || 'AI'}`}
             </p>
           </div>
         </div>

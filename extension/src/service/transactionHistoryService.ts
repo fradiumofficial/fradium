@@ -29,7 +29,12 @@ export type UnifiedTx = {
 }
 
 // Environment configuration (use same keys as other extension services)
-const ETHERSCAN_API_KEY = (typeof process !== 'undefined' && (process as any)?.env?.PLASMO_PUBLIC_ETHERSCAN_API_KEY) || ''
+const ETHERSCAN_API_KEY = (typeof process !== 'undefined' && (
+  (process as any)?.env?.PLASMO_PUBLIC_ETHERSCAN_API_KEY ||
+  (process as any)?.env?.VITE_ETHERSCAN_API_KEY ||
+  (process as any)?.env?.ETHERSCAN_API_KEY ||
+  ''
+)) || ''
 
 const API_URLS = {
   ethereum: {
@@ -53,7 +58,13 @@ export async function getETHTransactionHistory(address: string, network: 'sepoli
   try {
     const apiUrl = (API_URLS as any).ethereum?.[network]
     if (!apiUrl) throw new Error(`Unsupported Ethereum network: ${network}`)
-    if (!ETHERSCAN_API_KEY) throw new Error('PLASMO_PUBLIC_ETHERSCAN_API_KEY is not configured')
+
+    if (!ETHERSCAN_API_KEY || ETHERSCAN_API_KEY.trim() === '') {
+      console.warn('⚠️ Etherscan API key not configured. Ethereum transaction history unavailable.')
+      console.warn('To enable Ethereum transaction history, set PLASMO_PUBLIC_ETHERSCAN_API_KEY in your environment variables.')
+      console.warn('Get a free API key from: https://etherscan.io/apis')
+      return []
+    }
 
     const url = `${apiUrl}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${limit}&sort=desc`
     const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } })
