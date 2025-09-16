@@ -4,6 +4,8 @@ import { Input } from "@/core/components/ui/input";
 import { Textarea } from "@/core/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select";
 import PrimaryButton from "@/core/components/Button";
+import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import Footer from "../../core/components/Footer.jsx";
 
 // Icon
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle, FileText, Plus, Upload, Wallet, X } from "lucide-react";
@@ -529,9 +531,23 @@ export default function CreateReportPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-black text-white">
-        <main className="pt-24 mb-32 pb-16 px-4 sm:px-6">
-          <div className="container mx-auto max-w-6xl">
+      <div className=" bg-black text-white relative overflow-hidden min-h-[900px] md:min-h-[1000px] lg:min-h-[1100px]">
+        {/* Background layer */}
+        <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
+          <img
+            src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            loading="lazy"
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
+        {/* Soft fade at top edge */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent z-0" />
+        <main className="pt-24 px-4 sm:px-6">
+          <div className="relative z-10 container mx-auto max-w-6xl">
             {/* Back Button */}
             <div className="mb-6 sm:mb-8">
               <Link to="/reports" className="inline-flex items-center text-gray-300 hover:text-white transition-colors">
@@ -542,21 +558,19 @@ export default function CreateReportPage() {
 
             {/* Page Title */}
             <div className="mb-8 sm:mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-4">Create New Report</h1>
-              <p className="text-lg sm:text-xl text-gray-300">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
+              <h1 className="text-3xl sm:text-4xl font-medium mb-4">Create New Report</h1>
+              <p className="text-lg sm:text-lg text-gray-300">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
             </div>
 
             {/* Login Required Alert */}
             {!isAuthenticated && (
-              <div className="mb-8 bg-[#99e39e]/10 border border-[#99e39e]/20 rounded-xl p-6 pb-8">
+              <div className="mb-8 bg-[#99E39E12] backdrop-blur-sm border border-[#99E39E33] rounded-2xl p-6 pb-8">
                 <div className="flex items-start space-x-4">
                   <AlertTriangle className="w-6 h-6 text-[#99e39e] flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-[#99e39e] mb-2">Login Required</h3>
                     <p className="text-gray-300 mb-4">You need to login to create a new report. This ensures secure submission and allows you to stake FUM tokens for the community validation process.</p>
-                    <PrimaryButton onClick={handleLogin} className="bg-[#99e39e] text-black font-semibold">
-                      Login to Continue
-                    </PrimaryButton>
+                    <ButtonGreen size="md" fontWeight="medium" onClick={handleLogin}>Login to Continue</ButtonGreen>
                   </div>
                 </div>
               </div>
@@ -777,6 +791,7 @@ export default function CreateReportPage() {
           </div>
         </div>
       )}
+      <Footer />
     </>
   );
 }
