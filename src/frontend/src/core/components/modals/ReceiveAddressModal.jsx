@@ -20,10 +20,22 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
   // Use Wallet Provider for addresses
   const { addresses, fetchAddresses, getAddressesLoadingState } = useWallet();
 
-  // Fetch addresses using WalletProvider
+  // State declarations (must be declared before any useEffect that uses them)
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+  const [qrDetail, setQrDetail] = useState({ open: false, coin: null, address: null });
+  const [addressErrors, setAddressErrors] = useState({
+    bitcoin: null,
+    ethereum: null,
+    solana: null,
+    icp_principal: null,
+    icp_account: null,
+  });
+  // Fetch addresses using WalletProvider (simple)
   useEffect(() => {
     if (isOpen) {
-      fetchAddresses();
+      fetchAddresses().catch((error) => {
+        console.error("Failed to fetch addresses in modal:", error);
+      });
     }
   }, [isOpen, fetchAddresses]);
 
@@ -45,19 +57,6 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
       setAddressErrors(newErrors);
     }
   }, [addresses]);
-
-  // QR Code states
-  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
-  const [qrDetail, setQrDetail] = useState({ open: false, coin: null, address: null });
-
-  // Address error states
-  const [addressErrors, setAddressErrors] = useState({
-    bitcoin: null,
-    ethereum: null,
-    solana: null,
-    icp_principal: null,
-    icp_account: null,
-  });
 
   // QR Code generation
   useEffect(() => {
@@ -277,10 +276,51 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
             </div>
           ) : (
             // Address List Actions
-            <div className="mt-4">
-              <ButtonGreen fullWidth onClick={onClose} size="md" textSize="text-base" fontWeight="medium">
-                Done
-              </ButtonGreen>
+            <div className="mt-4 space-y-3">
+              <div className="flex gap-3">
+                <button
+                  className="flex-1 py-2.5 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors text-sm"
+                  onClick={() => {
+                    fetchAddresses()
+                      .then(() => {
+                        toast.success("Addresses refreshed!", {
+                          position: "bottom-center",
+                          duration: 2000,
+                          style: {
+                            background: "#23272F",
+                            color: "#9BE4A0",
+                            border: "1px solid #393E4B",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                          },
+                          icon: "🔄",
+                        });
+                      })
+                      .catch((error) => {
+                        console.error("Failed to refresh addresses:", error);
+                        toast.error("Failed to refresh addresses", {
+                          position: "bottom-center",
+                          duration: 2000,
+                          style: {
+                            background: "#23272F",
+                            color: "#FF6B6B",
+                            border: "1px solid #393E4B",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                          },
+                          icon: "❌",
+                        });
+                      });
+                  }}
+                  disabled={getAddressesLoadingState()}>
+                  {getAddressesLoadingState() ? "Refreshing..." : "Refresh"}
+                </button>
+                <ButtonGreen fullWidth onClick={onClose} size="md" textSize="text-base" fontWeight="medium" className="flex-1">
+                  Done
+                </ButtonGreen>
+              </div>
             </div>
           )}
         </div>

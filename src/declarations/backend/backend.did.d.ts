@@ -102,11 +102,7 @@ export type Result_6 = { 'Ok' : Array<AnalyzeHistory> } |
 export type Result_7 = { 'Ok' : GetAnalyzeAddressResult } |
   { 'Err' : string };
 export type Time = bigint;
-export type TokenType = { 'Fradium' : null } |
-  { 'Ethereum' : null } |
-  { 'Solana' : null } |
-  { 'Unknown' : null } |
-  { 'Bitcoin' : null };
+export type TokenType = string;
 export interface VoteReportParams {
   'report_id' : ReportId,
   'vote_type' : boolean,

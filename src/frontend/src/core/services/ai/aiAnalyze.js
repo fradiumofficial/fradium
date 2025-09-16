@@ -2,6 +2,7 @@ import { detectAddressNetwork } from "@/core/lib/tokenUtils.js";
 import { extractFeatures as extractBitcoinFeatures } from "./bitcoinAnalyzeService.js";
 import { extractFeatures as extractEthereumFeatures } from "./ethereumAnalyzeService.js";
 import SolanaAnalyzeService from "./solanaAnalyzeService.js";
+import { buildComprehensiveFeatures as extractICPFeatures, prepareFeaturesForCanister } from "./icpAnalyzeService.js";
 import { ai } from "declarations/ai";
 import { backend } from "declarations/backend";
 
@@ -30,13 +31,11 @@ export class AIAnalyzeService {
 
       // Detect network type
       const network = detectAddressNetwork(trimmedAddress);
-      console.log(`Detected network: ${network} for address: ${trimmedAddress}`);
 
       // Step 1: Try AI Analysis first (if supported)
       let aiResult = null;
       let aiSupported = true;
 
-      console.log("Starting AI Analysis for network:", network);
       try {
         switch (network) {
           case "Bitcoin":
@@ -49,22 +48,20 @@ export class AIAnalyzeService {
             aiResult = await this.analyzeSolanaAddress(trimmedAddress, options);
             break;
           case "Internet Computer":
+            aiResult = await this.analyzeICPAddress(trimmedAddress, options);
+            break;
           default:
-            console.log(`AI Analysis not supported for ${network} - skipping to community analysis`);
             aiSupported = false;
             break;
         }
       } catch (error) {
         console.error(`AI Analysis failed for ${network}:`, error.message);
-        console.log(`Skipping AI analysis for ${network} - proceeding with community analysis`);
         aiSupported = false;
       }
 
       // If AI is not supported or failed, skip directly to community analysis
       if (!aiSupported || !aiResult) {
-        console.log(`Proceeding with community analysis only for ${network}`);
         const communityResult = await this.performCommunityAnalysis(trimmedAddress);
-        console.log("Community Analysis Result:", communityResult);
 
         const result = {
           success: true,
@@ -83,19 +80,14 @@ export class AIAnalyzeService {
         return result;
       }
 
-      console.log("AI Analysis Result:", aiResult);
-      console.log("AI Analysis isSafe:", aiResult.result.isSafe);
-
       // Case 2: If AI analysis shows unsafe, stop here
       if (!aiResult.result.isSafe) {
-        console.log("AI analysis shows unsafe - stopping analysis");
         const result = {
           ...aiResult,
           analysisSource: "ai",
           finalStatus: "unsafe_by_ai",
           result: aiResult.result, // Ensure result is from AI analysis
         };
-        console.log("Returning unsafe_by_ai result:", result);
 
         // Create analyze history for AI analysis
         await this.createAnalyzeHistory(trimmedAddress, aiResult.result, "ai", network);
@@ -104,9 +96,7 @@ export class AIAnalyzeService {
       }
 
       // Case 1 & 3: AI shows safe, proceed with community analysis
-      console.log("AI analysis shows safe - proceeding with community analysis");
       const communityResult = await this.performCommunityAnalysis(trimmedAddress);
-      console.log("Community Analysis Result:", communityResult);
 
       // Case 1: Both AI and Community show safe
       if (aiResult.result.isSafe && communityResult.result.isSafe) {
@@ -156,20 +146,14 @@ export class AIAnalyzeService {
    */
   static async analyzeBitcoinAddress(address, options = {}) {
     try {
-      console.log(`Analyzing Bitcoin address: ${address}`);
-
       // Extract features using Bitcoin service
       const features = await extractBitcoinFeatures(address);
-      console.log(`Extracted ${features.length} features for Bitcoin address`);
 
       // Call Rust AI canister - following the correct backend call pattern
       const ransomwareReport = await ai.analyze_btc_address(features, address, features.length);
 
-      console.log("Bitcoin Report:", ransomwareReport);
-
       if ("Ok" in ransomwareReport) {
         const result = ransomwareReport.Ok;
-        console.log("AI Analysis Result:", result);
 
         // Transform Rust result to frontend format
         const transformedResult = this.transformRansomwareResult(result);
@@ -200,26 +184,18 @@ export class AIAnalyzeService {
    */
   static async analyzeEthereumAddress(address, options = {}) {
     try {
-      console.log(`Analyzing Ethereum address: ${address}`);
-
       // Extract features using Ethereum service
       const features = await extractEthereumFeatures(address, options);
-      console.log(`Extracted features for Ethereum address:`, features);
 
       // Convert features object to array format expected by Rust canister - following the correct backend call pattern
       const featuresPairs = Object.entries(features).map(([k, v]) => [k, Number(v)]);
       const txCount = this.getTxCountFromFeaturesETH(features);
 
-      console.log("Ethereum Features:", featuresPairs, address, txCount);
-
       // Call Rust AI canister
       const ransomwareReport = await ai.analyze_eth_address(featuresPairs, address, txCount);
 
-      console.log("Ethereum Report:", ransomwareReport);
-
       if ("Ok" in ransomwareReport) {
         const result = ransomwareReport.Ok;
-        console.log("AI Analysis Result:", result);
 
         // Transform Rust result to frontend format
         const transformedResult = this.transformRansomwareResult(result);
@@ -247,18 +223,11 @@ export class AIAnalyzeService {
    */
   static async analyzeSolanaAddress(address, options = {}) {
     try {
-      console.log(`Analyzing Solana address: ${address}`);
       const features = await SolanaAnalyzeService.extractFeatures(address, options);
       const featuresPairs = Object.entries(features).map(([k, v]) => [k, Number(v)]);
       const txCount = SolanaAnalyzeService.getTxCountFromFeatures(features);
 
-      console.log("Solana Features:", JSON.stringify(featuresPairs));
-      console.log("Solana Address:", address);
-      console.log("Solana Tx Count:", txCount);
-
       const ransomwareReport = await ai.analyze_sol_address(featuresPairs, address, txCount);
-
-      console.log("Solana Report:", JSON.stringify(ransomwareReport));
 
       if ("Ok" in ransomwareReport) {
         const result = ransomwareReport.Ok;
@@ -281,14 +250,91 @@ export class AIAnalyzeService {
   }
 
   /**
+   * Analyze ICP address
+   */
+  static async analyzeICPAddress(address, options = {}) {
+    try {
+      // Extract features using ICP service with real data from ICP canisters
+      const features = await extractICPFeatures(address);
+
+      // Validate features object
+      if (!features || typeof features !== "object") {
+        throw new Error("Invalid features object received from ICP service");
+      }
+
+      // Convert features to array format expected by Rust canister
+      // Format: Array<[string, number]> as per TypeScript declarations
+      const featuresArray = [];
+      for (const [key, value] of prepareFeaturesForCanister(features)) {
+        const numValue = Number(value);
+        if (!isNaN(numValue) && isFinite(numValue)) {
+          featuresArray.push([key, numValue]);
+        } else {
+          featuresArray.push([key, 0.0]);
+        }
+      }
+
+      // Ensure we have at least some features
+      if (featuresArray.length === 0) {
+        featuresArray.push(["total_transactions", 0.0]);
+        featuresArray.push(["icp_balance", 0.0]);
+        featuresArray.push(["ckbtc_balance", 0.0]);
+        featuresArray.push(["cketh_balance", 0.0]);
+        featuresArray.push(["ckusdc_balance", 0.0]);
+      }
+
+      const txCount = Math.floor(Number(features.total_transactions) || 0);
+
+      // Call Rust AI canister with array format
+
+      // Ensure ai canister is available
+      if (!ai) {
+        throw new Error("AI canister not available");
+      }
+
+      const ransomwareReport = await ai.analyze_icp_address(featuresArray, address, txCount);
+
+      // Validate canister response
+      if (!ransomwareReport || typeof ransomwareReport !== "object") {
+        throw new Error("Invalid response from ICP AI canister");
+      }
+
+      if ("Ok" in ransomwareReport) {
+        const result = ransomwareReport.Ok;
+
+        // Validate result object for ICP
+        if (!result || typeof result !== "object") {
+          throw new Error("Invalid result object from ICP AI canister");
+        }
+
+        // Transform Rust result to frontend format
+        const transformedResult = this.transformRansomwareResult(result);
+
+        return {
+          success: true,
+          network: "Internet Computer",
+          address: address,
+          result: transformedResult,
+          features: features,
+          type: "ai",
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      throw new Error("ICP AI analysis failed");
+    } catch (error) {
+      console.error("ICP analysis error:", error);
+      throw new Error(`ICP analysis failed: ${error.message}`);
+    }
+  }
+
+  /**
    * Perform Community analysis using backend
    * @param {string} address - Address to analyze
    * @returns {Promise<Object>} Community analysis result
    */
   static async performCommunityAnalysis(address) {
     try {
-      console.log(`Performing community analysis for address: ${address}`);
-
       const communityResult = await backend.analyze_address(address);
 
       if (communityResult.Err) {
@@ -296,7 +342,6 @@ export class AIAnalyzeService {
       }
 
       const result = communityResult.Ok;
-      console.log("Community Analysis Result:", result);
 
       // Transform community result to frontend format
       const transformedResult = this.transformCommunityResult(result);
@@ -378,18 +423,9 @@ export class AIAnalyzeService {
    * @returns {Object} Transformed result for frontend
    */
   static transformRansomwareResult(rustResult) {
-    console.log("🔍 TransformRansomwareResult - Raw Rust Result:", rustResult);
     const isSafe = !rustResult.is_ransomware;
     const confidence = Math.round(rustResult.confidence * 100);
     const riskScore = Math.round(rustResult.ransomware_probability * 100);
-
-    console.log("🔍 TransformRansomwareResult - Transformed:", {
-      isSafe,
-      confidence,
-      riskScore,
-      is_ransomware: rustResult.is_ransomware,
-      ransomware_probability: rustResult.ransomware_probability,
-    });
 
     // Determine risk level based on ransomware probability
     let riskLevel = "LOW";
@@ -442,7 +478,7 @@ export class AIAnalyzeService {
    * @returns {Array<string>} List of supported networks
    */
   static getSupportedNetworks() {
-    return ["Bitcoin", "Ethereum", "Solana"];
+    return ["Bitcoin", "Ethereum", "Solana", "Internet Computer"];
   }
 
   /**
@@ -464,36 +500,11 @@ export class AIAnalyzeService {
    */
   static async createAnalyzeHistory(address, result, analysisType, network) {
     try {
-      console.log(`Creating analyze history for ${analysisType} analysis of ${address}`);
+      // token_type now string; gunakan standar dari tokenUtils (chain/network)
+      const tokenType = network;
 
-      // Map network string to TokenType
-      let tokenType;
-      switch (network) {
-        case "Bitcoin":
-          tokenType = { Bitcoin: null };
-          break;
-        case "Ethereum":
-          tokenType = { Ethereum: null };
-          break;
-        case "Solana":
-          tokenType = { Solana: null };
-          break;
-        default:
-          tokenType = { Unknown: null };
-      }
-
-      // Map analysis type to AnalyzeHistoryType
-      let analyzedType;
-      switch (analysisType) {
-        case "ai":
-          analyzedType = { AIAnalysis: null };
-          break;
-        case "community":
-          analyzedType = { CommunityVote: null };
-          break;
-        default:
-          analyzedType = { AIAnalysis: null };
-      }
+      // Map analysis type to AnalyzeHistoryType (variant tetap sama)
+      const analyzedType = analysisType === "community" ? { CommunityVote: null } : { AIAnalysis: null };
 
       const historyParams = {
         address: address,
@@ -515,8 +526,6 @@ export class AIAnalyzeService {
 
       if (historyResult.Err) {
         console.error(`Failed to create analyze history: ${historyResult.Err}`);
-      } else {
-        console.log(`Successfully created analyze history for ${analysisType} analysis`);
       }
     } catch (error) {
       console.error(`Error creating analyze history for ${analysisType}:`, error);

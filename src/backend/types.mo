@@ -1,7 +1,7 @@
 import Time "mo:base/Time";
 import Principal "mo:base/Principal";
 import Nat32 "mo:base/Nat32";
-import Nat8 "mo:base/Nat8";
+// import Nat8 "mo:base/Nat8";
 import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
 
@@ -51,17 +51,12 @@ module {
     #ICP;
   };
 
-  public type TokenType = {
-    #Bitcoin;
-    #Ethereum;
-    #Solana;
-    #Fradium;
-    #Unknown;
-  };
+  // Use string for token type to support many tokens
+  public type TokenType = Text;
 
   public type WalletAddress = {
     network: Network;
-    token_type: TokenType;
+    token_type: TokenType; // string
     address: Text;
   };
 
@@ -80,7 +75,7 @@ module {
     address: Text;
     is_safe: Bool;
     analyzed_type: AnalyzeHistoryType;
-    token_type: TokenType;
+    token_type: TokenType; // string
     created_at: Time.Time;
     metadata: Text;
   };
@@ -178,7 +173,7 @@ module {
     is_safe: Bool;
     analyzed_type: AnalyzeHistoryType;
     metadata: Text;
-    token_type: TokenType;
+    token_type: TokenType; // string
   };
 
   public type CreateWalletParams = {

@@ -283,6 +283,9 @@ export const idlFactory = ({ IDL }) => {
     'responses' : IDL.Vec(
       IDL.Tuple(IDL.Tuple(IDL.Text, IDL.Text, IDL.Text), IDL.Nat64)
     ),
+    'errMaxResponseSizeExceeded' : IDL.Vec(
+      IDL.Tuple(IDL.Tuple(IDL.Text, IDL.Text), IDL.Nat64)
+    ),
     'inconsistentResponses' : IDL.Vec(
       IDL.Tuple(IDL.Tuple(IDL.Text, IDL.Text), IDL.Nat64)
     ),

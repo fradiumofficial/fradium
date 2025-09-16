@@ -25,6 +25,45 @@ fn get_icp_api_health() -> String {
     data_extractor::get_api_health_report()
 }
 
+/// Analyzes ICP features provided by frontend and runs a prediction.
+pub fn analyze_icp_features(
+    features: std::collections::HashMap<String, f64>,
+    address: &str,
+    transaction_count: u32,
+) -> Result<RansomwareResult, String> {
+    ic_cdk::println!("--- Starting ICP Feature Analysis for: {} ---", address);
+
+    ic_cdk::println!("[1/2] Converting features to UserFeatures...");
+    let user_features = feature_calculator::features_map_to_user_features(features);
+
+    ic_cdk::println!("[2/2] Running prediction model...");
+    let prediction_result = prediction::predict(&user_features);
+
+    // FIX: This block now creates the RansomwareResult with all required fields and correct types.
+    let (confidence_f64, probability) = match prediction_result {
+        Ok(pred) => {
+            ic_cdk::println!("Prediction successful: Cluster {}", pred.cluster_id);
+            (pred.confidence as f64, 0.0)
+        },
+        Err(e) => {
+            ic_cdk::println!("Prediction failed: {}", e);
+            (0.1, 0.0)
+        }
+    };
+    
+    Ok(RansomwareResult {
+        address: address.to_string(),
+        is_ransomware: false,
+        chain_type: "icp".to_string(),
+        ransomware_probability: probability,
+        confidence_level: format!("{:.2}%", confidence_f64 * 100.0), // FIX: Format f64 into a String
+        threshold_used: 0.0,
+        transactions_analyzed: transaction_count,
+        confidence: confidence_f64, // FIX: Added missing `confidence` field (as f64)
+        data_source: "Fradium AI".to_string(), // FIX: Added missing `data_source` field
+    })
+}
+
 /// Analyzes an ICP principal, fetches data, calculates features, and runs a prediction.
 pub async fn analyze_icp_principal(principal_str: &str) -> Result<RansomwareResult, String> {
     ic_cdk::println!("--- Starting ICP Principal Analysis for: {} ---", principal_str);
