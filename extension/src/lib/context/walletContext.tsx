@@ -17,6 +17,10 @@ import { createActor as createFradiumLedgerActor, canisterId as fradiumLedgerCan
 import { TOKENS_CONFIG, TokenType } from "~lib/utils/tokenUtils"
 import { createActor as createIcpIndexActor, canisterId as icpIndexCanisterId } from "../../declarations/icp_index"
 import { createActor as createFradiumIndexActor, canisterId as fradiumIndexCanisterId } from "../../declarations/fradium_index"
+import { createActor as createCkbTcLedgerActor, canisterId as ckbtcLedgerCanisterId } from "../../declarations/ckbtc_ledger"
+import { createActor as createCkbTcIndexActor, canisterId as ckbtcIndexCanisterId } from "../../declarations/ckbtc_index"
+import { createActor as createCkbTcMinterActor, canisterId as ckbtcMinterCanisterId } from "../../declarations/ckbtc_minter"
+import { createActor as createCkbTcKytActor, canisterId as ckbtcKytCanisterId } from "../../declarations/ckbtc_kyt"
 import { Principal } from "@dfinity/principal"
 import { fetchUsdPrices } from "~service/priceService"
 
@@ -55,12 +59,57 @@ const EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID =
   // Project mainnet value from canister_ids.json
   "sr4wk-4qaaa-aaaae-qfdta-cai"
 
+const EFFECTIVE_CKBTC_LEDGER_CANISTER_ID =
+  ckbtcLedgerCanisterId ||
+  (typeof process !== "undefined" && (
+    (process as any).env?.VITE_CANISTER_ID_CKBTC_LEDGER ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_LEDGER ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_LEDGER ||
+    (process as any).env?.CANISTER_ID_CKBTC_LEDGER
+  )) ||
+  // ckBTC mainnet ledger
+  "mc6ru-gyaaa-aaaar-qaaaq-cai"
+
+const EFFECTIVE_CKBTC_INDEX_CANISTER_ID =
+  ckbtcIndexCanisterId ||
+  (typeof process !== "undefined" && (
+    (process as any).env?.VITE_CANISTER_ID_CKBTC_INDEX ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_INDEX ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_INDEX ||
+    (process as any).env?.CANISTER_ID_CKBTC_INDEX
+  )) ||
+  // ckBTC mainnet index
+  "mm444-5iaaa-aaaar-qaabq-cai"
+
+const EFFECTIVE_CKBTC_MINTER_CANISTER_ID =
+  ckbtcMinterCanisterId ||
+  (typeof process !== "undefined" && (
+    (process as any).env?.VITE_CANISTER_ID_CKBTC_MINTER ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_MINTER ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_MINTER ||
+    (process as any).env?.CANISTER_ID_CKBTC_MINTER
+  )) ||
+  // ckBTC mainnet minter
+  "ml52i-qqaaa-aaaar-qaaba-cai"
+
+const EFFECTIVE_CKBTC_KYT_CANISTER_ID =
+  ckbtcKytCanisterId ||
+  (typeof process !== "undefined" && (
+    (process as any).env?.VITE_CANISTER_ID_CKBTC_KYT ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_KYT ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_KYT ||
+    (process as any).env?.CANISTER_ID_CKBTC_KYT
+  )) ||
+  // ckBTC mainnet KYT
+  "pvm5g-xaaaa-aaaar-qaaia-cai"
+
 interface NetworkFilters {
   Bitcoin: boolean
   Solana: boolean
   Fradium: boolean
   Ethereum: boolean
   ICP: boolean
+  ckBTC: boolean
 }
 
 interface NetworkValues {
@@ -69,6 +118,7 @@ interface NetworkValues {
   Solana: number
   Fradium: number
   Ethereum: number
+  ckBTC: number
 }
 
 interface WalletAddresses {
@@ -170,8 +220,14 @@ interface WalletContextType {
   refreshAllUSDPrices: () => Promise<void>
 
   // ICRC actions
-  sendIcrcTransfer: (token: "icp" | "fradium", toPrincipalText: string, amount: number) => Promise<{ success: boolean; error?: string }>
-  fetchIcrcHistory: (token: "icp" | "fradium", limit?: number) => Promise<any[]>
+  sendIcrcTransfer: (token: "icp" | "fradium" | "ckbtc", toPrincipalText: string, amount: number) => Promise<{ success: boolean; error?: string }>
+  fetchIcrcHistory: (token: "icp" | "fradium" | "ckbtc", limit?: number) => Promise<any[]>
+
+  // ckBTC specific actions
+  getCkbTcDepositAddress: () => Promise<string>
+  retrieveBtc: (btcAddress: string, amount: number) => Promise<{ success: boolean; blockIndex?: string; error?: string }>
+  getBtcWithdrawalStatus: (blockIndex: string) => Promise<any>
+  checkBtcAddressCompliance: (btcAddress: string) => Promise<{ compliant: boolean; alerts?: any[] }>
 }
 
 const WalletContext = createContext<WalletContextType | null>(null)
@@ -209,6 +265,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     Solana: 0,
     Fradium: 0,
     Ethereum: 0,
+    ckBTC: 0,
   })
 
   // Initialize network filters with default values
@@ -218,6 +275,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     Fradium: true,
     Ethereum: true,
     ICP: true,
+    ckBTC: true,
   });
 
   // Load network filters from storage on mount
@@ -318,6 +376,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       icon: TOKENS_CONFIG[TokenType.FUM].icon,
       networkKey: "fra",
       type: "native"
+    },
+    {
+      id: "ckbtc",
+      symbol: "ckBTC",
+      name: "Chain Key BTC",
+      chain: "Internet Computer",
+      icon: TOKENS_CONFIG[TokenType.BITCOIN].icon, // Reuse BTC icon for ckBTC
+      networkKey: "ckbtc",
+      type: "icrc"
     }
   ]
 
@@ -371,7 +438,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
             (networkFilters.Bitcoin ? updated.Bitcoin : 0) +
             (networkFilters.Ethereum ? updated.Ethereum : 0) +
             (networkFilters.Solana ? updated.Solana : 0) +
-            (networkFilters.Fradium ? updated.Fradium : 0)
+            (networkFilters.Fradium ? updated.Fradium : 0) +
+            (networkFilters.ckBTC ? updated.ckBTC : 0)
         }
         return updated
       })
@@ -524,6 +592,29 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           break
 
+        case "ckbtc":
+          try {
+            const resolvedId = EFFECTIVE_CKBTC_LEDGER_CANISTER_ID
+            if (!resolvedId) throw new Error("ckBTC ledger canister ID not configured")
+            const agent = new HttpAgent({ identity })
+            if (process.env.DFX_NETWORK !== "ic") {
+              try { await agent.fetchRootKey() } catch {}
+            }
+            const ckbtcActor = createCkbTcLedgerActor(resolvedId as any, { agent: agent as any }) as any
+            const owner = identity.getPrincipal()
+            const ckbtcRaw = await ckbtcActor.icrc1_balance_of({ owner, subaccount: [] })
+            let decimals = 8
+            try {
+              decimals = (await ckbtcActor.icrc1_decimals?.()) ?? 8
+            } catch {}
+            const ckbtcValue = Number(ckbtcRaw) / Math.pow(10, Number(decimals))
+            balance = ckbtcValue.toFixed(8)
+          } catch (e) {
+            console.warn("Failed to fetch ckBTC balance:", e)
+            balance = "0.000000"
+          }
+          break
+
         default:
           balance = "0.000000"
       }
@@ -599,8 +690,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isRefreshingPrices, fetchAllUSDPrices])
 
-  // Send ICRC transfer (ICP or Fradium)
-  const sendIcrcTransfer = useCallback(async (token: "icp" | "fradium", toPrincipalText: string, amount: number) => {
+  // Send ICRC transfer (ICP, Fradium, or ckBTC)
+  const sendIcrcTransfer = useCallback(async (token: "icp" | "fradium" | "ckbtc", toPrincipalText: string, amount: number) => {
     try {
       if (!identity) throw new Error("Not authenticated")
       const owner = identity.getPrincipal()
@@ -612,7 +703,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const actor = token === "icp"
         ? (createIcpLedgerActor(icpLedgerCanisterId as any, { agent: agent as any }) as any)
-        : (createFradiumLedgerActor(fradiumLedgerCanisterId as any, { agent: agent as any }) as any)
+        : token === "fradium"
+        ? (createFradiumLedgerActor(fradiumLedgerCanisterId as any, { agent: agent as any }) as any)
+        : (createCkbTcLedgerActor(EFFECTIVE_CKBTC_LEDGER_CANISTER_ID as any, { agent: agent as any }) as any)
 
       // decimals -> convert to e8s
       let decimals = 8
@@ -637,7 +730,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [identity, refreshAllBalances])
 
   // Fetch ICRC history via index canisters (raw entries)
-  const fetchIcrcHistory = useCallback(async (token: "icp" | "fradium", limit = 20) => {
+  const fetchIcrcHistory = useCallback(async (token: "icp" | "fradium" | "ckbtc", limit = 20) => {
     try {
       if (!identity) return []
       const agent = new HttpAgent({ identity })
@@ -651,15 +744,131 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
         const res = await indexActor.get_account_transactions({ account: { owner, subaccount: [] }, start: [], max_results: BigInt(limit) })
         if (res && res.Ok && res.Ok.transactions) return res.Ok.transactions
         return []
-      } else {
+      } else if (token === "fradium") {
         if (!fradiumIndexCanisterId) return []
         const indexActor = createFradiumIndexActor(fradiumIndexCanisterId as any, { agent: agent as any }) as any
         const res = await indexActor.get_account_transactions({ account: { owner, subaccount: [] }, start: [], max_results: BigInt(limit) })
         if (res && res.Ok && res.Ok.transactions) return res.Ok.transactions
         return []
+      } else if (token === "ckbtc") {
+        if (!EFFECTIVE_CKBTC_INDEX_CANISTER_ID) return []
+        const indexActor = createCkbTcIndexActor(EFFECTIVE_CKBTC_INDEX_CANISTER_ID as any, { agent: agent as any }) as any
+        const res = await indexActor.get_account_transactions({ account: { owner, subaccount: [] }, start: [], max_results: BigInt(limit) })
+        if (res && res.Ok && res.Ok.transactions) return res.Ok.transactions
+        return []
       }
+      return []
     } catch {
       return []
+    }
+  }, [identity])
+
+  // Get ckBTC deposit address from minter canister
+  const getCkbTcDepositAddress = useCallback(async (): Promise<string> => {
+    try {
+      if (!identity) throw new Error("Not authenticated")
+      const agent = new HttpAgent({ identity })
+      if (process.env.DFX_NETWORK !== "ic") {
+        try { await agent.fetchRootKey() } catch {}
+      }
+      const minterActor = createCkbTcMinterActor(EFFECTIVE_CKBTC_MINTER_CANISTER_ID as any, { agent: agent as any }) as any
+      const address = await minterActor.get_btc_address({ owner: identity.getPrincipal(), subaccount: [] })
+      return address
+    } catch (e: any) {
+      console.error("Failed to get ckBTC deposit address:", e)
+      throw new Error(e?.message || "Failed to get deposit address")
+    }
+  }, [identity])
+
+  // Withdraw ckBTC to BTC
+  const retrieveBtc = useCallback(async (btcAddress: string, amount: number): Promise<{ success: boolean; blockIndex?: string; error?: string }> => {
+    try {
+      if (!identity) throw new Error("Not authenticated")
+      const agent = new HttpAgent({ identity })
+      if (process.env.DFX_NETWORK !== "ic") {
+        try { await agent.fetchRootKey() } catch {}
+      }
+      const minterActor = createCkbTcMinterActor(EFFECTIVE_CKBTC_MINTER_CANISTER_ID as any, { agent: agent as any }) as any
+
+      // Convert amount to satoshis (8 decimals for ckBTC)
+      const amountSatoshis = BigInt(Math.floor(amount * 100000000))
+
+      const result = await minterActor.retrieve_btc({
+        address: btcAddress,
+        amount: amountSatoshis
+      })
+
+      if (result.Ok) {
+        // Refresh balances after successful withdrawal
+        refreshAllBalances().catch(() => {})
+        return { success: true, blockIndex: result.Ok.block_index.toString() }
+      } else {
+        return { success: false, error: JSON.stringify(result.Err) }
+      }
+    } catch (e: any) {
+      console.error("Failed to retrieve BTC:", e)
+      return { success: false, error: e?.message || "Failed to retrieve BTC" }
+    }
+  }, [identity, refreshAllBalances])
+
+  // Get BTC withdrawal status
+  const getBtcWithdrawalStatus = useCallback(async (blockIndex: string): Promise<any> => {
+    try {
+      if (!identity) throw new Error("Not authenticated")
+      const agent = new HttpAgent({ identity })
+      if (process.env.DFX_NETWORK !== "ic") {
+        try { await agent.fetchRootKey() } catch {}
+      }
+      const minterActor = createCkbTcMinterActor(EFFECTIVE_CKBTC_MINTER_CANISTER_ID as any, { agent: agent as any }) as any
+      const status = await minterActor.retrieve_btc_status_v2({ block_index: BigInt(blockIndex) })
+      return status
+    } catch (e: any) {
+      console.error("Failed to get BTC withdrawal status:", e)
+      throw new Error(e?.message || "Failed to get withdrawal status")
+    }
+  }, [identity])
+
+  // Check BTC address compliance using KYT
+  const checkBtcAddressCompliance = useCallback(async (btcAddress: string): Promise<{ compliant: boolean; alerts?: any[] }> => {
+    try {
+      if (!identity) throw new Error("Not authenticated")
+      const agent = new HttpAgent({ identity })
+      if (process.env.DFX_NETWORK !== "ic") {
+        try { await agent.fetchRootKey() } catch {}
+      }
+      const kytActor = createCkbTcKytActor(EFFECTIVE_CKBTC_KYT_CANISTER_ID as any, { agent: agent as any }) as any
+
+      // Create a mock withdrawal attempt for compliance check
+      const withdrawalAttempt = {
+        caller: identity.getPrincipal(),
+        id: `compliance-check-${Date.now()}`,
+        amount: 1000n, // Small amount for compliance check
+        address: btcAddress,
+        timestamp_nanos: BigInt(Date.now() * 1000000)
+      }
+
+      const result = await kytActor.fetch_withdrawal_alerts(withdrawalAttempt)
+
+      if (result.Ok) {
+        const alerts = result.Ok.alerts || []
+        // Check if any alert has severe or high level
+        const hasSevereAlerts = alerts.some((alert: any) =>
+          alert.level === "Severe" || alert.level === "High"
+        )
+
+        return {
+          compliant: !hasSevereAlerts,
+          alerts: alerts
+        }
+      } else {
+        // If KYT check fails, assume compliant for now (graceful degradation)
+        console.warn("KYT check failed, assuming compliant:", result.Err)
+        return { compliant: true }
+      }
+    } catch (e: any) {
+      console.error("Failed to check BTC address compliance:", e)
+      // Graceful degradation - if KYT fails, allow the operation
+      return { compliant: true }
     }
   }, [identity])
 
@@ -741,6 +950,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       // ICRC actions
       sendIcrcTransfer,
       fetchIcrcHistory,
+      // ckBTC specific actions
+      getCkbTcDepositAddress,
+      retrieveBtc,
+      getBtcWithdrawalStatus,
+      checkBtcAddressCompliance,
     }),
     [
       isLoading,
@@ -780,6 +994,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       refreshAllUSDPrices,
       sendIcrcTransfer,
       fetchIcrcHistory,
+      getCkbTcDepositAddress,
+      retrieveBtc,
+      getBtcWithdrawalStatus,
+      checkBtcAddressCompliance,
     ]
   )
 
