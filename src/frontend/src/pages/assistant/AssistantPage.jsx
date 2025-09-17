@@ -23,7 +23,7 @@ const formatTextWithBold = (text) => {
   });
 };
 
-const ChatBubble = ({ type, message, time, isLink, isList }) => {
+const ChatBubble = ({ type, message, time, isLink, isList, loading }) => {
   if (type === "user") {
     return (
       <div className="flex items-end gap-3 self-end">
@@ -49,17 +49,27 @@ const ChatBubble = ({ type, message, time, isLink, isList }) => {
         <img src="logo.svg" alt="Fradium" className="w-10 h-10" />
       </div>
       <div>
-        <div className="bg-[#FFFFFF0D] text-white px-5 py-3 rounded-2xl rounded-tl-md text-base max-w-2xl mb-1 shadow-lg border border-[#FFFFFF1A]">
-          {isList ? (
-            <ol className="list-decimal ml-5">
-              {message.map((item, idx) => (
-                <li key={idx}>{formatTextWithBold(item)}</li>
-              ))}
-            </ol>
-          ) : (
-            formatTextWithBold(message)
-          )}
-        </div>
+        {loading ? (
+          <div className="bg-[#FFFFFF0D] text-white px-5 py-4image.png rounded-2xl rounded-tl-md text-base max-w-2xl mb-1 shadow-lg border border-[#FFFFFF1A]">
+            <div className="flex items-center gap-1.5" aria-label="Assistant is typing">
+              <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce" />
+              <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#FFFFFF0D] text-white px-5 py-3 rounded-2xl rounded-tl-md text-base max-w-2xl mb-1 shadow-lg border border-[#FFFFFF1A]">
+            {isList ? (
+              <ol className="list-decimal ml-5">
+                {message.map((item, idx) => (
+                  <li key={idx}>{formatTextWithBold(item)}</li>
+                ))}
+              </ol>
+            ) : (
+              formatTextWithBold(message)
+            )}
+          </div>
+        )}
         <span className="text-xs text-[#B0B6BE] mt-1">{time}</span>
       </div>
     </div>
@@ -283,7 +293,7 @@ const Assistant = () => {
         </div>
 
         {/* DESKTOP ONLY */}
-        <div className="hidden md:flex h-screen overflow-hidden pt-[110px] px-0 md:px-8 flex-col md:flex-row gap-x-8">
+        <div className="hidden md:flex overflow-hidden pt-[110px] px-0 md:px-8 flex-col md:flex-row gap-x-8">
           {/* Left: Chat Area */}
           <div className="flex-1 mx-auto rounded-[16px] border border-white/10 bg-[#000000]/50 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)]">
             {/* Header */}
@@ -376,6 +386,11 @@ const Assistant = () => {
             </ul>
           </div>
         </div>
+      </div>
+
+      {/* footer */}
+      <div className="relative z-10 pt-8">
+        <p className="text-center text-xs text-[#B0B6BE]">Copyright ©{new Date().getFullYear()} Fradium. All rights reserved</p>
       </div>
 
       {/* bottom fade */}

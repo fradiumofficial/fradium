@@ -312,7 +312,7 @@ export default function ReportPage() {
 
               {/* Create Report Button */}
               <div className="flex-shrink-0 mt-2 md:mt-0">
-                <ButtonGreen size="md" fontWeight="medium" onClick={() => navigate("/reports/create")}>Create Report</ButtonGreen>
+                <ButtonGreen size="sm" fontWeight="medium" onClick={() => navigate("/reports/create")}>Create Report</ButtonGreen>
               </div>
             </div>
 

@@ -618,7 +618,7 @@ export default function CreateReportPage() {
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-[#99e39e] mb-2">Login Required</h3>
                     <p className="text-gray-300 mb-4">You need to login to create a new report. This ensures secure submission and allows you to stake FUM tokens for the community validation process.</p>
-                    <ButtonGreen size="md" fontWeight="medium" onClick={handleLogin}>Login to Continue</ButtonGreen>
+                    <ButtonGreen size="sm" fontWeight="medium" onClick={handleLogin}>Login to Continue</ButtonGreen>
                   </div>
                 </div>
               </div>
