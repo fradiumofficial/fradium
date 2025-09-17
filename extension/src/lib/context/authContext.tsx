@@ -148,8 +148,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await new Promise<void>((resolve, reject) =>
         currentClient.login({
-          derivationOrigin: "https://fradium.io",
-          identityProvider: "https://identity.ic0.app",
+          derivationOrigin: "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
+          identityProvider: identityProvider,
           onSuccess: () => {
             console.log("🔐 AuthContext: Internet Identity login successful")
             resolve()

@@ -61,7 +61,7 @@
       "dependencies": ["fradium_ledger"]
     },
     "frontend": {
-      "source": ["src/frontend/dist", "src/assets"],
+      "source": ["src/frontend/dist"],
       "type": "assets",
       "workspace": "frontend"
     },
