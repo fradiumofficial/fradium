@@ -40,3 +40,5 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.venv/
+pocket-ic
