@@ -22,7 +22,7 @@
       "build": "scripts/build.wallet.sh",
       "_mainnet_init_arg": "(variant { Mainnet })",
       "init_arg": "(variant { Local })",
-      "dependencies": ["sol_rpc", "evm_rpc", "ckbtc_minter"],
+      "dependencies": ["sol_rpc", "evm_rpc"],
       "metadata": [
         {
           "name": "candid:service"

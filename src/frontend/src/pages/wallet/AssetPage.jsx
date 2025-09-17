@@ -72,8 +72,6 @@ export default function AssetsPage() {
 
   const handleTokenClick = (token) => {
     setSelectedToken(token);
-    // For now, just log the selected token
-    console.log("Selected token:", token);
   };
 
   const handleSearchToggle = () => {

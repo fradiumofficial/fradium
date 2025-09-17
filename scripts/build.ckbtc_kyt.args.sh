@@ -17,11 +17,13 @@ set -euxo pipefail
 ARGS_FILE="$(jq -re .canisters.ckbtc_kyt.init_arg_file dfx.json)"
 mkdir -p "$(dirname "$ARGS_FILE")"
 
+CALLER_PRINCIPAL=$(dfx identity get-principal)
+
 cat <<EOF >"$ARGS_FILE"
 (variant {
   InitArg = record {
     minter_id = principal "$CANISTER_ID_CKBTC_MINTER";
-    maintainers = vec {};
+    maintainers = vec {principal "$CALLER_PRINCIPAL"};
     mode = variant { AcceptAll };
    }
 })

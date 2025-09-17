@@ -89,7 +89,6 @@ export const WalletProvider = ({ children }) => {
       const key = getAddressesKey();
       try {
         localStorage.setItem(key, JSON.stringify(addresses));
-        console.log("Wallet addresses saved to localStorage for principal:", userPrincipalString);
       } catch (error) {
         console.error("Error saving wallet addresses to localStorage:", error);
       }
@@ -104,7 +103,6 @@ export const WalletProvider = ({ children }) => {
       const saved = localStorage.getItem(key);
       if (saved) {
         const parsedAddresses = JSON.parse(saved);
-        console.log("Wallet addresses loaded from localStorage for principal:", userPrincipalString);
         return parsedAddresses;
       }
     } catch (error) {
@@ -243,7 +241,6 @@ export const WalletProvider = ({ children }) => {
   // 4) Simpan ke localStorage
   const fetchAddresses = useCallback(async () => {
     if (!wallet || !userPrincipalString) {
-      console.log("fetchAddresses skipped:", { wallet: !!wallet, userPrincipalString: !!userPrincipalString });
       return;
     }
 
@@ -413,7 +410,6 @@ export const WalletProvider = ({ children }) => {
       try {
         const principal = identity?.getPrincipal();
         clearBalanceCache(principal, tokenId);
-        console.log(`Balance cache cleared manually for ${tokenId ? `token ${tokenId}` : "all tokens"}`);
       } catch (error) {
         console.error("Error clearing balance cache manually:", error);
       }
@@ -440,7 +436,6 @@ export const WalletProvider = ({ children }) => {
       // Clear balance cache when user logs out
       try {
         clearBalanceCache(null); // Clear all balance cache
-        console.log("Cleared all balance cache on logout");
       } catch (error) {
         console.error("Error clearing balance cache on logout:", error);
       }
@@ -470,7 +465,6 @@ export const WalletProvider = ({ children }) => {
       oldAddressKeys.forEach((key) => {
         try {
           localStorage.removeItem(key);
-          console.log("Cleared old wallet addresses cache:", key);
         } catch (error) {
           console.error("Error clearing old cache:", error);
         }
@@ -481,7 +475,6 @@ export const WalletProvider = ({ children }) => {
         const oldBalanceKeys = Object.keys(localStorage).filter((key) => key.startsWith("balanceCache_") && !key.includes(userPrincipalString));
         oldBalanceKeys.forEach((key) => {
           localStorage.removeItem(key);
-          console.log("Cleared old balance cache:", key);
         });
       } catch (error) {
         console.error("Error clearing old balance cache:", error);

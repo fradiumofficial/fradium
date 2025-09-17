@@ -4,7 +4,6 @@ set -euxo pipefail
 # Ensure that a minter id exists:
 dfx identity get-principal --identity minter 2>/dev/null || dfx identity new minter --storage-mode=plaintext
 
-MINTER_PRINCIPAL=$(dfx identity get-principal --identity minter)
 CALLER_PRINCIPAL=$(dfx identity get-principal)
 
 ARGS_FILE="$(jq -re .canisters.ckbtc_ledger.init_arg_file dfx.json)"
@@ -16,7 +15,7 @@ cat <<EOF >"$ARGS_FILE"
   Init = record {
     token_symbol = "ckBTC";
     token_name = "Chain key local Bitcoin";
-    minting_account = record { owner = principal "$MINTER_PRINCIPAL" };
+    minting_account = record { owner = principal "$CANISTER_ID_CKBTC_MINTER" };
     transfer_fee = 11_500;
     metadata = vec {};
     max_memo_length = opt 80;

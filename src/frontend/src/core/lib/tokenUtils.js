@@ -24,7 +24,6 @@ function loadBalanceFromStorage(principal, tokenId) {
       const parsed = JSON.parse(saved);
       // Check if cache is still valid (cache for 5 minutes)
       if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
-        console.log(`Balance loaded from localStorage cache for token ${tokenId}:`, parsed.balance);
         return parsed.balance;
       } else {
         // Cache expired, remove it
@@ -45,7 +44,6 @@ function saveBalanceToStorage(principal, tokenId, balance) {
       timestamp: Date.now(),
     };
     localStorage.setItem(key, JSON.stringify(cacheData));
-    console.log(`Balance saved to localStorage cache for token ${tokenId}:`, balance);
   } catch (error) {
     console.error("Error saving balance to localStorage:", error);
   }
@@ -57,7 +55,6 @@ function clearBalanceCache(principal, tokenId = null) {
       // Clear cache for specific token
       const key = getBalanceCacheKey(principal, tokenId);
       localStorage.removeItem(key);
-      console.log(`Balance cache cleared for token ${tokenId}`);
     } else {
       // Clear all balance cache for this principal
       const principalString = principal?.toString() || null;
@@ -71,7 +68,6 @@ function clearBalanceCache(principal, tokenId = null) {
         }
         keysToRemove.forEach((key) => {
           localStorage.removeItem(key);
-          console.log(`Balance cache cleared:`, key);
         });
       }
     }
@@ -377,8 +373,6 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
-  console.log(`Sending ${amount} ${token.symbol} to ${to} via ${token.chain}`);
-
   try {
     let result;
 
@@ -421,8 +415,8 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
             decimals = await fradium_ledger.icrc1_decimals();
             break;
           case 6: // ckBTC
-            // decimals = await ckbtc_ledger.icrc1_decimals();
-            decimals = 8; // ckBTC typically has 8 decimals like BTC
+            decimals = await ckbtc_ledger.icrc1_decimals();
+            // decimals = 8; // ckBTC typically has 8 decimals like BTC
             break;
           default:
             throw new Error("Unknown ICRC token for decimals");
@@ -483,7 +477,6 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
       throw new Error(`Unsupported token type: ${token.type}`);
     }
 
-    console.log(`Successfully sent ${amount} ${token.symbol} to ${to}. Transaction ID: ${result}`);
     return {
       success: true,
       transactionId: result,
@@ -532,12 +525,10 @@ export async function getBalance(tokenId, principal, useCache = true) {
     switch (token.id) {
       case 4: // ICP
         try {
-          console.log("Fetching ICP balance for principal:", principal);
           const balance = await icp_index.icrc1_balance_of({
             owner: principal,
             subaccount: [],
           });
-          console.log("ICP balance raw:", balance, "type:", typeof balance);
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
@@ -549,7 +540,6 @@ export async function getBalance(tokenId, principal, useCache = true) {
               decimals = 8; // Default decimals for ICRC tokens
             }
           }
-          console.log("ICP decimals:", decimals, "type:", typeof decimals);
 
           // Convert from e8s to ICP using dynamic decimals
           // balance is a bigint, so we need to convert it properly
@@ -614,12 +604,10 @@ export async function getBalance(tokenId, principal, useCache = true) {
             console.warn("ckBTC update_balance warning:", e);
           }
 
-          console.log("Fetching ckBTC balance from blockchain for principal:", principal);
           const balance = await ckbtc_ledger.icrc1_balance_of({
             owner: principal,
             subaccount: [],
           });
-          console.log("ckBTC balance raw:", balance, "type:", typeof balance);
 
           // Get decimals dynamically from ledger if token.decimals is null
           let decimals = token.decimals;
@@ -627,7 +615,6 @@ export async function getBalance(tokenId, principal, useCache = true) {
             // decimals = await ckbtc_ledger.icrc1_decimals();
             decimals = 8; // ckBTC typically has 8 decimals like BTC
           }
-          console.log("ckBTC decimals:", decimals, "type:", typeof decimals);
 
           // Convert from e8s to ckBTC using dynamic decimals
           // balance is a bigint, so we need to convert it properly
@@ -719,7 +706,6 @@ export async function getUSD(tokenId) {
 
   // Special handling for Fradium token - return 0 directly since it's not available on major APIs
   if (token.symbol === "FADM") {
-    console.log("Fradium token detected, returning default price 0");
     return 0;
   }
 
@@ -901,8 +887,23 @@ export function getChainFromTokenType(tokenType) {
   return "Unknown";
 }
 
-// Get icon by chain name
-export function getIconByChain(chain) {
+// Get icon by chain name and token type
+export function getIconByChain(chain, tokenType = null) {
+  // For Internet Computer chain, determine token based on tokenType
+  if (chain.toLowerCase() === "internet computer" && tokenType) {
+    if (tokenType === "icp") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 4); // ICP token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/icp.webp";
+    } else if (tokenType === "fradium") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 5); // Fradium token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/fradium.webp";
+    } else if (tokenType === "ckbtc") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 6); // ckBTC token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/ckbtc.webp";
+    }
+  }
+
+  // For other chains, find by chain name
   const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
   return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
 }

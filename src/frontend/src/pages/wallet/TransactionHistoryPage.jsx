@@ -1,32 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TOKENS_CONFIG, formatAmount } from "@/core/lib/tokenUtils";
+import { TOKENS_CONFIG, formatAmount, getIconByChain } from "@/core/lib/tokenUtils";
 import { getETHTransactionHistory, getSolanaTransactionHistory, getBitcoinTransactionHistory, getTransactionHistory, getICRCTransactionHistory } from "@/core/services/historyTransactionService";
 import { useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { getExplorerUrl } from "@/core/lib/chainExplorers";
 import { Copy, ExternalLink } from "lucide-react";
 import { copyToClipboard } from "@/core/lib/clipboardUtils";
-
-function getIconByChain(chain, tokenType) {
-  // For Internet Computer chain, determine token based on tokenType
-  if (chain.toLowerCase() === "internet computer") {
-    if (tokenType === "icp") {
-      const token = TOKENS_CONFIG.find((t) => t.id === 4); // ICP token
-      return token ? `/${token.imageUrl}` : "/assets/images/coins/icp.webp";
-    } else if (tokenType === "fradium") {
-      const token = TOKENS_CONFIG.find((t) => t.id === 5); // Fradium token
-      return token ? `/${token.imageUrl}` : "/assets/images/coins/fradium.webp";
-    } else if (tokenType === "ckbtc") {
-      const token = TOKENS_CONFIG.find((t) => t.id === 6); // ckBTC token
-      return token ? `/${token.imageUrl}` : "/assets/images/coins/ckbtc.webp";
-    }
-  }
-
-  // For other chains, find by chain name
-  const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
-  return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
-}
 
 // Loading skeleton component
 const LoadingSkeleton = () => {

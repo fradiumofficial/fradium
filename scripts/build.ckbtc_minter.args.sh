@@ -25,7 +25,7 @@ cat <<EOF >"$ARGS_FILE"
        ecdsa_key_name = "dfx_test_key";
        retrieve_btc_min_amount = 10_000;
        max_time_in_queue_nanos = 420_000_000_000;
-       min_confirmations = opt 12;
+       min_confirmations = opt 1;
        mode = variant { GeneralAvailability };
        kyt_fee = opt 1_333;
        kyt_principal = opt principal "$CANISTER_ID_CKBTC_KYT";

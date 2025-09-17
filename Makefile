@@ -75,7 +75,7 @@ ckbtc-balance:
 	chmod +x "$(CURDIR)/scripts/ckbtc.check_balance.sh"
 	"$(CURDIR)/scripts/ckbtc.check_balance.sh"
 
-bitcoin-kyt:
+ckbtc-kyt:
 	dfx canister call ckbtc_kyt set_api_key '(record { api_key = "" })'
 
 kill-port:
