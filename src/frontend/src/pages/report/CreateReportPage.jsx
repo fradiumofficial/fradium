@@ -579,7 +579,7 @@ export default function CreateReportPage() {
 
   return (
     <>
-      <div className=" bg-black text-white relative overflow-hidden min-h-[900px] md:min-h-[1000px] lg:min-h-[1100px]">
+      <div className=" bg-[#000510] text-white relative overflow-hidden min-h-[900px] md:min-h-[1000px] lg:min-h-[1100px]">
         {/* Background layer */}
         <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
           <img
@@ -589,11 +589,11 @@ export default function CreateReportPage() {
             decoding="async"
             loading="lazy"
             draggable={false}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
         </div>
         {/* Soft fade at top edge */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent z-0" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
         <main className="pt-24 px-4 sm:px-6">
           <div className="relative z-10 container mx-auto max-w-6xl">
             {/* Back Button */}

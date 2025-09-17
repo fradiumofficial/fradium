@@ -3,6 +3,7 @@ import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
 import PrimaryButton from "@/core/components/Button";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import Footer from "../../core/components/Footer.jsx";
 
 // Declarations
 import { fradium_token as token } from "declarations/fradium_token";
@@ -271,8 +272,8 @@ export default function MyReportPage() {
 
   return (
     <>
-      <div className="bg-black text-white relative overflow-hidden min-h-screen">
-        {/* Background layer */}
+      <div className="bg-[#000510] text-white relative overflow-hidden min-h-screen">
+        {/* Background layer - starts below navbar (not from top) */}
         <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
           <img
             src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
@@ -281,11 +282,11 @@ export default function MyReportPage() {
             decoding="async"
             loading="lazy"
             draggable={false}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
         </div>
-        {/* Soft fade at top edge */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent z-0" />
+        {/* Soft fade at top edge to blend with navbar */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />
         {/* Main Content */}
         <main className="pt-24 mb-32 pb-16 px-4 sm:px-6">
           <div className="relative z-10 max-w-6xl container mx-auto">
@@ -551,6 +552,7 @@ export default function MyReportPage() {
           </div>
         </main>
       </div>
+      <Footer />
       {/* Unstake Modal */}
       {showUnstakeModal && unstakeReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
