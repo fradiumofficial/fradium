@@ -60,6 +60,7 @@ function Home() {
           case "sol": return networkFilters?.Solana ?? true;
           case "fra": return networkFilters?.Fradium ?? true;
           case "icp": return networkFilters?.ICP ?? true;
+          case "ckbtc": return networkFilters?.ckBTC ?? true;
           default: return true;
         }
       });
@@ -70,7 +71,8 @@ function Home() {
         eth: "eth",
         sol: "sol",
         fra: "fra",
-        icp: "icp"
+        icp: "icp",
+        ckbtc: "ckbtc"
       };
 
       const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
@@ -83,6 +85,7 @@ function Home() {
             case "sol": return networkFilters?.Solana ?? true;
             case "fra": return networkFilters?.Fradium ?? true;
             case "icp": return networkFilters?.ICP ?? true;
+            case "ckbtc": return networkFilters?.ckBTC ?? true;
             default: return true;
           }
         })();
@@ -300,8 +303,10 @@ function Home() {
       case "ETH":
         return "Ethereum";
       case "FUM":
-        return "Fradium";
+        return "Internet Computer";
       case "ICP":
+        return "Internet Computer";
+      case "CKBTC":
         return "Internet Computer";
       default:
         return token?.name || "";
@@ -649,7 +654,7 @@ function Home() {
                       <div className="flex flex-col items-start p-0 w-[183px] h-[45px] flex-none order-1 flex-grow-0">
                         {/* Token Symbol and Name */}
                         <div className="flex flex-row items-center p-0 gap-2 w-[96px] h-6 flex-none order-0 flex-grow-0">
-                          <div className="w-8 h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-center text-white flex-none order-0 flex-grow-0">
+                          <div className="h-6 font-['General Sans'] font-medium text-[16px] leading-[150%] flex items-center text-white flex-none order-0 flex-grow-0">
                             {token.symbol}
                           </div>
                           <div className="w-1 h-1 bg-white/50 rounded-full flex-none order-1 flex-grow-0"></div>

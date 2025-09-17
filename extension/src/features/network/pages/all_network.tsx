@@ -37,6 +37,11 @@ const BASE_NETWORKS = [
     name: "Internet Computer",
     icon: CDN.tokens.icp,
   },
+  {
+    key: "ckbtc" as const,
+    name: "ckBTC",
+    icon: CDN.tokens.bitcoinDark, // Use Bitcoin icon for ckBTC
+  },
 ] as const;
 
 type AllNetworkProps = {
@@ -64,11 +69,12 @@ export default function AllNetwork({
       case "sol": return networkFilters?.Solana ?? true;
       case "fra": return networkFilters?.Fradium ?? true;
       case "icp": return networkFilters?.ICP ?? true;
+      case "ckbtc": return networkFilters?.ckBTC ?? true;
       default: return true;
     }
   }).map(network => {
     // derive token id mapping for price * balance
-    const keyToId: any = { btc: "bitcoin", eth: "ethereum", sol: "solana", fra: "fradium", icp: "icp" };
+    const keyToId: any = { btc: "bitcoin", eth: "ethereum", sol: "solana", fra: "fradium", icp: "icp", ckbtc: "ckbtc" };
     const formatUSD = (v: number) => `$${(v || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
     let totalUsd = 0;

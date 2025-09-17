@@ -14,6 +14,7 @@ export default function ManageNetwork() {
   const [sol, setSol] = useState(networkFilters?.Solana ?? true);
   const [fra, setFra] = useState(networkFilters?.Fradium ?? true);
   const [icp, setIcp] = useState(networkFilters?.ICP ?? true);
+  const [ckbtc, setCkbTc] = useState(networkFilters?.ckBTC ?? true);
 
   // Sync local state with networkFilters when they change
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function ManageNetwork() {
       setSol(networkFilters.Solana ?? true);
       setFra(networkFilters.Fradium ?? true);
       setIcp(networkFilters.ICP ?? true);
+      setCkbTc(networkFilters.ckBTC ?? true);
     }
   }, [networkFilters]);
 
@@ -34,6 +36,7 @@ export default function ManageNetwork() {
       Solana: sol,
       Fradium: fra,
       ICP: icp,
+      ckBTC: ckbtc,
     };
     updateNetworkFilters(updatedFilters);
     // Navigate back after saving
@@ -233,6 +236,42 @@ export default function ManageNetwork() {
                   <span
                     className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
                       icp ? "translate-x-7" : ""
+                    }`}
+                  ></span>
+                </span>
+              </label>
+            </div>
+            <div className="mt-2 h-px w-full bg-white/10" />
+          </div>
+
+          {/* ckBTC */}
+          <div className="py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img
+                  src={CDN.tokens.bitcoinDark}
+                  className="w-6 h-6"
+                  alt="ckbtc"
+                />
+                <span className="text-white text-[14px] font-normal">
+                  ckBTC
+                </span>
+              </div>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={ckbtc}
+                  onChange={(e) => setCkbTc(e.target.checked)}
+                />
+                <span
+                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
+                    ckbtc ? "bg-[#37C058]" : "bg-white/20"
+                  }`}
+                >
+                  <span
+                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                      ckbtc ? "translate-x-7" : ""
                     }`}
                   ></span>
                 </span>
