@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
 import { ChevronDown, FileText, LogOut, Coins } from "lucide-react";
 
-import { fradium_token as token } from "declarations/fradium_token";
+import { fradium_ledger as token } from "declarations/fradium_ledger";
 
 import { useAuth } from "@/core/providers/AuthProvider";
 import { Button as ButtonShad } from "@/core/components/ui/button";
@@ -57,7 +57,7 @@ const Navbar = () => {
           subaccount: [],
         });
         setBalance(response);
-      } catch (error) {}
+      } catch (error) { }
     }
 
     fetchBalance();

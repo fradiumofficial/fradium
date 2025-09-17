@@ -4,7 +4,7 @@ import { Link } from "react-router";
 
 import { Search, ArrowUpRight, ArrowDownLeft, Coins, Calendar } from "lucide-react";
 
-import { fradium_token as token } from "declarations/fradium_token";
+import { fradium_ledger as token } from "declarations/fradium_ledger";
 
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
