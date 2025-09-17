@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
+import AIAssistantWidget from "@/core/components/assistant/AIAssistantWidget";
 import ManageNetworksModal from "../modals/ManageNetworksModal";
 
 const MotionLink = motion(Link);
@@ -746,6 +747,9 @@ function WalletLayoutContent() {
           );
         })}
       </nav>
+
+      {/* AI Assistant Widget - floating bottom-right */}
+      <AIAssistantWidget />
     </>
   );
 }
