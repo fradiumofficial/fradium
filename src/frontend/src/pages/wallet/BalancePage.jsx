@@ -12,6 +12,7 @@ import { useAuth } from "@/core/providers/AuthProvider";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 
 import Card from "@/core/components/Card";
+import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 
 export default function BalancePage() {
   const { isAuthenticated: isConnected, identity } = useAuth();
@@ -26,6 +27,9 @@ export default function BalancePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all"); // all, receive, sent
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+
+  // Toggle mock data for previewing UI
+  const useMockData = false;
 
   // Convert backend transaction data to UI format
   const convertTransactionData = (backendTransactions, userPrincipal) => {
@@ -128,24 +132,65 @@ export default function BalancePage() {
       if (!isConnected || !identity) return;
 
       try {
-        // Fetch balance
-        const balance = await token.icrc1_balance_of({
-          owner: identity.getPrincipal(),
-          subaccount: [],
-        });
-        setUserBalance(convertE8sToToken(balance));
-        setWalletAddress(identity.getPrincipal().toString());
+        if (useMockData) {
+          // Mock balance
+          setUserBalance(5);
+          setWalletAddress(identity.getPrincipal().toString());
 
-        // Fetch transactions
-        setIsLoadingTransactions(true);
-        const backendTransactions = await token.get_transaction_history_of({
-          owner: identity.getPrincipal(),
-          subaccount: [],
-        });
+          // Mock transactions
+          setIsLoadingTransactions(true);
+          const now = Date.now();
+          const mock = [
+            {
+              id: 1,
+              type: "sent",
+              description: "Report Stake",
+              amount: -5,
+              date: new Date(now - 1000 * 60 * 60 * 1).toISOString(),
+              txHash: "tx_a_1234567890abcdef",
+              timestamp: now - 1000 * 60 * 60 * 1,
+            },
+            {
+              id: 2,
+              type: "sent",
+              description: "Approve for staking report creation",
+              amount: 0,
+              date: new Date(now - 1000 * 60 * 60 * 2).toISOString(),
+              txHash: "tx_b_abcdef1234567890",
+              timestamp: now - 1000 * 60 * 60 * 2,
+            },
+            {
+              id: 3,
+              type: "receive",
+              description: "Faucet Claim",
+              amount: 10,
+              date: new Date(now - 1000 * 60 * 60 * 24).toISOString(),
+              txHash: "tx_c_9876543210fedcba",
+              timestamp: now - 1000 * 60 * 60 * 24,
+            },
+          ];
+          setTransactions(mock);
+          setFilteredTransactions(mock);
+        } else {
+          // Fetch balance
+          const balance = await token.icrc1_balance_of({
+            owner: identity.getPrincipal(),
+            subaccount: [],
+          });
+          setUserBalance(convertE8sToToken(balance));
+          setWalletAddress(identity.getPrincipal().toString());
 
-        const convertedTransactions = convertTransactionData(backendTransactions, identity.getPrincipal().toString());
-        setTransactions(convertedTransactions);
-        setFilteredTransactions(convertedTransactions);
+          // Fetch transactions
+          setIsLoadingTransactions(true);
+          const backendTransactions = await token.get_transaction_history_of({
+            owner: identity.getPrincipal(),
+            subaccount: [],
+          });
+
+          const convertedTransactions = convertTransactionData(backendTransactions, identity.getPrincipal().toString());
+          setTransactions(convertedTransactions);
+          setFilteredTransactions(convertedTransactions);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -209,7 +254,21 @@ export default function BalancePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#000510] text-white relative overflow-hidden">
+      {/* Background layer - starts below navbar (not from top) */}
+      <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
+        <img
+          src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          loading="lazy"
+          draggable={false}
+          className="absolute inset-0 w-full h-full object-cover object-top"
+        />
+      </div>
+      {/* Soft fade at top edge to blend with navbar */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
       {/* Header */}
       <header className="fixed top-0 w-full z-50 backdrop-blur-md bg-black/80 border-b border-white/10">
         <div className="container mx-auto px-4 sm:px-6 py-4">
@@ -245,7 +304,7 @@ export default function BalancePage() {
       </header>
 
       {/* Main Content */}
-      <main className="pt-24 pb-16 px-4 sm:px-6">
+      <main className="relative z-10 pt-24 pb-16 px-4 sm:px-6">
         <div className="container mx-auto max-w-4xl">
           {!isConnected ? (
             <div className="text-center py-16">
@@ -255,44 +314,42 @@ export default function BalancePage() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Current Balance - Minimalist Design */}
-              <Card className="p-6">
+              {/* Current Balance with Top Up */}
+              <Card className="p-4 sm:p-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.30)]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-400 mb-1">Current Balance</p>
-                    <div className="flex items-baseline space-x-2">
+                    <p className="text-xs text-white/70 mb-1">Current Balance</p>
+                    <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-semibold text-white">{userBalance.toLocaleString()}</span>
-                      <span className="text-sm text-gray-400">FUM</span>
+                      <span className="text-sm text-white/70">FUM</span>
                     </div>
                   </div>
-                  <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
-                    <Coins className="w-4 h-4 text-gray-400" />
-                  </div>
+                  <ButtonGreen size="now" fontWeight="medium">Top Up</ButtonGreen>
                 </div>
               </Card>
 
               {/* Transaction History */}
               <div className="rounded-2xl pt-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-4 sm:space-y-0">
-                  <h2 className="text-xl sm:text-2xl font-bold">Transaction History</h2>
-                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                    {/* Search */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input placeholder="Search transactions..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10" />
-                    </div>
-
-                    {/* Filter */}
-                    <div className="flex space-x-2">
-                      <Button onClick={() => setFilterType("all")} className={`text-sm ${filterType === "all" ? "bg-white text-black" : "bg-white/10 border border-white/20 hover:bg-white/20 text-white"}`}>
+                  <h2 className="text-xl sm:text-2xl font-medium">Transaction History</h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                    {/* Filter pills */}
+                    <div className="flex items-center space-x-2">
+                      <Button onClick={() => setFilterType("all")} className={`text-sm rounded-full px-4 py-1.5 border ${filterType === "all" ? "bg-white/10 text-white border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" : "bg-transparent text-white/80 border-white/15 hover:bg-white/10 hover:text-white"}`}>
                         All
                       </Button>
-                      <Button onClick={() => setFilterType("receive")} className={`text-sm ${filterType === "receive" ? "bg-green-400 text-black" : "bg-white/10 border border-white/20 hover:bg-white/20 text-white"}`}>
+                      <Button onClick={() => setFilterType("receive")} className={`text-sm rounded-full px-4 py-1.5 border ${filterType === "receive" ? "bg-green-400 text-black border-green-400" : "bg-transparent text-white/80 border-white/15 hover:bg-white/10 hover:text-white"}`}>
                         Received
                       </Button>
-                      <Button onClick={() => setFilterType("sent")} className={`text-sm ${filterType === "sent" ? "bg-red-400 text-white" : "bg-white/10 border border-white/20 hover:bg-white/20 text-white"}`}>
+                      <Button onClick={() => setFilterType("sent")} className={`text-sm rounded-full px-4 py-1.5 border ${filterType === "sent" ? "bg-red-400 text-white border-red-400" : "bg-transparent text_white/80 border-white/15 hover:bg-white/10 hover:text-white"}`}>
                         Sent
                       </Button>
+                    </div>
+
+                    {/* Search pill */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input placeholder="Search transactions..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 bg-white/5 border-white/15 text-white placeholder-gray-400 focus:bg-white/10 rounded-full w-[220px] sm:w-[260px]" />
                     </div>
                   </div>
                 </div>
@@ -305,42 +362,40 @@ export default function BalancePage() {
                     <p className="text-gray-400">Please wait while we fetch your transaction history</p>
                   </div>
                 ) : filteredTransactions.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No transactions found</h3>
-                    <p className="text-gray-400">{searchTerm || filterType !== "all" ? "Try adjusting your search or filter criteria" : "Your transaction history will appear here"}</p>
+                  <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-12 text-center">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-10%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%)]" />
+                    <Search className="relative z-[1] w-10 h-10 text-white/70 mx-auto mb-4" />
+                    <h3 className="relative z-[1] text-base font-semibold text-white mb-1">No transactions found</h3>
+                    <p className="relative z-[1] text-sm text-gray-400">{searchTerm || filterType !== "all" ? "Try adjusting your search terms or filters" : "Your transaction history will appear here"}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {filteredTransactions.map((transaction) => {
                       const { date, time } = formatDate(transaction.date);
                       return (
-                        <Card key={transaction.id} className="transition-all duration-300">
-                          <div className="flex items-start justify-between">
+                        <Card key={transaction.id} className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.35)] p-4 sm:p-5">
+                          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-20%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_60%)]" />
+                          <div className="relative z-[1] flex items-start justify-between">
                             <div className="flex items-start space-x-4 flex-1 min-w-0">
                               {/* Transaction Icon */}
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${transaction.type === "receive" ? "bg-green-400/10" : "bg-red-400/10"}`}>{getTransactionIcon(transaction.type)}</div>
 
                               {/* Transaction Details */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                                  <h3 className="font-semibold text-white truncate pr-2">{transaction.description}</h3>
-                                  <div className={`font-bold text-lg sm:text-xl flex-shrink-0 ${getTransactionColor(transaction.type)}`}>
-                                    {transaction.amount > 0 ? "+" : ""}
-                                    {transaction.amount} FUM
+                                <div className="flex items-start justify-between mb-1">
+                                  <h3 className="font-medium text-white truncate pr-2">{transaction.description}</h3>
+                                  <div className={`ml-2 font-medium text-lg sm:text-xl ${getTransactionColor(transaction.type)}`}>
+                                    {transaction.amount > 0 ? "+" : ""}{transaction.amount} FUM
                                   </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
-                                  <div className="flex items-center space-x-4 text-sm text-gray-400">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3 text-sm text-white/70">
                                     <span className="capitalize">{transaction.type}</span>
                                     <span>•</span>
-                                    <span>
-                                      {date} at {time}
-                                    </span>
+                                    <span>{date} at {time}</span>
                                   </div>
-
-                                  <div className="font-mono text-xs text-gray-400">{formatTxHash(transaction.txHash)}</div>
+                                  <div className="font-mono text-xs text-white/60">{formatTxHash(transaction.txHash)}</div>
                                 </div>
                               </div>
                             </div>
@@ -367,3 +422,4 @@ export default function BalancePage() {
     </div>
   );
 }
+

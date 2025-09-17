@@ -8,7 +8,7 @@ const Card = ({ children, className = "", ...props }) => {
         w-full
         bg-[rgba(20,24,30,0.85)]
         shadow-[0_8px_32px_0_rgba(0,0,0,0.25)]
-        rounded-md
+        rounded-2xl
         backdrop-blur-md
         p-8
         ${className}

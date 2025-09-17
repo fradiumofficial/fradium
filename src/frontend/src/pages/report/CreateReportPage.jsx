@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PrimaryButton from "@/core/components/Button";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import Footer from "../../core/components/Footer.jsx";
+import { fradium_ledger } from "declarations/fradium_ledger";
 
 // Icon
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle, FileText, Plus, Upload, Wallet, X } from "lucide-react";
@@ -178,7 +179,7 @@ export default function CreateReportPage() {
   useEffect(() => {
     const fetchBalance = async () => {
       setIsBalanceLoading(true);
-      const balance = await token.icrc1_balance_of({
+      const balance = await fradium_ledger.icrc1_balance_of({
         owner: identity.getPrincipal(),
         subaccount: [],
       });
@@ -317,7 +318,7 @@ export default function CreateReportPage() {
 
     try {
       // Approve tokens first
-      const approveResult = await token.icrc2_approve({
+      const approveResult = await fradium_ledger.icrc2_approve({
         from_subaccount: [],
         spender: Principal.fromText(backendCanisterId),
         amount: BigInt(stakeAmount) * BigInt(10 ** 8),
