@@ -9,14 +9,13 @@ export function getInternetIdentityNetwork() {
 
   const network =
     env.PLASMO_PUBLIC_DFX_NETWORK ||
-    env.VITE_DFX_NETWORK ||
+    env.PLASMO_PUBLIC_DFX_NETWORK ||
     process.env.PLASMO_PUBLIC_DFX_NETWORK ||
     process.env.VITE_DFX_NETWORK ||
     process.env.DFX_NETWORK
 
   if (!canisterId) {
     console.warn("CANISTER_ID_INTERNET_IDENTITY is not set.");
-    // Fallback to the public Internet Identity service
     return "https://id.ai";
   }
 
