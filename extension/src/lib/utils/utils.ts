@@ -9,21 +9,25 @@ export function getInternetIdentityNetwork() {
 
   const network =
     env.PLASMO_PUBLIC_DFX_NETWORK ||
-    env.VITE_DFX_NETWORK ||
+    env.PLASMO_PUBLIC_DFX_NETWORK ||
     process.env.PLASMO_PUBLIC_DFX_NETWORK ||
     process.env.VITE_DFX_NETWORK ||
     process.env.DFX_NETWORK
 
   if (!canisterId) {
     console.warn("CANISTER_ID_INTERNET_IDENTITY is not set.");
-    // Fallback to the public Internet Identity service
-    return "https://identity.ic0.app";
+    return "https://id.ai";
   }
 
   if (network === "local") {
     return `http://${canisterId}.localhost:4943`;
   } else {
     // Mainnet/public II URL
-    return `https://identity.ic0.app`;
+    return `https://id.ai`;
   }
+}
+
+// Utility function to combine class names
+export function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(" ");
 }

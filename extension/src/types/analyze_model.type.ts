@@ -66,11 +66,29 @@ export interface ICPAnalysisResult {
  */
 export interface AnalysisResult {
   isSafe: boolean;
-  source: "community" | "ai" | "smartcontract";
+  source: "community" | "ai" | "ai_and_community" | "smartcontract";
   communityData?: CommunityAnalysisResult;
   aiData?: ICPAnalysisResult;
   tokenType: string;
   address: string;
+  // Additional properties for enhanced analysis
+  confidence?: number;
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+  description?: string;
+  stats?: {
+    transactions?: number;
+    totalVolume?: string;
+    riskScore?: string;
+    lastActivity?: string;
+    thresholdUsed?: number;
+    dataSource?: string;
+    reportId?: number;
+    votesYes?: number;
+    votesNo?: number;
+  };
+  securityChecks?: string[];
+  aiAnalysis?: any;
+  finalStatus?: string;
 }
 
 /**

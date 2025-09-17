@@ -1,0 +1,19 @@
+type RansomwareResult = record {
+  transactions_analyzed : nat32;
+  threshold_used : float64;
+  data_source : text;
+  is_ransomware : bool;
+  address : text;
+  chain_type : text;
+  confidence : float64;
+  confidence_level : text;
+  ransomware_probability : float64;
+};
+type Result = variant { Ok : RansomwareResult; Err : text };
+service : () -> {
+  analyze_btc_address : (vec float32, text, nat32) -> (Result);
+  analyze_eth_address : (vec record { text; float64 }, text, nat32) -> (Result);
+  analyze_icp_address : (text) -> (Result);
+  analyze_sol_address : (vec record { text; float64 }, text, nat32) -> (Result);
+  get_icp_api_health : () -> (text) query;
+}

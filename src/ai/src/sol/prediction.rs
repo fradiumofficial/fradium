@@ -1,9 +1,7 @@
-// src/solana/prediction.rs
+    // src/solana/prediction.rs
 
 use crate::shared_models::{RansomwareResult, PredictionError};
 use super::config::{MODEL_BYTES, SCALER_PARAMS_JSON, MODEL_METADATA_JSON};
-use super::data_extractor::SolanaDataExtractor;
-use super::feature_calculator::SolanaFeatureCalculator;
 use super::models::{is_valid_solana_address};
 use tract_onnx::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -64,70 +62,24 @@ impl SolanaPredictionService {
         })
     }
 
-    pub async fn predict_fraud(&mut self, address: &str) -> Result<RansomwareResult, PredictionError> {
+    pub async fn predict_from_feature_map(
+        &self,
+        feature_map: &std::collections::HashMap<String, f64>,
+        address: &str,
+        transactions_count: u32,
+    ) -> Result<RansomwareResult, PredictionError> {
+        // Optional: basic address sanity check (kept lightweight)
         if !is_valid_solana_address(address) {
-            return Err(PredictionError::DataExtraction(format!("Invalid Solana address format: {}", address)));
+            ic_cdk::println!("[warn] Provided address does not look like a valid Solana address: {}", address);
         }
 
-        let (features, transactions_count) = self.extract_and_calculate_features(address).await?;
-
-        if features.is_empty() {
-            return Ok(RansomwareResult {
-                address: address.to_string(),
-                chain_type: "Solana".to_string(),
-                is_ransomware: false,
-                ransomware_probability: 0.0, // Clean, explicit zero
-                confidence_level: "INCONCLUSIVE".to_string(), // Clear signal for frontend
-                confidence: 0.0,
-                threshold_used: self.model_metadata.deployment_threshold as f64,
-                transactions_analyzed: transactions_count,
-                data_source: "Helius".to_string(),
-            });
-        }
-
-        self.predict_from_features(address, features, transactions_count).await
-    }
-
-    async fn extract_and_calculate_features(&mut self, address: &str) -> Result<(Vec<f32>, u32), PredictionError> {
-        let mut data_extractor = SolanaDataExtractor::new();
-        
-        // Step 1: Get raw transactions
-        let raw_transactions = data_extractor.get_all_transactions(address).await
-            .map_err(|e| PredictionError::DataExtraction(e))?;
-        
-        // Step 2: Parse into flat list
-        let parsed_transfers = data_extractor.parse_all_transactions(&raw_transactions, address).await;
-        
-        // Get the count of parsed transfers *before* checking if it's empty
-        let transactions_count = parsed_transfers.len() as u32;
-
-        if parsed_transfers.is_empty() {
-            // This handles cases with no relevant transfers found
-            ic_cdk::println!("[INFO] No relevant user transfers found. Returning inconclusive result.");
-            return Ok((vec![], transactions_count)); // Return empty vec as signal
-        }
-
-        // Step 3: Calculate features
-        let mut feature_calculator = SolanaFeatureCalculator::new(data_extractor.price_converter);
-        let feature_map = feature_calculator.calculate_features(address, &parsed_transfers, &raw_transactions).await
-            .ok_or_else(|| PredictionError::FeatureCalculation("Feature calculation returned None".to_string()))?;
-        
-        // Check for Infinity or NaN values before creating the final vector
-        for (name, value) in &feature_map {
-            if !value.is_finite() {
-                ic_cdk::println!("[INFO] Inconclusive feature detected: {} = {}. Returning zero-confidence result.", name, value);
-                // Return an empty vec as a signal to the calling function
-                return Ok((vec![], transactions_count));
-            }
-        }
-        
-        // Step 4: Convert feature map to ordered vector
+        // Build ordered feature vector according to model metadata
         let mut features = Vec::with_capacity(self.model_metadata.feature_names.len());
         for name in &self.model_metadata.feature_names {
             features.push(*feature_map.get(name).unwrap_or(&0.0) as f32);
         }
-        
-        Ok((features, transactions_count))
+
+        self.predict_from_features(address, features, transactions_count).await
     }
 
     async fn predict_from_features(&self, address: &str, features: Vec<f32>, transactions_count: u32) -> Result<RansomwareResult, PredictionError> {

@@ -9,7 +9,7 @@ use alloy::{
 #[ic_cdk::update]
 pub async fn ethereum_balance() -> String {
     // Hardcoded return for testing
-    return "3200000000000000".to_string(); // 0.0032 ETH in wei
+    // return "3200000000000000".to_string(); // 0.0032 ETH in wei
 
     let owner = validate_caller_not_anonymous();
     let ecdsa_key_name = get_ecdsa_key_name();

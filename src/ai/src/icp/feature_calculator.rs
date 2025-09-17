@@ -3,7 +3,7 @@
 use super::data_extractor;
 use super::models::{TransactionData, UserFeatures};
 use candid::Principal;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 // --- Helper Functions ---
 fn calculate_statistics(values: &[f64]) -> (f64, f64, f64) {
@@ -330,4 +330,72 @@ fn preprocess_features_for_inference(features: &mut UserFeatures) {
     if features.primary_token_dominance.is_nan() { features.primary_token_dominance = 0.0; }
     if features.mint_to_transfer_ratio.is_nan() { features.mint_to_transfer_ratio = 0.0; }
     if features.defi_activity_score.is_nan() { features.defi_activity_score = 0.0; }
+}
+
+// --- Convert HashMap features to UserFeatures (for frontend integration) ---
+pub fn features_map_to_user_features(features_map: HashMap<String, f64>) -> UserFeatures {
+    let mut features = UserFeatures::default();
+    
+    // Extract values from HashMap with defaults
+    features.icp_balance = *features_map.get("icp_balance").unwrap_or(&0.0);
+    features.ckbtc_balance = *features_map.get("ckbtc_balance").unwrap_or(&0.0);
+    features.cketh_balance = *features_map.get("cketh_balance").unwrap_or(&0.0);
+    features.ckusdc_balance = *features_map.get("ckusdc_balance").unwrap_or(&0.0);
+    features.num_tokens_held = *features_map.get("num_tokens_held").unwrap_or(&0.0) as u32;
+    features.total_portfolio_value_usd = *features_map.get("total_portfolio_value_usd").unwrap_or(&0.0);
+    features.portfolio_diversity_score = *features_map.get("portfolio_diversity_score").unwrap_or(&0.0) as u32;
+    features.icp_value_usd = *features_map.get("icp_value_usd").unwrap_or(&0.0);
+    features.ckbtc_value_usd = *features_map.get("ckbtc_value_usd").unwrap_or(&0.0);
+    features.cketh_value_usd = *features_map.get("cketh_value_usd").unwrap_or(&0.0);
+    features.ckusdc_value_usd = *features_map.get("ckusdc_value_usd").unwrap_or(&0.0);
+    features.total_transactions = *features_map.get("total_transactions").unwrap_or(&0.0) as u32;
+    features.sent_transactions = *features_map.get("sent_transactions").unwrap_or(&0.0) as u32;
+    features.received_transactions = *features_map.get("received_transactions").unwrap_or(&0.0) as u32;
+    features.unique_counterparties = *features_map.get("unique_counterparties").unwrap_or(&0.0) as u32;
+    features.tokens_used = *features_map.get("tokens_used").unwrap_or(&0.0) as u32;
+    features.cross_token_user = *features_map.get("cross_token_user").unwrap_or(&0.0) != 0.0;
+    features.has_activity = *features_map.get("has_activity").unwrap_or(&0.0) != 0.0;
+    features.has_mint_activity = *features_map.get("has_mint_activity").unwrap_or(&0.0) != 0.0;
+    features.has_burn_activity = *features_map.get("has_burn_activity").unwrap_or(&0.0) != 0.0;
+    features.total_value_sent_usd = *features_map.get("total_value_sent_usd").unwrap_or(&0.0);
+    features.total_value_received_usd = *features_map.get("total_value_received_usd").unwrap_or(&0.0);
+    features.net_flow_usd = *features_map.get("net_flow_usd").unwrap_or(&0.0);
+    features.avg_transaction_value_usd = *features_map.get("avg_transaction_value_usd").unwrap_or(&0.0);
+    features.sent_amount_mean_usd = *features_map.get("sent_amount_mean_usd").unwrap_or(&0.0);
+    features.received_amount_mean_usd = *features_map.get("received_amount_mean_usd").unwrap_or(&0.0);
+    features.transaction_value_std_usd = *features_map.get("transaction_value_std_usd").unwrap_or(&0.0);
+    features.total_value_sent_icp = *features_map.get("total_value_sent_icp").unwrap_or(&0.0);
+    features.total_value_received_icp = *features_map.get("total_value_received_icp").unwrap_or(&0.0);
+    features.net_flow_icp = *features_map.get("net_flow_icp").unwrap_or(&0.0);
+    features.avg_transaction_value_icp = *features_map.get("avg_transaction_value_icp").unwrap_or(&0.0);
+    features.tokens_actively_used = *features_map.get("tokens_actively_used").unwrap_or(&0.0) as u32;
+    features.primary_token_dominance = *features_map.get("primary_token_dominance").unwrap_or(&0.0);
+    features.transaction_span_days = *features_map.get("transaction_span_days").unwrap_or(&0.0);
+    features.avg_time_between_txs_hours = *features_map.get("avg_time_between_txs_hours").unwrap_or(&0.0);
+    features.transaction_frequency_score = *features_map.get("transaction_frequency_score").unwrap_or(&0.0);
+    features.send_receive_ratio = *features_map.get("send_receive_ratio").unwrap_or(&0.0);
+    features.value_sent_received_ratio_usd = *features_map.get("value_sent_received_ratio_usd").unwrap_or(&0.0);
+    features.mint_to_transfer_ratio = *features_map.get("mint_to_transfer_ratio").unwrap_or(&0.0);
+    features.defi_activity_score = *features_map.get("defi_activity_score").unwrap_or(&0.0);
+    features.round_number_transactions = *features_map.get("round_number_transactions").unwrap_or(&0.0) as u32;
+    features.high_value_transaction_ratio = *features_map.get("high_value_transaction_ratio").unwrap_or(&0.0);
+    features.microtransaction_ratio = *features_map.get("microtransaction_ratio").unwrap_or(&0.0);
+    features.icp_transfer = *features_map.get("icp_transfer").unwrap_or(&0.0) as u32;
+    features.icp_mint = *features_map.get("icp_mint").unwrap_or(&0.0) as u32;
+    features.icp_burn = *features_map.get("icp_burn").unwrap_or(&0.0) as u32;
+    features.ckbtc_transfer = *features_map.get("ckbtc_transfer").unwrap_or(&0.0) as u32;
+    features.ckbtc_mint = *features_map.get("ckbtc_mint").unwrap_or(&0.0) as u32;
+    features.ckbtc_burn = *features_map.get("ckbtc_burn").unwrap_or(&0.0) as u32;
+    features.cketh_transfer = *features_map.get("cketh_transfer").unwrap_or(&0.0) as u32;
+    features.cketh_mint = *features_map.get("cketh_mint").unwrap_or(&0.0) as u32;
+    features.cketh_burn = *features_map.get("cketh_burn").unwrap_or(&0.0) as u32;
+    features.ckusdc_transfer = *features_map.get("ckusdc_transfer").unwrap_or(&0.0) as u32;
+    features.ckusdc_mint = *features_map.get("ckusdc_mint").unwrap_or(&0.0) as u32;
+    features.ckusdc_burn = *features_map.get("ckusdc_burn").unwrap_or(&0.0) as u32;
+    features.user_type = features_map.get("user_type").map(|s| s.to_string()).unwrap_or_default();
+    
+    // Clean up any invalid values
+    preprocess_features_for_inference(&mut features);
+    
+    features
 }

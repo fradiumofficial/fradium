@@ -1,14 +1,7 @@
 // src/ai/src/icp/prediction.rs
 
-use candid::{CandidType, Deserialize, Principal};
-use ic_cdk::api::management_canister::http_request::{
-    http_request, CanisterHttpRequestArgument, HttpHeader, HttpMethod,
-};
-use serde::{Deserialize as SerdeDeserialize, Serialize};
-use sha2::{Digest, Sha224};
+use candid::Deserialize;
 use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
-use super::models::{PriceData, TokenConfig, TransactionData};
 use tract_onnx::prelude::*;
 use tract_core::ndarray;
 use super::config;
@@ -94,16 +87,6 @@ fn features_to_vector(features: &UserFeatures) -> Result<Vec<f32>, String> {
     ])
 }
 
-fn get_cluster_interpretation(cluster_id: i32) -> String {
-    match cluster_id {
-        0 => "Inactive/Low Activity User".to_string(),
-        1 => "Regular User".to_string(),
-        2 => "Active Multi-Token User".to_string(),
-        3 => "High-Value Investor".to_string(),
-        4 => "DeFi Power User".to_string(),
-        _ => "Unknown Cluster".to_string(),
-    }
-}
 
 // --- Prediction Logic ---
 pub fn predict(features: &UserFeatures) -> Result<PredictionResult, String> {

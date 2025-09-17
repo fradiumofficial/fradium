@@ -111,7 +111,7 @@ export default function AnalyzeLoadingModal({ isOpen, onCancel }) {
           </div>
 
           {/* Cancel Button */}
-          <ButtonGreen size="sm" className="w-full h-10 !bg-red-600 hover:!bg-red-700 active:!bg-red-800 !border-red-600 hover:!border-red-700 active:!border-red-800 !from-red-600 !to-red-700 hover:!from-red-700 hover:!to-red-800 active:!from-red-800 active:!to-red-900 !transition-all !duration-200 !ease-out" textSize="text-sm" fontWeight="medium" textClassName="!text-white hover:!text-red-50" onClick={onCancel}>
+          <ButtonGreen size="sm" className="mt-4 w-full h-10 !bg-red-600 hover:!bg-red-700 active:!bg-red-800 !border-red-600 hover:!border-red-700 active:!border-red-800 !from-red-600 !to-red-700 hover:!from-red-700 hover:!to-red-800 active:!from-red-800 active:!to-red-900 !transition-all !duration-200 !ease-out" textSize="text-sm" fontWeight="medium" textClassName="!text-white hover:!text-red-50" onClick={onCancel}>
             Cancel Analysis
           </ButtonGreen>
         </div>

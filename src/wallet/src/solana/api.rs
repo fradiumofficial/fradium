@@ -16,7 +16,7 @@ pub async fn solana_address() -> String {
 #[ic_cdk::update]
 pub async fn solana_balance() -> Nat {
 	// Hardcoded return for testing: 2.3 SOL = 2,300,000,000 lamports
-	return Nat::from(2300000000u64);
+	// return Nat::from(2300000000u64);
 
 	let owner = validate_caller_not_anonymous();
 	let wallet = SolanaWallet::new(owner).await;

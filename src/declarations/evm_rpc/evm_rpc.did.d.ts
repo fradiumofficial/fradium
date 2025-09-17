@@ -132,6 +132,7 @@ export type LogFilter = { 'ShowAll' : null } |
   { 'HidePattern' : Regex };
 export interface Metrics {
   'responses' : Array<[[string, string, string], bigint]>,
+  'errMaxResponseSizeExceeded' : Array<[[string, string], bigint]>,
   'inconsistentResponses' : Array<[[string, string], bigint]>,
   'cyclesCharged' : Array<[[string, string], bigint]>,
   'requests' : Array<[[string, string], bigint]>,

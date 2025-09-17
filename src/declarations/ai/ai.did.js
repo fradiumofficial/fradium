@@ -11,16 +11,6 @@ export const idlFactory = ({ IDL }) => {
     'ransomware_probability' : IDL.Float64,
   });
   const Result = IDL.Variant({ 'Ok' : RansomwareResult, 'Err' : IDL.Text });
-  const HttpHeader = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
-  const HttpResponse = IDL.Record({
-    'status' : IDL.Nat,
-    'body' : IDL.Vec(IDL.Nat8),
-    'headers' : IDL.Vec(HttpHeader),
-  });
-  const TransformArgs = IDL.Record({
-    'context' : IDL.Vec(IDL.Nat8),
-    'response' : HttpResponse,
-  });
   return IDL.Service({
     'analyze_btc_address' : IDL.Func(
         [IDL.Vec(IDL.Float32), IDL.Text, IDL.Nat32],
@@ -32,13 +22,17 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
-    'analyze_sol_address' : IDL.Func([IDL.Text], [Result], []),
-    'transform' : IDL.Func([TransformArgs], [HttpResponse], ['query']),
-    'transform_helius_response' : IDL.Func(
-        [TransformArgs],
-        [HttpResponse],
-        ['query'],
+    'analyze_icp_address' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64)), IDL.Text, IDL.Nat32],
+        [Result],
+        [],
       ),
+    'analyze_sol_address' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64)), IDL.Text, IDL.Nat32],
+        [Result],
+        [],
+      ),
+    'get_icp_api_health' : IDL.Func([], [IDL.Text], ['query']),
   });
 };
 export const init = ({ IDL }) => { return []; };

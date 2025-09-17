@@ -768,7 +768,6 @@ pub async fn get_all_transactions(principal: Principal) -> Vec<TransactionData> 
 
 // --- API Health Status Functions ---
 pub fn get_api_health_report() -> String {
-    let healthy_apis = get_healthy_apis();
     let mut report = Vec::new();
     
     API_HEALTH.with(|health| {
@@ -786,8 +785,4 @@ pub fn get_api_health_report() -> String {
     });
     
     format!("API Health Status:\n{}", report.join("\n"))
-}
-
-pub fn all_apis_failed() -> bool {
-    get_healthy_apis().is_empty()
 }

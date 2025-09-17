@@ -1,0 +1,34 @@
+export const idlFactory = ({ IDL }) => {
+  const RansomwareResult = IDL.Record({
+    'transactions_analyzed' : IDL.Nat32,
+    'threshold_used' : IDL.Float64,
+    'data_source' : IDL.Text,
+    'is_ransomware' : IDL.Bool,
+    'address' : IDL.Text,
+    'chain_type' : IDL.Text,
+    'confidence' : IDL.Float64,
+    'confidence_level' : IDL.Text,
+    'ransomware_probability' : IDL.Float64,
+  });
+  const Result = IDL.Variant({ 'Ok' : RansomwareResult, 'Err' : IDL.Text });
+  return IDL.Service({
+    'analyze_btc_address' : IDL.Func(
+        [IDL.Vec(IDL.Float32), IDL.Text, IDL.Nat32],
+        [Result],
+        [],
+      ),
+    'analyze_eth_address' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64)), IDL.Text, IDL.Nat32],
+        [Result],
+        [],
+      ),
+    'analyze_icp_address' : IDL.Func([IDL.Text], [Result], []),
+    'analyze_sol_address' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64)), IDL.Text, IDL.Nat32],
+        [Result],
+        [],
+      ),
+    'get_icp_api_health' : IDL.Func([], [IDL.Text], ['query']),
+  });
+};
+export const init = ({ IDL }) => { return []; };

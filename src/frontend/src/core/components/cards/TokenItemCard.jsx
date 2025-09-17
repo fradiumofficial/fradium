@@ -13,7 +13,7 @@ const TokenItemCard = ({ token, onClick, balance, isLoading, hasError, usdPrice,
   const networkIcon = getNetworkIcon(token.chain);
 
   // Calculate USD value
-  const usdValue = balance && usdPrice && !isLoading && !usdPriceLoading ? (parseFloat(balance) * usdPrice).toFixed(2) : "0.00";
+  const usdValue = balance && usdPrice && !isLoading && !usdPriceLoading && !hasError && !usdPriceError ? (parseFloat(balance) * usdPrice).toFixed(2) : "0.00";
 
   return (
     <motion.div className="group relative flex items-center md:px-2 px-1 md:py-4 py-2 md:gap-4 gap-2 cursor-pointer rounded-lg overflow-hidden hover:bg-white/5 transition-colors duration-200" onClick={() => onClick && onClick(token)} initial={{ y: 0 }} transition={{ type: "spring", stiffness: 320, damping: 24, mass: 0.6 }}>
@@ -36,8 +36,8 @@ const TokenItemCard = ({ token, onClick, balance, isLoading, hasError, usdPrice,
         <div className="text-[#B0B6BE] md:text-sm text-xs truncate">{token.chain}</div>
       </div>
       <div className="flex flex-col items-end gap-2">
-        {isLoading ? <BalanceRowSkeleton /> : hasError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-white font-medium md:text-base text-sm">{hideBalance ? "••••" : formatAmount(balance)}</span>}
-        {usdPriceLoading ? <USDRowSkeleton /> : usdPriceError ? <span className="text-red-400 md:text-sm text-xs">Error</span> : <span className="text-[#B0B6BE] md:text-sm text-xs">{hideBalance ? "••••" : `$${usdValue}`}</span>}
+        {isLoading ? <BalanceRowSkeleton /> : hasError ? <span className="text-red-400 md:text-sm text-xs font-medium">Error</span> : <span className="text-white font-medium md:text-base text-sm">{hideBalance ? "••••" : formatAmount(balance)}</span>}
+        {usdPriceLoading ? <USDRowSkeleton /> : usdPriceError ? <span className="text-red-400 md:text-sm text-xs font-medium">Error</span> : <span className="text-[#B0B6BE] md:text-sm text-xs">{hideBalance ? "••••" : `$${usdValue}`}</span>}
       </div>
     </motion.div>
   );

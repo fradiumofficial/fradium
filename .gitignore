@@ -40,3 +40,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Bitcoind
+bitcoin_data/*
+
+# Pocket IC
+.venv/
+pocket-ic

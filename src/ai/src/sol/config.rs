@@ -1,13 +1,3 @@
-// src/solana/config.rs
-
-
-
-
-pub const MAX_RETRIES: u32 = 3;
-pub const HELIUS_MAX_RECORDS: usize = 1000;
-pub const MAX_TRANSACTIONS_PER_ADDRESS: usize = 50000;
-
-
 pub const MODEL_BYTES: &[u8] = include_bytes!("../../models/sol_risk_model_mlp.onnx");
 
 pub const SCALER_PARAMS_JSON: &str = r#"
@@ -397,89 +387,7 @@ pub const MODEL_METADATA_JSON: &str = r#"
 }
 "#;
 
-// Comprehensive Solana program addresses for filtering
-pub const COMPREHENSIVE_PROGRAM_ADDRESSES: &[&str] = &[
-    // System Programs
-    "11111111111111111111111111111112",  // System Program
-    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",  // Token Program
-    "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",  // Token Program 2022
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",  // Associated Token Program
-    
-    // DEXs
-    "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",  // Raydium AMM
-    "CAMMCzo5YL8w4VFF8KVHrK22GGUQpMDdHwMBSPBy4kD",   // Raydium CLMM
-    "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",  // Orca
-    "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",   // Orca Whirlpools
-    "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",   // Jupiter V6
-    "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB",   // Jupiter V4
-    "DjVE6JNiYqPL2QXyCUUh8rNjHrbz9hXHNYt99MQ59qw1",  // Orca V1
-    "EhYXq3ANp5nAerUpbSgd7VK2RRcxK1zNuSQ755G5Mtc1",   // Orca V2
-    
-    // Serum DEX
-    "EUqojwWA2rd19FZrzeBncJsm38Jm1hEhE3zsmX3bRc2o",   // Serum DEX
-    "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",   // Serum DEX V3
-    "BJ3jrUzddfuSrZHXSCxMbUE2yoHqpiUWyypURhoxiFwZ",   // Serum DEX V2
-    
-    // Lending Protocols
-    "So1endDq2YkqhipRh3WViPa8hdiSpxWy6z3Z6tMCpAo",   // Solend
-    "4MangoMjqJ2firMokCjjGgoK8d4MXcrgL7XJaL3w6fVg",   // Mango V3
-    "mv3ekLzLbnVPNxjSKvqBpU3ZeZXPQdEC3bp5MDEBG68",    // Mango V4
-    "LendZqTs7gn5CTSJU1jWKhKuVpjg9avMpS7FgG7V4CJ",   // Port Finance
-    "FC81tbGt6JWRXidaWYFXxGnTk2VgEYrLR9c2YLGgCu8z",   // Francium
-    
-    // Staking Programs
-    "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD",   // Marinade Finance
-    "StakeSSzfxn391k3LvdKbZP5WVwWd6AsY39qcgwy7f3J",   // Native Staking
-    "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",   // JitoSOL
-    "SP12tWFxD9oJsVWNavTTBZvMbA6gkAmxtVgxdqvyvhY",    // Stake Pool Program
-    
-    // Cross-chain Bridges
-    "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth",   // Wormhole
-    "wormDTUJ6AWPNvk59vGQbDvGJmqbDTdgWgAqcLBCgUb",    // Wormhole Token Bridge
-    "HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ",   // Wormhole NFT Bridge
-    
-    // NFT Marketplaces
-    "CJsLwbP1iu5DuUikHEJnLfANgKy6stB2uFgvBBHoyxwz",   // Solanart
-    "hausS13jsjafwWwGqZTUQRmWyvyxn9EQpqMwV1PBBmk",    // Metaplex Auction House
-    "M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K",    // Magic Eden V1
-    
-    // Other DeFi
-    "CLMM9tUoggJu2wagPkkqs9eFG4BWhVBZWkP1qv3Sp7tR",   // Lifinity
-    "SSwpkEEcbUqx4vtoEByFjSkhKdCT862DNVb52nZg1UZ",    // Saber
-    
-    // Oracle
-    "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH",    // Pyth Oracle
-    "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s",     // Pyth Program
-    
-    // Governance
-    "Gov1BBdCNNqVD39vdFm93vVEwX7xEYqR3AwKbyKPP4",      // SPL Governance
-    "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw",     // Realms Governance
-];
 
 
 
 
-
-// API configurations - REPLACE WITH YOUR API KEYS
-pub const HELIUS_API_KEY: &str = "2924b86e-5cf9-4952-b335-fb4efea7eb6d";
-
-
-// DEX, Lending, and Staking program sets for transaction classification
-pub const DEX_PROGRAMS: &[&str] = &[
-    "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",  // Raydium
-    "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",  // Orca
-    "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",   // Jupiter
-    "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",   // Orca Whirlpools
-];
-
-pub const LENDING_PROGRAMS: &[&str] = &[
-    "So1endDq2YkqhipRh3WViPa8hdiSpxWy6z3Z6tMCpAo",   // Solend
-    "4MangoMjqJ2firMokCjjGgoK8d4MXcrgL7XJaL3w6fVg",   // Mango
-    "LendZqTs7gn5CTSJU1jWKhKuVpjg9avMpS7FgG7V4CJ",   // Port Finance
-];
-
-pub const STAKING_PROGRAMS: &[&str] = &[
-    "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD",   // Marinade
-    "StakeSSzfxn391k3LvdKbZP5WVwWd6AsY39qcgwy7f3J",   // Native Staking
-    "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",   // JitoSOL
-];

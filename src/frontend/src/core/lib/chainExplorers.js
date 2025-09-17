@@ -194,6 +194,26 @@ export const CHAIN_EXPLORERS = {
     baseUrl: "https://dashboard.internetcomputer.org/account/",
     icon: "🟠",
   },
+  internet_computer: {
+    name: "IC Dashboard",
+    baseUrl: "https://dashboard.internetcomputer.org/account/",
+    icon: "🟠",
+  },
+  fradium: {
+    name: "IC Dashboard",
+    baseUrl: "https://dashboard.internetcomputer.org/account/",
+    icon: "🟠",
+  },
+  fadm: {
+    name: "IC Dashboard",
+    baseUrl: "https://dashboard.internetcomputer.org/account/",
+    icon: "🟠",
+  },
+  ckbtc: {
+    name: "IC Dashboard",
+    baseUrl: "https://dashboard.internetcomputer.org/account/",
+    icon: "🟠",
+  },
 
   // Aptos
   aptos: {
@@ -660,6 +680,10 @@ export function getChainExplorer(chainName) {
     xtz: "tezos",
     near: "near",
     icp: "icp",
+    internet_computer: "internet_computer",
+    fradium: "fradium",
+    fadm: "fadm",
+    ckbtc: "ckbtc",
     apt: "aptos",
     sui: "sui",
     trx: "tron",

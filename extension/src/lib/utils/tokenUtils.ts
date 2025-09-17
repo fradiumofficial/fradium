@@ -4,6 +4,7 @@ export const TokenType = Object.freeze({
   BITCOIN: "Bitcoin",
   ETHEREUM: "Ethereum", 
   SOLANA: "Solana",
+  ICP: "ICP",
   FUM: "Fradium",
   UNKNOWN: "Unknown",
 });
@@ -49,6 +50,20 @@ export const TOKENS_CONFIG = {
       base: "lamport",
       display: "SOL",
       factor: 1000000000,
+    },
+  },
+  [TokenType.ICP]: {
+    id: "icp",
+    name: "ICP",
+    symbol: "Internet Computer",
+    displayName: "Internet Computer",
+    description: "ICP • Internet Computer",
+    icon: CDN.tokens.icp,
+    decimals: 8,
+    unitConversion: {
+      base: "e8s",
+      display: "ICP",
+      factor: 100000000,
     },
   },
   [TokenType.FUM]: {
@@ -154,16 +169,25 @@ function capitalize(s: string) {
 }
 
 export function getTokenImageURL(chain: string) {
-  switch (capitalize(chain)) {
-    case TokenType.ETHEREUM:
+  if (!chain) return CDN.tokens.unknown;
+
+  const normalizedChain = chain.toLowerCase();
+
+  switch (normalizedChain) {
+    case 'ethereum':
       return CDN.tokens.eth;
-    case TokenType.BITCOIN:
+    case 'bitcoin':
       return CDN.tokens.bitcoin;
-    case TokenType.SOLANA:
+    case 'solana':
       return CDN.tokens.solana;
-    case TokenType.FUM:
+    case 'internet computer':
+    case 'icp':
+      return CDN.tokens.icp;
+    case 'fradium':
+    case 'fum':
       return CDN.tokens.fum;
     default:
+      console.warn(`Unknown token type for icon: "${chain}" (normalized: "${normalizedChain}"), falling back to unknown icon`);
       return CDN.tokens.unknown;
   }
 }

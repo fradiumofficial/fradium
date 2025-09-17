@@ -1,0 +1,8 @@
+type Result = 
+ variant {
+   Err: text;
+   Ok: text;
+ };
+service : {
+  ask: (prompt: text) -> (Result);
+}

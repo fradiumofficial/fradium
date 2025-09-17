@@ -1,47 +1,38 @@
-import ProfileHeader from "~components/header";
 import { Search, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
-
-type ScanHistoryItem = {
-  id: string;
-  address: string;
-  tokenType: string;
-  isSafe: boolean;
-  source: "ai" | "community";
-  date: string;
-};
 import { useState, useEffect } from "react";
 import { CDN } from "~lib/constant/cdn";
+import { getTokenImageURL } from "~lib/utils/tokenUtils";
+import LocalStorageService, { type LocalAnalysisHistory } from "~service/localStorageService";
 
 function ScanHistory() {
   const navigate = useNavigate();
-  const [scanItems, setScanItems] = useState<ScanHistoryItem[]>([]);
+  const [scanItems, setScanItems] = useState<LocalAnalysisHistory[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredItems, setFilteredItems] = useState<ScanHistoryItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<LocalAnalysisHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load scan history on component mount
   useEffect(() => {
-    // Dummy data fallback
-    const dummy: ScanHistoryItem[] = [
-      {
-        id: "scan_1",
-        address: "0x1234567890abcdef1234567890abcdef12345678",
-        tokenType: "Ethereum",
-        isSafe: true,
-        source: "ai",
-        date: new Date(Date.now() - 1000 * 60 * 10).toLocaleString(),
-      },
-      {
-        id: "scan_2",
-        address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-        tokenType: "Bitcoin",
-        isSafe: false,
-        source: "community",
-        date: new Date(Date.now() - 1000 * 60 * 60).toLocaleString(),
-      },
-    ];
-    setScanItems(dummy);
+    const loadHistory = () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const history = LocalStorageService.getHistory();
+        setScanItems(history);
+      } catch (err) {
+        console.error("Error loading scan history:", err);
+        setError("Failed to load scan history");
+        setScanItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadHistory();
   }, []);
 
   // Filter items based on search term
@@ -49,11 +40,7 @@ function ScanHistory() {
     if (searchTerm.trim() === "") {
       setFilteredItems(scanItems);
     } else {
-      const filtered = scanItems.filter(
-        (item) =>
-          item.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.tokenType.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const filtered = LocalStorageService.searchHistory(searchTerm);
       setFilteredItems(filtered);
     }
   }, [scanItems, searchTerm]);
@@ -64,16 +51,35 @@ function ScanHistory() {
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
+  // Format date in custom format: DD/MM/YY, HH.MM
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear().toString().slice(-2); // Last 2 digits of year
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+
+      return `${day}/${month}/${year}, ${hours}.${minutes}`;
+    } catch (error) {
+      // Fallback if date parsing fails
+      return 'Invalid Date';
+    }
+  };
+
   // Get subtitle based on analysis result
-  const getSubtitle = (item: ScanHistoryItem) => {
+  const getSubtitle = (item: LocalAnalysisHistory) => {
     const riskStatus = item.isSafe ? "Safe" : "Risk Detected";
-    const source = item.source === "ai" ? "AI" : "Community";
-    return `${riskStatus} - ${source}`;
+    const source = item.source === "ai" ? "AI" :
+                  item.source === "ai_and_community" ? "AI + Community" : "Community";
+    const status = item.status === "completed" ? "" : `(${item.status})`;
+    return `${riskStatus} - ${source} ${status}`.trim();
   };
 
   // Handle item click to navigate to detail
-  const handleItemClick = (item: ScanHistoryItem) => {
-    console.log('HIAHSIDHAISDhi',item);
+  const handleItemClick = (item: LocalAnalysisHistory) => {
+    console.log('Analysis item clicked:', item);
     navigate(ROUTES.DETAIL_HISTORY.replace(":id", item.id));
   };
 
@@ -81,10 +87,8 @@ function ScanHistory() {
 
   return (
     <div
-      className={`w-[375px] h-[600px] bg-[#25262B] text-white pb-20 flex flex-col`}
+      className={`w-[375px] space-y-4 text-white shadow-md overflow-y-auto`}
     >
-      <ProfileHeader />
-
       {/* Content wrapper fills remaining height */}
       <div
         className={`relative flex-1 ${
@@ -116,7 +120,7 @@ function ScanHistory() {
               <Search className="w-5 h-5 mr-2 text-white/60" />
               <input
                 type="text"
-                placeholder="Search by token"
+                placeholder="Search by token or address"
                 className="bg-transparent outline-none placeholder:text-white/60 w-full text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,7 +136,34 @@ function ScanHistory() {
 
           {/* List or Empty State area fills remaining height */}
           <div className="relative flex-1 mt-6">
-            {SHOW_EMPTY ? (
+            {isLoading ? (
+              <div className="relative z-10 w-full h-full flex items-center justify-center text-center">
+                <div>
+                  <div className="text-[16px] font-medium mb-2">Loading history...</div>
+                  <div className="text-white/60 text-[14px]">Please wait while we fetch your scan history</div>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="relative z-10 w-full h-full flex items-center justify-center text-center">
+                <div>
+                  <img
+                    src={CDN.icons.empty}
+                    alt="error"
+                    className="w-16 h-16 mb-6 mx-auto"
+                  />
+                  <div className="text-[18px] font-medium mb-2">Error loading history</div>
+                  <div className="text-red-400 text-[14px] font-normal leading-relaxed max-w-[320px] mx-auto mb-4">
+                    {error}
+                  </div>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="bg-[#3A3B41] text-white px-4 py-2 rounded-md text-sm hover:bg-[#4A4B51] transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            ) : SHOW_EMPTY ? (
               <>
                 <div className="relative z-10 w-full h-full flex items-center justify-center text-center">
                   <div>
@@ -162,12 +193,11 @@ function ScanHistory() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center">
                         <img
-                          src={`/assets/tokens/${item.tokenType.toLowerCase()}.svg`}
+                          src={getTokenImageURL(item.tokenType)}
                           alt={item.tokenType}
                           className="w-10 h-10 rounded-full"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "/assets/images/default-token.png";
+                            (e.target as HTMLImageElement).src = CDN.tokens.unknown
                           }}
                         />
                         <div className="ml-3">
@@ -176,7 +206,11 @@ function ScanHistory() {
                           </div>
                           <div
                             className={`text-[12px] mt-1 ${
-                              item.isSafe ? "text-green-400" : "text-red-400"
+                              item.status === "in_progress"
+                                ? "text-yellow-400"
+                                : item.isSafe
+                                  ? "text-green-400"
+                                  : "text-red-400"
                             }`}
                           >
                             {getSubtitle(item)}
@@ -184,7 +218,7 @@ function ScanHistory() {
                         </div>
                       </div>
                       <div className="text-white/60 text-[14px] mt-1">
-                        {item.date}
+                        {formatDate(item.date)}
                       </div>
                     </div>
                     <div className="mt-4 h-px w-full bg-white/10" />

@@ -3,9 +3,10 @@ import { useAuth } from "./AuthProvider";
 
 // Wallet declarations
 import { wallet } from "declarations/wallet";
+import { ckbtc_minter } from "declarations/ckbtc_minter";
 
 // Token utilities
-import { TOKENS_CONFIG, getBalance, getUSD, getUSDPrices } from "@/core/lib/tokenUtils";
+import { TOKENS_CONFIG, getBalance, getUSD, getUSDPrices, clearBalanceCache } from "@/core/lib/tokenUtils";
 
 // Create context for wallet data
 const WalletContext = createContext();
@@ -32,20 +33,20 @@ export const WalletProvider = ({ children }) => {
     Bitcoin: true,
     Ethereum: true,
     Solana: true,
-    Fradium: true,
+    "Internet Computer": true,
   });
 
-  // Address states for receive modal
+  // Address states for receive modal (simple)
   const [addresses, setAddresses] = useState({
     bitcoin: "",
     ethereum: "",
     solana: "",
     icp_principal: "",
     icp_account: "",
+    ckbtc: "",
   });
   const [addressesLoading, setAddressesLoading] = useState(false);
-  const [addressesLoaded, setAddressesLoaded] = useState(false);
-  const [hasLoadedAddressesOnce, setHasLoadedAddressesOnce] = useState(false);
+  const [addressesReady, setAddressesReady] = useState(false);
 
   // Balance states
   const [balances, setBalances] = useState({});
@@ -59,15 +60,56 @@ export const WalletProvider = ({ children }) => {
   const [usdPriceErrors, setUsdPriceErrors] = useState({});
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
 
-  // Memoize user principal string to prevent unnecessary re-renders
+  // Memoize user principal string (robust: coba dari identity lalu user.identity)
   const userPrincipalString = useMemo(() => {
-    return user?.identity?.getPrincipal()?.toString();
-  }, [user?.identity]);
+    try {
+      const principal = (typeof identity?.getPrincipal === "function" ? identity.getPrincipal() : null) || (typeof user?.identity?.getPrincipal === "function" ? user.identity.getPrincipal() : null);
+      return principal?.toString() || null;
+    } catch (_e) {
+      return null;
+    }
+  }, [identity, user]);
 
   // Function to get localStorage key for user's network filters
   const getNetworkFiltersKey = useCallback(() => {
     return userPrincipalString ? `networkFilters_${userPrincipalString}` : "networkFilters_default";
   }, [userPrincipalString]);
+
+  // Function to get localStorage key for user's wallet addresses
+  const getAddressesKey = useCallback(() => {
+    if (!userPrincipalString) {
+      throw new Error("Principal ID is required for wallet addresses cache");
+    }
+    return `walletAddresses_${userPrincipalString}`;
+  }, [userPrincipalString]);
+
+  // Function to save wallet addresses to localStorage
+  const saveAddressesToStorage = useCallback(
+    (addresses) => {
+      const key = getAddressesKey();
+      try {
+        localStorage.setItem(key, JSON.stringify(addresses));
+      } catch (error) {
+        console.error("Error saving wallet addresses to localStorage:", error);
+      }
+    },
+    [getAddressesKey, userPrincipalString]
+  );
+
+  // Function to load wallet addresses from localStorage
+  const loadAddressesFromStorage = useCallback(() => {
+    const key = getAddressesKey();
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsedAddresses = JSON.parse(saved);
+        return parsedAddresses;
+      }
+    } catch (error) {
+      console.error("Error loading wallet addresses from localStorage:", error);
+    }
+    return null;
+  }, [getAddressesKey, userPrincipalString]);
 
   // Function to save network filters to localStorage
   const saveNetworkFilters = useCallback(
@@ -192,64 +234,112 @@ export const WalletProvider = ({ children }) => {
 
   // Network values are now calculated dynamically from balances and USD prices
 
-  // Function to fetch wallet addresses
+  // Simple fetch addresses:
+  // 1) Cek localStorage by principal -> pakai jika ada
+  // 2) Jika tidak ada -> fetch dari wallet.wallet_addresses
+  // 3) Tambahkan ckBTC deposit BTC address dari ckbtc_minter.get_btc_address (parallel)
+  // 4) Simpan ke localStorage
   const fetchAddresses = useCallback(async () => {
-    if (!wallet || addressesLoaded) return;
+    if (!wallet || !userPrincipalString) {
+      return;
+    }
 
     try {
       setAddressesLoading(true);
+
+      const cached = loadAddressesFromStorage();
+      // Jika cache lama belum memiliki ckbtc_btc_address, jangan cache hit (lanjut fetch baru)
+      if (cached && typeof cached.ckbtc === "string" && cached.ckbtc) {
+        setAddresses(cached);
+        setAddressesReady(true);
+        return;
+      }
+
       const result = await wallet.wallet_addresses();
 
+      // Jalankan fetch ckBTC BTC deposit address secara parallel
+      // Hanya jika principal tersedia
+      const principal = identity?.getPrincipal();
+      const promises = [];
+
+      // ckBTC BTC address promise
+      let ckbtcBtcAddress = "";
+      if (principal && ckbtc_minter && typeof ckbtc_minter.get_btc_address === "function") {
+        const ckbtcPromise = ckbtc_minter
+          .get_btc_address({ owner: [principal], subaccount: [] })
+          .then((addr) => (typeof addr === "string" ? addr : ""))
+          .catch((_e) => "");
+        promises.push(ckbtcPromise);
+      }
+
+      // Tunggu semua promise parallel (saat ini hanya ckBTC, mudah ditambah kedepan)
+      const results = await Promise.all(promises);
+      if (results.length > 0) {
+        ckbtcBtcAddress = results[0] || "";
+      }
+
       const newAddresses = {
-        bitcoin: result.bitcoin,
-        ethereum: result.ethereum,
-        solana: result.solana,
-        icp_principal: result.icp_principal,
-        icp_account: result.icp_account,
+        bitcoin: result?.bitcoin || "",
+        ethereum: result?.ethereum || "",
+        solana: result?.solana || "",
+        icp_principal: result?.icp_principal || "",
+        icp_account: result?.icp_account || "",
+        ckbtc: ckbtcBtcAddress,
       };
 
+      saveAddressesToStorage(newAddresses);
       setAddresses(newAddresses);
-      setAddressesLoaded(true);
-      setHasLoadedAddressesOnce(true);
+      setAddressesReady(true);
     } catch (error) {
       console.error("Error fetching addresses:", error);
+      // Jangan set fallback kosong; biarkan addressesReady tetap false agar UI menunggu/menampilkan error
     } finally {
       setAddressesLoading(false);
     }
-  }, [addressesLoaded]);
+  }, [wallet, userPrincipalString, loadAddressesFromStorage, saveAddressesToStorage, identity]);
 
-  // Function to get loading state for addresses
+  // Function to get loading state for addresses (simple)
   const getAddressesLoadingState = useCallback(() => {
-    return addressesLoading && !hasLoadedAddressesOnce;
-  }, [addressesLoading, hasLoadedAddressesOnce]);
+    return !userPrincipalString || addressesLoading || !addressesReady;
+  }, [userPrincipalString, addressesLoading, addressesReady]);
 
   // Function to fetch balance for a specific token
-  const fetchTokenBalance = useCallback(async (token) => {
-    if (token.type !== "native") return; // Skip non-native tokens for now
+  const fetchTokenBalance = useCallback(
+    async (token, useCache = true) => {
+      setBalanceLoading((prev) => ({ ...prev, [token.id]: true }));
+      setBalanceErrors((prev) => ({ ...prev, [token.id]: null }));
 
-    setBalanceLoading((prev) => ({ ...prev, [token.id]: true }));
-    setBalanceErrors((prev) => ({ ...prev, [token.id]: null }));
+      try {
+        // Get principal from Internet Identity
+        const principal = identity?.getPrincipal();
 
-    try {
-      const balance = await getBalance(token.id);
-      const formattedBalance = (Number(balance) / Math.pow(10, token.decimals)).toFixed(6);
+        const balance = await getBalance(token.id, principal, useCache);
 
-      setBalances((prev) => ({ ...prev, [token.id]: formattedBalance }));
-    } catch (error) {
-      console.error(`Error fetching balance for ${token.symbol}:`, error);
-      setBalanceErrors((prev) => ({ ...prev, [token.id]: error.message }));
-      setBalances((prev) => ({ ...prev, [token.id]: "0.000000" }));
-    } finally {
-      setBalanceLoading((prev) => ({ ...prev, [token.id]: false }));
-    }
-  }, []);
+        // For ICRC tokens, balance is already converted to proper units in getBalance
+        // For native tokens, we need to convert from smallest unit
+        let formattedBalance;
+        if (token.type === "icrc") {
+          formattedBalance = Number(balance).toFixed(6);
+        } else {
+          formattedBalance = (Number(balance) / Math.pow(10, token.decimals)).toFixed(6);
+        }
+
+        setBalances((prev) => ({ ...prev, [token.id]: formattedBalance }));
+      } catch (error) {
+        console.error(`Error fetching balance for ${token.symbol}:`, error);
+        setBalanceErrors((prev) => ({ ...prev, [token.id]: error.message || "Failed to fetch balance" }));
+        setBalances((prev) => ({ ...prev, [token.id]: "0.000000" }));
+      } finally {
+        setBalanceLoading((prev) => ({ ...prev, [token.id]: false }));
+      }
+    },
+    [identity]
+  );
 
   // Function to fetch all balances
   const fetchAllBalances = useCallback(async () => {
-    const nativeTokens = TOKENS_CONFIG.filter((token) => token.type === "native");
-
-    // Load all balances in parallel
-    await Promise.all(nativeTokens.map((token) => fetchTokenBalance(token)));
+    // Load all token balances in parallel (both native and ICRC tokens)
+    await Promise.all(TOKENS_CONFIG.map((token) => fetchTokenBalance(token)));
   }, [fetchTokenBalance]);
 
   // Function to refresh all balances
@@ -257,18 +347,18 @@ export const WalletProvider = ({ children }) => {
     if (isRefreshingBalances) return; // Prevent multiple refresh calls
 
     setIsRefreshingBalances(true);
-    const nativeTokens = TOKENS_CONFIG.filter((token) => token.type === "native");
 
-    // Set all native tokens to loading state
+    // Set all tokens to loading state
     const loadingState = {};
-    nativeTokens.forEach((token) => {
+    TOKENS_CONFIG.forEach((token) => {
       loadingState[token.id] = true;
     });
     setBalanceLoading((prev) => ({ ...prev, ...loadingState }));
 
     try {
-      // Load all balances in parallel
-      await Promise.all(nativeTokens.map((token) => fetchTokenBalance(token)));
+      // Load all balances in parallel (both native and ICRC tokens)
+      // Use cache=false for refresh to ensure fresh data from blockchain
+      await Promise.all(TOKENS_CONFIG.map((token) => fetchTokenBalance(token, false)));
     } finally {
       setIsRefreshingBalances(false);
     }
@@ -284,7 +374,7 @@ export const WalletProvider = ({ children }) => {
       setUsdPrices((prev) => ({ ...prev, [tokenId]: price }));
     } catch (error) {
       console.error(`Error fetching USD price for token ${tokenId}:`, error);
-      setUsdPriceErrors((prev) => ({ ...prev, [tokenId]: error.message }));
+      setUsdPriceErrors((prev) => ({ ...prev, [tokenId]: error.message || "Failed to fetch price" }));
       setUsdPrices((prev) => ({ ...prev, [tokenId]: null }));
     } finally {
       setUsdPriceLoading((prev) => ({ ...prev, [tokenId]: false }));
@@ -314,6 +404,19 @@ export const WalletProvider = ({ children }) => {
     }
   }, [fetchTokenUSDPrice, isRefreshingPrices]);
 
+  // Function to clear balance cache manually
+  const clearBalanceCacheManual = useCallback(
+    async (tokenId = null) => {
+      try {
+        const principal = identity?.getPrincipal();
+        clearBalanceCache(principal, tokenId);
+      } catch (error) {
+        console.error("Error clearing balance cache manually:", error);
+      }
+    },
+    [identity]
+  );
+
   // useEffect for balance and price fetching - placed after function definitions
   useEffect(() => {
     if (identity) {
@@ -329,13 +432,55 @@ export const WalletProvider = ({ children }) => {
       setBalanceLoading({});
       setBalanceErrors({});
       setIsRefreshingBalances(false);
+
+      // Clear balance cache when user logs out
+      try {
+        clearBalanceCache(null); // Clear all balance cache
+      } catch (error) {
+        console.error("Error clearing balance cache on logout:", error);
+      }
       // Reset USD price states when user logs out
       setUsdPrices({});
       setUsdPriceLoading({});
       setUsdPriceErrors({});
       setIsRefreshingPrices(false);
+      // Reset address states when user logs out
+      setAddresses({
+        bitcoin: "",
+        ethereum: "",
+        solana: "",
+        icp_principal: "",
+        icp_account: "",
+        ckbtc: "",
+      });
+      setAddressesReady(false);
     }
   }, [identity, fetchAllBalances, fetchAddresses, fetchAllUSDPrices]);
+
+  // Clear addresses and balance cache when user changes (principal changes)
+  useEffect(() => {
+    if (userPrincipalString) {
+      // Clear any old cache when principal changes
+      const oldAddressKeys = Object.keys(localStorage).filter((key) => key.startsWith("walletAddresses_") && !key.includes(userPrincipalString));
+      oldAddressKeys.forEach((key) => {
+        try {
+          localStorage.removeItem(key);
+        } catch (error) {
+          console.error("Error clearing old cache:", error);
+        }
+      });
+
+      // Clear balance cache for old principals
+      try {
+        const oldBalanceKeys = Object.keys(localStorage).filter((key) => key.startsWith("balanceCache_") && !key.includes(userPrincipalString));
+        oldBalanceKeys.forEach((key) => {
+          localStorage.removeItem(key);
+        });
+      } catch (error) {
+        console.error("Error clearing old balance cache:", error);
+      }
+    }
+  }, [userPrincipalString]);
 
   // Helper function to add new address to existing wallet
 
@@ -395,8 +540,6 @@ export const WalletProvider = ({ children }) => {
       // Address related
       addresses,
       addressesLoading,
-      addressesLoaded,
-      hasLoadedAddressesOnce,
       fetchAddresses,
       getAddressesLoadingState,
       // Balance related
@@ -413,8 +556,10 @@ export const WalletProvider = ({ children }) => {
       isRefreshingPrices,
       fetchAllUSDPrices,
       refreshAllUSDPrices,
+      // Cache management
+      clearBalanceCacheManual,
     }),
-    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, calculateNetworkValue, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, addressesLoaded, hasLoadedAddressesOnce, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices]
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, calculateNetworkValue, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices, clearBalanceCacheManual]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;

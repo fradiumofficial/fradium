@@ -1,105 +1,124 @@
-import { SafetyCard } from "~components/custom-card";
-import ProfileHeader from "~components/header";
-import { Wallet } from "lucide-react";
-import NeoButton from "~components/custom-button";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { ROUTES } from "~lib/constant/routes";
-import type { AnalysisResult } from "~types/analyze_model.type";
+import { ArrowLeftIcon, Gauge } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+
+import { SafetyCard } from "~components/custom-card"
+import { CDN } from "~lib/constant/cdn"
+import { ROUTES } from "~lib/constant/routes"
+import LocalStorageService from "~service/localStorageService"
+import type { AnalysisResult } from "~types/analyze_model.type"
 
 function AnalyzeAdressResult() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const result = location.state?.result as AnalysisResult;
-  const address = location.state?.address as string;
+  const location = useLocation()
+  const navigate = useNavigate()
+  const result = location.state?.result as AnalysisResult
+  const address = location.state?.address as string
+  const sendContext = location.state?.sendContext as
+    | { amount?: string; selectedNetwork?: "btc" | "eth" | "sol" }
+    | undefined
 
   // Inisialisasi state dengan nilai yang benar langsung
   const [isAddressSafe, setIsAddressSafe] = useState<boolean>(() => {
-    return result?.isSafe === true;
-  });
+    return result?.isSafe === true
+  })
+
+  // Save analysis result to local storage when component mounts
+  useEffect(() => {
+    const saveToLocalStorage = () => {
+      if (result && address) {
+        try {
+          // Find the existing analysis (should be in progress)
+          const history = LocalStorageService.getHistory()
+          const existingAnalysis = history.find(
+            (item) => item.address === address && item.status === "in_progress"
+          )
+
+          if (existingAnalysis) {
+            // Update existing analysis with results
+            const updates = {
+              isSafe: result.isSafe,
+              source: result.source as "ai" | "community" | "ai_and_community",
+              status: "completed" as const,
+              date: new Date().toISOString(),
+              analysisResult: {
+                confidence: result.confidence,
+                riskLevel: result.riskLevel,
+                description: result.description,
+                source: result.source,
+                aiData: result.aiAnalysis,
+                communityData: result.communityData
+              }
+            }
+
+            LocalStorageService.updateAnalysis(existingAnalysis.id, updates)
+            console.log("Analysis result updated in local storage successfully")
+          } else {
+            // If no existing analysis found, create new one
+            const tokenType = LocalStorageService.detectTokenType(address)
+            LocalStorageService.saveAnalysis({
+              address,
+              tokenType,
+              isSafe: result.isSafe,
+              source: result.source as "ai" | "community" | "ai_and_community",
+              status: "completed",
+              date: new Date().toISOString(),
+              analysisResult: {
+                confidence: result.confidence,
+                riskLevel: result.riskLevel,
+                description: result.description,
+                source: result.source,
+                aiData: result.aiAnalysis,
+                communityData: result.communityData
+              }
+            })
+            console.log(
+              "New analysis result saved to local storage successfully"
+            )
+          }
+        } catch (error) {
+          console.error("Error saving analysis to local storage:", error)
+        }
+      }
+    }
+
+    saveToLocalStorage()
+  }, [result, address])
 
   // Use useEffect to update state if result changes
   useEffect(() => {
     if (result) {
-      setIsAddressSafe(result.isSafe === true);
+      setIsAddressSafe(result.isSafe === true)
     }
-  }, [result]);
-
-  // Function to calculate time ago from timestamp
-  const getTimeAgo = (timestamp: string) => {
-    const now = Date.now();
-    const timeDiff = now - Number(timestamp) / 1000000; // Convert nanoseconds to milliseconds
-    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-    if (days > 0) {
-      return `${days} day${days > 1 ? "s" : ""} ago`;
-    } else if (hours > 0) {
-      return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-    } else {
-      return "Just now";
-    }
-  };
-
-  // Function to calculate risk score based on votes
-  const calculateRiskScore = (votesYes: string, votesNo: string) => {
-    const totalVotes = Number(votesYes) + Number(votesNo);
-    if (totalVotes === 0) return "0/100";
-
-    const yesPercentage = (Number(votesYes) / totalVotes) * 100;
-    return `${Math.round(yesPercentage)}/100`;
-  };
+  }, [result])
 
   const getSecurityCheckItems = () => {
-    const isCommunitySource = result?.source === "community";
-    
+    const isCommunitySource = result?.source === "community"
+
     if (isAddressSafe) {
       return [
-        "No suspicious transaction patterns detected",
-        "Transaction volume within normal range",
-        "No connections to known malicious addresses",
+        "No suspicious transaction detected",
+        "Transaction is in normal range",
+        "No connections to malicious addresses",
         "Address activity appears legitimate"
-      ];
+      ]
     } else {
-      return isCommunitySource ? [
-        "Links to known scam addresses detected",
-        "Suspicious transaction pattern detected",
-        "Community flagged as unsafe",
-        "Exercise extreme caution"
-      ] : [
-        "Ransomware activity detected",
-        "Failed AI security analysis",
-        "High-risk transaction patterns",
-        "Exercise extreme caution"
-      ];
+      return isCommunitySource
+        ? [
+            "Links to known scam addresses detected",
+            "Suspicious transaction pattern detected",
+            "Community flagged as unsafe",
+            "Exercise extreme caution"
+          ]
+        : [
+            "Illicit activity detected",
+            "Failed AI security analysis",
+            "High-risk transaction patterns",
+            "Exercise extreme caution"
+          ]
     }
-  };
+  }
 
-  const checkItems = getSecurityCheckItems();
-
-  // Component for checkmark/warning icon (SVG)
-  const CheckIcon: React.FC = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      className={`w-5 h-5 ${isAddressSafe ? 'text-green-400' : 'text-red-400'}`}
-    >
-      {isAddressSafe ? (
-        <path
-          fillRule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-          clipRule="evenodd"
-        />
-      ) : (
-        <path
-          fillRule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-          clipRule="evenodd"
-        />
-      )}
-    </svg>
-  );
+  const checkItems = getSecurityCheckItems()
 
   // Guard clause to handle case when result is not available
   if (!result) {
@@ -107,197 +126,348 @@ function AnalyzeAdressResult() {
       <div className="w-[375px] h-[600px] bg-[#25262B] text-white flex items-center justify-center overflow-y-auto pb-20">
         <p>No analysis result found</p>
       </div>
-    );
+    )
   }
 
   // Convert confidence level to percentage for display
   const getConfidencePercentage = () => {
-    if (result.source === "ai" && result.aiData) {
-      return Math.round((result.aiData.confidence_level === "HIGH" ? 95 : result.aiData.confidence_level === "MEDIUM" ? 75 : 50));
-    } else if (result.source === "community" && result.communityData) {
-      // For community, calculate based on vote ratio
-      const report = result.communityData.report?.[0];
-      if (report) {
-        const totalVotes = Number(report.votes_yes) + Number(report.votes_no);
-        if (totalVotes > 0) {
-          return Math.round((Number(report.votes_yes) / totalVotes) * 100);
-        }
-      }
-      return 50; // Default for community
+    if (
+      (result.source === "ai" || result.source === "ai_and_community") &&
+      result.aiData
+    ) {
+      // Use real confidence value from AI analysis (like frontend)
+      return result.aiData.ransomware_probability * 100
+    } else if (
+      (result.source === "community" || result.source === "ai_and_community") &&
+      result.communityData
+    ) {
+      // Use static confidence values based on safety (like frontend)
+      return result.isSafe ? 85 : 75
     }
-    return 50;
-  };
+    return 50 // Default fallback
+  }
 
-  const confidencePercentage = getConfidencePercentage();
+  const confidencePercentage = getConfidencePercentage()
+
+  // Helper functions for the new UI - using real data from analysis result
+  const getTransactionCount = () => {
+    // Priority: stats.transactions -> aiData.transactions_analyzed -> community report voters -> 0
+    if (result.stats?.transactions !== undefined) {
+      return result.stats.transactions.toString()
+    } else if (
+      (result.source === "ai" || result.source === "ai_and_community") &&
+      result.aiData
+    ) {
+      return result.aiData.transactions_analyzed?.toString() || "0"
+    } else if (
+      (result.source === "community" || result.source === "ai_and_community") &&
+      result.communityData
+    ) {
+      return (
+        result.communityData.report?.[0]?.voted_by?.length?.toString() || "0"
+      )
+    }
+    return "0"
+  }
+
+  // Get risk level as readable text
+  const getRiskLevel = () => {
+    if (result.riskLevel) {
+      return result.riskLevel
+    } else if (
+      (result.source === "ai" || result.source === "ai_and_community") &&
+      result.aiData
+    ) {
+      const probability = result.aiData.ransomware_probability || 0
+      if (probability >= 0.8) return "HIGH"
+      if (probability >= 0.5) return "MEDIUM"
+      return "LOW"
+    }
+    return "Unknown"
+  }
+
+  // Get risk score from stats
+  const getRiskScore = () => {
+    if (result.stats?.riskScore) {
+      return result.stats.riskScore
+    } else if (
+      (result.source === "ai" || result.source === "ai_and_community") &&
+      result.aiData
+    ) {
+      return `${Math.round(result.aiData.ransomware_probability * 100)}/100`
+    } else if (
+      (result.source === "community" || result.source === "ai_and_community") &&
+      result.communityData
+    ) {
+      return isAddressSafe ? "15/100" : "85/100"
+    }
+    return "50/100"
+  }
+
+  // Get data source information
+  const getDataSource = () => {
+    switch (result.source) {
+      case "ai":
+        return "AI Analysis"
+      case "community":
+        return "Community Vote"
+      case "ai_and_community":
+        return "AI + Community"
+      case "smartcontract":
+        return "Smart Contract"
+      default:
+        return "Unknown"
+    }
+  }
 
   return (
-    <div className="w-[375px] h-[600px] space-y-4 bg-[#25262B] text-white shadow-md overflow-y-auto pb-20">
+    <div className="w-[375px] flex flex-col items-start p-5 gap-7 text-white overflow-y-auto">
+      {/* Header Section */}
+      <div className="w-[335px] h-[24px] flex flex-row items-center gap-2 flex-none flex-grow-0">
+        {/* Arrow Left - Hidden in design but keeping for navigation */}
+        <button
+          onClick={() => navigate(ROUTES.ANALYZE_ADDRESS)}
+          className="w-[24px] h-[24px] relative flex-none flex-grow-0">
+          <ArrowLeftIcon className="w-6 h-6" />
+        </button>
 
-      {/* Header Sections */}
-      <ProfileHeader />
+        <h1 className="w-[161px] h-[24px] font-sans font-semibold text-[20px] leading-[120%] text-white flex-none flex-grow-0">
+          Analyze Address
+        </h1>
+      </div>
 
-      {/* Analyze Address Section */}
-      <div className="m-4">
-        <h1 className="text-[20px] font-semibold">Analyze Address</h1>
-
-        {/* Display analyzed address */}
-        <div className="mt-4 bg-white/5 p-3  rounded">
-          <p className="text-sm font-mono break-all">{address}</p>
-        </div>
-
+      {/* Main Content */}
+      <div className="w-[335px] flex flex-col items-start gap-5 flex-none flex-grow-0">
+        {/* Safety Result Card */}
         <SafetyCard
           confidence={confidencePercentage}
-          title={"Address"}
+          title="Address"
           isSafe={isAddressSafe}
+          description={result?.description}
         />
 
-        {/* Analysis Source Indicator */}
-        <div className="mt-4 p-3 bg-white/5 rounded">
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${result.source === "community" ? "bg-blue-400" : "bg-purple-400"}`}></div>
-            <span className="text-sm font-medium">
-              Detected by {result.source === "community" ? "Community Analysis" : "AI Analysis"}
-            </span>
+        {/* Address Details Section */}
+        <div className="w-[335px] h-auto flex flex-col items-start gap-4 flex-none flex-grow-0">
+          <div className="w-[122px] h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none flex-grow-0">
+            Address Details
+          </div>
+
+          {/* Statistics Cards Grid */}
+          <div className="w-[335px] h-auto flex flex-row flex-wrap items-start content-start gap-[10px] flex-none flex-grow-0">
+            {/* Card 1 - Transactions */}
+            <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+              <div className="w-[26px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-white flex-none flex-grow-0">
+                {getTransactionCount()}
+              </div>
+              <div className="w-[104px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
+                <img
+                  src={CDN.icons.transactions}
+                  alt="Transactions"
+                  className="w-[16px] h-[16px] flex-none flex-grow-0"
+                />
+                <div className="w-[82px] h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  Transactions
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2 - Confidence Level */}
+            <div className="w-[159px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+              <div
+                className={`w-[72px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] flex-none flex-grow-0 ${
+                  getConfidencePercentage() >= 80
+                    ? "text-green-400"
+                    : getConfidencePercentage() >= 60
+                      ? "text-yellow-400"
+                      : "text-red-400"
+                }`}>
+                {getConfidencePercentage()}%
+              </div>
+              <div className="w-[104px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
+                <img
+                  src={CDN.icons.total}
+                  alt="Confidence"
+                  className="w-[16px] h-[16px] flex-none flex-grow-0"
+                />
+                <div className="w-[82px] h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  Confidence
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3 - Risk Level */}
+            <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+              <div
+                className={`w-[43px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] flex-none flex-grow-0 ${
+                  getRiskLevel() === "LOW"
+                    ? "text-green-400"
+                    : getRiskLevel() === "MEDIUM"
+                      ? "text-yellow-400"
+                      : "text-red-400"
+                }`}>
+                {getRiskLevel()}
+              </div>
+              <div className="w-[89px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
+                <img
+                  src={CDN.icons.riskScore}
+                  alt="Risk Level"
+                  className="w-[16px] h-[16px] flex-none flex-grow-0"
+                />
+                <div className="w-[67px] h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  Risk Level
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4 - Risk Score */}
+            <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+              <div className="w-[60px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-[#9BE4A0] flex-none flex-grow-0">
+                {getRiskScore()}
+              </div>
+              <div className="h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
+                <Gauge className="w-[16px] h-[16px] flex-none flex-grow-0 text-white/60" />
+                <div className="h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  Risk Score
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <h1 className="text-[20px] font-semibold mt-[32px] mb-[20px]">Analysis Details</h1>
-        
-        {/* Render different details based on analysis source */}
-        {result.source === "ai" && result.aiData ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">{result.aiData.transactions_analyzed}</p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Transactions</p>
-              </div>
-            </div>
-            
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">{(result.aiData.ransomware_probability * 100).toFixed(2)}%</p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Risk Score</p>
-              </div>
-            </div>
-            
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">{result.aiData.confidence_level}</p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Confidence</p>
-              </div>
-            </div>
-            
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">{result.aiData.threshold_used.toString().substring(0, 4)}</p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Threshold</p>
-              </div>
-            </div>
-          </div>
-        ) : result.source === "community" && result.communityData ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {result.communityData.report?.[0]?.voted_by?.length || "0"}
-              </p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Total Voters</p>
-              </div>
-            </div>
-            
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {result.communityData.report?.[0] ? 
-                  `${result.communityData.report[0].votes_yes} Yes / ${result.communityData.report[0].votes_no} No` : 
-                  "N/A"
-                }
-              </p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Vote Results</p>
-              </div>
-            </div>
-            
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className={`font-medium text-[18px] pb-2 ${isAddressSafe ? 'text-green-400' : 'text-red-400'}`}>
-                {result.communityData.report?.[0] ? 
-                  calculateRiskScore(result.communityData.report[0].votes_yes, result.communityData.report[0].votes_no) : 
-                  "0/100"
-                }
-              </p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Risk Score</p>
-              </div>
-            </div>
-            
-            <div className="bg-white/5 flex-1 items-center gap-2 p-4">
-              <p className="font-medium text-[18px] pb-2">
-                {result.communityData.report?.[0] ? 
-                  getTimeAgo(result.communityData.report[0].created_at) : 
-                  "N/A"
-                }
-              </p>
-              <div className="flex flex-row">
-                <Wallet className="w-5 h-5"/>
-                <p className="font-normal text-[14px] text-white/60 ps-1">Report Created</p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
 
-      {/* Security Checks */}
-      <div className="m-4">
-        <div className={`w-full max-w-md ps-[2px] ${isAddressSafe ? 'bg-green-500' : 'bg-red-500'}`}>
-          <div className={`bg-gradient-to-r ${isAddressSafe ? 'from-[#4A834C] to-[#35373E]' : 'from-[#8B4A4C] to-[#3E3537]'} bg-slate-800 p-6 mt-[20px]`}>
-            <h2 className="text-[20px] font-semibold mb-4">
-              {isAddressSafe ? 'Security Checks Passed' : 'Security Warnings'}
-            </h2>
-            <ul className="list-disc space-y-2">
-              {checkItems.map((item, index) => (
-                <li key={index} className="flex items-center">
-                  <CheckIcon />
-                  <span className="ml-2">{item}</span>
-                </li>
+        {/* Security Checks Section */}
+        <div className="w-[335px] flex flex-col items-start gap-4 flex-none flex-grow-0">
+          <div className="h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none ">
+            Security Checks
+          </div>
+
+          {/* Security Check Card */}
+          <div
+            className="w-[335px] box-border flex flex-col items-start p-4 gap-[17px] rounded-[12px] flex-none flex-grow-0"
+            style={{
+              background: isAddressSafe
+                ? "radial-gradient(69.63% 230.37% at -11.33% 50%, #1A4A1B 0%, rgba(153, 227, 158, 0.21) 30.29%, rgba(255, 255, 255, 0.03) 100%)"
+                : "radial-gradient(69.63% 230.37% at -11.33% 50%, #4A1A1B 0%, rgba(227, 153, 158, 0.21) 30.29%, rgba(255, 255, 255, 0.03) 100%)",
+              borderLeft: `1px solid ${isAddressSafe ? "#9BE4A0" : "#E3999E"}`
+            }}>
+            <div className="w-[303px] flex flex-col items-start gap-2 flex-none flex-grow-0">
+              {checkItems.slice(0, 3).map((item, index) => (
+                <div
+                  key={index}
+                  className="w-[303px] h-[20px] flex flex-row items-center gap-2 flex-none flex-grow-0">
+                  <img
+                    src={
+                      isAddressSafe
+                        ? CDN.icons.checkSafe
+                        : CDN.icons.checkDanger
+                    }
+                    alt="Check"
+                    className="w-[20px] h-[20px] flex-none flex-grow-0"
+                  />
+                  <div className="font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                    {item}
+                  </div>
+                </div>
               ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Report Details - Only show if there's a community report */}
-      {result.source === "community" && result.communityData?.report?.[0] && (
-        <div className="m-4">
-          <div className="bg-white/5 p-4 rounded">
-            <h3 className="text-[18px] font-semibold mb-3">Report Details</h3>
-            <div className="space-y-2">
-              <div>
-                <span className="text-gray-400 text-sm">Category: </span>
-                <span className="text-white capitalize">{result.communityData.report[0].category}</span>
-              </div>
-              <div>
-                <span className="text-gray-400 text-sm">Report ID: </span>
-                <span className="text-white">{result.communityData.report[0].report_id}</span>
-              </div>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Analysis Source Section */}
+        <div className="w-[335px] flex flex-col items-start gap-4 flex-none flex-grow-0">
+          <div className="h-[19px] font-sans font-semibold text-[16px] leading-[120%] text-white flex-none">
+            Analysis Source
+          </div>
+
+          {/* Analysis Source Card */}
+          <div
+            className="w-[335px] box-border flex flex-col items-start p-4 gap-4 rounded-[12px] flex-none flex-grow-0 bg-white/5"
+          >
+            <div className="w-[303px] flex flex-col items-start gap-3 flex-none flex-grow-0">
+              <div className="w-[303px] flex flex-row items-center gap-3 flex-none flex-grow-0">
+                <div className="flex-shrink-0">
+                  <div className={`w-3 h-3 rounded-full ${
+                    result.source === 'ai' ? 'bg-blue-400' :
+                    result.source === 'community' ? 'bg-purple-400' :
+                    result.source === 'ai_and_community' ? 'bg-green-400' : 'bg-gray-400'
+                  }`}></div>
+                </div>
+                <div className="flex flex-col items-start gap-1 flex-grow">
+                  <div className="font-sans font-medium text-[14px] leading-[130%] text-white flex-none flex-grow-0">
+                    {result.source === 'ai' ? 'AI Analysis' :
+                     result.source === 'community' ? 'Community Vote' :
+                     result.source === 'ai_and_community' ? 'AI + Community Analysis' :
+                     'Unknown Source'}
+                  </div>
+                  <div className="font-sans font-normal text-[12px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                    {result.source === 'ai' ? 'Analyzed using advanced AI algorithms' :
+                     result.source === 'community' ? 'Validated by community voting' :
+                     result.source === 'ai_and_community' ? 'Combined AI and community validation' :
+                     'Analysis source unknown'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Analysis details for combined analysis */}
+              {result.source === 'ai_and_community' && (
+                <div className="w-[303px] flex flex-row items-center gap-4 flex-none flex-grow-0 pt-2 border-t border-white/10">
+                  <div className="flex flex-row items-center gap-2 flex-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                    <div className="font-sans font-normal text-[12px] leading-[130%] text-white/60">
+                      AI Analysis
+                    </div>
+                  </div>
+                  <div className="flex flex-row items-center gap-2 flex-1">
+                    <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                    <div className="font-sans font-normal text-[12px] leading-[130%] text-white/60">
+                      Community Vote
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Action Button */}
-      <div className="p-4">
-        <NeoButton icon={Wallet} onClick={() => navigate(ROUTES.HOME)}>
-          Complete
-        </NeoButton>
+      <div className="flex-none flex-grow-0 mt-4 space-y-2 w-full">
+        {sendContext?.amount && sendContext?.selectedNetwork ? (
+          <>
+            <button
+              onClick={() =>
+                navigate(ROUTES.SEND_CONFIRM, {
+                  state: {
+                    recipientAddress: address,
+                    amount: sendContext.amount,
+                    selectedNetwork: sendContext.selectedNetwork
+                  }
+                })
+              }
+              className="w-[335px] h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] flex-none flex-grow-0">
+              <span className="w-auto h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent flex-none flex-grow-0">
+                Continue to Confirmation
+              </span>
+            </button>
+            <button
+              onClick={() => navigate(ROUTES.SEND)}
+              className="w-[335px] h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] border border-white/15 rounded-[99px]">
+              <span className="w-auto h-[17px] font-sans font-medium text-[14px]">
+                Cancel
+              </span>
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => navigate(ROUTES.ANALYZE_ADDRESS)}
+            className="w-[335px] h-[40px] box-border flex flex-row justify-center items-center p-[10px_20px] gap-[6px] bg-gradient-to-br from-[#99E39E] to-[#4BB255] shadow-[0px_5px_8px_-4px_rgba(153,227,158,0.7),0px_0px_0px_1px_#C0DDB5] rounded-[99px] flex-none flex-grow-0">
+            <span className="w-[112px] h-[17px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.0125em] bg-gradient-to-b from-[#004104] to-[#004104_60%] bg-clip-text text-transparent flex-none flex-grow-0">
+              Go Analyze Other
+            </span>
+          </button>
+        )}
       </div>
     </div>
-  );
+  )
 }
 
-export default AnalyzeAdressResult;
+export default AnalyzeAdressResult

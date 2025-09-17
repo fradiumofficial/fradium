@@ -14,6 +14,8 @@ import { useWallet } from "@/core/providers/WalletProvider";
 
 // Modal Components
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
+import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal";
+import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal";
 
 // Token Item Card Component
 import TokenItemCard from "@/core/components/cards/TokenItemCard";
@@ -27,15 +29,29 @@ export default function AssetsPage() {
   const [showReceive, setShowReceive] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
 
+  // Analyze Address States
+  const [showAnalyzeModal, setShowAnalyzeModal] = useState(false);
+  const [showAnalyzeLoading, setShowAnalyzeLoading] = useState(false);
+  const [showAnalyzeResult, setShowAnalyzeResult] = useState(false);
+  const [analyzeAddress, setAnalyzeAddress] = useState("");
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analyzeError, setAnalyzeError] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   // Search States
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Settings Dropdown States
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+  const [hideZeroValue, setHideZeroValue] = useState(false);
 
   // Hover/interaction states
   const [isCardHover, setIsCardHover] = useState(false);
   const [cardMouse, setCardMouse] = useState({ x: 0, y: 0 });
   const [hoverSearch, setHoverSearch] = useState(false);
   const [hoverFilter, setHoverFilter] = useState(false);
+  const [hoverSettings, setHoverSettings] = useState(false);
 
   // Event Handlers
   const handleSendClick = () => {
@@ -56,8 +72,6 @@ export default function AssetsPage() {
 
   const handleTokenClick = (token) => {
     setSelectedToken(token);
-    // For now, just log the selected token
-    console.log("Selected token:", token);
   };
 
   const handleSearchToggle = () => {
@@ -72,7 +86,76 @@ export default function AssetsPage() {
     setSearchQuery(e.target.value);
   };
 
-  // Filter tokens based on network selection and search query
+  // Analyze Address Handlers
+  const handleAnalyzeClick = () => {
+    setShowAnalyzeModal(true);
+  };
+
+  const handleCloseAnalyzeModal = () => {
+    setShowAnalyzeModal(false);
+    setAnalyzeAddress("");
+    setAnalyzeError(null);
+  };
+
+  const handleAnalyze = async () => {
+    if (!analyzeAddress.trim()) {
+      setAnalyzeError("Please enter a valid address");
+      return;
+    }
+
+    try {
+      setAnalyzeError(null);
+      setIsAnalyzing(true);
+      setShowAnalyzeLoading(true);
+      setShowAnalyzeModal(false);
+
+      // Import AI Analyze Service
+      const { default: AIAnalyzeService } = await import("@/core/services/ai/aiAnalyze.js");
+
+      // Perform analysis
+      const result = await AIAnalyzeService.analyzeAddress(analyzeAddress.trim());
+
+      setAnalysisResult(result);
+      setShowAnalyzeLoading(false);
+      setShowAnalyzeResult(true);
+    } catch (err) {
+      console.error("Analysis error:", err);
+      setAnalyzeError(err.message || "Analysis failed. Please try again.");
+      setShowAnalyzeLoading(false);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleCloseAnalyzeResult = () => {
+    setShowAnalyzeResult(false);
+    setAnalysisResult(null);
+    setAnalyzeError(null);
+  };
+
+  const handleCancelAnalysis = () => {
+    setShowAnalyzeLoading(false);
+    setIsAnalyzing(false);
+    setAnalyzeError(null);
+  };
+
+  // Settings Dropdown Handlers
+  const handleSettingsToggle = () => {
+    setShowSettingsDropdown(!showSettingsDropdown);
+  };
+
+  const handleHideZeroValue = () => {
+    setHideZeroValue(!hideZeroValue);
+    setShowSettingsDropdown(false);
+  };
+
+  const handleManageNetworks = () => {
+    // Trigger the manage networks modal
+    window.dispatchEvent(new CustomEvent("openManageNetworks"));
+    setShowSettingsDropdown(false);
+  };
+
+  // Filter tokens based on network selection, search query, and zero value filter
   const filteredTokens = TOKENS_CONFIG.filter((token) => {
     // First, filter by network selection
     let networkMatch = true;
@@ -90,7 +173,15 @@ export default function AssetsPage() {
       searchMatch = token.name.toLowerCase().includes(searchQuery.toLowerCase()) || token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || token.chain.toLowerCase().includes(searchQuery.toLowerCase());
     }
 
-    return networkMatch && searchMatch;
+    // Finally, filter by zero value if hideZeroValue is enabled
+    let zeroValueMatch = true;
+    if (hideZeroValue) {
+      const balance = balances[token.id];
+      const numericBalance = parseFloat(balance || "0");
+      zeroValueMatch = numericBalance > 0;
+    }
+
+    return networkMatch && searchMatch && zeroValueMatch;
   });
 
   // Calculate total portfolio value
@@ -157,6 +248,20 @@ export default function AssetsPage() {
       return `$${totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
   }, [totalPortfolioValue, isPortfolioLoading, hideBalance]);
+
+  // Close settings dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSettingsDropdown && !event.target.closest(".settings-dropdown")) {
+        setShowSettingsDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSettingsDropdown]);
 
   return (
     <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4">
@@ -235,7 +340,57 @@ export default function AssetsPage() {
             <h2 className="md:text-base text-sm font-semibold text-white">Tokens</h2>
             <div className="flex md:gap-4 gap-2 ml-auto">
               <motion.img src="/assets/icons/search.svg" alt="Search" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverSearch(true)} onMouseLeave={() => setHoverSearch(false)} onClick={handleSearchToggle} animate={hoverSearch ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
-              <motion.img src="/assets/icons/page_info.svg" alt="Filter" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} animate={hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
+              {/* Settings Dropdown */}
+              <div className="relative settings-dropdown">
+                <div className="relative">
+                  <motion.img src="/assets/icons/page_info.svg" alt="Settings" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverSettings(true)} onMouseLeave={() => setHoverSettings(false)} onClick={handleSettingsToggle} animate={hoverSettings ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 280, damping: 20 }} />
+                  {hideZeroValue && <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#9BE4A0] rounded-full"></div>}
+                </div>
+
+                {/* Dropdown Menu */}
+                <AnimatePresence>
+                  {showSettingsDropdown && (
+                    <motion.div
+                      className="absolute top-full right-0 mt-2 w-48 rounded-xl border border-white/10 z-[9999] overflow-hidden"
+                      style={{
+                        background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))",
+                        boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+                        backdropFilter: "blur(10px)",
+                      }}
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}>
+                      <div className="py-2">
+                        <button onClick={handleHideZeroValue} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors">
+                          {hideZeroValue ? (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                              <path d="M1 1l22 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                            </svg>
+                          )}
+                          <span className={hideZeroValue ? "text-[#9BE4A0] font-medium" : ""}>Hide Zero Value</span>
+                          {hideZeroValue && <div className="ml-auto w-2 h-2 bg-[#9BE4A0] rounded-full"></div>}
+                        </button>
+
+                        <div className="h-px bg-white/10 mx-4 my-1" />
+
+                        <button onClick={handleManageNetworks} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors">
+                          <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-4 h-4" />
+                          <span>Manage Networks</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <motion.img src="/assets/icons/refresh.webp" alt="Refresh Balance" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={isRefreshingBalances ? { rotate: { duration: 1, repeat: Infinity, ease: "linear" } } : { type: "spring", stiffness: 280, damping: 20 }} />
             </div>
           </div>
 
@@ -272,7 +427,7 @@ export default function AssetsPage() {
                         delay: index * 0.05,
                         ease: "easeOut",
                       }}>
-                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={usdPriceErrors[token.id]} hideBalance={hideBalance} />
+                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={!!balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={!!usdPriceErrors[token.id]} hideBalance={hideBalance} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -294,6 +449,59 @@ export default function AssetsPage() {
 
       {/* Modal Receive Address */}
       <ReceiveAddressModal isOpen={showReceive} onClose={handleCloseReceive} />
+
+      {/* Modal Analyze Address Input */}
+      {showAnalyzeModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+          <div className="w-full max-w-md bg-[#171A1C] rounded-2xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-semibold">Analyze Address</h3>
+              <button className="text-white/70 hover:text-white transition-colors" onClick={handleCloseAnalyzeModal} aria-label="Close">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-white/90 text-sm font-medium mb-2 block">Address to analyze</label>
+                <input
+                  type="text"
+                  placeholder="Enter wallet address..."
+                  value={analyzeAddress}
+                  onChange={(e) => {
+                    setAnalyzeAddress(e.target.value);
+                    setAnalyzeError(null);
+                  }}
+                  className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-3 text-white text-sm placeholder-[#B0B6BE] outline-none focus:border-[#9BE4A0] transition-colors"
+                />
+              </div>
+
+              {analyzeError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-red-400 text-sm">{analyzeError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={handleCloseAnalyzeModal}>
+                  Cancel
+                </button>
+                <button className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleAnalyze} disabled={!analyzeAddress.trim() || isAnalyzing}>
+                  {isAnalyzing ? "Analyzing..." : "Analyze"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Analyze Loading */}
+      <AnalyzeLoadingModal isOpen={showAnalyzeLoading} onCancel={handleCancelAnalysis} />
+
+      {/* Modal Analyze Result */}
+      <AnalyzeResultModal isOpen={showAnalyzeResult} onClose={handleCloseAnalyzeResult} analysisResult={analysisResult} />
     </div>
   );
 }

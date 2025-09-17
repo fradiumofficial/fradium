@@ -7,9 +7,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use getrandom::{register_custom_getrandom, Error};
 
-//Ini hapus kalau mau pindahin ke FE
-use ic_cdk::api::management_canister::http_request::TransformArgs;
-use ic_cdk::api::management_canister::http_request::HttpResponse;
 
 // --- Main Modules ---
 mod address_detector;
@@ -136,22 +133,37 @@ async fn analyze_btc_address(
 }
 
 #[update]
-async fn analyze_sol_address(address: String) -> Result<RansomwareResult, String> {
+async fn analyze_sol_address(
+    features: Vec<(String, f64)>,
+    address: String,
+    transaction_count: u32,
+) -> Result<RansomwareResult, String> {
     match address_detector::detect_address_type(&address) {
         address_detector::AddressType::Solana => {
-            ic_cdk::println!("Address detected as Solana. Routing to SOL analyzer...");
-            sol::analyze_solana_address(&address).await
+            ic_cdk::println!("Address detected as Solana. Predicting with provided features...");
+            // Convert Vec<(String, f64)> to HashMap<String, f64>
+            let features_map: std::collections::HashMap<String, f64> = features.into_iter().collect();
+            sol::analyze_solana_features(features_map, &address, transaction_count).await
         }
         _ => Err("This endpoint only accepts valid Solana addresses.".to_string()),
     }
 }
 
 #[update]
-async fn analyze_icp_address(address: String) -> Result<RansomwareResult, String> { // <-- ADD THIS FUNCTION
+async fn analyze_icp_address(
+    features: Vec<(String, f64)>,
+    address: String,
+    transaction_count: u32,
+) -> Result<RansomwareResult, String> {
     match address_detector::detect_address_type(&address) {
         address_detector::AddressType::InternetComputer => {
-            ic_cdk::println!("Address detected as ICP Principal. Routing to ICP analyzer...");
-            icp::analyze_icp_principal(&address).await
+            ic_cdk::println!("Address detected as ICP Principal. Predicting with provided features...");
+            // Convert Vec<(String, f64)> to HashMap<String, f64>
+            let mut features_map = std::collections::HashMap::new();
+            for (key, value) in features {
+                features_map.insert(key, value);
+            }
+            icp::analyze_icp_features(features_map, &address, transaction_count)
         }
         _ => Err("This endpoint only accepts valid ICP principals.".to_string()),
     }

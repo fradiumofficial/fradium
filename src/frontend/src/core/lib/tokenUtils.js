@@ -1,4 +1,80 @@
 import { wallet } from "declarations/wallet";
+import { icp_ledger } from "declarations/icp_ledger";
+import { icp_index } from "declarations/icp_index";
+import { fradium_ledger } from "declarations/fradium_ledger";
+import { ckbtc_ledger } from "declarations/ckbtc_ledger";
+import { ckbtc_minter } from "declarations/ckbtc_minter";
+import { Principal } from "@dfinity/principal";
+
+// Helper function to safely stringify objects that may contain BigInt
+function safeStringify(obj) {
+  return JSON.stringify(obj, (key, value) => (typeof value === "bigint" ? value.toString() : value));
+}
+
+// Helper functions for localStorage caching (similar to WalletProvider)
+function getBalanceCacheKey(principal, tokenId) {
+  return principal ? `balanceCache_${principal}_${tokenId}` : `balanceCache_default_${tokenId}`;
+}
+
+function loadBalanceFromStorage(principal, tokenId) {
+  const key = getBalanceCacheKey(principal, tokenId);
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Check if cache is still valid (cache for 5 minutes)
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+        return parsed.balance;
+      } else {
+        // Cache expired, remove it
+        localStorage.removeItem(key);
+      }
+    }
+  } catch (error) {
+    console.error("Error loading balance from localStorage:", error);
+  }
+  return null;
+}
+
+function saveBalanceToStorage(principal, tokenId, balance) {
+  const key = getBalanceCacheKey(principal, tokenId);
+  try {
+    const cacheData = {
+      balance: balance,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(key, JSON.stringify(cacheData));
+  } catch (error) {
+    console.error("Error saving balance to localStorage:", error);
+  }
+}
+
+function clearBalanceCache(principal, tokenId = null) {
+  try {
+    if (tokenId !== null) {
+      // Clear cache for specific token
+      const key = getBalanceCacheKey(principal, tokenId);
+      localStorage.removeItem(key);
+    } else {
+      // Clear all balance cache for this principal
+      const principalString = principal?.toString() || null;
+      if (principalString) {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(`balanceCache_${principalString}_`)) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => {
+          localStorage.removeItem(key);
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error clearing balance cache:", error);
+  }
+}
 
 // --- Mainnet tokens ---
 export const TOKENS_CONFIG = [
@@ -40,7 +116,7 @@ export const TOKENS_CONFIG = [
     name: "Internet Computer",
     symbol: "ICP",
     chain: "Internet Computer",
-    decimals: 8,
+    decimals: null,
     imageUrl: "assets/images/coins/icp.webp",
     mainnet: true,
     // Token type
@@ -50,16 +126,68 @@ export const TOKENS_CONFIG = [
   {
     id: 5,
     name: "Fradium",
-    symbol: "FADM",
+    symbol: "FRADIUM",
     chain: "Internet Computer",
-    decimals: 8,
+    decimals: null,
     imageUrl: "assets/images/coins/fradium.webp",
-    mainnet: true,
+    mainnet: false,
     // Token type
     type: "icrc",
-    canisterId: "mxzaz-hqaaa-aaaar-qaada-cai",
+    canisterId: "sr4wk-4qaaa-aaaae-qfdta-cai",
+  },
+  {
+    id: 6,
+    name: "ckBTC Testnet4",
+    symbol: "ckBTC",
+    chain: "Internet Computer",
+    decimals: null,
+    imageUrl: "assets/images/coins/ckbtc.webp",
+    mainnet: false,
+    // Token type
+    type: "icrc",
+    canisterId: "mc6ru-gyaaa-aaaar-qaaaq-cai",
   },
 ];
+
+// API Keys for different services
+const ETHERSCAN_API_KEY = process.env.VITE_ETHERSCAN_API_KEY;
+const COINGECKO_API_KEY = process.env.VITE_COINGECKO_API_KEY;
+const COINMARKETCAP_API_KEY = process.env.VITE_COINMARKETCAP_API_KEY;
+
+if (!ETHERSCAN_API_KEY) {
+  throw new Error("VITE_ETHERSCAN_API_KEY environment variable is required but not set");
+}
+
+// CoinGecko API key is optional but recommended for higher rate limits
+// Get your free API key at: https://www.coingecko.com/en/api
+// Add it to your .env file as: VITE_COINGECKO_API_KEY=your_api_key_here
+if (!COINGECKO_API_KEY) {
+  console.warn("VITE_COINGECKO_API_KEY not set. Using free tier with rate limits (10-50 calls/minute).");
+  console.warn("Get your free API key at: https://www.coingecko.com/en/api");
+}
+
+// CoinMarketCap API key is optional but recommended for better rate limits
+// Get your free API key at: https://coinmarketcap.com/api/
+// Add it to your .env file as: VITE_COINMARKETCAP_API_KEY=your_api_key_here
+if (!COINMARKETCAP_API_KEY) {
+  console.warn("VITE_COINMARKETCAP_API_KEY not set. Using free tier with rate limits (10,000 calls/month).");
+  console.warn("Get your free API key at: https://coinmarketcap.com/api/");
+}
+
+export const API_URLS = {
+  ethereum: {
+    sepolia: `https://api-sepolia.etherscan.io/api?module=account&action=txlist&apikey=${ETHERSCAN_API_KEY}`,
+    mainnet: `https://api.etherscan.io/api?module=account&action=txlist&apikey=${ETHERSCAN_API_KEY}`,
+  },
+  bitcoin: {
+    testnet: "https://api.blockcypher.com/v1/btc/test3",
+    mainnet: "https://api.blockcypher.com/v1/btc/main",
+  },
+  solana: {
+    devnet: "https://api.devnet.solana.com",
+    mainnet: "https://api.mainnet-beta.solana.com",
+  },
+};
 
 // Network configuration for WalletLayout compatibility
 export const NETWORK_CONFIG = [
@@ -81,7 +209,7 @@ export const NETWORK_CONFIG = [
   {
     id: "icp",
     name: "Internet Computer",
-    icon: "/assets/images/networks/solana.webp", // Using solana as placeholder for ICP
+    icon: "/assets/images/networks/icp.webp",
   },
 ];
 
@@ -118,10 +246,10 @@ export function detectAddressNetwork(address) {
     return "Solana";
   }
 
-  // ICP Principal (simplified): lowercase, hyphen-separated groups
-  // Example: m5rq4-tzmga-7d5hk-l37qx-42aao-gk3xg-jvocx-tqxeh-26hfr-hcaga-qae
-  if (/^[a-z0-9-]+$/.test(lower) && lower.includes("-")) {
-    const parts = lower.split("-").filter(Boolean);
+  // ICP Principal (simplified): alphanumeric, hyphen-separated groups
+  // Example: nppey-3ctwu-sps4z-cd2gh-fovyr-4lnq6-rq66v-pvtvq-oqal3-bvwhc-nae
+  if (/^[a-zA-Z0-9-]+$/.test(trimmed) && trimmed.includes("-")) {
+    const parts = trimmed.split("-").filter(Boolean);
     if (parts.length >= 5) {
       return "Internet Computer";
     }
@@ -154,54 +282,369 @@ export function getFeeInfo(token) {
   }
 }
 
-export async function sendToken(tokenId, to, amount) {
-  const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
-  if (!token) throw new Error("Token not found: " + tokenId);
-
-  if (token.type === "native") {
-    switch (token.id) {
-      case "BTC":
-        return await wallet.bitcoin_send({ destination_address: to, amount_in_satoshi: amount });
-      case "ETH":
-        return await wallet.ethereum_send(to, amount);
-      case "SOL":
-        return await wallet.solana_send(to, amount);
-      default:
-        throw new Error("Native token not supported");
-    }
-  }
-
-  if (token.type === "icrc" && token.canisterId) {
-    const ledger = await initLedgerActor(token.canisterId);
-    return await ledger.icrc1_transfer({
-      from_subaccount: [],
-      to: { owner: to, subaccount: [] },
-      amount,
-      fee: [],
-      memo: [],
-      created_at_time: [],
-    });
-  }
-
-  throw new Error("Unsupported token type");
-}
-
-export async function getBalance(tokenId) {
+export async function sendToken(tokenId, to, amount, principal) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
   if (token.type === "native") {
     switch (token.id) {
       case 1: // BTC
-        return await wallet.bitcoin_balance();
+        return await wallet.bitcoin_send({ destination_address: to, amount_in_satoshi: amount });
       case 2: // ETH
-        return await wallet.ethereum_balance();
+        return await wallet.ethereum_send(to, amount);
       case 3: // SOL
-        return await wallet.solana_balance();
+        return await wallet.solana_send(to, amount);
       default:
         throw new Error("Native token not supported");
     }
   }
+
+  if (token.type === "icrc") {
+    if (!principal) {
+      throw new Error("Principal is required for ICRC tokens");
+    }
+
+    // Get decimals dynamically from ledger if token.decimals is null
+    let decimals = token.decimals;
+    if (decimals === null) {
+      switch (token.id) {
+        case 4: // ICP
+          decimals = await icp_ledger.decimals();
+          break;
+        case 5: // Fradium
+          decimals = await fradium_ledger.icrc1_decimals();
+          break;
+        case 6: // ckBTC
+          decimals = await ckbtc_ledger.icrc1_decimals();
+          decimals = 8; // ckBTC typically has 8 decimals like BTC
+          break;
+        default:
+          throw new Error("Unknown ICRC token for decimals");
+      }
+    }
+
+    // Convert amount to smallest unit (e8s)
+    const amountInSmallestUnit = Math.floor(amount * Math.pow(10, decimals));
+
+    // Convert string principal to Principal object
+    const toPrincipal = Principal.fromText(to);
+
+    switch (token.id) {
+      case 4: // ICP
+        return await icp_ledger.icrc1_transfer({
+          from_subaccount: [],
+          to: { owner: toPrincipal, subaccount: [] },
+          amount: BigInt(amountInSmallestUnit),
+          fee: [],
+          memo: [],
+          created_at_time: [],
+        });
+
+      case 5: // Fradium
+        return await fradium_ledger.icrc1_transfer({
+          from_subaccount: [],
+          to: { owner: toPrincipal, subaccount: [] },
+          amount: BigInt(amountInSmallestUnit),
+          fee: [],
+          memo: [],
+          created_at_time: [],
+        });
+
+      case 6: // ckBTC
+        return await ckbtc_ledger.icrc1_transfer({
+          from_subaccount: [],
+          to: { owner: toPrincipal, subaccount: [] },
+          amount: BigInt(amountInSmallestUnit),
+          fee: [],
+          memo: [],
+          created_at_time: [],
+        });
+
+      default:
+        throw new Error(`Unsupported ICRC token: ${token.symbol}`);
+    }
+  }
+
+  throw new Error("Unsupported token type");
+}
+
+// Enhanced send token function with proper backend integration
+export async function sendTokenToBackend(tokenId, to, amount, principal) {
+  const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
+  if (!token) throw new Error("Token not found: " + tokenId);
+
+  try {
+    let result;
+
+    if (token.type === "native") {
+      // Convert amount to proper units based on token decimals
+      const amountInSmallestUnit = Math.floor(amount * Math.pow(10, token.decimals));
+
+      switch (token.chain) {
+        case "Bitcoin":
+          result = await wallet.bitcoin_send({
+            destination_address: to,
+            amount_in_satoshi: BigInt(amountInSmallestUnit),
+          });
+          break;
+
+        case "Ethereum":
+          result = await wallet.ethereum_send(to, BigInt(amountInSmallestUnit));
+          break;
+
+        case "Solana":
+          result = await wallet.solana_send(to, BigInt(amountInSmallestUnit));
+          break;
+
+        default:
+          throw new Error(`Unsupported native token chain: ${token.chain}`);
+      }
+    } else if (token.type === "icrc") {
+      if (!principal) {
+        throw new Error("Principal is required for ICRC tokens");
+      }
+
+      // Get decimals dynamically from ledger if token.decimals is null
+      let decimals = token.decimals;
+      if (decimals === null) {
+        switch (token.id) {
+          case 4: // ICP
+            decimals = await icp_ledger.decimals();
+            break;
+          case 5: // Fradium
+            decimals = await fradium_ledger.icrc1_decimals();
+            break;
+          case 6: // ckBTC
+            decimals = await ckbtc_ledger.icrc1_decimals();
+            // decimals = 8; // ckBTC typically has 8 decimals like BTC
+            break;
+          default:
+            throw new Error("Unknown ICRC token for decimals");
+        }
+      }
+
+      // Convert amount to smallest unit (e8s)
+      const amountInSmallestUnit = Math.floor(amount * Math.pow(10, decimals));
+
+      // Convert string principal to Principal object
+      const toPrincipal = Principal.fromText(to);
+
+      switch (token.id) {
+        case 4: // ICP
+          result = await icp_ledger.icrc1_transfer({
+            from_subaccount: [],
+            to: { owner: toPrincipal, subaccount: [] },
+            amount: BigInt(amountInSmallestUnit),
+            fee: [],
+            memo: [],
+            created_at_time: [],
+          });
+          break;
+
+        case 5: // Fradium
+          result = await fradium_ledger.icrc1_transfer({
+            from_subaccount: [],
+            to: { owner: toPrincipal, subaccount: [] },
+            amount: BigInt(amountInSmallestUnit),
+            fee: [],
+            memo: [],
+            created_at_time: [],
+          });
+          break;
+
+        case 6: // ckBTC
+          result = await ckbtc_ledger.icrc1_transfer({
+            from_subaccount: [],
+            to: { owner: toPrincipal, subaccount: [] },
+            amount: BigInt(amountInSmallestUnit),
+            fee: [],
+            memo: [],
+            created_at_time: [],
+          });
+          break;
+
+        default:
+          throw new Error(`Unsupported ICRC token: ${token.symbol}`);
+      }
+
+      // Handle ICRC transfer result
+      if (result && typeof result === "object" && "Ok" in result) {
+        result = result.Ok;
+      } else if (result && typeof result === "object" && "Err" in result) {
+        throw new Error(`Transfer failed: ${safeStringify(result.Err)}`);
+      }
+    } else {
+      throw new Error(`Unsupported token type: ${token.type}`);
+    }
+
+    return {
+      success: true,
+      transactionId: result,
+      token: token,
+      amount: amount,
+      destination: to,
+    };
+  } catch (error) {
+    console.error(`Failed to send ${token.symbol}:`, error);
+    // Safely handle error message that might contain BigInt
+    const errorMessage = error.message || error.toString();
+    throw new Error(`Failed to send ${token.symbol}: ${errorMessage}`);
+  }
+}
+
+export async function getBalance(tokenId, principal, useCache = true) {
+  const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
+  if (!token) throw new Error("Token not found: " + tokenId);
+
+  // Get principal string for caching
+  const principalString = principal?.toString() || null;
+
+  if (token.type === "native") {
+    try {
+      switch (token.id) {
+        case 1: // BTC
+          return await wallet.bitcoin_balance();
+        case 2: // ETH
+          return await wallet.ethereum_balance();
+        case 3: // SOL
+          return await wallet.solana_balance();
+        default:
+          throw new Error("Native token not supported");
+      }
+    } catch (error) {
+      console.error(`Error fetching ${token.symbol} balance:`, error);
+      throw new Error(`Failed to fetch ${token.symbol} balance: ${error.message || "Unknown error"}`);
+    }
+  }
+
+  if (token.type === "icrc") {
+    if (!principal) {
+      throw new Error("Principal is required for ICRC tokens");
+    }
+
+    switch (token.id) {
+      case 4: // ICP
+        try {
+          const balance = await icp_index.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+
+          // Get decimals dynamically from ledger if token.decimals is null
+          let decimals = token.decimals;
+          if (decimals === null) {
+            try {
+              decimals = await icp_ledger.icrc1_decimals();
+            } catch (error) {
+              console.warn("Failed to fetch ICP decimals, using default 8:", error);
+              decimals = 8; // Default decimals for ICRC tokens
+            }
+          }
+
+          // Convert from e8s to ICP using dynamic decimals
+          // balance is a bigint, so we need to convert it properly
+          const balanceNumber = Number(balance);
+          const divisor = Math.pow(10, decimals);
+          const result = balanceNumber / divisor;
+
+          // Handle edge cases
+          if (isNaN(result) || !isFinite(result)) {
+            console.warn("Invalid balance calculation for ICP:", { balance, balanceNumber, decimals, divisor, result });
+            return "0";
+          }
+
+          return result.toString();
+        } catch (error) {
+          console.error("Error fetching ICP balance:", error);
+          throw new Error(`Failed to fetch ICP balance: ${error.message || "Unknown error"}`);
+        }
+      case 5: // Fradium (FADM)
+        try {
+          const balance = await fradium_ledger.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+
+          // Get decimals dynamically from ledger if token.decimals is null
+          let decimals = token.decimals;
+          if (decimals === null) {
+            try {
+              decimals = await fradium_ledger.icrc1_decimals();
+            } catch (error) {
+              console.warn("Failed to fetch Fradium decimals, using default 8:", error);
+              decimals = 8; // Default decimals for ICRC tokens
+            }
+          }
+
+          // Convert from e8s to FADM using dynamic decimals
+          // balance is a bigint, so we need to convert it properly
+          const balanceNumber = Number(balance);
+          const divisor = Math.pow(10, decimals);
+          const result = balanceNumber / divisor;
+
+          // Handle edge cases
+          if (isNaN(result) || !isFinite(result)) {
+            console.warn("Invalid balance calculation for Fradium:", { balance, balanceNumber, decimals, divisor, result });
+            return "0";
+          }
+
+          return result.toString();
+        } catch (error) {
+          console.error("Error fetching Fradium balance:", error);
+          throw new Error(`Failed to fetch Fradium balance: ${error.message || "Unknown error"}`);
+        }
+      case 6: // ckBTC
+        try {
+          // Trigger balance refresh on ckBTC minter before reading ledger balance
+          try {
+            const result = await ckbtc_minter.update_balance({ owner: [principal], subaccount: [] });
+            console.log("ckBTC update_balance result:", result);
+          } catch (e) {
+            // Ignore refresh errors like AlreadyProcessing/NoNewUtxos and proceed to read balance
+            console.warn("ckBTC update_balance warning:", e);
+          }
+
+          const balance = await ckbtc_ledger.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+
+          // Get decimals dynamically from ledger if token.decimals is null
+          let decimals = token.decimals;
+          if (decimals === null) {
+            // decimals = await ckbtc_ledger.icrc1_decimals();
+            decimals = 8; // ckBTC typically has 8 decimals like BTC
+          }
+
+          // Convert from e8s to ckBTC using dynamic decimals
+          // balance is a bigint, so we need to convert it properly
+          const balanceNumber = Number(balance);
+          const divisor = Math.pow(10, decimals);
+          const result = balanceNumber / divisor;
+
+          // Handle edge cases
+          if (isNaN(result) || !isFinite(result)) {
+            console.warn("Invalid balance calculation for ckBTC:", { balance, balanceNumber, decimals, divisor, result });
+            return "0";
+          }
+
+          const resultString = result.toString();
+
+          // Save to cache if useCache is enabled
+          if (useCache && principalString) {
+            saveBalanceToStorage(principalString, tokenId, resultString);
+          }
+
+          return resultString;
+        } catch (error) {
+          console.error("Error fetching ckBTC balance:", error);
+          throw new Error(`Failed to fetch ckBTC balance: ${error.message || "Unknown error"}`);
+        }
+      default:
+        throw new Error("ICRC token not supported");
+    }
+  }
+
   throw new Error("Unsupported token type");
 }
 
@@ -256,17 +699,36 @@ export async function getUSD(tokenId) {
     SOL: "solana",
     ICP: "internet-computer",
     FADM: "fradium", // Note: Fradium might not be on CoinGecko, we'll handle this
+    ckBTC: "bitcoin", // ckBTC uses BTC price
   };
 
   const coinGeckoId = coinGeckoIds[token.symbol];
 
+  // Special handling for Fradium token - return 0 directly since it's not available on major APIs
+  if (token.symbol === "FADM") {
+    return 0;
+  }
+
   // Primary API: CoinGecko
   try {
     if (coinGeckoId) {
-      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`, {
+      // Build URL with API key if available
+      const baseUrl = "https://api.coingecko.com/api/v3/simple/price";
+      const params = new URLSearchParams({
+        ids: coinGeckoId,
+        vs_currencies: "usd",
+      });
+
+      // Add API key if available
+      if (COINGECKO_API_KEY) {
+        params.append("x_cg_demo_api_key", COINGECKO_API_KEY);
+      }
+
+      const response = await fetch(`${baseUrl}?${params.toString()}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
+          ...(COINGECKO_API_KEY && { "x-cg-demo-api-key": COINGECKO_API_KEY }),
         },
       });
 
@@ -282,6 +744,49 @@ export async function getUSD(tokenId) {
     }
   } catch (error) {
     console.warn("CoinGecko API failed:", error);
+    // Don't throw here, try fallback APIs
+  }
+
+  // Fallback API: CoinMarketCap (requires API key, but we can try without)
+  try {
+    const cmcIds = {
+      BTC: "1",
+      ETH: "1027",
+      SOL: "5426",
+      ICP: "8916",
+    };
+
+    const cmcId = cmcIds[token.symbol];
+
+    if (cmcId) {
+      // Build headers with API key if available
+      const headers = {
+        Accept: "application/json",
+      };
+
+      // Add API key if available
+      if (COINMARKETCAP_API_KEY) {
+        headers["X-CMC_PRO_API_KEY"] = COINMARKETCAP_API_KEY;
+      }
+
+      const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail?id=${cmcId}`, {
+        method: "GET",
+        headers: headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`CoinMarketCap API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.data && data.data.statistics && data.data.statistics.price) {
+        return data.data.statistics.price;
+      }
+    }
+  } catch (error) {
+    console.warn("CoinMarketCap API failed:", error);
+    // Don't throw here, try fallback APIs
   }
 
   // Fallback API: CoinPaprika
@@ -315,55 +820,33 @@ export async function getUSD(tokenId) {
     }
   } catch (error) {
     console.warn("CoinPaprika API failed:", error);
+    // Don't throw here, try fallback
   }
 
-  // Fallback API: CoinMarketCap (requires API key, but we can try without)
-  try {
-    const cmcIds = {
-      BTC: "1",
-      ETH: "1027",
-      SOL: "5426",
-      ICP: "8916",
-    };
-
-    const cmcId = cmcIds[token.symbol];
-
-    if (cmcId) {
-      const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail?id=${cmcId}`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`CoinMarketCap API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.data && data.data.statistics && data.data.statistics.price) {
-        return data.data.statistics.price;
-      }
-    }
-  } catch (error) {
-    console.warn("CoinMarketCap API failed:", error);
-  }
-
-  // Final fallback: Use cached/default prices or return null
+  // Final fallback: Use cached/default prices or return 0
   console.warn(`All price APIs failed for ${token.symbol}, using fallback`);
 
-  // For tokens not supported by major APIs, return a default price or null
+  // For tokens not supported by major APIs, return a default price or 0
   const fallbackPrices = {
     BTC: 0,
     ETH: 0,
     SOL: 0,
     ICP: 0,
     FADM: 0, // Placeholder price for Fradium
+    ckBTC: 0, // ckBTC uses BTC price, fallback to 0
   };
 
-  return fallbackPrices[token.symbol] || null;
+  const fallbackPrice = fallbackPrices[token.symbol];
+  if (fallbackPrice === undefined) {
+    console.warn(`No fallback price available for ${token.symbol}, returning 0`);
+    return 0;
+  }
+
+  return fallbackPrice;
 }
+
+// Export cache management functions
+export { clearBalanceCache };
 
 // Function to get USD prices for multiple tokens at once
 export async function getUSDPrices(tokenIds) {
@@ -382,4 +865,45 @@ export async function getUSDPrices(tokenIds) {
   });
 
   return prices;
+}
+
+// Get chain name from token type
+export function getChainFromTokenType(tokenType) {
+  if (!tokenType) return "Unknown";
+
+  // Handle different token type structures
+  if (typeof tokenType === "string") {
+    return tokenType;
+  }
+
+  if (typeof tokenType === "object") {
+    // Handle object structure like { Bitcoin: null }
+    const keys = Object.keys(tokenType);
+    if (keys.length > 0) {
+      return keys[0];
+    }
+  }
+
+  return "Unknown";
+}
+
+// Get icon by chain name and token type
+export function getIconByChain(chain, tokenType = null) {
+  // For Internet Computer chain, determine token based on tokenType
+  if (chain.toLowerCase() === "internet computer" && tokenType) {
+    if (tokenType === "icp") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 4); // ICP token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/icp.webp";
+    } else if (tokenType === "fradium") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 5); // Fradium token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/fradium.webp";
+    } else if (tokenType === "ckbtc") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 6); // ckBTC token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/ckbtc.webp";
+    }
+  }
+
+  // For other chains, find by chain name
+  const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
+  return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
 }
