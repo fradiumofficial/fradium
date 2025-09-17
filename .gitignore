@@ -43,3 +43,7 @@ __pycache__/
 
 # Bitcoind
 bitcoin_data/*
+
+# Pocket IC
+.venv/
+pocket-ic
