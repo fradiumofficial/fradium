@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 
 import { Button } from "@/core/components/ui/button";
@@ -30,6 +30,61 @@ export default function ReportPage() {
   const [isLoading, setIsLoading] = useState(false);
   // Animation helper for smooth content reveal
   const pageTransitionClass = isLoading ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0";
+
+  // Reveal-on-scroll component (similar to ProductsExtensionPage)
+  const Reveal = ({ children, delay = 0 }) => {
+    const ref = useRef(null);
+    const [show, setShow] = useState(false);
+    useEffect(() => {
+      const el = ref.current;
+      if (!el) return;
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setShow(true);
+            io.disconnect();
+          }
+        },
+        { rootMargin: "-10% 0px" }
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    }, []);
+    return (
+      <div
+        ref={ref}
+        className={`transition-all duration-300 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"}`}
+        style={{ transitionDelay: `${delay}ms` }}
+      >
+        {children}
+      </div>
+    );
+  };
+
+  // Skeleton card for reports
+  const SkeletonReportCard = () => (
+    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)]">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex ml-4 mb-2 items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-white/10 animate-pulse" />
+            <div className="h-4 w-32 bg-white/10 rounded animate-pulse" />
+            <div className="h-5 w-20 bg-white/10 rounded-full ml-3 animate-pulse" />
+          </div>
+          <div className="h-5 w-64 bg-white/10 rounded mb-3 animate-pulse" />
+          <div className="h-4 w-40 bg-white/10 rounded mb-4 animate-pulse" />
+        </div>
+        <div className="h-9 w-28 bg-white/10 rounded-full animate-pulse" />
+      </div>
+      <div className="flex justify-between text-xs mb-2">
+        <div className="h-3 w-24 bg-white/10 rounded animate-pulse" />
+        <div className="h-3 w-24 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+        <div className="h-2 w-1/2 bg-white/10 animate-pulse" />
+      </div>
+    </div>
+  );
   // Helper function to check if a vote is correct based on majority and quorum (same logic as backend)
   const isVoteCorrect = (report, voteType) => {
     const MINIMUM_QUORUM = 1; // Same as backend
@@ -283,18 +338,7 @@ export default function ReportPage() {
     <div className="min-h-screen max-w-full mt-16 bg-[#000510] text-white ">
       {/* Main Content */}
       <main className="pt-18">
-        {/* Loading overlay */}
-        {isLoading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="h-10 w-10 rounded-full border-2 border-white/30 border-t-white/90 animate-spin" />
-              <div className="mt-3 h-2 w-40 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full w-1/2 bg-white/30 animate-pulse" />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Loading state handled inline in list section below */}
         {/* Page Header - Full Screen */}
         <div className="relative overflow-hidden mb-6 sm:mb-8 px-3 md:px-6">
           {/* Background layer (top) */}
@@ -376,7 +420,15 @@ export default function ReportPage() {
                   </div>
                 </div>
 
-                {currentData.length === 0 ? (
+                {isLoading ? (
+                  <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                    {[0, 1, 2, 3].map((i) => (
+                      <Reveal key={i} delay={i * 80}>
+                        <SkeletonReportCard />
+                      </Reveal>
+                    ))}
+                  </div>
+                ) : currentData.length === 0 ? (
                   <div className="mx-auto w-full rounded-2xl bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.30)] p-10 md:p-12 min-h-[260px] md:min-h-[260px]">
                     <div className="flex flex-col items-center justify-center text-center">
                       <Search className="w-12 h-12 text-gray-300/80 mx-auto mb-6" />
@@ -387,50 +439,52 @@ export default function ReportPage() {
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:gap-6">
                     {currentData.map((report, index) => (
-                      <div key={report.report_id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)]">
-                        {/* Card Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1 min-w-0">
-                            {/* Network and Address */}
-                            <div className="flex ml-4 mb-2">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs font-bold">₿</span>
+                      <Reveal key={report.report_id} delay={index * 80}>
+                        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)]">
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1 min-w-0">
+                              {/* Network and Address */}
+                              <div className="flex ml-4 mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs font-bold">₿</span>
+                                  </div>
+                                  <span className="text-sm text-gray-300">{report.chain} Network</span>
                                 </div>
-                                <span className="text-sm text-gray-300">{report.chain} Network</span>
+                                <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full ml-4 text-xs font-medium border ${getStatusColor(report.status)}`}>
+                                  {getStatusIcon(report.status)}
+                                  <span>{report.status}</span>
+                                </div>
                               </div>
-                              <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full ml-4 text-xs font-medium border ${getStatusColor(report.status)}`}>
-                                {getStatusIcon(report.status)}
-                                <span>{report.status}</span>
+
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-mono text-lg font-semibold text-white">{report.shortAddress}</span>
+                              </div>
+
+                              <div className="flex items-center space-x-2 text-sm text-gray-400 mb-4">
+                                <span>{report.category}</span>
+                                <span>•</span>
+                                <span>Reported {report.dateReported}</span>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-mono text-lg font-semibold text-white">{report.shortAddress}</span>
-                            </div>
-
-                            <div className="flex items-center space-x-2 text-sm text-gray-400 mb-4">
-                              <span>{report.category}</span>
-                              <span>•</span>
-                              <span>Reported {report.dateReported}</span>
-                            </div>
+                            <Button className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 text-white text-sm px-4 py-2 !rounded-full" onClick={() => navigate(`/reports/${report.id}`)}>
+                              View Details
+                              <ArrowUpRight className="w-3 h-3 ml-2" />
+                            </Button>
                           </div>
 
-                          <Button className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 text-white text-sm px-4 py-2 !rounded-full" onClick={() => navigate(`/reports/${report.id}`)}>
-                            View Details
-                            <ArrowUpRight className="w-3 h-3 ml-2" />
-                          </Button>
+                          {/* Vote Information */}
+                          <div className="flex justify-between text-xs mb-2">
+                            <span className="text-red-400">Unsafe: {report.yesPercentage}%</span>
+                            <span className="text-green-400">Safe: {report.noPercentage}%</span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div className="bg-red-400 h-2 rounded-full" style={{ width: `${report.yesPercentage}%` }} />
+                          </div>
                         </div>
-
-                        {/* Vote Information */}
-                        <div className="flex justify-between text-xs mb-2">
-                          <span className="text-red-400">Unsafe: {report.yesPercentage}%</span>
-                          <span className="text-green-400">Safe: {report.noPercentage}%</span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                          <div className="bg-red-400 h-2 rounded-full" style={{ width: `${report.yesPercentage}%` }} />
-                        </div>
-                      </div>
+                      </Reveal>
                     ))}
                   </div>
                 )}
