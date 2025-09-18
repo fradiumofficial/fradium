@@ -19,7 +19,8 @@ import AnalyzeProgressModal from "@/core/components/modals/AnalyzeProgressModal"
 import WelcomingWalletModal from "@/core/components/modals/WelcomingWallet";
 
 import { jsonStringify } from "@/core/lib/canisterUtils";
-import { detectTokenType, TokenType, getPriceUSD, TOKENS_CONFIG, getAmountToken, amountToBaseUnit } from "@/core/lib/tokenUtils";
+import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
+import { detectTokenType, TokenType, getPriceUSD, getAmountToken, amountToBaseUnit } from "@/core/lib/tokenUtils";
 import { extractFeatures } from "@/core/services/ai/bitcoinAnalyzeService";
 
 function isAmountExceedBalance(tokenType, sendAmount, currentAmount) {

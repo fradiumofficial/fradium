@@ -11,7 +11,7 @@ import Text "mo:base/Text";
 import Bool "mo:base/Bool";
 import Blob "mo:base/Blob";
 import Nat64 "mo:base/Nat64";
-import TokenCanister "canister:token";
+import TokenCanister "canister:fradium_ledger";
 import Types "../types";
 import Debug "mo:base/Debug";
 

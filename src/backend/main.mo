@@ -74,8 +74,6 @@ persistent actor Fradium {
         stakeRecordsStore.put(key, value);
     };
 
-
-
     analyzeAddressStore := Map.HashMap<Principal, [Types.AnalyzeHistory]>(analyzeAddressStorage.size(), Principal.equal, Principal.hash);
     for ((key, value) in analyzeAddressStorage.vals()) {
         analyzeAddressStore.put(key, value);

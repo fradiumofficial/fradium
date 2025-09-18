@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../core/providers/AuthProvider";
 import { useWallet } from "../../core/providers/WalletProvider";
 import ManageNetworksModal from "../../core/components/modals/ManageNetworksModal";
-import { NETWORK_CONFIG } from "../../core/lib/tokenUtils";
+import { NETWORK_CONFIG } from "@/core/config/tokenConfig.js";
 import toast from "react-hot-toast";
 
 export default function SettingPage() {

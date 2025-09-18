@@ -17,7 +17,7 @@ export TOKEN_NAME="Fradium Token"
 export TOKEN_SYMBOL="FRADIUM"
 
 # Token economics parameters
-export PRE_MINTED_TOKENS=10_000_000_000
+export PRE_MINTED_TOKENS=50_000_000_000_000_000
 export TRANSFER_FEE=10_000
 
 # Archive parameters

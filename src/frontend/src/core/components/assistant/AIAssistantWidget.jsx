@@ -1,15 +1,22 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/core/providers/AuthProvider";
+import { useWallet } from "@/core/providers/WalletProvider";
+import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
+import { getBalance } from "@/core/lib/tokenUtils.js";
+import { agentService } from "@/core/services/agentService.js";
 
 export default function AIAssistantWidget() {
   const { user, identity } = useAuth();
+  const walletContext = useWallet();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [messages, setMessages] = React.useState([{ id: "m1", role: "assistant", text: "Hi! I'm your AI Assistant. How can I help you today?", ts: Date.now() }]);
+  const [messages, setMessages] = React.useState([{ id: "m1", role: "assistant", text: "Hello! I'm your Fradium AI Assistant. How can I help you today?", ts: Date.now() }]);
   const [input, setInput] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
   const chipsRef = React.useRef(null);
   const messagesContainerRef = React.useRef(null);
   const messagesEndRef = React.useRef(null);
+  const inputRef = React.useRef(null);
   const didLoadFromStorageRef = React.useRef(false);
 
   const principalString = React.useMemo(() => {
@@ -47,6 +54,12 @@ export default function AIAssistantWidget() {
     }
   }, [isOpen]);
 
+  // Set wallet context to agent service
+  React.useEffect(() => {
+    agentService.setWalletContext(walletContext);
+    agentService.setAuthContext({ identity, user });
+  }, [walletContext, identity, user]);
+
   // Prebuilt sparkles vectors (emanate from center fast, random spread)
   const sparkles = React.useMemo(() => {
     const count = 20;
@@ -60,17 +73,121 @@ export default function AIAssistantWidget() {
 
   const handleToggle = () => setIsOpen((v) => !v);
 
-  const sendText = (text) => {
+  const sendText = async (text) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || isLoading) return;
+
     const now = Date.now();
     const userMsg = { id: `u-${now}`, role: "user", text: trimmed, ts: now };
     setMessages((prev) => [...prev, userMsg]);
-    // Placeholder response
-    setTimeout(() => {
+    setIsLoading(true);
+
+    try {
+      // Intercept command: "get my balance <token>"
+      const cmdMatch = /^get my balance\s+(.+)$/i.exec(trimmed);
+      if (cmdMatch && cmdMatch[1]) {
+        const tokenQuery = cmdMatch[1].trim();
+
+        // Find token by symbol or name (case-insensitive)
+        const token = TOKENS_CONFIG.find((t) => t.symbol.toLowerCase() === tokenQuery.toLowerCase() || t.name.toLowerCase() === tokenQuery.toLowerCase());
+
+        const ats = Date.now();
+        if (!token) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `a-${ats}`,
+              role: "assistant",
+              text: `Sorry, I couldn't find a token named "${tokenQuery}". Please try a valid token symbol or name (e.g., ETH, Bitcoin, ICP).`,
+              ts: ats,
+            },
+          ]);
+          return;
+        }
+
+        // Resolve principal for ICRC tokens
+        let principal = null;
+        try {
+          principal = typeof identity?.getPrincipal === "function" ? identity.getPrincipal() : null;
+        } catch (_e) {}
+
+        // Fetch balance via reusable tokenUtils
+        let balanceText = "0";
+        try {
+          const raw = await getBalance(token.id, principal, true);
+          balanceText = String(raw);
+        } catch (e) {
+          const errMsg = e?.message || "Unknown error";
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `a-${Date.now()}`,
+              role: "assistant",
+              text: `Failed to fetch ${token.symbol} balance: ${errMsg}`,
+              ts: Date.now(),
+            },
+          ]);
+          return;
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a-${ats}`,
+            role: "assistant",
+            text: `Your ${token.name} (${token.symbol}) balance is ${balanceText}.`,
+            ts: ats,
+          },
+        ]);
+        return;
+      }
+
+      // Prepare chat history for agent
+      const chatHistory = messages.map((msg) => ({
+        role: msg.role === "user" ? "human" : "ai",
+        content: msg.text,
+      }));
+
+      // Process message with agent service
+      const response = await agentService.processMessage(trimmed, chatHistory);
+
       const ats = Date.now();
-      setMessages((prev) => [...prev, { id: `a-${ats}`, role: "assistant", text: "Got it! Smart agent actions will be available soon. This is a UI preview.", ts: ats }]);
-    }, 400);
+      if (response.success) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a-${ats}`,
+            role: "assistant",
+            text: response.response,
+            ts: ats,
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a-${ats}`,
+            role: "assistant",
+            text: `Sorry, an error occurred: ${response.error || "Unknown error"}. Please try again.`,
+            ts: ats,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error processing message:", error);
+      const ats = Date.now();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${ats}`,
+          role: "assistant",
+          text: "Sorry, an error occurred while processing your message. Please try again.",
+          ts: ats,
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSend = (e) => {
@@ -108,13 +225,19 @@ export default function AIAssistantWidget() {
         }
       }
       if (!didLoadFromStorageRef.current) {
-        setMessages([{ id: `m1-${Date.now()}`, role: "assistant", text: "Hi! I'm your AI Assistant. How can I help you today?", ts: Date.now() }]);
+        setMessages([{ id: `m1-${Date.now()}`, role: "assistant", text: "Hello! I'm your Fradium AI Assistant. How can I help you today?", ts: Date.now() }]);
       }
     } catch (_e) {}
   }, [getStorageKey]);
 
   const handleSampleClick = (text) => {
-    sendText(text);
+    setInput(text);
+    // Fokuskan ke input agar user bisa edit/enter
+    requestAnimationFrame(() => {
+      try {
+        inputRef.current?.focus();
+      } catch (_e) {}
+    });
   };
 
   const scrollChipsBy = (delta) => {
@@ -239,6 +362,20 @@ export default function AIAssistantWidget() {
                       </div>
                     </motion.div>
                   ))}
+                  {isLoading && (
+                    <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="flex justify-start">
+                      <div className="flex max-w-[80%] flex-col gap-1">
+                        <div className="bg-white/5 text-white/90 px-3 py-2 rounded-2xl text-sm border border-white/10 flex items-center gap-2">
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                            <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                            <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                          </div>
+                          <span className="text-white/60">AI is thinking...</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
                 <div ref={messagesEndRef} />
               </div>
@@ -252,13 +389,12 @@ export default function AIAssistantWidget() {
                   <div
                     ref={chipsRef}
                     className="flex items-center gap-2 overflow-x-auto overflow-y-hidden no-scrollbar py-1 overscroll-contain touch-pan-x px-2 cursor-grab active:cursor-grabbing select-none"
+                    style={{ overscrollBehaviorX: "contain" }}
                     onWheel={(e) => {
                       const el = chipsRef.current;
                       if (!el) return;
                       // Convert vertical wheel to horizontal scroll and prevent page scroll
                       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                        e.preventDefault();
-                        e.stopPropagation();
                         el.scrollLeft += e.deltaY;
                       }
                     }}
@@ -288,11 +424,23 @@ export default function AIAssistantWidget() {
                       const walk = (x - startX) * 1;
                       el.scrollLeft = startLeft - walk;
                     }}
+                    onTouchStart={(e) => {
+                      const el = chipsRef.current;
+                      if (!el) return;
+                      el.dataset.tStartX = String(e.touches[0].clientX);
+                      el.dataset.tStartLeft = String(el.scrollLeft);
+                    }}
+                    // Jangan panggil preventDefault dalam passive listener
                     onTouchMove={(e) => {
-                      // Prevent vertical scroll passing to page while swiping within chips
-                      e.stopPropagation();
+                      const el = chipsRef.current;
+                      if (!el) return;
+                      const startX = Number(el.dataset.tStartX || 0);
+                      const startLeft = Number(el.dataset.tStartLeft || 0);
+                      const x = e.touches[0].clientX;
+                      const walk = (x - startX) * 1;
+                      el.scrollLeft = startLeft - walk;
                     }}>
-                    {["Get my BTC balance", "Check my Ethereum transactions", "Show my Solana address", "What's my ICP balance?", "Show latest Bitcoin price", "Refresh all balances", "Analyze address risk", "Get my ckBTC balance"].map((sample) => (
+                    {["Check my ETH balance", "What's the balance of wallet 0x123...", "Show Bitcoin balance", "Check Solana balance", "Analyze address risk", "Refresh all balances", "Show Bitcoin price", "Check ICP balance"].map((sample) => (
                       <button key={sample} type="button" onClick={() => handleSampleClick(sample)} className="shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs border border-white/10 hover:border-white/20 transition-colors" title={sample}>
                         {sample}
                       </button>
@@ -304,13 +452,13 @@ export default function AIAssistantWidget() {
               {/* Input */}
               <form onSubmit={handleSend} className="px-3 pb-3 pt-1">
                 <div className="flex items-center gap-2 bg-[#23272F] border border-[#393E4B] rounded-xl px-2 py-2">
-                  <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Write a command... e.g., Check my Bitcoin balance" className="flex-1 bg-transparent outline-none text-white text-sm placeholder-[#B0B6BE] px-2" />
-                  <button type="submit" className="px-3 py-1.5 rounded-lg bg-[#7C72FE] text-white text-sm hover:brightness-110 active:brightness-95 transition">
-                    Send
+                  <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Write a command... e.g., Check my Bitcoin balance" className="flex-1 bg-transparent outline-none text-white text-sm placeholder-[#B0B6BE] px-2" disabled={isLoading} />
+                  <button type="submit" disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-[#7C72FE] text-white text-sm hover:brightness-110 active:brightness-95 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isLoading ? "..." : "Send"}
                   </button>
                 </div>
                 <div className="mt-2 text-[10px] text-white/40 text-center">
-                  Powered by <span className="text-white/70">FetchAI</span>.
+                  Powered by <span className="text-white/70">Gemini AI</span> & <span className="text-white/70">LangChain</span>.
                 </div>
               </form>
             </motion.div>

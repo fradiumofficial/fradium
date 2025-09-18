@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TOKENS_CONFIG, formatAmount, getIconByChain } from "@/core/lib/tokenUtils";
+import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
+import { formatAmount, getIconByChain } from "@/core/lib/tokenUtils";
 import { getETHTransactionHistory, getSolanaTransactionHistory, getBitcoinTransactionHistory, getTransactionHistory, getICRCTransactionHistory } from "@/core/services/historyTransactionService";
 import { useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";

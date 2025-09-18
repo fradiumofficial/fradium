@@ -6,7 +6,8 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Token Configuration
-import { TOKENS_CONFIG, getSupportedTokensForAddress, getFeeInfo, detectAddressNetwork, sendTokenToBackend } from "@/core/lib/tokenUtils";
+import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
+import { getSupportedTokensForAddress, getFeeInfo, detectAddressNetwork, sendTokenToBackend } from "@/core/lib/tokenUtils";
 
 // Wallet Provider
 import { useWallet } from "@/core/providers/WalletProvider";
