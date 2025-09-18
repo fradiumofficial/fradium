@@ -72,19 +72,21 @@ const ButtonGreen = ({ children, icon, onClick, className = "", size = "md", ful
         fullWidth ? "w-full" : "",
         // base visual - green gradient
         "bg-gradient-to-b from-[#99E39E] to-[#4BB255]",
-        // subtle single border like previous style
-        "border border-[#FFFFFF47]",
+        // borders and inner shadow to mimic glossy pill
+        "border border-white/15 shadow-[0_8px_24px_rgba(75,178,85,0.45),inset_0_-2px_6px_rgba(0,0,0,0.35)]",
         // interaction
         "transition-all duration-200 ease-out will-change-transform",
-        "hover:from-[#90DB95] hover:to-[#46A74F]",
-        "active:from-[#86D28C] active:to-[#409C49]",
+        "hover:shadow-[0_12px_28px_rgba(75,178,85,0.6),inset_0_-2px_8px_rgba(0,0,0,0.35)] hover:-translate-y-[1px]",
+        "active:translate-y-0 active:shadow-[0_6px_18px_rgba(75,178,85,0.45),inset_0_-1px_4px_rgba(0,0,0,0.4)]",
         "disabled:opacity-60 disabled:cursor-not-allowed",
         className
       )}
-      // simple soft drop shadow underneath
-      style={{ boxShadow: disabled ? undefined : "0 8px 20px rgba(0,0,0,0.35)" }}
       {...props}>
-      <span className="flex items-center gap-2">
+      {/* Glow */}
+      <span className="pointer-events-none absolute -inset-2 rounded-full bg-[radial-gradient(120%_120%_at_50%_120%,rgba(75,178,85,0.25)_0%,rgba(75,178,85,0)_60%)] blur-md" />
+      {/* Gloss highlight */}
+      <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(120%_60%_at_50%_-30%,rgba(255,255,255,0.45)_0%,rgba(255,255,255,0)_60%)]" />
+      <span className="relative z-[1] flex items-center gap-2">
         {loading ? (
           <span className={cn("flex items-center gap-2", s.text)}>
             <svg className="animate-spin h-4 w-4 text-[#0A4C2A]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

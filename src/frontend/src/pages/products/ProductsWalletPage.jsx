@@ -4,6 +4,8 @@ import { useAuth } from "@/core/providers/AuthProvider";
 import { useWallet } from "@/core/providers/WalletProvider";
 import { backend } from "declarations/backend";
 import SidebarButton from "@/core/components/SidebarButton";
+import Footer from "../../core/components/Footer.jsx";
+import ButtonGreen from "@/core/components/ButtonGreen";
 import ConfirmCreateWalletModal from "@/core/components/modals/ConfirmCreateWalletModal";
 
 // Custom hook untuk deteksi mobile
@@ -159,79 +161,84 @@ const ProductsWallet = () => {
 
   // Layout desktop lama
   return (
-    <div className="relative min-h-screen mb-32 bg-[#000510] text-white font-inter w-full overflow-x-hidden">
-      {/* Glow background */}
-      <img src="/assets/images/glow.png" alt="Glow" className="absolute top-0 left-0 w-[600px] h-[400px] opacity-40 z-0 pointer-events-none select-none" style={{ objectFit: "cover" }} />
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center pt-40 pb-10 px-4 md:px-8 lg:px-16">
-        {/* Section label */}
-        <span className="text-[#9beb83] text-[16px] font-semibold tracking-[0.18em] mb-6 uppercase">FRADIUM WALLET</span>
-        {/* Heading */}
-        <h1 className="text-white text-center text-[40px] md:text-[48px] font-medium leading-tight mb-12 max-w-3xl">Your Command Center for Safer Transactions</h1>
-        {/* Button */}
-        <div className="mb-16">
-          <SidebarButton onClick={handleLaunchWallet} disabled={isLoading} className="text-[20px] font-medium">
-            {isLoading ? "Checking Wallet..." : "Start Using Wallet →"}
-          </SidebarButton>
-        </div>
-        {/* Laptop Image with Glow Effect */}
-        <div className="relative w-full flex justify-center mb-16">
-          <img src="/assets/images/glow-effect.png" alt="Glow Effect" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-auto z-0 pointer-events-none select-none blur-2xl " />
-          <img src="/assets/images/laptop.png" alt="Laptop" className="relative w-full max-w-3xl mx-auto z-10" style={{ objectFit: "contain" }} />
-        </div>
-        {/* Description */}
-        <p className="text-[#B0B6BE] text-center text-base font-normal max-w-5xl mx-auto mt-2">Fradium Extension is a browser tool designed to help you assess the safety of blockchain interactions as you navigate Web3 platforms. After downloading and installing the extension, you can analyse wallet addresses and smart contracts directly from your browser. The extension runs checks in the background and displays risk information on the spot, so you can review potential threats without leaving the page or switching to another tool.</p>
-      </div>
-      {/* Wallet Feature Section */}
-      <section className="w-full max-w-[1200px] mb-32 mx-auto flex flex-col md:flex-row items-center justify-between gap-x-12 gap-y-8 py-24 px-4 md:px-8 lg:px-16">
-        {/* Left: Text & Features */}
-        <div className="flex-1 flex flex-col items-start justify-center">
-          <span className="text-[#9beb83] text-[17px] font-semibold tracking-[0.18em] mb-6 uppercase">FRADIUM WALLET FEATURE</span>
-          <h2 className="text-white text-[40px] font-medium leading-tight mb-12 max-w-2xl">Protect and manage your assets with confidence</h2>
-          {/* Feature Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 w-full max-w-2xl">
-            {/* Safe Transactions */}
-            <div className="flex items-start gap-5">
-              <img src="/assets/icons/Icon.png" alt="Safe Transactions" className="w-16 h-16 md:w-[56px] md:h-[56px]" />
-              <div>
-                <div className="text-white text-[20px] font-medium mb-1">Safe Transactions</div>
-                <div className="text-[#B0B6BE] text-[16px] font-normal leading-snug">Map the crypto projects. Identify wallet risks before any transaction.</div>
-              </div>
-            </div>
-            {/* Smart Contract Audit */}
-            <div className="flex items-start gap-5">
-              <img src="/assets/icons/Icon-1.png" alt="Smart Contract Audit" className="w-16 h-16 md:w-[56px] md:h-[56px]" />
-              <div>
-                <div className="text-white text-[20px] font-medium mb-1">Smart Contract Audit</div>
-                <div className="text-[#B0B6BE] text-[16px] font-normal leading-snug">Check and scan contracts for vulnerabilities automatically.</div>
-              </div>
-            </div>
-            {/* Analyze Address */}
-            <div className="flex items-start gap-5">
-              <img src="/assets/icons/Icon-2.png" alt="Analyze Address" className="w-16 h-16 md:w-[56px] md:h-[56px]" />
-              <div>
-                <div className="text-white text-[20px] font-medium mb-1">Analyze Address</div>
-                <div className="text-[#B0B6BE] text-[16px] font-normal leading-snug">Check wallet address for past fraud activity.</div>
-              </div>
-            </div>
-            {/* History */}
-            <div className="flex items-start gap-5">
-              <img src="/assets/icons/Icon-3.png" alt="History" className="w-16 h-16 md:w-[56px] md:h-[56px]" />
-              <div>
-                <div className="text-white text-[20px] font-medium mb-1">History</div>
-                <div className="text-[#B0B6BE] text-[16px] font-normal leading-snug">View past transactions and scan records in one place.</div>
-              </div>
-            </div>
+    <section className="relative bg-[#000510] w-full overflow-hidden">
+      {/* Top content before background */}
+      <div className="relative z-10 mx-auto w-full max-w-[1300px] pt-28">
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex-1 min-w-[320px]">
+            <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-3 uppercase">FRADIUM WALLET</span>
+            <h1 className="text-white text-[36px] font-medium leading-tight mb-3">Manage your assets with protection</h1>
+            <p className="text-[#B0B6BE] text-[14px] md:text-[15px] max-w-3xl">Fradium Extension lets you analyse wallet addresses and smart contracts directly in your browser, showing instant risk checks so you can spot threats without leaving the page.</p>
+          </div>
+          <div className="shrink-0 hidden md:block pt-4">
+            <ButtonGreen
+              textSize="text-[16px]"
+              fontWeight="medium"
+              onClick={() => {
+                window.open("https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc", "_blank");
+              }}
+            >
+              Download Extension
+            </ButtonGreen>
           </div>
         </div>
-        {/* Right: Image */}
-        <div className="flex-1 flex items-center justify-center w-full">
-          <img src="/assets/images/wallet-feature.png" alt="Wallet Feature" className="w-full max-w-2xl md:max-w-[600px] rounded-2xl" />
+      </div>
+
+      {/* Background section with cards and laptop */}
+      <div className="relative mx-auto mt-8 overflow-hidden">
+        {/* Background layer */}
+        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+          <img
+            src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            loading="lazy"
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         </div>
-      </section>
-      {/* Confirm Create Wallet Modal */}
-      <ConfirmCreateWalletModal isOpen={showConfirmWalletModal} onOpenChange={setShowConfirmWalletModal} onConfirm={handleConfirmCreateWallet} isLoading={isLoading} />
-    </div>
+
+        {/* Content over background */}
+        <div className="relative z-10 mx-auto w-full max-w-[1300px] pt-12 pb-[380px] md:pb-[600px]">
+          {/* Cards row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
+            {[0, 1, 2].map((_, idx) => (
+              <div key={idx} className="rounded-2xl border border-white/10 bg-[#0B0F18]/60 backdrop-blur-[2px] p-5">
+                <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5" />
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div className="text-white text-[18px] md:text-[20px] font-medium">Extension</div>
+                    <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Helps you check the safety of your transaction while browsing Web3.</div>
+                  </div>
+                  <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M8 16L16 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M9 8H16V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Laptop image moved to absolute bottom full-width */}
+        </div>
+        {/* Full-width laptop at the very bottom */}
+        <div className="absolute inset-x-0 bottom-[-40px] md:bottom-[-80px] z-10">
+          <div className="relative w-full overflow-hidden pointer-events-none select-none">
+            <img
+              src="/assets/images/laptop.png"
+              alt="Laptop"
+              className="relative w-full max-w-none h-auto block"
+              style={{ objectFit: "contain" }}
+            />
+          </div>
+        </div>
+      </div>
+      {/* Footer visuals spacing area if needed */}
+      <Footer />
+    </section>
   );
 };
 
