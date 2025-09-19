@@ -1,3 +1,5 @@
+import { HttpAgent } from "@dfinity/agent"
+
 export function getInternetIdentityNetwork() {
   const env = (typeof import.meta !== "undefined" ? (import.meta as any).env : {}) || {}
   const canisterId =
@@ -25,6 +27,73 @@ export function getInternetIdentityNetwork() {
     // Mainnet/public II URL
     return `https://id.ai`;
   }
+}
+
+// Resolve DFX network from multiple env sources (plasmo/vite/node)
+export function getDfxNetwork(): string {
+  const env = (typeof import.meta !== "undefined" ? (import.meta as any).env : {}) || {}
+  return (
+    env.PLASMO_PUBLIC_DFX_NETWORK ||
+    env.VITE_DFX_NETWORK ||
+    process.env.PLASMO_PUBLIC_DFX_NETWORK ||
+    process.env.VITE_DFX_NETWORK ||
+    process.env.DFX_NETWORK ||
+    "ic"
+  )
+}
+
+// Return proper agent host based on network
+export function getIcHost(): string | undefined {
+  const net = getDfxNetwork()
+  if (net === "local") {
+    return "http://127.0.0.1:4943"
+  }
+  // undefined lets @dfinity/agent use default boundary (icp-api.io)
+  return undefined
+}
+
+// Convenience factory to create HttpAgent honoring host and root key policy
+export function createHttpAgent(identity?: any): HttpAgent {
+  const host = getIcHost()
+  const agent = new HttpAgent({ identity, host }) as HttpAgent
+  if (getDfxNetwork() !== "ic") {
+    try { (agent as any).fetchRootKey?.() } catch {}
+  }
+  return agent
+}
+
+// Create an agent tailored for a specific canister id. In local mode,
+// always talk to the local replica and fetch the root key. In mainnet,
+// use the default boundary node host and do NOT fetch root key.
+export function createAgentForCanister(canisterId: string | undefined, identity?: any): HttpAgent {
+  const network = getDfxNetwork()
+  const isLocalEnv = network !== "ic"
+
+  // Known mainnet canister IDs used by the extension for production ledgers and services
+  const MAINNET_CANISTERS = new Set<string>([
+    // ICP Ledger (mainnet)
+    "ryjl3-tyaaa-aaaaa-aaaba-cai",
+    // Fradium Ledger (project mainnet value)
+    "sr4wk-4qaaa-aaaae-qfdta-cai",
+    // ckBTC Ledger / Index / Minter / KYT (mainnet)
+    "mc6ru-gyaaa-aaaar-qaaaq-cai",
+    "mm444-5iaaa-aaaar-qaabq-cai",
+    "ml52i-qqaaa-aaaar-qaaba-cai",
+    "pvm5g-xaaaa-aaaar-qaaia-cai",
+  ])
+
+  const targetIsMainnet = !!canisterId && MAINNET_CANISTERS.has(canisterId)
+  const shouldUseLocalHost = isLocalEnv && !targetIsMainnet
+
+  const host = shouldUseLocalHost ? "http://127.0.0.1:4943" : undefined
+  const agent = new HttpAgent({ identity, host, verifyQuerySignatures: false }) as HttpAgent
+
+  // Only fetch root key when talking to a local replica
+  if (shouldUseLocalHost) {
+    try { agent.fetchRootKey?.() } catch {}
+  }
+
+  return agent
 }
 
 // Utility function to combine class names

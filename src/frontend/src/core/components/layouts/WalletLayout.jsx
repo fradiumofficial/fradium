@@ -5,7 +5,7 @@ import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
-import { NETWORK_CONFIG } from "@/core/lib/tokenUtils";
+import { NETWORK_CONFIG } from "@/core/config/tokenConfig.js";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 

@@ -1,4 +1,4 @@
-import { API_URLS } from "@/core/lib/tokenUtils";
+import { API_URLS } from "@/core/config/tokenConfig.js";
 import { icp_index } from "declarations/icp_index";
 import { fradium_index } from "declarations/fradium_index";
 import { ckbtc_index } from "declarations/ckbtc_index";

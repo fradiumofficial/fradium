@@ -5,6 +5,7 @@ import { fradium_ledger } from "declarations/fradium_ledger";
 import { ckbtc_ledger } from "declarations/ckbtc_ledger";
 import { ckbtc_minter } from "declarations/ckbtc_minter";
 import { Principal } from "@dfinity/principal";
+import { TOKENS_CONFIG, API_KEYS, API_URLS, NETWORK_CONFIG, COINGECKO_IDS, COINMARKETCAP_IDS, COINPAPRIKA_IDS, FALLBACK_PRICES, TOKEN_TYPE_MAPPINGS, DEFAULT_DECIMALS, CACHE_CONFIG } from "@/core/config/tokenConfig.js";
 
 // Helper function to safely stringify objects that may contain BigInt
 function safeStringify(obj) {
@@ -13,7 +14,7 @@ function safeStringify(obj) {
 
 // Helper functions for localStorage caching (similar to WalletProvider)
 function getBalanceCacheKey(principal, tokenId) {
-  return principal ? `balanceCache_${principal}_${tokenId}` : `balanceCache_default_${tokenId}`;
+  return principal ? `${CACHE_CONFIG.BALANCE_CACHE_PREFIX}${principal}_${tokenId}` : `${CACHE_CONFIG.BALANCE_CACHE_PREFIX}default_${tokenId}`;
 }
 
 function loadBalanceFromStorage(principal, tokenId) {
@@ -22,8 +23,8 @@ function loadBalanceFromStorage(principal, tokenId) {
     const saved = localStorage.getItem(key);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Check if cache is still valid (cache for 5 minutes)
-      if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+      // Check if cache is still valid
+      if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_CONFIG.BALANCE_CACHE_DURATION) {
         return parsed.balance;
       } else {
         // Cache expired, remove it
@@ -62,7 +63,7 @@ function clearBalanceCache(principal, tokenId = null) {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          if (key && key.startsWith(`balanceCache_${principalString}_`)) {
+          if (key && key.startsWith(`${CACHE_CONFIG.BALANCE_CACHE_PREFIX}${principalString}_`)) {
             keysToRemove.push(key);
           }
         }
@@ -75,143 +76,6 @@ function clearBalanceCache(principal, tokenId = null) {
     console.error("Error clearing balance cache:", error);
   }
 }
-
-// --- Mainnet tokens ---
-export const TOKENS_CONFIG = [
-  {
-    id: 1,
-    name: "Bitcoin Testnet4",
-    symbol: "BTC",
-    chain: "Bitcoin",
-    decimals: 8,
-    imageUrl: "assets/images/coins/bitcoin.webp",
-    mainnet: false,
-    // Token type
-    type: "native",
-  },
-  {
-    id: 2,
-    name: "Sepolia Ethereum",
-    symbol: "ETH",
-    chain: "Ethereum",
-    decimals: 18,
-    imageUrl: "assets/images/coins/ethereum.webp",
-    mainnet: false,
-    // Token type
-    type: "native",
-  },
-  {
-    id: 3,
-    name: "Solana Devnet",
-    symbol: "SOL",
-    chain: "Solana",
-    decimals: 9,
-    imageUrl: "assets/images/coins/solana.webp",
-    mainnet: false,
-    // Token type
-    type: "native",
-  },
-  {
-    id: 4,
-    name: "Internet Computer",
-    symbol: "ICP",
-    chain: "Internet Computer",
-    decimals: null,
-    imageUrl: "assets/images/coins/icp.webp",
-    mainnet: true,
-    // Token type
-    type: "icrc",
-    canisterId: "ryjl3-tyaaa-aaaaa-aaaba-cai",
-  },
-  {
-    id: 5,
-    name: "Fradium",
-    symbol: "FRADIUM",
-    chain: "Internet Computer",
-    decimals: null,
-    imageUrl: "assets/images/coins/fradium.webp",
-    mainnet: false,
-    // Token type
-    type: "icrc",
-    canisterId: "sr4wk-4qaaa-aaaae-qfdta-cai",
-  },
-  {
-    id: 6,
-    name: "ckBTC Testnet4",
-    symbol: "ckBTC",
-    chain: "Internet Computer",
-    decimals: null,
-    imageUrl: "assets/images/coins/ckbtc.webp",
-    mainnet: false,
-    // Token type
-    type: "icrc",
-    canisterId: "mc6ru-gyaaa-aaaar-qaaaq-cai",
-  },
-];
-
-// API Keys for different services
-const ETHERSCAN_API_KEY = process.env.VITE_ETHERSCAN_API_KEY;
-const COINGECKO_API_KEY = process.env.VITE_COINGECKO_API_KEY;
-const COINMARKETCAP_API_KEY = process.env.VITE_COINMARKETCAP_API_KEY;
-
-if (!ETHERSCAN_API_KEY) {
-  throw new Error("VITE_ETHERSCAN_API_KEY environment variable is required but not set");
-}
-
-// CoinGecko API key is optional but recommended for higher rate limits
-// Get your free API key at: https://www.coingecko.com/en/api
-// Add it to your .env file as: VITE_COINGECKO_API_KEY=your_api_key_here
-if (!COINGECKO_API_KEY) {
-  console.warn("VITE_COINGECKO_API_KEY not set. Using free tier with rate limits (10-50 calls/minute).");
-  console.warn("Get your free API key at: https://www.coingecko.com/en/api");
-}
-
-// CoinMarketCap API key is optional but recommended for better rate limits
-// Get your free API key at: https://coinmarketcap.com/api/
-// Add it to your .env file as: VITE_COINMARKETCAP_API_KEY=your_api_key_here
-if (!COINMARKETCAP_API_KEY) {
-  console.warn("VITE_COINMARKETCAP_API_KEY not set. Using free tier with rate limits (10,000 calls/month).");
-  console.warn("Get your free API key at: https://coinmarketcap.com/api/");
-}
-
-export const API_URLS = {
-  ethereum: {
-    sepolia: `https://api-sepolia.etherscan.io/api?module=account&action=txlist&apikey=${ETHERSCAN_API_KEY}`,
-    mainnet: `https://api.etherscan.io/api?module=account&action=txlist&apikey=${ETHERSCAN_API_KEY}`,
-  },
-  bitcoin: {
-    testnet: "https://api.blockcypher.com/v1/btc/test3",
-    mainnet: "https://api.blockcypher.com/v1/btc/main",
-  },
-  solana: {
-    devnet: "https://api.devnet.solana.com",
-    mainnet: "https://api.mainnet-beta.solana.com",
-  },
-};
-
-// Network configuration for WalletLayout compatibility
-export const NETWORK_CONFIG = [
-  {
-    id: "bitcoin",
-    name: "Bitcoin",
-    icon: "/assets/images/networks/bitcoin.webp",
-  },
-  {
-    id: "ethereum",
-    name: "Ethereum",
-    icon: "/assets/images/networks/ethereum.webp",
-  },
-  {
-    id: "solana",
-    name: "Solana",
-    icon: "/assets/images/networks/solana.webp",
-  },
-  {
-    id: "icp",
-    name: "Internet Computer",
-    icon: "/assets/images/networks/icp.webp",
-  },
-];
 
 export function getTokens() {
   return TOKENS_CONFIG;
@@ -409,22 +273,36 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
       if (decimals === null) {
         switch (token.id) {
           case 4: // ICP
-            decimals = await icp_ledger.decimals();
+            decimals = Number(await icp_ledger.decimals());
             break;
           case 5: // Fradium
-            decimals = await fradium_ledger.icrc1_decimals();
+            decimals = Number(await fradium_ledger.icrc1_decimals());
             break;
           case 6: // ckBTC
-            decimals = await ckbtc_ledger.icrc1_decimals();
-            // decimals = 8; // ckBTC typically has 8 decimals like BTC
+            {
+              let d = 8;
+              try {
+                d = Number(await ckbtc_ledger.icrc1_decimals());
+              } catch (_e) {
+                d = 8; // fallback
+              }
+              decimals = d;
+            }
             break;
           default:
             throw new Error("Unknown ICRC token for decimals");
         }
       }
 
+      // Ensure decimals is a finite number
+      decimals = Number(decimals);
+      if (!Number.isFinite(decimals)) {
+        decimals = 8;
+      }
+
       // Convert amount to smallest unit (e8s)
-      const amountInSmallestUnit = Math.floor(amount * Math.pow(10, decimals));
+      const power = Math.pow(10, Number(decimals));
+      const amountInSmallestUnit = Math.floor(Number(amount) * power);
 
       // Convert string principal to Principal object
       const toPrincipal = Principal.fromText(to);
@@ -692,17 +570,7 @@ export async function getUSD(tokenId) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
-  // Map token symbols to CoinGecko IDs
-  const coinGeckoIds = {
-    BTC: "bitcoin",
-    ETH: "ethereum",
-    SOL: "solana",
-    ICP: "internet-computer",
-    FADM: "fradium", // Note: Fradium might not be on CoinGecko, we'll handle this
-    ckBTC: "bitcoin", // ckBTC uses BTC price
-  };
-
-  const coinGeckoId = coinGeckoIds[token.symbol];
+  const coinGeckoId = COINGECKO_IDS[token.symbol];
 
   // Special handling for Fradium token - return 0 directly since it's not available on major APIs
   if (token.symbol === "FADM") {
@@ -720,15 +588,15 @@ export async function getUSD(tokenId) {
       });
 
       // Add API key if available
-      if (COINGECKO_API_KEY) {
-        params.append("x_cg_demo_api_key", COINGECKO_API_KEY);
+      if (API_KEYS.COINGECKO_API_KEY) {
+        params.append("x_cg_demo_api_key", API_KEYS.COINGECKO_API_KEY);
       }
 
       const response = await fetch(`${baseUrl}?${params.toString()}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
-          ...(COINGECKO_API_KEY && { "x-cg-demo-api-key": COINGECKO_API_KEY }),
+          ...(API_KEYS.COINGECKO_API_KEY && { "x-cg-demo-api-key": API_KEYS.COINGECKO_API_KEY }),
         },
       });
 
@@ -749,14 +617,7 @@ export async function getUSD(tokenId) {
 
   // Fallback API: CoinMarketCap (requires API key, but we can try without)
   try {
-    const cmcIds = {
-      BTC: "1",
-      ETH: "1027",
-      SOL: "5426",
-      ICP: "8916",
-    };
-
-    const cmcId = cmcIds[token.symbol];
+    const cmcId = COINMARKETCAP_IDS[token.symbol];
 
     if (cmcId) {
       // Build headers with API key if available
@@ -765,8 +626,8 @@ export async function getUSD(tokenId) {
       };
 
       // Add API key if available
-      if (COINMARKETCAP_API_KEY) {
-        headers["X-CMC_PRO_API_KEY"] = COINMARKETCAP_API_KEY;
+      if (API_KEYS.COINMARKETCAP_API_KEY) {
+        headers["X-CMC_PRO_API_KEY"] = API_KEYS.COINMARKETCAP_API_KEY;
       }
 
       const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail?id=${cmcId}`, {
@@ -791,14 +652,7 @@ export async function getUSD(tokenId) {
 
   // Fallback API: CoinPaprika
   try {
-    const paprikaIds = {
-      BTC: "btc-bitcoin",
-      ETH: "eth-ethereum",
-      SOL: "sol-solana",
-      ICP: "icp-internet-computer",
-    };
-
-    const paprikaId = paprikaIds[token.symbol];
+    const paprikaId = COINPAPRIKA_IDS[token.symbol];
 
     if (paprikaId) {
       const response = await fetch(`https://api.coinpaprika.com/v1/tickers/${paprikaId}`, {
@@ -826,17 +680,7 @@ export async function getUSD(tokenId) {
   // Final fallback: Use cached/default prices or return 0
   console.warn(`All price APIs failed for ${token.symbol}, using fallback`);
 
-  // For tokens not supported by major APIs, return a default price or 0
-  const fallbackPrices = {
-    BTC: 0,
-    ETH: 0,
-    SOL: 0,
-    ICP: 0,
-    FADM: 0, // Placeholder price for Fradium
-    ckBTC: 0, // ckBTC uses BTC price, fallback to 0
-  };
-
-  const fallbackPrice = fallbackPrices[token.symbol];
+  const fallbackPrice = FALLBACK_PRICES[token.symbol];
   if (fallbackPrice === undefined) {
     console.warn(`No fallback price available for ${token.symbol}, returning 0`);
     return 0;
@@ -873,14 +717,14 @@ export function getChainFromTokenType(tokenType) {
 
   // Handle different token type structures
   if (typeof tokenType === "string") {
-    return tokenType;
+    return TOKEN_TYPE_MAPPINGS[tokenType] || tokenType;
   }
 
   if (typeof tokenType === "object") {
     // Handle object structure like { Bitcoin: null }
     const keys = Object.keys(tokenType);
     if (keys.length > 0) {
-      return keys[0];
+      return TOKEN_TYPE_MAPPINGS[keys[0]] || keys[0];
     }
   }
 

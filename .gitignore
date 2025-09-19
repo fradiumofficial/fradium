@@ -47,3 +47,11 @@ bitcoin_data/*
 # Pocket IC
 .venv/
 pocket-ic
+
+# fetch
+fetch/venv/
+fetch/private_keys.json
+fetch/.env
+fetch/__pycache__/
+fetch/fetch.log
+fetch/*_data.json

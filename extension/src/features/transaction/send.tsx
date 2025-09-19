@@ -3,15 +3,17 @@ import { CDN } from "~lib/constant/cdn";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "~lib/context/walletContext";
+import { createHttpAgent } from "~lib/utils/utils";
 import { useAuth } from "~lib/context/authContext";
 import { ROUTES } from "~lib/constant/routes";
 import { TxHistoryService } from "~service/txHistoryService";
+import { Principal } from "@dfinity/principal";
 
 type NetworkKey = "btc" | "eth" | "sol" | "icp" | "fra";
 
 function Send() {
   const navigate = useNavigate();
-  const { walletActor, isAuthenticated, addresses } = useWallet();
+  const { walletActor, isAuthenticated, addresses, balances, balanceLoading } = useWallet() as any;
   const { identity } = useAuth();
 
   // Form state
@@ -25,9 +27,8 @@ function Send() {
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkKey>("btc");
   const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false);
 
-  // Balance state
-  const [balance, setBalance] = useState<string>("0.00");
-  const [isFetchingBalance, setIsFetchingBalance] = useState(false);
+  // Balance state - use context balances directly
+  const [localBalance, setLocalBalance] = useState<string>("0.00");
 
   // Validation state
   const [addressError, setAddressError] = useState<string | null>(null);
@@ -74,116 +75,24 @@ function Send() {
     }
   }, [selectedNetwork]);
 
-  // Fetch balance from wallet canister
-  const fetchBalance = useCallback(async () => {
-    if (!walletActor || !identity) return;
+  // Get balance from context based on selected network
+  const getBalanceFromContext = useCallback(() => {
+    const tokenId = selectedNetwork === "fra" ? "fradium" : selectedNetwork;
+    return balances?.[tokenId] || "0.000000";
+  }, [balances, selectedNetwork]);
 
-    setIsFetchingBalance(true);
-    try {
-      let balanceValue: string = "0.00";
+  // Get loading state from context
+  const getLoadingFromContext = useCallback(() => {
+    const tokenId = selectedNetwork === "fra" ? "fradium" : selectedNetwork;
+    return balanceLoading?.[tokenId] || false;
+  }, [balanceLoading, selectedNetwork]);
 
-      switch (selectedNetwork) {
-        case "btc":
-          const btcBalance = await walletActor.bitcoin_balance();
-          const btcValue = Number(btcBalance) / 100000000; // Convert satoshi to BTC
-          balanceValue = btcValue.toFixed(getDecimalPlaces());
-          break;
-        case "eth":
-          const ethBalance = await walletActor.ethereum_balance();
-          // Convert wei (string/bigint-like) to ETH precisely using BigInt math then format
-          const wei = BigInt(ethBalance.toString());
-          const WEI_PER_ETH = 1000000000000000000n;
-          const whole = wei / WEI_PER_ETH;
-          const frac = wei % WEI_PER_ETH;
-          const fracStr = frac.toString().padStart(18, '0');
-          const display = `${whole}.${fracStr}`;
-          const num = parseFloat(display);
-          balanceValue = num.toFixed(getDecimalPlaces());
-          break;
-        case "sol":
-          const solBalance = await walletActor.solana_balance();
-          const solValue = Number(solBalance) / 1000000000; // Convert lamports to SOL
-          balanceValue = solValue.toFixed(getDecimalPlaces());
-          break;
-        case "icp":
-          try {
-            // Import ICP ledger actor dynamically
-            const { createActor: createIcpLedgerActor, canisterId: icpLedgerCanisterId } = await import("../../declarations/icp_ledger");
-            const { HttpAgent } = await import("@dfinity/agent");
-
-            const agent = new HttpAgent({ identity }) as any;
-            if (process.env.DFX_NETWORK !== "ic") {
-              try { await agent.fetchRootKey() } catch {}
-            }
-
-            const icpActor = createIcpLedgerActor(icpLedgerCanisterId, { agent });
-            const owner = identity.getPrincipal();
-            const icpRaw = await icpActor.icrc1_balance_of({ owner, subaccount: [] });
-
-            let decimals = 8;
-            try {
-              const decimalsResult = await icpActor.icrc1_decimals?.();
-              if (decimalsResult && typeof decimalsResult === 'object') {
-                decimals = (decimalsResult as any).decimals || 8;
-              }
-            } catch {}
-
-            const icpValue = Number(icpRaw) / Math.pow(10, decimals);
-            balanceValue = icpValue.toFixed(getDecimalPlaces());
-          } catch (error) {
-            console.error("Error fetching ICP balance:", error);
-            balanceValue = "0.00000000";
-          }
-          break;
-        case "fra":
-          try {
-            // Import Fradium ledger actor dynamically
-            const { createActor: createFradiumLedgerActor, canisterId: fradiumLedgerCanisterId } = await import("../../declarations/fradium_ledger");
-            const { HttpAgent } = await import("@dfinity/agent");
-
-            const agent = new HttpAgent({ identity }) as any;
-            if (process.env.DFX_NETWORK !== "ic") {
-              try { await agent.fetchRootKey() } catch {}
-            }
-
-            const fradiumActor = createFradiumLedgerActor(fradiumLedgerCanisterId, { agent });
-            const owner = identity.getPrincipal();
-            const fumRaw = await fradiumActor.icrc1_balance_of({ owner, subaccount: [] });
-
-            let decimals = 8;
-            try {
-              const decimalsResult = await fradiumActor.icrc1_decimals?.();
-              if (decimalsResult && typeof decimalsResult === 'object') {
-                decimals = (decimalsResult as any).decimals || 8;
-              }
-            } catch {}
-
-            const fumValue = Number(fumRaw) / Math.pow(10, decimals);
-            balanceValue = fumValue.toFixed(getDecimalPlaces());
-          } catch (error) {
-            console.error("Error fetching Fradium balance:", error);
-            balanceValue = "0.00000000";
-          }
-          break;
-      }
-
-      setBalance(balanceValue);
-    } catch (error) {
-      console.error("Error fetching balance:", error);
-      setBalance("0.00");
-    } finally {
-      setIsFetchingBalance(false);
-    }
-  }, [walletActor, identity, selectedNetwork, getDecimalPlaces]);
-
-  // Fetch balance when network changes or component mounts
+  // Update local balance display when context balances change
   useEffect(() => {
-    if (isAuthenticated && walletActor) {
-      fetchBalance();
-    } else {
-      setBalance("0.00");
-    }
-  }, [selectedNetwork, isAuthenticated, walletActor, fetchBalance]);
+    const contextBalance = getBalanceFromContext();
+    const formattedBalance = parseFloat(contextBalance).toFixed(getDecimalPlaces());
+    setLocalBalance(formattedBalance);
+  }, [getBalanceFromContext, getDecimalPlaces]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -239,14 +148,11 @@ function Send() {
         }
         break;
       case "icp":
-        // ICP Principal/Account validation
-        if (address.length < 27 || address.length > 64) {
-          setAddressError("Invalid ICP Principal or Account ID format");
-          return false;
-        }
-        // Additional validation for ICP format (basic check)
-        if (!address.includes('-') && !address.startsWith('aaaaa-aa')) {
-          setAddressError("Invalid ICP address format");
+        // Require a valid Principal for ICRC transfer
+        try {
+          Principal.fromText(address);
+        } catch (_e) {
+          setAddressError("Enter a valid ICP Principal ID (not account ID)");
           return false;
         }
         break;
@@ -282,9 +188,9 @@ function Send() {
       return false;
     }
 
-    const balanceNum = parseFloat(balance);
+    const balanceNum = parseFloat(localBalance);
     if (numAmount > balanceNum) {
-      setAmountError(`Insufficient balance. Available: ${balance} ${getCurrencySymbol()}`);
+      setAmountError(`Insufficient balance. Available: ${localBalance} ${getCurrencySymbol()}`);
       return false;
     }
 
@@ -299,7 +205,7 @@ function Send() {
 
     setAmountError(null);
     return true;
-  }, [balance, getCurrencySymbol]);
+  }, [localBalance, getCurrencySymbol]);
 
   // Handle address input change
   const handleAddressChange = useCallback((value: string) => {
@@ -349,9 +255,9 @@ function Send() {
     const isAmountValid = validateAmount(amount);
     if (!isAddressValid || !isAmountValid) return;
 
-    // Navigate to analyze flow first
+    // Navigate to analyze flow for all tokens (including ICP)
     navigate(ROUTES.ANALYZE_PROGRESS, { state: { address: recipientAddress, isAnalyzing: true, sendContext: { amount, selectedNetwork } } });
-  }, [walletActor, identity, recipientAddress, amount, selectedNetwork, validateAddress, validateAmount, convertToBlockchainUnits, fetchBalance]);
+  }, [walletActor, identity, recipientAddress, amount, selectedNetwork, validateAddress, validateAmount, convertToBlockchainUnits, navigate]);
 
   // Handle back navigation
   const handleBack = useCallback(() => {
@@ -384,11 +290,11 @@ function Send() {
         <div className="text-center mt-4">
           <p className="text-[14px] text-white/60 font-normal mb-[6px]">Available Balance</p>
           <div className="flex items-center justify-center gap-2">
-            {isFetchingBalance ? (
+            {getLoadingFromContext() ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <span className="text-[18px] font-semibold text-white">
-                {balance} {getCurrencySymbol()}
+                {localBalance} {getCurrencySymbol()}
               </span>
             )}
           </div>

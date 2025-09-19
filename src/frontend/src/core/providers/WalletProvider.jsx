@@ -6,7 +6,8 @@ import { wallet } from "declarations/wallet";
 import { ckbtc_minter } from "declarations/ckbtc_minter";
 
 // Token utilities
-import { TOKENS_CONFIG, getBalance, getUSD, getUSDPrices, clearBalanceCache } from "@/core/lib/tokenUtils";
+import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
+import { getBalance, getUSD, getUSDPrices, clearBalanceCache } from "@/core/lib/tokenUtils";
 
 // Create context for wallet data
 const WalletContext = createContext();

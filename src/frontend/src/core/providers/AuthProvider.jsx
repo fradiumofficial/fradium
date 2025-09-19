@@ -86,15 +86,20 @@ export const AuthProvider = ({
     // Konfigurasi untuk membuka window baru, bukan tab
     const windowFeatures = ["width=500", "height=600", "scrollbars=yes", "resizable=yes", "toolbar=no", "menubar=no", "location=no", "status=no", "directories=no"].join(",");
 
-    await new Promise((resolve, reject) =>
-      authClient.login({
-        // derivationOrigin: "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
+    await new Promise((resolve, reject) => {
+      const loginOptions = {
         identityProvider: getIdentityProvider(),
         onSuccess: resolve,
         onError: reject,
         windowOpenerFeatures: windowFeatures,
-      })
-    );
+      };
+
+      if (process.env.DFX_NETWORK === "ic") {
+        // loginOptions.derivationOrigin = "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io";
+      }
+
+      authClient.login(loginOptions);
+    });
     const newIdentity = authClient.getIdentity();
     await handleLoginSuccess(newIdentity, customLoginSuccessHandler);
   };
