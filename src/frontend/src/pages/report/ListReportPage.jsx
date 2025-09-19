@@ -164,8 +164,14 @@ export default function ReportPage() {
       const shortAddress = report.address.length > 10 ? `${report.address.substring(0, 6)}...${report.address.substring(report.address.length - 4)}` : report.address;
 
       console.log("Converting report data:", report.report_id, "Type:", typeof report.report_id);
+
+      // Ensure report_id is properly converted to number
+      const reportId = typeof report.report_id === 'bigint' ? Number(report.report_id) : report.report_id;
+      console.log("Converted report ID:", reportId, "Type:", typeof reportId);
+
       return {
-        id: report.report_id,
+        id: reportId,
+        report_id: reportId, // Add both for compatibility
         address: report.address,
         shortAddress: shortAddress,
         status: status,
@@ -534,8 +540,15 @@ export default function ReportPage() {
                               <Button
                                 className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]"
                                 onClick={() => {
-                                  console.log("Navigating to report ID:", report.id, "Type:", typeof report.id);
-                                  navigate(`/reports/${report.id}`);
+                                  console.log("Navigating to report ID:", report.report_id, "Type:", typeof report.report_id);
+                                  console.log("Full report object:", report);
+                                  console.log("Navigation URL:", `/reports/${report.report_id}`);
+
+                                  // Ensure we're passing the correct ID
+                                  const reportId = report.report_id || report.id;
+                                  console.log("Using report ID for navigation:", reportId);
+
+                                  navigate(`/reports/${reportId}`);
                                 }}
                               >
                                 View Details

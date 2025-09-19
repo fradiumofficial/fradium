@@ -10,6 +10,7 @@ import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/cha
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { Principal } from "@dfinity/principal";
 import PrimaryButton from "@/core/components/Button";
+import { backend } from "declarations/backend";
 
 export default function DetailReportPage() {
   const { id } = useParams();
@@ -327,12 +328,39 @@ export default function DetailReportPage() {
       setIsLoading(true);
       try {
         console.log("Fetching report with ID:", id, "Type:", typeof id);
-        // Try different conversion methods
+
+        // First, try to get all reports to see what's available
+        console.log("Getting all reports to debug...");
+        const allReportsResponse = await backend.get_reports();
+        console.log("All reports response:", allReportsResponse);
+
+        if (allReportsResponse.Ok && allReportsResponse.Ok.length > 0) {
+          console.log("Available report IDs:", allReportsResponse.Ok.map(r => r.report_id));
+          console.log("Looking for report ID:", id, "in available IDs");
+
+          // Try to find the report by different ID comparisons
+          let foundReport = allReportsResponse.Ok.find(r => r.report_id.toString() === id);
+          if (!foundReport) {
+            foundReport = allReportsResponse.Ok.find(r => Number(r.report_id) === Number(id));
+          }
+          if (!foundReport) {
+            foundReport = allReportsResponse.Ok.find(r => r.report_id === parseInt(id));
+          }
+
+          if (foundReport) {
+            console.log("Found report by search:", foundReport);
+            setReportData(foundReport);
+            return;
+          }
+        }
+
+        // If not found in all reports, try direct backend call
+        console.log("Trying direct backend call...");
         const reportId = parseInt(id);
         console.log("Converted to parseInt:", reportId);
-        // Try with different data types
-        console.log("Trying with parseInt:", reportId);
+
         let response = await backend.get_report(reportId);
+        console.log("Backend response:", response);
 
         if (response.Err) {
           console.log("parseInt failed, trying with Number:", Number(id));
@@ -343,23 +371,10 @@ export default function DetailReportPage() {
           console.log("Number failed, trying with BigInt:", BigInt(id));
           response = await backend.get_report(BigInt(id));
         }
+
         console.log("Final backend response:", response);
         if (response.Err) {
-          console.error("All conversion methods failed. Report not found error:", response.Err);
-          // Let's also try to get all reports to see what's available
-          console.log("Trying to get all reports to debug...");
-          const allReportsResponse = await backend.get_reports();
-          console.log("All reports:", allReportsResponse);
-          if (allReportsResponse.Ok && allReportsResponse.Ok.length > 0) {
-            console.log("Available report IDs:", allReportsResponse.Ok.map(r => r.report_id));
-            console.log("Looking for report ID:", id, "in available IDs");
-            const foundReport = allReportsResponse.Ok.find(r => r.report_id.toString() === id);
-            if (foundReport) {
-              console.log("Found report by string comparison:", foundReport);
-              setReportData(foundReport);
-              return;
-            }
-          }
+          console.error("All methods failed. Report not found error:", response.Err);
           toast.error("Report not found. Please check the URL or try again.");
         } else {
           console.log("Report data received successfully:", response.Ok);
@@ -393,6 +408,7 @@ export default function DetailReportPage() {
           <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Report Not Found</h2>
           <p className="text-gray-400 mb-4">The report you're looking for doesn't exist or has been removed.</p>
+          <p className="text-gray-500 mb-4 text-sm">Report ID: {id}</p>
           <Link to="/reports" className="inline-flex items-center text-blue-400 hover:text-blue-300">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
