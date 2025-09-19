@@ -60,7 +60,7 @@ const EFFECTIVE_WALLET_CANISTER_ID =
       (process as any).env?.NEXT_PUBLIC_CANISTER_ID_WALLET ||
       (process as any).env?.CANISTER_ID_WALLET)) ||
   // As a last resort, fall back to mainnet canister ID in canister_ids.json
-  "v3x23-lyaaa-aaaam-aej2a-cai"
+  "ufxgi-4p777-77774-qaadq-cai"
 
 // Resolve ICP and Fradium ledger canister IDs for extension builds
 const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
@@ -869,10 +869,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           memo: [],
           created_at_time: []
         })
-        if (res && res.Err) throw new Error(JSON.stringify(res.Err))
+        if (res && (res as any).Err) throw new Error(JSON.stringify((res as any).Err))
+        const blockIndex = (res as any)?.Ok ? String((res as any).Ok) : undefined
         // Kickoff a background refresh
         refreshAllBalances().catch(() => {})
-        return { success: true }
+        return { success: true, blockIndex }
       } catch (e: any) {
         return { success: false, error: e?.message || String(e) }
       }

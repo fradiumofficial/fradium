@@ -13,7 +13,7 @@ type NetworkKey = "btc" | "eth" | "sol" | "icp" | "fra";
 
 function Send() {
   const navigate = useNavigate();
-  const { walletActor, isAuthenticated, addresses, balances, balanceLoading } = useWallet() as any;
+  const { walletActor, isAuthenticated, addresses, balances, balanceLoading, refreshAllBalances } = useWallet() as any;
   const { identity } = useAuth();
 
   // Form state
@@ -115,7 +115,11 @@ function Send() {
     setAmountError(null);
     setError(null);
     setSuccess(null);
-  }, []);
+    // Trigger ICP balance refresh when selecting ICP to ensure latest and show loading
+    if (networkKey === "icp") {
+      try { refreshAllBalances?.() } catch {}
+    }
+  }, [refreshAllBalances]);
 
   // Validate recipient address
   const validateAddress = useCallback((address: string) => {

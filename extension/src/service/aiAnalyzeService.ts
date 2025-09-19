@@ -96,7 +96,7 @@ export class AIAnalyzeService {
   }
   /**
    * Analyze an address and return risk assessment
-   * New flow: Community Analysis first, then AI Analysis if community is safe
+   * New flow: AI Analysis first, then Community Analysis if AI is safe
    * @param address - The address to analyze
    * @param options - Analysis options
    * @returns Promise<CombinedAnalysisResult> Analysis result
@@ -120,74 +120,110 @@ export class AIAnalyzeService {
       const network = detectTokenType(trimmedAddress) as SupportedNetwork;
       console.log(`Detected network: ${network} for address: ${trimmedAddress}`);
 
-      // Step 1: Perform Community Analysis first
-      console.log('Starting Community Analysis first...');
-      const communityResult = await this.performCommunityAnalysis(trimmedAddress);
-      console.log('Community Analysis Result:', communityResult);
+      // Step 1: Try AI Analysis first (if supported)
+      let aiResult: AIAnalysisResult | null = null;
+      let aiSupported = true;
 
-      // Case 1: If Community analysis shows unsafe, stop here and return community result
-      if (!communityResult.result.isSafe) {
-        console.log('Community analysis shows unsafe - stopping analysis');
-        await this.saveAnalysisToHistory(trimmedAddress, communityResult, network);
-        return {
+      try {
+        switch (network) {
+          case 'Bitcoin':
+            aiResult = await this.analyzeBitcoinAddress(trimmedAddress, options);
+            break;
+          case 'Ethereum':
+            aiResult = await this.analyzeEthereumAddress(trimmedAddress, options);
+            break;
+          case 'Solana':
+            aiResult = await this.analyzeSolanaAddress(trimmedAddress, options);
+            break;
+          case 'Internet Computer':
+            aiResult = await this.analyzeICPAddress(trimmedAddress, options);
+            break;
+          default:
+            aiSupported = false;
+            break;
+        }
+      } catch (error) {
+        console.error(`AI Analysis failed for ${network}:`, error);
+        aiSupported = false;
+      }
+
+      // If AI is not supported or failed, skip directly to community analysis
+      if (!aiSupported || !aiResult) {
+        const communityResult = await this.performCommunityAnalysis(trimmedAddress);
+
+        const result: CombinedAnalysisResult = {
           ...communityResult,
           analysisSource: 'community',
-          finalStatus: 'unsafe_by_community',
+          finalStatus: communityResult.result.isSafe ? 'safe_by_community' : 'unsafe_by_community',
         };
+
+        // Create analyze history for community analysis only
+        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, 'community', network);
+
+        return result;
       }
 
-      // Case 2: Community shows safe, proceed with AI Analysis
-      console.log('Community analysis shows safe - proceeding with AI analysis');
-      let aiResult: AIAnalysisResult;
-      switch (network) {
-        case 'Bitcoin':
-          aiResult = await this.analyzeBitcoinAddress(trimmedAddress, options);
-          break;
-        case 'Ethereum':
-          aiResult = await this.analyzeEthereumAddress(trimmedAddress, options);
-          break;
-        case 'Solana':
-          aiResult = await this.analyzeSolanaAddress(trimmedAddress, options);
-          break;
-        default:
-          throw new Error(`Token not supported: ${network} addresses are not yet supported for analysis`);
-      }
-
-      console.log('AI Analysis Result:', aiResult);
-
-      let finalResult: CombinedAnalysisResult;
-
-      // Case 2a: Both Community and AI show safe
-      if (communityResult.result.isSafe && aiResult.result.isSafe) {
-        finalResult = {
-          ...aiResult,
-          analysisSource: 'community_and_ai',
-          finalStatus: 'safe_by_both',
-          communityAnalysis: communityResult.result,
-        };
-      }
-      // Case 2b: Community shows safe but AI shows unsafe
-      else if (communityResult.result.isSafe && !aiResult.result.isSafe) {
-        finalResult = {
+      // Case 2: If AI analysis shows unsafe, stop here
+      if (!aiResult.result.isSafe) {
+        const result: CombinedAnalysisResult = {
           ...aiResult,
           analysisSource: 'ai',
           finalStatus: 'unsafe_by_ai',
-          communityAnalysis: communityResult.result,
         };
-      }
-      // Fallback case
-      else {
-        finalResult = {
-          ...aiResult,
-          analysisSource: 'ai',
-          finalStatus: 'safe_by_ai',
-          communityAnalysis: communityResult.result,
-        };
+
+        // Create analyze history for AI analysis
+        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
+
+        return result;
       }
 
-      // Save the final result to history
-      await this.saveAnalysisToHistory(trimmedAddress, finalResult, network);
-      return finalResult;
+      // Case 1 & 3: AI shows safe, proceed with community analysis
+      const communityResult = await this.performCommunityAnalysis(trimmedAddress);
+
+      // Case 1: Both AI and Community show safe
+      if (aiResult.result.isSafe && communityResult.result.isSafe) {
+        const result: CombinedAnalysisResult = {
+          ...aiResult,
+          analysisSource: 'ai_and_community',
+          finalStatus: 'safe_by_both',
+          communityAnalysis: communityResult.result,
+          aiAnalysis: aiResult.result,
+        };
+
+        // Create analyze history for both AI and Community analysis
+        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
+        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, 'community', network);
+
+        return result;
+      }
+
+      // Case 3: AI shows safe but Community shows unsafe
+      if (aiResult.result.isSafe && !communityResult.result.isSafe) {
+        const result: CombinedAnalysisResult = {
+          ...aiResult, // Keep AI result as base (network, address, etc.)
+          analysisSource: 'community',
+          finalStatus: 'unsafe_by_community',
+          result: communityResult.result, // Primary result from Community
+          aiAnalysis: aiResult.result,
+        };
+
+        // Create analyze history for both AI and Community analysis
+        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
+        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, 'community', network);
+
+        return result;
+      }
+
+      // Fallback case
+      const result: CombinedAnalysisResult = {
+        ...aiResult,
+        analysisSource: 'ai',
+        finalStatus: 'safe_by_ai',
+        communityAnalysis: communityResult.result,
+      };
+
+      await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
+      return result;
 
     } catch (error) {
       console.error('AI Analyze Service Error:', error);
@@ -360,41 +396,120 @@ export class AIAnalyzeService {
       const featuresPairs: [string, number][] = Object.entries(features).map(([k, v]) => [k, typeof v === 'number' ? v : 0]);
       const txCount = this.getTxCountFromFeaturesSOL(features);
 
-      // Note: AI analysis for Solana is not yet implemented in the canister
-      // For now, return a basic safe result with placeholder data
-      console.log('Solana AI analysis not yet implemented, returning basic analysis');
+      // Call AI canister via safe actor
+      const aiActor = this.getAiActor();
+      const ransomwareReport = await aiActor.analyze_sol_address(featuresPairs, address, txCount);
 
-      const transformedResult: AnalysisResult = {
-        isSafe: true, // Default to safe for now
-        confidence: 50, // Lower confidence since no AI analysis
-        riskLevel: 'MEDIUM',
-        description: `Basic analysis completed for Solana address. AI-powered analysis for Solana is not yet available. This address appears to be valid but comprehensive risk assessment requires AI analysis.`,
-        stats: {
-          transactions: features.total_txs,
-          totalVolume: `${features.total_received} SOL received`,
-          riskScore: '50/100',
-          lastActivity: 'Address validated',
-        },
-        securityChecks: [
-          'Address format is valid',
-          'Basic pattern analysis completed',
-          'AI analysis not yet available for Solana'
-        ],
-        rawResult: features,
-      };
+      console.log('Solana AI Report:', ransomwareReport);
 
-      return {
-        success: true,
-        network: 'Solana',
-        address: address,
-        result: transformedResult,
-        features: features,
-        type: 'ai',
-        timestamp: new Date().toISOString(),
-      };
+      if ('Ok' in ransomwareReport) {
+        const result = ransomwareReport.Ok as RansomwareResult;
+        console.log('AI Analysis Result:', result);
+
+        // Transform Rust result to frontend format
+        const transformedResult = this.transformRansomwareResult(result);
+
+        return {
+          success: true,
+          network: 'Solana',
+          address: address,
+          result: transformedResult,
+          features: features,
+          type: 'ai',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      throw new Error('Solana AI analysis failed');
     } catch (error) {
       console.error('Solana analysis error:', error);
       throw new Error(`Solana analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Analyze ICP address
+   * @param address - ICP address
+   * @param options - Analysis options
+   * @returns Promise<AIAnalysisResult> Analysis result
+   */
+  static async analyzeICPAddress(
+    address: string,
+    options: AnalysisOptions = {}
+  ): Promise<AIAnalysisResult> {
+    try {
+      console.log(`Analyzing ICP address: ${address}`);
+
+      // Extract features using ICP service with real data from ICP canisters
+      const features = await this.extractICPFeatures(address);
+
+      // Validate features object
+      if (!features || typeof features !== 'object') {
+        throw new Error('Invalid features object received from ICP service');
+      }
+
+      // Convert features to array format expected by Rust canister
+      // Format: Array<[string, number]> as per TypeScript declarations
+      const featuresArray: [string, number][] = [];
+      for (const [key, value] of this.prepareFeaturesForCanister(features)) {
+        const numValue = Number(value);
+        if (!isNaN(numValue) && isFinite(numValue)) {
+          featuresArray.push([key, numValue]);
+        } else {
+          featuresArray.push([key, 0.0]);
+        }
+      }
+
+      // Ensure we have at least some features
+      if (featuresArray.length === 0) {
+        featuresArray.push(['total_transactions', 0.0]);
+        featuresArray.push(['icp_balance', 0.0]);
+        featuresArray.push(['ckbtc_balance', 0.0]);
+        featuresArray.push(['cketh_balance', 0.0]);
+        featuresArray.push(['ckusdc_balance', 0.0]);
+      }
+
+      const txCount = Math.floor(Number(features.total_transactions) || 0);
+
+      // Call Rust AI canister with array format
+      const aiActor = this.getAiActor();
+      if (!aiActor) {
+        throw new Error('AI canister not available');
+      }
+
+      const ransomwareReport = await aiActor.analyze_icp_address(featuresArray, address, txCount);
+
+      // Validate canister response
+      if (!ransomwareReport || typeof ransomwareReport !== 'object') {
+        throw new Error('Invalid response from ICP AI canister');
+      }
+
+      if ('Ok' in ransomwareReport) {
+        const result = ransomwareReport.Ok as RansomwareResult;
+
+        // Validate result object for ICP
+        if (!result || typeof result !== 'object') {
+          throw new Error('Invalid result object from ICP AI canister');
+        }
+
+        // Transform Rust result to frontend format
+        const transformedResult = this.transformRansomwareResult(result);
+
+        return {
+          success: true,
+          network: 'Internet Computer',
+          address: address,
+          result: transformedResult,
+          features: features,
+          type: 'ai',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      throw new Error('ICP AI analysis failed');
+    } catch (error) {
+      console.error('ICP analysis error:', error);
+      throw new Error(`ICP analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -535,6 +650,7 @@ export class AIAnalyzeService {
     if (networkName === 'btc') networkName = 'bitcoin';
     if (networkName === 'eth') networkName = 'ethereum';
     if (networkName === 'sol') networkName = 'solana';
+    if (networkName === 'icp') networkName = 'internet computer';
 
     // Generate description based on result
     let description: string;
@@ -574,20 +690,89 @@ export class AIAnalyzeService {
     };
   }
 
+
   /**
-   * Save analysis result to history
-   * @param address - The analyzed address
-   * @param result - Analysis result to save
-   * @param network - Network type
+   * Extract ICP features for analysis
+   * @param address - ICP address
+   * @returns Promise<any> ICP features
    */
-  private static async saveAnalysisToHistory(
-    _address: string,
-    _result: AIAnalysisResult | CombinedAnalysisResult,
-    _network: SupportedNetwork
-  ): Promise<void> {
-    // History persistence via backend has been disabled in the extension build
-    // after removing historyService. This is intentionally a no-op.
-    return;
+  private static async extractICPFeatures(address: string): Promise<any> {
+    // Placeholder implementation - would need actual ICP feature extraction
+    // This should be implemented based on the frontend's icpAnalyzeService.js
+    return {
+      total_transactions: 0,
+      icp_balance: 0,
+      ckbtc_balance: 0,
+      cketh_balance: 0,
+      ckusdc_balance: 0,
+      first_transaction: '',
+      last_transaction: '',
+      unique_interactions: 0,
+      avg_transaction_value: 0,
+      total_received: 0,
+      total_sent: 0,
+    };
+  }
+
+  /**
+   * Prepare ICP features for canister
+   * @param features - ICP features object
+   * @returns Array<[string, number]> Prepared features
+   */
+  private static prepareFeaturesForCanister(features: any): Array<[string, number]> {
+    const featurePairs: Array<[string, number]> = [];
+    
+    for (const [key, value] of Object.entries(features)) {
+      const numValue = Number(value);
+      if (!isNaN(numValue) && isFinite(numValue)) {
+        featurePairs.push([key, numValue]);
+      } else {
+        featurePairs.push([key, 0.0]);
+      }
+    }
+    
+    return featurePairs;
+  }
+
+  /**
+   * Create analyze history in backend
+   * @param address - Address that was analyzed
+   * @param result - Analysis result
+   * @param analysisType - Type of analysis ("ai" or "community")
+   * @param network - Network type
+   * @returns Promise<void>
+   */
+  static async createAnalyzeHistory(address: string, result: AnalysisResult, analysisType: string, network: string): Promise<void> {
+    try {
+      // Map analysis type to AnalyzeHistoryType (variant tetap sama)
+      const analyzedType = analysisType === 'community' ? { CommunityVote: null } : { AIAnalysis: null };
+
+      const historyParams = {
+        address: address,
+        is_safe: result.isSafe,
+        analyzed_type: analyzedType,
+        metadata: JSON.stringify({
+          confidence: result.confidence,
+          riskLevel: result.riskLevel,
+          riskScore: result.stats?.riskScore,
+          transactions: result.stats?.transactions,
+          analysisType: analysisType,
+          network: network,
+          timestamp: new Date().toISOString(),
+        }),
+        token_type: network,
+      };
+
+      const backendActor = this.getBackendActor();
+      const historyResult = await backendActor.create_analyze_history(historyParams);
+
+      if ('Err' in historyResult) {
+        console.error(`Failed to create analyze history: ${historyResult.Err}`);
+      }
+    } catch (error) {
+      console.error(`Error creating analyze history for ${analysisType}:`, error);
+      // Don't throw error to avoid breaking the main analysis flow
+    }
   }
 
   /**
@@ -595,7 +780,7 @@ export class AIAnalyzeService {
    * @returns SupportedNetwork[] List of supported networks
    */
   static getSupportedNetworks(): SupportedNetwork[] {
-    return ['Bitcoin', 'Ethereum', 'Solana'];
+    return ['Bitcoin', 'Ethereum', 'Solana', 'Internet Computer'];
   }
 
   /**
