@@ -163,6 +163,7 @@ export default function ReportPage() {
       // Create short address
       const shortAddress = report.address.length > 10 ? `${report.address.substring(0, 6)}...${report.address.substring(report.address.length - 4)}` : report.address;
 
+      console.log("Converting report data:", report.report_id, "Type:", typeof report.report_id);
       return {
         id: report.report_id,
         address: report.address,
@@ -532,7 +533,10 @@ export default function ReportPage() {
 
                               <Button
                                 className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]"
-                                onClick={() => navigate(`/reports/${report.id}`)}
+                                onClick={() => {
+                                  console.log("Navigating to report ID:", report.id, "Type:", typeof report.id);
+                                  navigate(`/reports/${report.id}`);
+                                }}
                               >
                                 View Details
                                 <ArrowUpRight className="w-3 h-3 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />

@@ -20,9 +20,13 @@ import { useAuth } from "@/core/providers/AuthProvider";
 
 // Canister & Backend
 import { Principal } from "@dfinity/principal";
+import { backend } from "declarations/backend";
+
+// Backend canister ID
+const backendCanisterId = "oqcob-6iaaa-aaaar-qbr7q-cai";
 
 // Utils (local)
-import { convertE8sToToken, optValue } from "@/core/lib/canisterUtils";
+import { convertE8sToToken } from "@/core/lib/canisterUtils";
 
 import { uploadMultipleFilesToPinataWithFallback } from "@/core/lib/pinataUtils";
 import { validateFiles, formatFileSize, FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from "@/core/lib/fileValidationUtils";
@@ -53,7 +57,6 @@ export default function CreateReportPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [stakeAmount, setStakeAmount] = useState(5);
-  const [userBalance, setUserBalance] = useState(100);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [files, setFiles] = useState([]);
 
@@ -230,28 +233,22 @@ export default function CreateReportPage() {
 
   // Real-time validation for submit button
   const hasSubmitErrors = () => {
-    const submitErrors = {};
-
     // Check all required fields
     if (!formData.whatHappened.trim()) {
-      submitErrors.whatHappened = "This field is required";
+      return true;
     }
 
-    if (!formData.address.trim()) {
-      submitErrors.address = "Address is required";
-    } else if (formData.address.length < 10) {
-      submitErrors.address = "Please enter a valid address";
+    if (!formData.address.trim() || formData.address.length < 10) {
+      return true;
     }
 
-    if (!formData.description.trim()) {
-      submitErrors.description = "Description is required";
-    } else if (formData.description.length < 20) {
-      submitErrors.description = "Description must be at least 20 characters";
+    if (!formData.description.trim() || formData.description.length < 20) {
+      return true;
     }
 
     // Validate stake amount
     if (!stakeAmount || Number(stakeAmount) < 5) {
-      submitErrors.stakeAmount = "Minimum 5 FUM tokens required";
+      return true;
     }
 
     // Validate URL if provided
@@ -259,11 +256,11 @@ export default function CreateReportPage() {
       try {
         new URL(formData.url);
       } catch {
-        submitErrors.url = "Please enter a valid URL";
+        return true;
       }
     }
 
-    return Object.keys(submitErrors).length > 0;
+    return false;
   };
 
   // Handle form input changes
@@ -274,8 +271,6 @@ export default function CreateReportPage() {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
-
-  console.log(files);
 
   // Navigation functions
   const nextStep = () => {
@@ -309,6 +304,16 @@ export default function CreateReportPage() {
 
   // Submit form
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to submit a report.");
+      return;
+    }
+
+    if (hasSubmitErrors()) {
+      toast.error("Please fill in all required fields correctly.");
+      return;
+    }
+
     if (!validateStep(3)) {
       toast.error("Please fill in all required fields.");
       return;
@@ -317,23 +322,64 @@ export default function CreateReportPage() {
     setIsSubmitting(true);
 
     try {
-      // Approve tokens first
+      // Check if user has sufficient balance
+      const userBalance = balance ? convertE8sToToken(balance) : 0;
+      const stakeAmountNumber = Number(stakeAmount);
+      const requiredBalance = stakeAmountNumber + 2; // Add 2 FUM for fees and safety
+
+      if (requiredBalance > userBalance) {
+        toast.error(`Insufficient balance. You have ${userBalance} FUM but need ${requiredBalance} FUM (${stakeAmountNumber} for stake + 2 for fees).`);
+        return;
+      }
+
+      // Approve tokens first - approve more than needed to cover fees and operations
+      const approvalAmount = BigInt(stakeAmountNumber * 10 ** 8 + 200000000); // Add 2 FUM extra for fees and safety
+
+      console.log("Approving tokens with parameters:", {
+        from_subaccount: [],
+        spender: {
+          owner: backendCanisterId,
+          subaccount: []
+        },
+        amount: Number(approvalAmount),
+        fee: [],
+        memo: [],
+        created_at_time: [],
+        expected_allowance: [],
+        expires_at: []
+      });
+
       const approveResult = await fradium_ledger.icrc2_approve({
         from_subaccount: [],
-        spender: Principal.fromText(backendCanisterId),
-        amount: BigInt(stakeAmount) * BigInt(10 ** 8),
-        expires_at: [],
+        spender: {
+          owner: Principal.fromText(backendCanisterId),
+          subaccount: []
+        },
+        amount: approvalAmount,
         fee: [],
-        memo: [new TextEncoder().encode(`Approve for staking report creation`)],
+        memo: [],
         created_at_time: [],
+        expected_allowance: [],
+        expires_at: []
       });
+
+      console.log("Approve result:", approveResult);
 
       // Check if approve failed
       if (!approveResult || approveResult.Err) {
-        if (approveResult.Err?.InsufficientFunds) {
+        console.error("Approve failed:", approveResult);
+        if (approveResult?.Err?.InsufficientFunds) {
           toast.error("Insufficient funds. Please top up your balance.");
+        } else if (approveResult?.Err?.InsufficientAllowance) {
+          toast.error("Insufficient allowance. Please try again.");
+        } else if (approveResult?.Err?.BadFee) {
+          toast.error(`Bad fee. Expected: ${approveResult.Err.BadFee.expected_fee}`);
+        } else if (approveResult?.Err?.AllowanceChanged) {
+          toast.error(`Allowance changed. Current: ${approveResult.Err.AllowanceChanged.current_allowance}`);
+        } else if (approveResult?.Err?.GenericError) {
+          toast.error(`Generic error: ${approveResult.Err.GenericError.message}`);
         } else {
-          toast.error("Failed to approve tokens. Please try again.");
+          toast.error(`Failed to approve tokens: ${JSON.stringify(approveResult?.Err) || 'Unknown error'}`);
         }
         return;
       }
@@ -348,6 +394,8 @@ export default function CreateReportPage() {
           evidenceUrls.push(...uploadResult.success);
         } catch (error) {
           console.error("Error during file upload:", error);
+          toast.error("Failed to upload files. Please try again.");
+          return;
         } finally {
           setIsUploading(false);
         }
@@ -358,29 +406,46 @@ export default function CreateReportPage() {
         address: formData.address,
         category: formData.whatHappened.toLowerCase(),
         description: formData.description,
-        url: optValue(formData.url ?? null),
+        url: formData.url ? [formData.url] : [],
         evidence: evidenceUrls.length > 0 ? evidenceUrls : [],
-        stake_amount: Number(stakeAmount) * 10 ** 8,
+        stake_amount: stakeAmountNumber * 10 ** 8,
       });
-      console.log("response", response);
 
       if (response.Ok) {
-        toast.success("Report created successfully.");
+        toast.success("Report created successfully!");
         setShowConfirmModal(false);
+        setShowSuccessModal(true);
 
         // Trigger balance update event for navbar
         window.dispatchEvent(new Event("balance-updated"));
 
-        navigate("/reports");
+        // Navigate to reports after a delay
+        setTimeout(() => {
+          navigate("/reports");
+        }, 2000);
       } else {
+        console.error("Report creation failed:", response);
         if (response.Err) {
-          toast.error(response.Err);
+          if (response.Err.includes("InsufficientAllowance")) {
+            toast.error("Insufficient allowance. Please try again or increase your approval amount.");
+          } else if (response.Err.includes("InsufficientFunds")) {
+            toast.error("Insufficient funds. Please top up your balance.");
+          } else {
+            toast.error(`Failed to create report: ${response.Err}`);
+          }
         } else {
           toast.error("Failed to create report. Please try again.");
         }
       }
     } catch (error) {
       console.error("Error in handleSubmit:", error);
+      if (error.message && error.message.includes("expected_allowance")) {
+        toast.error("Token approval failed. Please try again.");
+      } else if (error.message && error.message.includes("InsufficientFunds")) {
+        toast.error("Insufficient funds. Please top up your balance.");
+      } else {
+        toast.error(`Error: ${error.message || "Failed to submit report. Please try again."}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -575,7 +640,7 @@ export default function CreateReportPage() {
   // Calculate estimated reward
   const calculateEstimatedReward = () => {
     const amount = Number.parseFloat(stakeAmount) || 0;
-    return amount * 0.25;
+    return (amount * 0.25).toFixed(2);
   };
 
   return (
@@ -706,7 +771,13 @@ export default function CreateReportPage() {
                           </span>
                         </ButtonGreen>
                       ) : (
-                        <ButtonGreen size="sm" fontWeight="medium" onClick={() => setShowConfirmModal(true)} disabled={isSubmitting || isUploading || !isAuthenticated || hasSubmitErrors()} className={`text-white disabled:opacity-50 ${!isAuthenticated ? "cursor-not-allowed" : ""}`}>
+                        <ButtonGreen
+                          size="sm"
+                          fontWeight="medium"
+                          onClick={() => setShowConfirmModal(true)}
+                          disabled={isSubmitting || isUploading || !isAuthenticated || hasSubmitErrors()}
+                          className={`text-white disabled:opacity-50 ${!isAuthenticated ? "cursor-not-allowed" : ""}`}
+                        >
                           {isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit Report"}
                         </ButtonGreen>
                       )}
@@ -743,7 +814,7 @@ export default function CreateReportPage() {
                   <Button onClick={() => setShowSuccessModal(false)} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
                     Create Another
                   </Button>
-                  <Link href="/reports" className="flex-1">
+                  <Link to="/reports" className="flex-1">
                     <Button className="w-full bg-white text-black hover:bg-gray-200">View Reports</Button>
                   </Link>
                 </div>
@@ -782,7 +853,7 @@ export default function CreateReportPage() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Enter amount of FUM to stake <span className="text-red-400">*</span>
                 </label>
-                <Input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="5" min="5" max={userBalance} required className={`bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10 rounded-xl`} />
+                <Input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="5" min="5" max={balance ? convertE8sToToken(balance) : 1000} required className={`bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10 rounded-xl`} />
                 <p className="text-gray-400 text-xs mt-1">Minimum: 5 FUM tokens required to submit a report</p>
               </div>
 
@@ -804,7 +875,11 @@ export default function CreateReportPage() {
                 <Button onClick={() => setShowConfirmModal(false)} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSubmitting || isUploading || !stakeAmount || Number(stakeAmount) < 5} className="flex-1 bg-red-400 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || isUploading || !stakeAmount || Number(stakeAmount) < 5 || !isAuthenticated}
+                  className="flex-1 bg-red-400 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {isUploading ? "Uploading Files..." : isSubmitting ? "Submitting..." : "Confirm & Submit"}
                 </Button>
               </div>
@@ -839,7 +914,7 @@ export default function CreateReportPage() {
               <Button onClick={() => setShowSuccessModal(false)} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
                 Create Another
               </Button>
-              <Link href="/reports" className="flex-1">
+              <Link to="/reports" className="flex-1">
                 <Button className="w-full bg-white text-black hover:bg-gray-200">View Reports</Button>
               </Link>
             </div>
