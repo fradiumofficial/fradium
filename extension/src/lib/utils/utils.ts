@@ -74,23 +74,23 @@ export function createAgentForCanister(canisterId: string | undefined, identity?
   // Known mainnet canister IDs used by the extension for production ledgers and services
   const MAINNET_CANISTERS = new Set<string>([
     // ICP Ledger (mainnet)
-    // "ryjl3-tyaaa-aaaaa-aaaba-cai",
-    // // Fradium Ledger (project mainnet value)
-    // "sr4wk-4qaaa-aaaae-qfdta-cai",
-    // // Fradium Index (project mainnet value)
-    // "vjrnc-hiaaa-aaaam-aejza-cai",
-    // // ckBTC Ledger / Index / Minter / KYT (mainnet)
-    // "mc6ru-gyaaa-aaaar-qaaaq-cai",
-    // "mm444-5iaaa-aaaar-qaabq-cai",
-    // "ml52i-qqaaa-aaaar-qaaba-cai",
-    // "pvm5g-xaaaa-aaaar-qaaia-cai",
-    // "v3x23-lyaaa-aaaam-aej2a-cai",
-    // "qhbym-qaaaa-aaaaa-aaafq-cai",
-    // "oqcob-6iaaa-aaaar-qbr7q-cai",
-    // "zkoni-faaaa-aaaar-qbsaa-cai",
-    // "t4sse-tyaaa-aaaae-qfduq-cai",
-    // "7hfb6-caaaa-aaaar-qadga-cai",
-    // "tghme-zyaaa-aaaar-qarca-cai",
+    "ryjl3-tyaaa-aaaaa-aaaba-cai",
+    // Fradium Ledger (project mainnet value)
+    "sr4wk-4qaaa-aaaae-qfdta-cai",
+    // Fradium Index (project mainnet value)
+    "vjrnc-hiaaa-aaaam-aejza-cai",
+    // ckBTC Ledger / Index / Minter / KYT (mainnet)
+    "mc6ru-gyaaa-aaaar-qaaaq-cai",
+    "mm444-5iaaa-aaaar-qaabq-cai",
+    "ml52i-qqaaa-aaaar-qaaba-cai",
+    "pvm5g-xaaaa-aaaar-qaaia-cai",
+    "v3x23-lyaaa-aaaam-aej2a-cai",
+    "qhbym-qaaaa-aaaaa-aaafq-cai",
+    "oqcob-6iaaa-aaaar-qbr7q-cai",
+    "zkoni-faaaa-aaaar-qbsaa-cai",
+    "t4sse-tyaaa-aaaae-qfduq-cai",
+    "7hfb6-caaaa-aaaar-qadga-cai",
+    "tghme-zyaaa-aaaar-qarca-cai",
   ])
 
   const targetIsMainnet = !!canisterId && MAINNET_CANISTERS.has(canisterId)

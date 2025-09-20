@@ -5,9 +5,10 @@ import { Principal } from '@dfinity/principal'
 import { createActor as createIcpIndexActor, canisterId as icpIndexCanisterId } from '../declarations/icp_index'
 import { createActor as createFradiumIndexActor, canisterId as fradiumIndexCanisterId } from '../declarations/fradium_index'
 import { createActor as createCkbtcIndexActor, canisterId as ckbtcIndexCanisterId } from '../declarations/ckbtc_index'
+import { createActor as createCkethIndexActor, canisterId as ckethIndexCanisterId } from '../declarations/cketh_index'
 import { createAgentForCanister } from '~lib/utils/utils'
 
-export type NetworkKey = 'ethereum' | 'bitcoin' | 'solana' | 'icp' | 'fradium' | 'ckbtc' | 'internet_computer'
+export type NetworkKey = 'ethereum' | 'bitcoin' | 'solana' | 'icp' | 'fradium' | 'ckbtc' | 'cketh' | 'internet_computer'
 
 export type UnifiedTx = {
   hash: string
@@ -29,7 +30,7 @@ export type UnifiedTx = {
   size?: number
   weight?: number
   // ICRC token discriminator for IC chain tokens
-  tokenType?: 'icp' | 'fradium' | 'ckbtc'
+  tokenType?: 'icp' | 'fradium' | 'ckbtc' | 'cketh'
 }
 
 // Pageable ICP history response
@@ -93,6 +94,16 @@ const EFFECTIVE_CKBTC_INDEX_CANISTER_ID =
     (process as any).env?.CANISTER_ID_CKBTC_INDEX
   )) ||
   'mm444-5iaaa-aaaar-qaabq-cai'
+
+const EFFECTIVE_CKETH_INDEX_CANISTER_ID =
+  ckethIndexCanisterId ||
+  (typeof process !== 'undefined' && (
+    (process as any).env?.VITE_CANISTER_ID_CKETH_INDEX ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKETH_INDEX ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKETH_INDEX ||
+    (process as any).env?.CANISTER_ID_CKETH_INDEX
+  )) ||
+  'sh5u2-cqaaa-aaaar-qacna-cai'
 
 // ---------------------------------
 // Simple persistence (best-effort)
@@ -527,6 +538,50 @@ export async function getCkBtcTransactionHistory(principalText: string, limit = 
 }
 
 // -----------------------------
+// ckETH via cketh_index (ICRC)
+// -----------------------------
+export async function getCkEthTransactionHistory(principalText: string, limit = 20): Promise<UnifiedTx[]> {
+  try {
+    if (!principalText) throw new Error('Principal is required')
+    const principalObj = Principal.fromText(principalText)
+    const agent = createAgentForCanister(EFFECTIVE_CKETH_INDEX_CANISTER_ID as any, undefined)
+    const indexActor = createCkethIndexActor(EFFECTIVE_CKETH_INDEX_CANISTER_ID as any, { agent: agent as any }) as any
+    const result = await indexActor.get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
+    if (result && (result as any).Ok && (result as any).Ok.transactions) {
+      const txs = (result as any).Ok.transactions
+      const transactions = txs
+        .map((tx: any) => {
+          const transfer = tx.transaction?.transfer?.[0]
+          if (!transfer) return null
+          const fromPrincipal = transfer.from?.owner?.__principal__ || transfer.from?.owner
+          const toPrincipal = transfer.to?.owner?.__principal__ || transfer.to?.owner
+          const isSent = String(fromPrincipal) === principalObj.toString()
+          const otherPartyStr = String(isSent ? toPrincipal : fromPrincipal)
+          return {
+            hash: String(tx.id),
+            chain: 'Internet Computer',
+            title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+            amount: (Number(transfer.amount || 0) / 1e18) * (isSent ? -1 : 1), // ckETH uses 18 decimals
+            status: 'Completed',
+            timestamp: Number(tx.transaction.timestamp || 0) / 1_000_000,
+            from: String(fromPrincipal || 'Unknown'),
+            to: String(toPrincipal || 'Unknown'),
+            fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e18 : 0, // ckETH uses 18 decimals
+            tokenType: 'cketh'
+          } as UnifiedTx
+        })
+        .filter(Boolean) as UnifiedTx[]
+      transactions.sort((a, b) => b.timestamp - a.timestamp)
+      return transactions
+    }
+    return []
+  } catch (e: any) {
+    console.error('Error fetching ckETH transaction history:', e)
+    return []
+  }
+}
+
+// -----------------------------
 // Aggregator
 // -----------------------------
 export async function getTransactionHistory(
@@ -560,6 +615,9 @@ export async function getTransactionHistory(
       case 'ckbtc':
         items = await getCkBtcTransactionHistory(addressOrPrincipal, limit)
         break
+      case 'cketh':
+        items = await getCkEthTransactionHistory(addressOrPrincipal, limit)
+        break
       default:
         throw new Error(`Unsupported network: ${network}`)
     }
@@ -581,6 +639,7 @@ export default {
   getICRCTransactionHistory,
   getICPTransactionHistoryPage,
   getCkBtcTransactionHistory,
+  getCkEthTransactionHistory,
   getTransactionHistory
 }
 

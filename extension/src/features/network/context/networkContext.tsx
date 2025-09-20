@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 
-export type SelectedNetworkKey = "all" | "btc" | "eth" | "fra" | "sol" | "icp" | "ckbtc";
+export type SelectedNetworkKey = "all" | "btc" | "eth" | "fra" | "sol" | "icp" | "ckbtc" | "cketh";
 
 type NetworkContextValue = {
     selectedNetwork: SelectedNetworkKey;
@@ -22,7 +22,8 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
             case "fra": return "Fradium";
             case "sol": return "Solana";
             case "icp": return "Internet Computer";
-            case "ckbtc": return "Chain Key BTC";
+          case "ckbtc": return "Chain Key BTC";
+          case "cketh": return "Chain Key ETH";
             default: return "All Networks";
         }
     };
@@ -34,7 +35,8 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
             case "fra": return "Fradium";
             case "sol": return "Solana";
             case "icp": return "Internet Computer";
-            case "ckbtc": return "Chain Key BTC";
+          case "ckbtc": return "Chain Key BTC";
+          case "cketh": return "Chain Key ETH";
             default: return "All";
         }
     };

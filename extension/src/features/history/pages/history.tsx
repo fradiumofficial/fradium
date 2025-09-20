@@ -10,6 +10,7 @@ import {
   getSolanaTransactionHistory,
   getICRCTransactionHistory,
   getCkBtcTransactionHistory,
+  getCkEthTransactionHistory,
   type UnifiedTx,
 } from "~service/transactionHistoryService";
 
@@ -51,6 +52,7 @@ function History() {
         if (icpPrincipal) tasks.push(getICRCTransactionHistory('icp', icpPrincipal, icpAccount, 30));
         if (icpPrincipal) tasks.push(getICRCTransactionHistory('fradium', icpPrincipal, null, 30));
         if (icpPrincipal) tasks.push(getCkBtcTransactionHistory(icpPrincipal, 30));
+        if (icpPrincipal) tasks.push(getCkEthTransactionHistory(icpPrincipal, 30));
 
         const results = await Promise.allSettled(tasks);
         const onchain = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
@@ -58,7 +60,7 @@ function History() {
         const mapped: TransactionHistoryItem[] = onchain.map((t) => ({
           id: t.hash,
           tokenType: t.tokenType
-            ? (t.tokenType === 'icp' ? 'ICP' : t.tokenType === 'fradium' ? 'Fradium' : t.tokenType === 'ckbtc' ? 'ckBTC' : (t.chain === 'Bitcoin' ? 'Bitcoin' : t.chain === 'Ethereum' ? 'Ethereum' : t.chain === 'Solana' ? 'Solana' : 'ICP'))
+            ? (t.tokenType === 'icp' ? 'ICP' : t.tokenType === 'fradium' ? 'Fradium' : t.tokenType === 'ckbtc' ? 'ckBTC' : t.tokenType === 'cketh' ? 'ckETH' : (t.chain === 'Bitcoin' ? 'Bitcoin' : t.chain === 'Ethereum' ? 'Ethereum' : t.chain === 'Solana' ? 'Solana' : 'ICP'))
             : (t.chain === 'Bitcoin' ? 'Bitcoin' : t.chain === 'Ethereum' ? 'Ethereum' : t.chain === 'Solana' ? 'Solana' : 'ICP'),
           direction: t.amount >= 0 ? 'Receive' as const : 'Send' as const,
           amount: Math.abs(t.amount),
@@ -106,6 +108,8 @@ function History() {
         return CDN.tokens.fum;
       case 'ckBTC':
         return CDN.tokens.bitcoin;
+      case 'ckETH':
+        return CDN.tokens.eth;
       default:
         return CDN.tokens.unknown;
     }
