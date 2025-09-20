@@ -68,7 +68,7 @@ export default function ReportPage() {
     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)] animate-pulse">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
-          <div className="flex ml-4 mb-2 items-center gap-2">
+          <div className="flex mb-2 items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]" />
             <div className="h-4 w-32 bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] rounded animate-[shimmer_2s_ease-in-out_infinite]" />
             <div className="h-5 w-20 bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] rounded-full ml-3 animate-[shimmer_2s_ease-in-out_infinite]" />
@@ -163,8 +163,14 @@ export default function ReportPage() {
       const shortAddress = report.address.length > 10 ? `${report.address.substring(0, 6)}...${report.address.substring(report.address.length - 4)}` : report.address;
 
       console.log("Converting report data:", report.report_id, "Type:", typeof report.report_id);
+
+      // Ensure report_id is properly converted to number
+      const reportId = typeof report.report_id === 'bigint' ? Number(report.report_id) : report.report_id;
+      console.log("Converted report ID:", reportId, "Type:", typeof reportId);
+
       return {
-        id: report.report_id,
+        id: reportId,
+        report_id: reportId, // Add both for compatibility
         address: report.address,
         shortAddress: shortAddress,
         status: status,
@@ -417,7 +423,7 @@ export default function ReportPage() {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors duration-200 group-focus-within:text-[#99E39E]" />
                       <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="h-12 rounded-full pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-[#99E39E]/50 focus:ring-2 focus:ring-[#99E39E]/20 transition-all duration-300 ease-out hover:bg-white/8 hover:border-white/20 group" />
                     </div>
-                    <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => {}}>
+                    <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => { }}>
                       Filter
                     </ButtonGreen>
                   </div>
@@ -505,7 +511,7 @@ export default function ReportPage() {
                             <div className="flex items-start justify-between mb-4">
                               <div className="flex-1 min-w-0">
                                 {/* Network and Address */}
-                                <div className="flex ml-4 mb-2">
+                                <div className="flex mb-2">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-lg group-hover:shadow-orange-500/30">
                                       <span className="text-white text-xs font-bold group-hover:scale-110 transition-transform duration-200">₿</span>
@@ -532,9 +538,17 @@ export default function ReportPage() {
                               <Button
                                 className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]"
                                 onClick={() => {
-                                  console.log("Navigating to report ID:", report.id, "Type:", typeof report.id);
-                                  navigate(`/reports/${report.id}`);
-                                }}>
+                                  console.log("Navigating to report ID:", report.report_id, "Type:", typeof report.report_id);
+                                  console.log("Full report object:", report);
+                                  console.log("Navigation URL:", `/reports/${report.report_id}`);
+
+                                  // Ensure we're passing the correct ID
+                                  const reportId = report.report_id || report.id;
+                                  console.log("Using report ID for navigation:", reportId);
+
+                                  navigate(`/reports/${reportId}`);
+                                }}
+                              >
                                 View Details
                                 <ArrowUpRight className="w-3 h-3 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                               </Button>

@@ -186,8 +186,8 @@ const ProductsWallet = () => {
 
       {/* Background section with cards and laptop */}
       <div className="relative mx-auto mt-8 overflow-hidden">
-        {/* Background layer */}
-        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+        {/* Background layer - starts from bottom with natural height */}
+        <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
           <img
             src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
             alt=""
@@ -195,7 +195,7 @@ const ProductsWallet = () => {
             decoding="async"
             loading="lazy"
             draggable={false}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-full h-auto object-contain object-bottom"
           />
         </div>
 
