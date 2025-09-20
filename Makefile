@@ -78,6 +78,14 @@ ckbtc-balance:
 ckbtc-kyt:
 	dfx canister call ckbtc_kyt set_api_key '(record { api_key = "" })'
 
+cketh-balance:
+	chmod +x "$(CURDIR)/scripts/cketh.check_balance.sh"
+	"$(CURDIR)/scripts/cketh.check_balance.sh"
+
+cketh-transfer:
+	chmod +x "$(CURDIR)/scripts/cketh.transfer_token.sh"
+	"$(CURDIR)/scripts/cketh.transfer_token.sh" $(address) $(amount)
+
 kill-port:
 	@echo "Killing process on port 4943..."
 	@PID=$$(lsof -t -i :4943); \

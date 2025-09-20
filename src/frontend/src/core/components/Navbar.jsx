@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
 import { ChevronDown, FileText, LogOut, Coins } from "lucide-react";
 
-import { fradium_token as token } from "declarations/fradium_token";
+import { fradium_ledger as token } from "declarations/fradium_ledger";
 
 import { useAuth } from "@/core/providers/AuthProvider";
 import { Button as ButtonShad } from "@/core/components/ui/button";
@@ -13,6 +13,40 @@ import ButtonPurple from "@/core/components/ButtonPurple";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { cn } from "@/core/lib/utils";
 import toast from "react-hot-toast";
+function NavbarCopyPrincipal({ identity }) {
+  const [copied, setCopied] = React.useState(false);
+  return (
+    <div className="flex items-center gap-1 text-xs text-white">
+      <p className="truncate max-w-[160px]" title={identity.getPrincipal().toString()}>
+        {identity.getPrincipal().toString()}
+      </p>
+      <button
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(identity.getPrincipal().toString());
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          } catch (error) {
+            console.error("Failed to copy Principal ID:", error);
+            toast.error("Failed to copy Principal ID");
+          }
+        }}
+        className="hover:text-foreground"
+        aria-label={copied ? "Copied" : "Copy Principal"}>
+        {copied ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9BE4A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
 
 const navigationItems = [
   { label: "Home", href: "/" },
@@ -57,7 +91,7 @@ const Navbar = () => {
           subaccount: [],
         });
         setBalance(response);
-      } catch (error) {}
+      } catch (error) { }
     }
 
     fetchBalance();
@@ -172,49 +206,7 @@ const Navbar = () => {
               <DropdownMenuContent align="end" className="w-56 bg-black/70 backdrop-blur-lg z-[1000] border border-transparent">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <div className="flex items-center gap-1 text-xs text-white">
-                      <p>{identity.getPrincipal().toString()}</p>
-                      <button
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(identity.getPrincipal().toString());
-                            toast.success("Principal ID copied to clipboard!", {
-                              position: "bottom-center",
-                              duration: 2000,
-                              style: {
-                                background: "#23272F",
-                                color: "#9BE4A0",
-                                border: "1px solid #393E4B",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                              },
-                              icon: "📋",
-                            });
-                          } catch (error) {
-                            console.error("Failed to copy Principal ID:", error);
-                            toast.error("Failed to copy Principal ID", {
-                              position: "bottom-center",
-                              duration: 2000,
-                              style: {
-                                background: "#23272F",
-                                color: "#FF6B6B",
-                                border: "1px solid #393E4B",
-                                borderRadius: "8px",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                              },
-                              icon: "❌",
-                            });
-                          }
-                        }}
-                        className="hover:text-foreground">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                      </button>
-                    </div>
+                    <NavbarCopyPrincipal identity={identity} />
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />

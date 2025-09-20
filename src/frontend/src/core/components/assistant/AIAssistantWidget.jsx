@@ -5,14 +5,16 @@ import { useWallet } from "@/core/providers/WalletProvider";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 import { getBalance } from "@/core/lib/tokenUtils.js";
 import { agentService } from "@/core/services/agentService.js";
+import ButtonPurple from "@/core/components/ButtonPurple";
 
 export default function AIAssistantWidget() {
   const { user, identity } = useAuth();
   const walletContext = useWallet();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [messages, setMessages] = React.useState([{ id: "m1", role: "assistant", text: "Hello! I'm your Fradium AI Assistant. How can I help you today?", ts: Date.now() }]);
+  const [messages, setMessages] = React.useState([{ id: "m1", role: "assistant", text: "Hello! I'm your Fradium Wallet Agent. How can I help you today?", ts: Date.now() }]);
   const [input, setInput] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
   const chipsRef = React.useRef(null);
   const messagesContainerRef = React.useRef(null);
   const messagesEndRef = React.useRef(null);
@@ -225,17 +227,23 @@ export default function AIAssistantWidget() {
         }
       }
       if (!didLoadFromStorageRef.current) {
-        setMessages([{ id: `m1-${Date.now()}`, role: "assistant", text: "Hello! I'm your Fradium AI Assistant. How can I help you today?", ts: Date.now() }]);
+        setMessages([{ id: `m1-${Date.now()}`, role: "assistant", text: "Hello! I'm your Fradium Wallet Agent. How can I help you today?", ts: Date.now() }]);
       }
     } catch (_e) {}
   }, [getStorageKey]);
 
   const handleSampleClick = (text) => {
     setInput(text);
-    // Fokuskan ke input agar user bisa edit/enter
+    // Fokuskan ke input dan posisikan cursor di akhir text
     requestAnimationFrame(() => {
       try {
-        inputRef.current?.focus();
+        const input = inputRef.current;
+        if (input) {
+          input.focus();
+          // Set cursor position ke akhir text
+          const textLength = text.length;
+          input.setSelectionRange(textLength, textLength);
+        }
       } catch (_e) {}
     });
   };
@@ -293,17 +301,16 @@ export default function AIAssistantWidget() {
         <button
           aria-label="Open AI Assistant"
           onClick={handleToggle}
-          className="relative z-10 group w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.35)] border border-white/10 hover:border-white/20 transition-all"
+          className="relative z-10 group w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, rgba(124,114,254,0.95), rgba(67,59,166,0.95))",
-            backdropFilter: "blur(10px)",
+            background: "linear-gradient(196.14deg, #7C72FE 35.66%, #4942AA 88.78%)",
+            boxShadow: "0px 26.25px 42px -21px rgba(74, 66, 170, 0.7), 0px 0px 0px 5.25px #4942AA",
+            borderRadius: "519.75px",
           }}>
-          {/* AI Logo (inline SVG) */}
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-white drop-shadow">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.9" />
-            <path d="M8.5 13.5c0-2.2 1.8-4 4-4 1.1 0 2 .9 2 2v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M7 16h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          {/* Fallback loading circle */}
+          {!imageLoaded && <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 animate-pulse"></div>}
+          {/* Fradium Agent Image */}
+          <img src="/assets/images/fradium-agent.webp" alt="Fradium Wallet Agent" className={`w-8 h-8 md:w-9 md:h-9 rounded-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} onLoad={() => setImageLoaded(true)} onError={() => setImageLoaded(false)} />
           <span className="sr-only">AI Assistant</span>
         </button>
       </div>
@@ -337,12 +344,19 @@ export default function AIAssistantWidget() {
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 bg-white/5">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center bg-gradient-to-b from-[#7C72FE] to-[#433BA6] border border-white/10">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                    </svg>
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center overflow-hidden"
+                    style={{
+                      background: "linear-gradient(196.14deg, #7C72FE 35.66%, #4942AA 88.78%)",
+                      boxShadow: "0px 8px 16px -8px rgba(74, 66, 170, 0.7), 0px 0px 0px 1.5px #7C77C4",
+                      borderRadius: "519.75px",
+                    }}>
+                    {/* Fallback loading circle */}
+                    {!imageLoaded && <div className="w-5 h-5 rounded-full bg-white/20 animate-pulse"></div>}
+                    {/* Fradium Agent Image */}
+                    <img src="/assets/images/fradium-agent.webp" alt="Fradium Wallet Agent" className={`w-5 h-5 rounded-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} onLoad={() => setImageLoaded(true)} onError={() => setImageLoaded(false)} />
                   </div>
-                  <div className="text-white font-medium">Fradium Agent</div>
+                  <div className="text-white font-medium">Fradium Wallet Agent</div>
                 </div>
                 <button onClick={handleToggle} className="text-white/70 hover:text-white transition-colors">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -453,12 +467,9 @@ export default function AIAssistantWidget() {
               <form onSubmit={handleSend} className="px-3 pb-3 pt-1">
                 <div className="flex items-center gap-2 bg-[#23272F] border border-[#393E4B] rounded-xl px-2 py-2">
                   <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Write a command... e.g., Check my Bitcoin balance" className="flex-1 bg-transparent outline-none text-white text-sm placeholder-[#B0B6BE] px-2" disabled={isLoading} />
-                  <button type="submit" disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-[#7C72FE] text-white text-sm hover:brightness-110 active:brightness-95 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    {isLoading ? "..." : "Send"}
-                  </button>
-                </div>
-                <div className="mt-2 text-[10px] text-white/40 text-center">
-                  Powered by <span className="text-white/70">Gemini AI</span> & <span className="text-white/70">LangChain</span>.
+                  <ButtonPurple type="submit" disabled={isLoading} loading={isLoading} size="sm" className="px-3 py-1.5">
+                    {isLoading ? "Sending..." : "Send"}
+                  </ButtonPurple>
                 </div>
               </form>
             </motion.div>

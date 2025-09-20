@@ -1,428 +1,431 @@
 // React
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 // Framer Motion
 import { motion, AnimatePresence } from "framer-motion";
 
-// Token Configuration
-import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { getSupportedTokensForAddress, getFeeInfo, detectAddressNetwork, sendTokenToBackend } from "@/core/lib/tokenUtils";
+// Token utils
+import { getSupportedTokensForAddress, getFeeInfo, sendTokenToBackend } from "@/core/lib/tokenUtils";
 
-// Wallet Provider
+// Providers & Components
 import { useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
-import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal.jsx";
-import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal.jsx";
 import SendConfirmationModal from "@/core/components/modals/SendConfirmationModal.jsx";
+import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal.jsx";
+import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal.jsx";
+import AIAnalyzeService from "@/core/services/ai/aiAnalyze.js";
 import SuccesSendModal from "@/core/components/modals/SuccesSendModal.jsx";
 
 const SendTokenModal = ({ isOpen, onClose }) => {
   const [destination, setDestination] = useState("");
   const [selectedToken, setSelectedToken] = useState(null);
   const [amount, setAmount] = useState("");
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [showLoadingModal, setShowLoadingModal] = useState(false);
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [showSuccessSend, setShowSuccessSend] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showAnalyzeLoading, setShowAnalyzeLoading] = useState(false);
+  const [showAnalyzeResult, setShowAnalyzeResult] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [sendError, setSendError] = useState(null);
-  const [transactionResult, setTransactionResult] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+  // Scanner state
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannerSupported, setScannerSupported] = useState(false);
+  const [scannerError, setScannerError] = useState("");
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
-  // Wallet Provider for balance and USD prices
-  const { balances, usdPrices, balanceLoading, usdPriceLoading } = useWallet();
-
-  // Auth Provider for principal
+  const { balances, balanceLoading, usdPrices, usdPriceLoading, refreshAllBalances } = useWallet();
   const { identity } = useAuth();
+  const inputRef = useRef(null);
 
-  // Reset state when modal is closed
-  React.useEffect(() => {
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
     if (!isOpen) {
       setDestination("");
       setSelectedToken(null);
       setAmount("");
-      setAnalysisResult(null);
-      setShowResultModal(false);
-      setShowLoadingModal(false);
-      setShowConfirmationModal(false);
-      setShowSuccessSend(false);
-      setIsConfirming(false);
-      setSendError(null);
-      setTransactionResult(null);
+      setShowConfirmation(false);
     }
+    // stop camera if exists
+    try {
+      streamRef.current?.getTracks?.().forEach((t) => t.stop());
+    } catch (_e) {}
   }, [isOpen]);
 
-  // Auto focus input when modal opens
-  const inputRef = React.useRef(null);
-  React.useEffect(() => {
-    if (isOpen && inputRef.current) {
-      // Small delay to ensure modal is fully rendered
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
+  // Disable page scroll when modal is open (match ReceiveAddressModal behavior)
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = "0px";
+    } else {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
     }
+    return () => {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    };
   }, [isOpen]);
+
+  // Detect BarcodeDetector support (QR)
+  useEffect(() => {
+    let mounted = true;
+    async function checkSupport() {
+      try {
+        if (window && window.BarcodeDetector) {
+          const formats = await window.BarcodeDetector.getSupportedFormats?.();
+          if (mounted) setScannerSupported(Array.isArray(formats) ? formats.includes("qr_code") : true);
+        } else {
+          if (mounted) setScannerSupported(false);
+        }
+      } catch (_e) {
+        if (mounted) setScannerSupported(false);
+      }
+    }
+    checkSupport();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Start/stop scanner
+  useEffect(() => {
+    let detectInterval;
+    async function start() {
+      if (!showScanner) return;
+      setScannerError("");
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        const detector = window && window.BarcodeDetector ? new window.BarcodeDetector({ formats: ["qr_code"] }) : null;
+        if (!detector) {
+          setScannerError("Scanner tidak didukung di browser ini");
+          return;
+        }
+        detectInterval = setInterval(async () => {
+          try {
+            const videoEl = videoRef.current;
+            if (!videoEl) return;
+            const codes = await detector.detect(videoEl);
+            if (codes && codes.length > 0) {
+              const value = codes[0]?.rawValue || "";
+              if (value) {
+                setDestination(value.trim());
+                setShowScanner(false);
+              }
+            }
+          } catch (_e) {}
+        }, 350);
+      } catch (_err) {
+        setScannerError("Gagal mengakses kamera. Izinkan akses kamera.");
+      }
+    }
+    start();
+    return () => {
+      if (detectInterval) clearInterval(detectInterval);
+      try {
+        streamRef.current?.getTracks?.().forEach((t) => t.stop());
+      } catch (_e) {}
+    };
+  }, [showScanner]);
 
   const supportedTokens = useMemo(() => {
     if (!destination.trim()) return [];
     return getSupportedTokensForAddress(destination.trim());
   }, [destination]);
 
-  const detectedNetwork = useMemo(() => {
-    if (!destination.trim()) return null;
-    return detectAddressNetwork(destination.trim());
-  }, [destination]);
-
-  const isNetworkKnown = useMemo(() => {
-    if (!destination.trim()) return false;
-    return detectedNetwork && detectedNetwork !== "Unknown";
-  }, [destination, detectedNetwork]);
-
-  // Get current balance and USD price for selected token
   const currentBalance = useMemo(() => {
     if (!selectedToken) return 0;
     return parseFloat(balances[selectedToken.id] || 0);
   }, [selectedToken, balances]);
-
-  const currentUsdPrice = useMemo(() => {
-    if (!selectedToken) return 0;
-    return usdPrices[selectedToken.id] || 0;
-  }, [selectedToken, usdPrices]);
 
   const isBalanceLoading = useMemo(() => {
     if (!selectedToken) return false;
     return balanceLoading[selectedToken.id] || false;
   }, [selectedToken, balanceLoading]);
 
+  const currentUsdPrice = useMemo(() => {
+    if (!selectedToken) return 0;
+    return usdPrices[selectedToken.id] || 0;
+  }, [selectedToken, usdPrices]);
+
   const isUsdPriceLoading = useMemo(() => {
     if (!selectedToken) return false;
     return usdPriceLoading[selectedToken.id] || false;
   }, [selectedToken, usdPriceLoading]);
 
-  // Calculate USD value of entered amount
   const amountUsdValue = useMemo(() => {
     if (!amount || !currentUsdPrice) return 0;
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount)) return 0;
-    return numericAmount * currentUsdPrice;
+    const n = parseFloat(amount);
+    if (isNaN(n)) return 0;
+    return n * currentUsdPrice;
   }, [amount, currentUsdPrice]);
 
-  // Validation states
-  const isAmountEmpty = !amount || amount.trim() === "";
-  const isAmountExceedsBalance = amount && parseFloat(amount) > currentBalance;
-  const isAmountInvalid = amount && (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0);
-
-  // Button state and label
-  const getButtonState = () => {
-    if (isAmountEmpty) {
-      return { disabled: true, label: "Enter amount to continue" };
-    }
-    if (isAmountInvalid) {
-      return { disabled: true, label: "Enter valid amount" };
-    }
-    if (isAmountExceedsBalance) {
-      return { disabled: true, label: "Amount exceeds your balance" };
-    }
-    return { disabled: false, label: "Analyze Destination Address" };
-  };
-
-  const buttonState = getButtonState();
-
-  const handleAnalyzeClick = async () => {
-    if (buttonState.disabled) return;
-    if (!destination.trim()) return;
-
+  // Handle Continue: analyze address first
+  const handleContinue = async () => {
+    if (!destination.trim() || !selectedToken || !amount || parseFloat(amount) <= 0) return;
     try {
-      setShowLoadingModal(true);
-
-      // Import AI Analyze Service
-      const { default: AIAnalyzeService } = await import("@/core/services/ai/aiAnalyze.js");
-
-      // Perform analysis
-      const result = await AIAnalyzeService.analyzeAddress(destination.trim());
-
-      // Store the result
-      setAnalysisResult(result);
-
-      // Show result modal after minimum loading time (same as AnalyzeAddressPage)
-      setTimeout(() => {
-        setShowLoadingModal(false);
-        setShowResultModal(true);
-      }, 2000); // 2 second minimum loading time like AnalyzeAddressPage
-    } catch (error) {
-      console.error("Analysis failed:", error);
-      setShowLoadingModal(false);
-      // You could show an error message here
+      setShowAnalyzeLoading(true);
+      setSendError("");
+      const res = await AIAnalyzeService.analyzeAddress(destination.trim());
+      setAnalysisResult(res);
+      setShowAnalyzeLoading(false);
+      setShowAnalyzeResult(true);
+    } catch (err) {
+      console.error("Analysis error:", err);
+      setShowAnalyzeLoading(false);
+      // Fallback ke confirmation jika analisis gagal
+      setAnalysisResult(null);
+      setShowConfirmation(true);
     }
   };
 
-  // Handle Max button click
-  const handleMaxClick = () => {
-    if (currentBalance > 0) {
-      setAmount(currentBalance.toString());
-    }
+  // After user confirms from AnalyzeResultModal
+  const handleAfterAnalyzeConfirm = () => {
+    setShowAnalyzeResult(false);
+    setShowConfirmation(true);
   };
 
-  // Handle confirmation modal actions
+  // Confirm send from confirmation modal
   const handleConfirmSend = async () => {
-    if (!selectedToken || !destination || !amount) {
-      setSendError("Missing required information for sending");
-      return;
-    }
-
+    if (!selectedToken) return;
     try {
-      setIsConfirming(true);
-      setSendError(null);
-
-      // Send token to backend
-      const principal = identity?.getPrincipal();
-      const result = await sendTokenToBackend(selectedToken.id, destination.trim(), parseFloat(amount), principal);
-
-      // Store transaction result
-      setTransactionResult(result);
-
-      // Close all previous modals and show success modal
-      setShowConfirmationModal(false);
-      setShowResultModal(false);
-      setShowLoadingModal(false);
-      setShowSuccessSend(true);
-    } catch (error) {
-      console.error("Send token failed:", error);
-      setSendError(error.message || "Failed to send token");
-    } finally {
-      setIsConfirming(false);
+      setIsSending(true);
+      setSendError("");
+      const principal = identity?.getPrincipal?.();
+      const normalizedAmount = Number(amount);
+      await sendTokenToBackend(selectedToken.id, destination.trim(), normalizedAmount, principal);
+      // Tampilkan success segera dan tutup modal sebelumnya
+      setShowConfirmation(false);
+      setShowSuccess(true);
+      setIsSending(false);
+      // Refresh balance di background (tanpa await agar tidak menunda success)
+      try {
+        Promise.resolve(refreshAllBalances());
+      } catch (_e) {}
+    } catch (err) {
+      console.error("Send error:", err);
+      setIsSending(false);
+      setSendError(err?.message || "Failed to send token");
     }
   };
 
-  const handleBackToAnalysis = () => {
-    setShowConfirmationModal(false);
-    setShowResultModal(true);
-  };
-
-  const handleProceedToConfirmation = () => {
-    setShowResultModal(false);
-    setShowConfirmationModal(true);
-  };
-
-  // Handle success modal close - close all modals
-  const handleSuccessModalClose = () => {
-    setShowSuccessSend(false);
-    setShowResultModal(false);
-    setShowLoadingModal(false);
-    setShowConfirmationModal(false);
-    onClose(); // Close the main modal
-  };
-
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.2,
-      },
-    },
+    visible: { opacity: 1, transition: { duration: 0.2 } },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    },
+    hidden: { opacity: 0, y: 8 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.25 } },
   };
 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/70 backdrop-blur-md p-4">
-      <div className="relative w-full max-w-[480px] bg-[#171A1C] rounded-[24px] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
-        <div className="pointer-events-none absolute -inset-x-8 -top-8 h-20 bg-[#A6F3AE]/10 blur-3xl opacity-25 rounded-full" />
-        <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={onClose} aria-label="Close">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="p-5 sm:p-6">
-          <div className="text-white text-[16px] pl-4 sm:text-[16px] font-medium leading-tight mb-4">Send Token</div>
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+      <div className="flex min-h-full items-start justify-center pt-8 pl-4 pr-4 pb-4">
+        <div className="relative w-full max-w-[500px] mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10">
+          {/* Close */}
+          <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={onClose} aria-label="Close">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
 
-          <AnimatePresence mode="wait">
-            {!selectedToken ? (
-              // Step 1: Destination Address
-              <motion.div key="step1" className="flex flex-col gap-4" initial="hidden" animate="visible" variants={containerVariants}>
-                {/* Empty State - First Time Opening */}
-                {!destination.trim() && (
-                  <motion.div variants={itemVariants} className="flex flex-col items-center justify-center py-12 px-4">
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{
-                        duration: 0.6,
-                        ease: "easeOut",
-                        delay: 0.2,
-                      }}
-                      className="relative mb-6">
-                      <div className="w-20 h-20 bg-gradient-to-br from-[#9BE4A0] to-[#7C72FE] rounded-full flex items-center justify-center shadow-lg">
-                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
+          {/* Content */}
+          <div className="flex flex-col items-center p-4 gap-4 h-auto">
+            <div className="w-full text-center text-white text-lg font-medium">Send to</div>
+
+            <AnimatePresence mode="wait">
+              {!selectedToken ? (
+                <motion.div key="step-address" initial="hidden" animate="visible" variants={containerVariants} className="flex flex-col gap-4 w-full">
+                  {/* Destination Input */}
+                  <motion.div variants={itemVariants} className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                    <div className="text-white/90 text-[13px] font-medium mb-2">Destination address</div>
+                    <div className="rounded-full border border-white/10 pl-4 pr-2 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <input ref={inputRef} type="text" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Enter public address or name" className="flex-1 bg-transparent text-white placeholder:text-white/40 text-sm outline-none font-mono" />
+                        <button type="button" className="grid place-items-center w-9 h-9 rounded-lg hover:bg-white/[0.06] disabled:opacity-50" aria-label="Scan" onClick={() => setShowScanner(true)} disabled={!scannerSupported} title={scannerSupported ? "Scan QR" : "Scan tidak didukung di browser ini"}>
+                          <img src="/assets/icons/qr_code.svg" alt="Scan" className="w-5 h-5 opacity-80" />
+                        </button>
                       </div>
-                      <motion.div
-                        className="absolute -top-1 -right-1 w-6 h-6 bg-[#9BE4A0] rounded-full flex items-center justify-center"
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.7, 1, 0.7],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}>
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </div>
+                    {/* Animated helper hint */}
+                    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.3 }} className="flex items-center gap-2 mt-3 text-xs text-[#B0B6BE]">
+                      <motion.span animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }} className="grid place-items-center w-5 h-5 rounded-full bg-white/5 border border-white/10" aria-hidden="true">
+                        <svg className="w-3.5 h-3.5 text-[#9BE4A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h3M7 4v3m10 10h3m-3 3v-3M4 17h3m0 3v-3M17 4v3m3 0h-3M9 12h6" />
                         </svg>
-                      </motion.div>
-                    </motion.div>
-
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.4 }} className="text-center">
-                      <h3 className="text-white text-lg font-semibold mb-2">Send Tokens</h3>
-                      <p className="text-[#B0B6BE] text-sm mb-4 max-w-xs">Paste the destination address below to see supported tokens and start your transfer</p>
+                      </motion.span>
+                      <span>Tip: Paste address or tap scan to autofill</span>
                     </motion.div>
                   </motion.div>
-                )}
 
-                <motion.div variants={itemVariants}>
-                  <div className="text-[#B0B6BE] text-sm mb-1">Destination address</div>
-                  <div className="bg-[#23272F] border border-[#393E4B] rounded-lg p-4">
-                    <input ref={inputRef} type="text" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Paste destination address" className="w-full bg-transparent text-[#B0B6BE] text-sm outline-none font-mono" />
-                  </div>
-                </motion.div>
-
-                {/* Network Detection Info */}
-                {destination.trim() && detectedNetwork && (
-                  <motion.div variants={itemVariants} className={`rounded-lg p-4 border ${isNetworkKnown ? "bg-[rgba(155,228,160,0.06)] border-[rgba(155,228,160,0.3)]" : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"}`}>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`w-2 h-2 rounded-full ${isNetworkKnown ? "bg-[#9BE4A0]" : "bg-[#F1999B]"}`}></div>
-                      <span className="text-white text-sm font-medium">Network Detected</span>
-                    </div>
-                    <div className={`text-xs ${isNetworkKnown ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>{detectedNetwork === "Unknown" ? "Unable to identify network type. Please check the address format." : `This address belongs to the ${detectedNetwork} network.`}</div>
-                  </motion.div>
-                )}
-
-                {/* Supported tokens list */}
-                {destination.trim() && (
-                  <motion.div variants={itemVariants}>
-                    <div className="text-[#B0B6BE] text-sm mb-2">Supported tokens for this address</div>
-                    <div className="flex flex-col gap-2">
-                      {supportedTokens.length === 0 ? (
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-lg p-4 text-center border ${isNetworkKnown ? "bg-[#1D222B] border-[#2F3541]" : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"}`}>
-                          <div className={`text-xs mb-1 ${isNetworkKnown ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>No supported tokens detected</div>
-                          <div className={`${isNetworkKnown ? "text-[#9BEB83]" : "text-[#F1999B]"} text-xs`}>{isNetworkKnown ? "This address format is not supported" : "Invalid or unsupported address format"}</div>
-                        </motion.div>
-                      ) : (
-                        supportedTokens.map((token, index) => (
-                          <motion.button key={token.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className="flex items-center gap-3 bg-[#1D222B] hover:bg-[#242A34] border border-[#2F3541] rounded-lg px-4 py-3 text-white text-sm transition-all duration-200 hover:border-[#9BE4A0]/30" onClick={() => setSelectedToken(token)}>
-                            <img src={`/${token.imageUrl}`} alt={token.name} className="w-6 h-6" />
-                            <div className="flex-1 text-left">
-                              <div className="font-medium">{token.name}</div>
-                              <div className="text-[#B0B6BE] text-xs">
-                                {token.symbol} • {token.chain}
+                  {/* Supported tokens */}
+                  {destination.trim() && (
+                    <motion.div variants={itemVariants} className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                      <div className="text-[#B0B6BE] text-sm mb-2">Supported tokens</div>
+                      <div className="flex flex-col gap-2">
+                        {supportedTokens.length === 0 ? (
+                          <div className="rounded-lg p-4 text-center bg-[#1D222B] border border-[#2F3541] text-[#B0B6BE] text-xs">No supported tokens detected for this address</div>
+                        ) : (
+                          supportedTokens.map((token) => (
+                            <button key={token.id} className="flex items-center gap-3 bg-[#1D222B] hover:bg-[#242A34] border border-[#2F3541] rounded-lg px-4 py-3 text-white text-sm transition-all duration-200 hover:border-[#9BE4A0]/30" onClick={() => setSelectedToken(token)}>
+                              <img src={`/${token.imageUrl}`} alt={token.name} className="w-6 h-6" />
+                              <div className="flex-1 text-left">
+                                <div className="font-medium">{token.name}</div>
+                                <div className="text-[#B0B6BE] text-xs">
+                                  {token.symbol} • {token.chain}
+                                </div>
                               </div>
-                            </div>
-                            <svg className="w-4 h-4 text-[#9BE4A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </motion.button>
-                        ))
-                      )}
+                              <svg className="w-4 h-4 text-[#9BE4A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div key="step-amount" initial="hidden" animate="visible" variants={containerVariants} className="flex flex-col gap-4 w-full">
+                  {/* Selected token card */}
+                  <motion.div variants={itemVariants} className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                    <div className="flex items-center gap-3">
+                      <img src={`/${selectedToken.imageUrl}`} alt={selectedToken.name} className="w-7 h-7" />
+                      <div className="flex-1">
+                        <div className="text-white font-medium">{selectedToken.name}</div>
+                        <div className="text-[#B0B6BE] text-xs">
+                          {selectedToken.symbol} • {selectedToken.chain}
+                        </div>
+                      </div>
+                      <button className="text-xs text-[#9BEB83] hover:text-white px-3 py-1 border border-[#9BEB83]/30 rounded hover:bg-[#9BEB83]/10 transition-colors" onClick={() => setSelectedToken(null)}>
+                        Change
+                      </button>
                     </div>
                   </motion.div>
-                )}
-              </motion.div>
-            ) : (
-              // Step 2: Amount and Fee
-              <motion.div key="step2" className="flex flex-col gap-4" initial="hidden" animate="visible" variants={containerVariants}>
-                <motion.div variants={itemVariants} className="flex items-center gap-3 bg-[#1D222B] border border-[#2F3541] rounded-lg p-4">
-                  <img src={`/${selectedToken.imageUrl}`} alt={selectedToken.name} className="w-8 h-8" />
-                  <div className="flex-1">
-                    <div className="text-white font-medium">{selectedToken.name}</div>
-                    <div className="text-[#B0B6BE] text-xs">
-                      {selectedToken.symbol} • {selectedToken.chain}
-                    </div>
-                  </div>
-                  <button className="text-xs text-[#9BEB83] hover:text-white px-3 py-1 border border-[#9BEB83]/30 rounded hover:bg-[#9BEB83]/10 transition-colors" onClick={() => setSelectedToken(null)}>
-                    Change
-                  </button>
-                </motion.div>
 
-                <motion.div variants={itemVariants}>
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="text-[#B0B6BE] text-sm">Amount</div>
-                    <div className="text-[#B0B6BE] text-xs">{isBalanceLoading ? <span className="inline-block w-16 h-3 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></span> : `Balance: ${currentBalance.toFixed(6)} ${selectedToken?.symbol || ""}`}</div>
-                  </div>
-                  <div className="bg-[#23272F] border border-[#393E4B] rounded-lg p-4">
-                    <div className="relative">
-                      <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-transparent text-[#B0B6BE] text-sm outline-none font-mono pr-20" placeholder="0.00" />
-                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                  {/* Amount */}
+                  <motion.div variants={itemVariants} className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-white/90 text-[13px] font-medium">Amount</div>
+                      <div className="text-[#B0B6BE] text-xs">{isBalanceLoading ? <span className="inline-block w-16 h-3 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></span> : `Balance: ${currentBalance.toFixed(6)} ${selectedToken?.symbol || ""}`}</div>
+                    </div>
+                    <div className="rounded-full border border-white/10 pl-4 pr-2 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="flex-1 bg-transparent text-white text-sm outline-none font-mono" placeholder="0.00" />
                         {amount && (
                           <button type="button" className="text-xs font-medium text-[#9BEB83] hover:text-white transition-colors" onClick={() => setAmount("")}>
                             CLEAR
                           </button>
                         )}
-                        <button type="button" className="text-xs font-medium text-[#9BE4A0] hover:text-white transition-colors px-2 py-1 border border-[#9BE4A0]/30 rounded hover:bg-[#9BE4A0]/10" onClick={handleMaxClick} disabled={currentBalance <= 0}>
+                        <button type="button" className="text-xs font-medium text-[#9BE4A0] hover:text-white transition-colors px-2 py-1 border border-[#9BE4A0]/30 rounded-full hover:bg-[#9BE4A0]/10" onClick={() => currentBalance > 0 && setAmount(currentBalance.toString())} disabled={currentBalance <= 0}>
                           MAX
                         </button>
                       </div>
                     </div>
-
-                    {/* USD Value Display */}
                     {amount && (
-                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-2 pt-2 border-t border-[#393E4B]">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[#B0B6BE] text-xs">USD Value:</span>
-                          {isUsdPriceLoading ? <span className="inline-block w-12 h-3 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></span> : <span className="text-[#9BE4A0] text-xs font-mono">${amountUsdValue.toFixed(2)}</span>}
-                        </div>
-                      </motion.div>
+                      <div className="mt-2 flex justify-between items-center">
+                        <span className="text-[#B0B6BE] text-xs">USD Value:</span>
+                        {isUsdPriceLoading ? <span className="inline-block w-12 h-3 bg-gradient-to-r from-[#393E4B] via-[#4A4F58] to-[#393E4B] rounded animate-pulse"></span> : <span className="text-[#9BE4A0] text-xs font-mono">${amountUsdValue.toFixed(2)}</span>}
+                      </div>
                     )}
-                  </div>
-                </motion.div>
-
-                <motion.div variants={itemVariants} className="bg-[#1D222B] border border-[#2F3541] rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-4 h-4 text-[#9BE4A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-white text-sm font-medium">Network Fee</span>
-                  </div>
-                  <div className="text-[#B0B6BE] text-xs">{getFeeInfo(selectedToken)}</div>
-                </motion.div>
-
-                {/* Error Display */}
-                {sendError && (
-                  <motion.div variants={itemVariants} className="bg-[rgba(241,153,155,0.06)] border border-[rgba(241,153,155,0.28)] rounded-lg p-3">
-                    <div className="text-[#F1999B] text-sm">⚠️ {sendError}</div>
                   </motion.div>
-                )}
 
-                <motion.div variants={itemVariants}>
-                  <ButtonGreen fullWidth disabled={buttonState.disabled} fontWeight="semibold" onClick={handleAnalyzeClick}>
-                    {buttonState.label}
-                  </ButtonGreen>
+                  {/* Fee */}
+                  <motion.div variants={itemVariants} className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-4 h-4 text-[#9BE4A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-white text-sm font-medium">Network Fee</span>
+                    </div>
+                    <div className="text-[#B0B6BE] text-xs">{getFeeInfo(selectedToken)}</div>
+                  </motion.div>
+
+                  {/* Continue */}
+                  <motion.div variants={itemVariants} className="w-full px-2 sm:px-3 pb-2">
+                    <ButtonGreen fullWidth disabled={!destination.trim() || !selectedToken || !amount || parseFloat(amount) <= 0} fontWeight="semibold" onClick={handleContinue}>
+                      Continue
+                    </ButtonGreen>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {/* Analyze modals to mirror AnalyzeAddressPage */}
-          <AnalyzeLoadingModal isOpen={showLoadingModal} onCancel={() => setShowLoadingModal(false)} />
-          <AnalyzeResultModal isOpen={showResultModal} onClose={() => setShowResultModal(false)} analysisResult={analysisResult} variant="send" onCancel={() => setShowResultModal(false)} onConfirm={handleProceedToConfirmation} />
-          <SendConfirmationModal isOpen={showConfirmationModal} onClose={() => setShowConfirmationModal(false)} onConfirm={handleConfirmSend} onBack={handleBackToAnalysis} selectedToken={selectedToken} destination={destination} amount={amount} usdValue={amountUsdValue} analysisResult={analysisResult} isConfirming={isConfirming} />
-          <SuccesSendModal isOpen={showSuccessSend} onClose={handleSuccessModalClose} transactionResult={transactionResult} selectedToken={selectedToken} />
+              )}
+            </AnimatePresence>
+
+            {/* Analyze Loading */}
+            <AnalyzeLoadingModal isOpen={showAnalyzeLoading} onCancel={() => setShowAnalyzeLoading(false)} />
+
+            {/* Analyze Result (variant send) */}
+            <AnalyzeResultModal isOpen={showAnalyzeResult} onClose={() => setShowAnalyzeResult(false)} analysisResult={analysisResult} variant="send" onCancel={() => setShowAnalyzeResult(false)} onConfirm={handleAfterAnalyzeConfirm} />
+
+            {/* Confirmation */}
+            <SendConfirmationModal isOpen={showConfirmation} onClose={() => setShowConfirmation(false)} onConfirm={handleConfirmSend} onBack={() => setShowConfirmation(false)} selectedToken={selectedToken} destination={destination} amount={amount} usdValue={amountUsdValue} analysisResult={analysisResult} isConfirming={isSending} />
+
+            {sendError && <div className="w-full px-4 text-center text-red-400 text-xs">{sendError}</div>}
+
+            {/* Success Modal */}
+            <SuccesSendModal
+              isOpen={showSuccess}
+              onClose={() => {
+                setShowSuccess(false);
+                onClose?.();
+              }}
+            />
+
+            {/* Scanner Overlay */}
+            <AnimatePresence>
+              {showScanner && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center p-4">
+                  <div className="relative w-full max-w-[520px] rounded-2xl border border-white/10 bg-[#0F1214] overflow-hidden">
+                    <div className="absolute top-3 right-3 z-10">
+                      <button className="text-white/80 hover:text-white" onClick={() => setShowScanner(false)} aria-label="Close scanner">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="p-4 pb-2 text-center text-white text-sm">Scan QR Address</div>
+                    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                      <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+                      {/* Corner guides */}
+                      <div className="pointer-events-none absolute inset-0">
+                        <div className="absolute inset-8 border-2 border-[#9BE4A0]/70 rounded-xl animate-pulse"></div>
+                        {/* Corner indicators */}
+                        <div className="absolute top-8 left-8 w-6 h-6 border-t-2 border-l-2 border-[#9BE4A0] rounded-tl-lg"></div>
+                        <div className="absolute top-8 right-8 w-6 h-6 border-t-2 border-r-2 border-[#9BE4A0] rounded-tr-lg"></div>
+                        <div className="absolute bottom-8 left-8 w-6 h-6 border-b-2 border-l-2 border-[#9BE4A0] rounded-bl-lg"></div>
+                        <div className="absolute bottom-8 right-8 w-6 h-6 border-b-2 border-r-2 border-[#9BE4A0] rounded-br-lg"></div>
+                      </div>
+                      {/* Camera preview overlay */}
+                      <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
+                        <div className="flex items-center gap-1 text-white text-xs">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                          <span>LIVE</span>
+                        </div>
+                      </div>
+                    </div>
+                    {scannerError && <div className="p-3 text-center text-xs text-red-400">{scannerError}</div>}
+                    <div className="p-3">
+                      <ButtonGreen fullWidth onClick={() => setShowScanner(false)} size="md" textSize="text-base" fontWeight="medium">
+                        Cancel
+                      </ButtonGreen>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>,

@@ -10,7 +10,6 @@ const LOGO_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main
 const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
 const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp";
 
-
 const Home = () => {
   const { isAuthenticated, handleLogin } = useAuth();
   const navigate = useNavigate();
@@ -40,6 +39,42 @@ const Home = () => {
 
   return (
     <section className="relative bg-[#000510] w-full overflow-hidden">
+      <style>{`
+        @keyframes fradium-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-12px); }
+        }
+        .floating-slow { 
+          animation: fradium-float 6s ease-in-out infinite; 
+          will-change: transform;
+        }
+        @keyframes fradium-bg-drift {
+          0% { transform: scale(1) translateY(0px); }
+          50% { transform: scale(1.02) translateY(-6px); }
+          100% { transform: scale(1) translateY(0px); }
+        }
+        .bg-drift-1 {
+          animation: fradium-bg-drift 30s ease-in-out infinite;
+          transform-origin: center;
+          will-change: transform;
+        }
+        .bg-drift-2 {
+          animation: fradium-bg-drift 36s ease-in-out infinite;
+          animation-delay: 0.8s;
+          transform-origin: center;
+          will-change: transform;
+        }
+        .bg-drift-3 {
+          animation: fradium-bg-drift 42s ease-in-out infinite;
+          animation-delay: 1.6s;
+          transform-origin: center;
+          will-change: transform;
+        }
+        .bg-soft-blur {
+          filter: blur(1.2px);
+          will-change: filter;
+        }
+      `}</style>
       {/* Tagline di atas background */}
       <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-16 mt-8 text-center sm:pt-24 transition-all duration-700 ease-out ${appear}`}>
         <p className="text-[14px] font-medium tracking-[0.28em] text-[#C1FFC5]">REINVENTED BLOCKCHAIN SECURITY</p>
@@ -49,7 +84,7 @@ const Home = () => {
       <div className={`relative mx-auto mt-4 overflow-hidden transition-all duration-700 ease-out ${appear}`}>
         {/* Background layer */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
+          <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover bg-drift-1 bg-soft-blur" />
         </div>
 
         {/* Content di atas background */}
@@ -65,17 +100,31 @@ const Home = () => {
         <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-14 transition-all duration-700 ease-out ${appear}`}>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
             {/* Card kiri: About Fradium Web3 Security */}
-            <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
-              <div className="flex items-start justify-between">
+            <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+              {/* decorative grid/beam overlay */}
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(800px_300px_at_70%_-80px,rgba(153,227,158,0.10),transparent_65%)] opacity-60" />
+              {/* Header row: title only; CTA moved to absolute top-right */}
+              <div className="relative z-[1] flex items-center gap-4">
                 <h3 className="text-xl md:text-2xl lg:text-3xl leading-[1.1] font-medium text-white">
                   About <span className="text-[#99E39E]">Fradium</span>
                   <br /> Web3 Security
                 </h3>
-                <ButtonGreen size="now" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[23px] h-[23px]" fontWeight="medium" onClick={handleLaunchWallet}>
+              </div>
+              {/* CTA button pinned to top-right corner */}
+              <div className="absolute top-6 right-6 md:top-8 md:right-8 lg:top-10 lg:right-10 z-[2]">
+                <ButtonGreen size="md" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[23px] h-[23px]" fontWeight="medium" onClick={handleLaunchWallet}>
                   Launch Wallet
                 </ButtonGreen>
               </div>
-              <p className="mt-6 max-w-md text-xs md:text-sm font-normal text-white/75">With Fradium, you can easily analyse wallet addresses before making any interaction. Our mission is simple: to help you identify risks, prevent fraud, and navigate the blockchain ecosystem with confidence.</p>
+              {/* Description block (controlled by padding) */}
+              <div className="relative z-[1] pt-16 md:pt-20 lg:pt-32">
+                <p className="max-w-md md:max-w-lg text-xs md:text-sm font-normal text-white/75">With Fradium, you can easily analyse wallet addresses before making any interaction. Our mission is simple, to help you identify risks, prevent fraud, and navigate the blockchain ecosystem with confidence.</p>
+              </div>
+              {/* Bento artwork (right bottom, slightly cropped, aligned with button) */}
+              <div className="absolute right-[-40px] md:right-[-64px] bottom-[-84px] md:bottom-[-84px] w-[270px] md:w-[350px] lg:w-[400px] pointer-events-none select-none floating-slow">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/bento.webp" alt="Fradium Bento" className="w-full h-auto object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.45)]" decoding="async" loading="lazy" draggable={false} />
+              </div>
+              {/* Hover glow highlight */}
               <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(520px_220px_at_60%_-40px,rgba(16,185,129,0.18),rgba(34,197,94,0.12)_55%,transparent_80%)]" />
             </div>
 
@@ -95,7 +144,7 @@ const Home = () => {
       {/* Background kedua di bawah background pertama, dengan jarak margin-8 */}
       <div className={`relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[760px] overflow-hidden transition-all duration-700 ease-out ${appear}`}>
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <img src={BACKGROUND_URL_2} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
+          <img src={BACKGROUND_URL_2} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover bg-drift-2 bg-soft-blur" />
         </div>
         {/* Fade dari warna dasar ke background-2 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
@@ -157,15 +206,7 @@ const Home = () => {
       {/* Background ketiga paling bawah, konten akan diletakkan di atasnya */}
       <div className={`relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible transition-all duration-700 ease-out ${appear}`}>
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <img
-            src={BACKGROUND_URL_3}
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            loading="lazy"
-            draggable={false}
-            className="absolute inset-x-0 bottom-0 h-full w-full object-cover"
-          />
+          <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover bg-drift-3 bg-soft-blur" />
         </div>
         {/* Fade dari warna dasar ke background-3 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
@@ -174,23 +215,15 @@ const Home = () => {
         <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-10 pb-24 md:pb-32 transition-all duration-700 ease-out ${appear}`}>
           {/* Hero di atas background ketiga */}
           <div className="flex flex-col items-center justify-center text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white">
-              Ready to use crypto with protection?
-            </h2>
-            <p className="mx-auto mt-4 max-w-3xl text-white/80 text-sm md:text-base">
-              With Fradium, every wallet address is checked in real time, so you can focus on using crypto without
-              worrying about the risks.
-            </p>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white">Ready to use crypto with protection?</h2>
+            <p className="mx-auto mt-4 max-w-3xl text-white/80 text-sm md:text-base">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about the risks.</p>
             <div className="mt-6">
               <ButtonGreen size="md" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[23px] h-[23px]" onClick={handleLaunchWallet}>
                 Try it free
               </ButtonGreen>
             </div>
           </div>
-
         </div>
-
-
       </div>
       <Footer />
     </section>

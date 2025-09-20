@@ -3,7 +3,7 @@ import { useAuth } from "../../core/providers/AuthProvider";
 import { useWallet } from "../../core/providers/WalletProvider";
 import ManageNetworksModal from "../../core/components/modals/ManageNetworksModal";
 import { NETWORK_CONFIG } from "@/core/config/tokenConfig.js";
-import toast from "react-hot-toast";
+// toast removed for copy feedback
 
 export default function SettingPage() {
   const { identity } = useAuth();
@@ -15,6 +15,7 @@ export default function SettingPage() {
     solana: true,
     icp: true,
   });
+  const [copiedPrincipal, setCopiedPrincipal] = useState(false);
 
   // Use NETWORK_CONFIG from tokenUtils for consistency
   const NETWORKS = NETWORK_CONFIG;
@@ -42,34 +43,10 @@ export default function SettingPage() {
     if (principalId) {
       try {
         await navigator.clipboard.writeText(principalId);
-        toast.success("Principal ID copied to clipboard!", {
-          position: "bottom-center",
-          duration: 2000,
-          style: {
-            background: "#23272F",
-            color: "#9BE4A0",
-            border: "1px solid #393E4B",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-          },
-          icon: "📋",
-        });
+        setCopiedPrincipal(true);
+        setTimeout(() => setCopiedPrincipal(false), 1500);
       } catch (error) {
         console.error("Failed to copy Principal ID:", error);
-        toast.error("Failed to copy Principal ID", {
-          position: "bottom-center",
-          duration: 2000,
-          style: {
-            background: "#23272F",
-            color: "#FF6B6B",
-            border: "1px solid #393E4B",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-          },
-          icon: "❌",
-        });
       }
     }
   };
@@ -119,11 +96,17 @@ export default function SettingPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-white text-base font-normal font-mono">{formatPrincipalId(identity?.getPrincipal()?.toString())}</span>
-                <button className="p-1 hover:bg-[#23272F] rounded transition-colors" onClick={copyPrincipalToClipboard}>
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="text-[#99E39E]">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" strokeWidth="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="2" />
-                  </svg>
+                <button className="p-1 hover:bg-[#23272F] rounded transition-colors" onClick={copyPrincipalToClipboard} aria-label={copiedPrincipal ? "Copied" : "Copy Principal ID"}>
+                  {copiedPrincipal ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-[#99E39E]">
+                      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="text-[#99E39E]">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" strokeWidth="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>

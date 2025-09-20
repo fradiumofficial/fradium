@@ -3,10 +3,9 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
-import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import { NETWORK_CONFIG } from "@/core/config/tokenConfig.js";
-import toast from "react-hot-toast";
+// toast not used for copy feedbacks anymore
 import { motion, AnimatePresence } from "framer-motion";
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
@@ -15,7 +14,8 @@ import ManageNetworksModal from "../modals/ManageNetworksModal";
 
 const MotionLink = motion(Link);
 
-function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdownOpen, setIsProfileDropdownOpen, network, getNetworkValue, getAvailableNetworks, handleNetworkChange, handleToggleHideBalance, contextHideBalance, navigate, logout }) {
+function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdownOpen, setIsProfileDropdownOpen, network, getNetworkValue, getAvailableNetworks, handleNetworkChange, handleToggleHideBalance, contextHideBalance, navigate, logout, icpPrincipal }) {
+  const [copiedPrincipal, setCopiedPrincipal] = React.useState(false);
   return (
     <>
       <div className="relative network-dropdown">
@@ -114,9 +114,24 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                   </div>
                 </button>
 
-                <button className="w-full text-sm transition-colors group">
+                <button
+                  className="w-full text-sm transition-colors group"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(icpPrincipal || "");
+                      setCopiedPrincipal(true);
+                      setTimeout(() => setCopiedPrincipal(false), 1500);
+                    } catch (_e) {}
+                  }}
+                  aria-label={copiedPrincipal ? "Copied" : "Copy Principal"}>
                   <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
-                    <img src="/assets/icons/copy-green.svg" alt="Your addresses" />
+                    {copiedPrincipal ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-[#9BE4A0]">
+                        <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <img src="/assets/icons/copy-green.svg" alt="Copy Principal" />
+                    )}
                     <span className="text-white">Copy Principal</span>
                   </div>
                 </button>
@@ -162,7 +177,7 @@ function WalletRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                 <div className="h-px bg-white/10 mx-5 my-3"></div>
 
                 <button className="w-full text-sm transition-colors group" onClick={() => window.open("https://github.com/fradiumofficial/fradium", "_blank")}>
-                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg_WHITE/5">
+                  <div className="mx-5 flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5">
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                       <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -702,7 +717,7 @@ function WalletLayoutContent() {
         <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col">
           {/* Topbar Network & User for md screens - placed above Outlet to avoid content shrink */}
           <div className="hidden md:flex xl:hidden w-full items-center justify-end gap-3 mb-4">
-            <WalletRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} />
+            <WalletRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} icpPrincipal={addresses?.icp_principal} />
           </div>
           <div className="w-full flex justify-center">
             <div className="w-full max-w-[30rem] sm:max-w-[32rem] md:max-w-[34rem] lg:max-w-[36rem] xl:max-w-[44rem] 2xl:max-w-[48rem] md:-translate-x-[100px] lg:-translate-x-[120px] xl:translate-x-0 transition-transform">
@@ -715,7 +730,7 @@ function WalletLayoutContent() {
           {/* Top action buttons */}
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-end">
-              <WalletRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} />
+              <WalletRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} icpPrincipal={addresses?.icp_principal} />
             </div>
           </div>
         </aside>

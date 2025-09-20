@@ -21,6 +21,8 @@ import { ckbtc_ledger as ckbtc_ledger } from "declarations/ckbtc_ledger";
 import { ckbtc_index as ckbtc_index } from "declarations/ckbtc_index";
 import { ckbtc_minter as ckbtc_minter } from "declarations/ckbtc_minter";
 import { ckbtc_kyt as ckbtc_kyt } from "declarations/ckbtc_kyt";
+import { cketh_ledger as cketh_ledger } from "declarations/cketh_ledger";
+import { cketh_index as cketh_index } from "declarations/cketh_index";
 
 // Global Style
 import "@/core/style/global.css";
@@ -175,7 +177,7 @@ function AnimatedRoutes() {
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <NProgressRouter />
-    <AuthProvider canisters={{ token, backend, wallet, fradium_ledger, icp_ledger, fradium_index, icp_index, ckbtc_ledger, ckbtc_index, ckbtc_minter, ckbtc_kyt }}>
+    <AuthProvider canisters={{ token, backend, wallet, fradium_ledger, icp_ledger, fradium_index, icp_index, ckbtc_ledger, ckbtc_index, ckbtc_minter, ckbtc_kyt, cketh_ledger, cketh_index }}>
       <AnimatedRoutes />
       <Toaster
         position="bottom-center"

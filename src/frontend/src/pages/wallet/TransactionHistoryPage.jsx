@@ -101,6 +101,7 @@ function getTokenSymbol(chain, tokenType) {
   if (tokenType === "icp") return "ICP";
   if (tokenType === "fradium") return "FRADIUM";
   if (tokenType === "ckbtc") return "ckBTC";
+  if (tokenType === "cketh") return "ckETH";
   if (chain === "Solana") return "SOL";
   if (chain === "Bitcoin") return "BTC";
   if (chain === "Ethereum") return "ETH";
@@ -109,6 +110,7 @@ function getTokenSymbol(chain, tokenType) {
     if (tokenType === "icp") return "ICP";
     if (tokenType === "fradium") return "FRADIUM";
     if (tokenType === "ckbtc") return "ckBTC";
+    if (tokenType === "cketh") return "ckETH";
     return "ICP"; // Default to ICP for Internet Computer
   }
   return "TOKEN";
@@ -245,6 +247,7 @@ export default function TransactionHistoryPage() {
       if (icpPrincipal && icpAccount) tokensToLoad.push("icp");
       if (icpPrincipal) tokensToLoad.push("fradium");
       if (icpPrincipal) tokensToLoad.push("ckbtc");
+      if (icpPrincipal) tokensToLoad.push("cketh");
       // Load transactions for all supported networks
       // Create parallel loading promises for better performance
       console.log("LOADING PROMISES 1");
@@ -302,6 +305,16 @@ export default function TransactionHistoryPage() {
         loadingPromises.push(
           getICRCTransactionHistory("ckbtc", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
             console.error("Error loading ckBTC transactions:", error);
+            return [];
+          })
+        );
+      }
+      // Load ckETH transactions
+      if (icpPrincipal) {
+        console.log("LOADING CKETH");
+        loadingPromises.push(
+          getICRCTransactionHistory("cketh", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
+            console.error("Error loading ckETH transactions:", error);
             return [];
           })
         );

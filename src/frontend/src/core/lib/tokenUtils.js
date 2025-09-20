@@ -4,6 +4,8 @@ import { icp_index } from "declarations/icp_index";
 import { fradium_ledger } from "declarations/fradium_ledger";
 import { ckbtc_ledger } from "declarations/ckbtc_ledger";
 import { ckbtc_minter } from "declarations/ckbtc_minter";
+import { cketh_ledger } from "declarations/cketh_ledger";
+import { cketh_minter } from "declarations/cketh_minter";
 import { Principal } from "@dfinity/principal";
 import { TOKENS_CONFIG, API_KEYS, API_URLS, NETWORK_CONFIG, COINGECKO_IDS, COINMARKETCAP_IDS, COINPAPRIKA_IDS, FALLBACK_PRICES, TOKEN_TYPE_MAPPINGS, DEFAULT_DECIMALS, CACHE_CONFIG } from "@/core/config/tokenConfig.js";
 
@@ -289,6 +291,17 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
               decimals = d;
             }
             break;
+          case 7: // ckETH
+            {
+              let d = 18;
+              try {
+                d = Number(await cketh_ledger.icrc1_decimals());
+              } catch (_e) {
+                d = 18; // fallback
+              }
+              decimals = d;
+            }
+            break;
           default:
             throw new Error("Unknown ICRC token for decimals");
         }
@@ -341,6 +354,17 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
           });
           break;
 
+        case 7: // ckETH
+          result = await cketh_ledger.icrc1_transfer({
+            from_subaccount: [],
+            to: { owner: toPrincipal, subaccount: [] },
+            amount: BigInt(amountInSmallestUnit),
+            fee: [],
+            memo: [],
+            created_at_time: [],
+          });
+          break;
+
         default:
           throw new Error(`Unsupported ICRC token: ${token.symbol}`);
       }
@@ -377,6 +401,30 @@ export async function getBalance(tokenId, principal, useCache = true) {
   // Get principal string for caching
   const principalString = principal?.toString() || null;
 
+  // Retry mechanism - try up to 3 times
+  const maxRetries = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetchBalanceWithRetry(token, principal, principalString, useCache);
+    } catch (error) {
+      lastError = error;
+      console.warn(`Balance fetch attempt ${attempt}/${maxRetries} failed for ${token.symbol}:`, error.message);
+
+      // If this is not the last attempt, wait a bit before retrying
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+      }
+    }
+  }
+
+  // If all retries failed, throw the last error
+  throw new Error(`Failed to fetch ${token.symbol} balance after ${maxRetries} attempts: ${lastError?.message || "Unknown error"}`);
+}
+
+// Helper function to fetch balance (extracted from original getBalance logic)
+async function fetchBalanceWithRetry(token, principal, principalString, useCache) {
   if (token.type === "native") {
     try {
       switch (token.id) {
@@ -510,13 +558,56 @@ export async function getBalance(tokenId, principal, useCache = true) {
 
           // Save to cache if useCache is enabled
           if (useCache && principalString) {
-            saveBalanceToStorage(principalString, tokenId, resultString);
+            saveBalanceToStorage(principalString, token.id, resultString);
           }
 
           return resultString;
         } catch (error) {
           console.error("Error fetching ckBTC balance:", error);
           throw new Error(`Failed to fetch ckBTC balance: ${error.message || "Unknown error"}`);
+        }
+      case 7: // ckETH
+        try {
+          // ckETH doesn't need update_balance like ckBTC, directly read from ledger
+          const balance = await cketh_ledger.icrc1_balance_of({
+            owner: principal,
+            subaccount: [],
+          });
+
+          // Get decimals dynamically from ledger if token.decimals is null
+          let decimals = token.decimals;
+          if (decimals === null) {
+            try {
+              decimals = await cketh_ledger.icrc1_decimals();
+            } catch (error) {
+              console.warn("Failed to fetch ckETH decimals, using default 18:", error);
+              decimals = 18; // ckETH typically has 18 decimals like ETH
+            }
+          }
+
+          // Convert from e18s to ckETH using dynamic decimals
+          // balance is a bigint, so we need to convert it properly
+          const balanceNumber = Number(balance);
+          const divisor = Math.pow(10, decimals);
+          const result = balanceNumber / divisor;
+
+          // Handle edge cases
+          if (isNaN(result) || !isFinite(result)) {
+            console.warn("Invalid balance calculation for ckETH:", { balance, balanceNumber, decimals, divisor, result });
+            return "0";
+          }
+
+          const resultString = result.toString();
+
+          // Save to cache if useCache is enabled
+          if (useCache && principalString) {
+            saveBalanceToStorage(principalString, token.id, resultString);
+          }
+
+          return resultString;
+        } catch (error) {
+          console.error("Error fetching ckETH balance:", error);
+          throw new Error(`Failed to fetch ckETH balance: ${error.message || "Unknown error"}`);
         }
       default:
         throw new Error("ICRC token not supported");
@@ -570,12 +661,36 @@ export async function getUSD(tokenId) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
-  const coinGeckoId = COINGECKO_IDS[token.symbol];
-
   // Special handling for Fradium token - return 0 directly since it's not available on major APIs
   if (token.symbol === "FADM") {
     return 0;
   }
+
+  // Retry mechanism - try up to 3 times
+  const maxRetries = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetchUSDPriceWithRetry(token);
+    } catch (error) {
+      lastError = error;
+      console.warn(`USD price fetch attempt ${attempt}/${maxRetries} failed for ${token.symbol}:`, error.message);
+
+      // If this is not the last attempt, wait a bit before retrying
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+      }
+    }
+  }
+
+  // If all retries failed, throw the last error
+  throw new Error(`Failed to fetch ${token.symbol} USD price after ${maxRetries} attempts: ${lastError?.message || "Unknown error"}`);
+}
+
+// Helper function to fetch USD price (extracted from original getUSD logic)
+async function fetchUSDPriceWithRetry(token) {
+  const coinGeckoId = COINGECKO_IDS[token.symbol];
 
   // Primary API: CoinGecko
   try {
@@ -744,10 +859,41 @@ export function getIconByChain(chain, tokenType = null) {
     } else if (tokenType === "ckbtc") {
       const token = TOKENS_CONFIG.find((t) => t.id === 6); // ckBTC token
       return token ? `/${token.imageUrl}` : "/assets/images/coins/ckbtc.webp";
+    } else if (tokenType === "cketh") {
+      const token = TOKENS_CONFIG.find((t) => t.id === 7); // ckETH token
+      return token ? `/${token.imageUrl}` : "/assets/images/coins/cketh.webp";
     }
   }
 
   // For other chains, find by chain name
   const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
   return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
+}
+
+// Get ckETH helper contract address for deposits
+export async function getCkEthHelperContractAddress() {
+  try {
+    if (!cketh_minter) {
+      throw new Error("ckETH minter not available");
+    }
+    const address = await cketh_minter.smart_contract_address();
+    return address;
+  } catch (error) {
+    console.error("Error fetching ckETH helper contract address:", error);
+    return null;
+  }
+}
+
+// Get ckETH minter address (for reference, not for direct deposits)
+export async function getCkEthMinterAddress() {
+  try {
+    if (!cketh_minter) {
+      throw new Error("ckETH minter not available");
+    }
+    const address = await cketh_minter.minter_address();
+    return address;
+  } catch (error) {
+    console.error("Error fetching ckETH minter address:", error);
+    return null;
+  }
 }

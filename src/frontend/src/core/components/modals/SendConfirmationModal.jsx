@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import { getChainExplorer, getExplorerUrl } from "@/core/lib/chainExplorers.js";
+import { getFeeInfo } from "@/core/lib/tokenUtils";
 
 export default function SendConfirmationModal({ isOpen, onClose, onConfirm, onBack, selectedToken, destination, amount, usdValue, analysisResult, isConfirming = false }) {
   if (!isOpen) return null;
@@ -11,23 +12,22 @@ export default function SendConfirmationModal({ isOpen, onClose, onConfirm, onBa
   const explorer = getChainExplorer(network);
   const explorerUrl = getExplorerUrl(network, destination);
 
-  // Calculate fee info (you can customize this based on your fee calculation logic)
-  const getFeeInfo = () => {
-    if (!selectedToken) return "Network fee will be calculated";
+  const feeInfo = selectedToken ? getFeeInfo(selectedToken) : "";
 
-    switch (selectedToken.chain.toLowerCase()) {
-      case "bitcoin":
-        return "~0.00001 BTC (estimated)";
-      case "ethereum":
-        return "~0.001 ETH (estimated)";
-      case "solana":
-        return "~0.000005 SOL (estimated)";
-      default:
-        return "Network fee will be calculated";
+  // Disable page scroll when modal is open (match ReceiveAddressModal behavior)
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = "0px";
+    } else {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
     }
-  };
-
-  const feeInfo = getFeeInfo();
+    return () => {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    };
+  }, [isOpen]);
 
   // Animation variants
   const containerVariants = {
@@ -63,21 +63,20 @@ export default function SendConfirmationModal({ isOpen, onClose, onConfirm, onBa
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/70 backdrop-blur-md p-4">
-      <motion.div className="relative w-full max-w-[480px] bg-[#171A1C] rounded-[24px] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.65)]" variants={containerVariants} initial="hidden" animate="visible" exit="exit">
-        <div className="pointer-events-none absolute -inset-x-8 -top-8 h-20 bg-[#A6F3AE]/10 blur-3xl opacity-25 rounded-full" />
-        <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={onClose} aria-label="Close">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="p-5 sm:p-6">
-          <div className="text-white text-[16px] pl-4 sm:text-[16px] font-medium leading-tight mb-6">Confirm Transaction</div>
-          {/* Token Info */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-[20px] bg-white/[0.03] border border-white/5 p-4 sm:p-5">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+      <div className="flex min-h-full items-start justify-center pt-8 pl-4 pr-4 pb-4">
+        <motion.div className="relative w-full max-w-[500px] mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10" variants={containerVariants} initial="hidden" animate="visible" exit="exit">
+          <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={onClose} aria-label="Close">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="flex flex-col items-center p-4 gap-4 h-auto">
+            <div className="w-full text-center text-white text-lg font-medium">Confirm Transaction</div>
+            {/* Token Info */}
+            <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
               <div className="flex items-center gap-3">
-                <img src={`/${selectedToken?.imageUrl}`} alt={selectedToken?.name} className="w-10 h-10" />
+                <img src={`/${selectedToken?.imageUrl}`} alt={selectedToken?.name} className="w-8 h-8" />
                 <div className="flex-1">
                   <div className="text-white font-medium">{selectedToken?.name}</div>
                   <div className="text-[#B0B6BE] text-sm">
@@ -85,12 +84,10 @@ export default function SendConfirmationModal({ isOpen, onClose, onConfirm, onBa
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Transaction Details */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-[20px] bg-white/[0.03] border border-white/5 p-4 sm:p-5">
+            {/* Transaction Details */}
+            <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
               <div className="space-y-5">
                 {/* Amount */}
                 <div className="flex justify-between items-center">
@@ -135,13 +132,11 @@ export default function SendConfirmationModal({ isOpen, onClose, onConfirm, onBa
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Analysis Result Summary */}
-          {analysisResult && (
-            <motion.div variants={itemVariants} className="mb-6">
-              <div className={`rounded-[20px] p-4 sm:p-5 border ${analysisResult.result?.isSafe ? "bg-[rgba(155,228,160,0.06)] border-[rgba(155,228,160,0.3)]" : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"}`}>
+            {/* Analysis Result Summary */}
+            {analysisResult && (
+              <motion.div variants={itemVariants} className={`mx-2 sm:mx-3 w-full mb-2 rounded-xl p-6 border ${analysisResult.result?.isSafe ? "bg-[rgba(155,228,160,0.06)] border-[rgba(155,228,160,0.3)]" : "bg-[rgba(241,153,155,0.06)] border-[rgba(241,153,155,0.28)]"}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-2 h-2 rounded-full ${analysisResult.result?.isSafe ? "bg-[#9BE4A0]" : "bg-[#F1999B]"}`}></div>
                   <span className="text-white text-sm font-medium">Address Analysis: {analysisResult.result?.isSafe ? "SAFE" : "RISKY"}</span>
@@ -149,33 +144,31 @@ export default function SendConfirmationModal({ isOpen, onClose, onConfirm, onBa
                 <div className={`text-xs ${analysisResult.result?.isSafe ? "text-[#B0B6BE]" : "text-[#F1999B]"}`}>
                   Confidence: {analysisResult.result?.confidence}% •{analysisResult.finalStatus === "safe_by_both" ? " AI & Community" : analysisResult.finalStatus === "unsafe_by_ai" ? " AI Analysis" : analysisResult.finalStatus === "unsafe_by_community" ? " Community" : " Community Analysis"}
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* Warning for risky addresses */}
-          {analysisResult && !analysisResult.result?.isSafe && (
-            <motion.div variants={itemVariants} className="mb-6">
-              <div className="rounded-[20px] p-4 sm:p-5 bg-[rgba(241,153,155,0.06)] border border-[rgba(241,153,155,0.28)]">
+            {/* Warning for risky addresses */}
+            {analysisResult && !analysisResult.result?.isSafe && (
+              <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl p-6 bg[rgba(241,153,155,0.06)] border border-[rgba(241,153,155,0.28)]">
                 <div className="text-[#F1999B] text-sm font-medium mb-1">⚠️ Warning</div>
                 <div className="text-[#F1999B] text-xs">This address has been flagged as potentially risky. Please double-check the address before proceeding.</div>
+              </motion.div>
+            )}
+
+            {/* Action Buttons */}
+            <motion.div variants={itemVariants} className="w-full px-2 sm:px-3 pb-2">
+              <div className="flex gap-3">
+                <button className="flex-1 py-3 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onBack} disabled={isConfirming}>
+                  Back
+                </button>
+                <ButtonGreen fullWidth className="flex-1" onClick={onConfirm} disabled={isConfirming} size="md" textSize="text-base" fontWeight="medium">
+                  {isConfirming ? "Confirming..." : "Confirm Send"}
+                </ButtonGreen>
               </div>
             </motion.div>
-          )}
-
-          {/* Action Buttons */}
-          <motion.div variants={itemVariants} className="mt-6">
-            <div className="flex gap-3">
-              <button className="flex-1 py-3 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onBack} disabled={isConfirming}>
-                Back
-              </button>
-              <ButtonGreen fullWidth className="flex-1" onClick={onConfirm} disabled={isConfirming} size="md" textSize="text-base" fontWeight="medium">
-                {isConfirming ? "Confirming..." : "Confirm Send"}
-              </ButtonGreen>
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
+      </div>
     </div>,
     document.body
   );

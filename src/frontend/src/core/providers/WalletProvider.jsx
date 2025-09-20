@@ -4,10 +4,11 @@ import { useAuth } from "./AuthProvider";
 // Wallet declarations
 import { wallet } from "declarations/wallet";
 import { ckbtc_minter } from "declarations/ckbtc_minter";
+import { cketh_minter } from "declarations/cketh_minter";
 
 // Token utilities
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { getBalance, getUSD, getUSDPrices, clearBalanceCache } from "@/core/lib/tokenUtils";
+import { getBalance, getUSD, getUSDPrices, clearBalanceCache, getCkEthHelperContractAddress, getCkEthMinterAddress } from "@/core/lib/tokenUtils";
 
 // Create context for wallet data
 const WalletContext = createContext();
@@ -45,6 +46,8 @@ export const WalletProvider = ({ children }) => {
     icp_principal: "",
     icp_account: "",
     ckbtc: "",
+    cketh_helper: "",
+    cketh_minter: "",
   });
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [addressesReady, setAddressesReady] = useState(false);
@@ -249,8 +252,8 @@ export const WalletProvider = ({ children }) => {
       setAddressesLoading(true);
 
       const cached = loadAddressesFromStorage();
-      // Jika cache lama belum memiliki ckbtc_btc_address, jangan cache hit (lanjut fetch baru)
-      if (cached && typeof cached.ckbtc === "string" && cached.ckbtc) {
+      // Jika cache lama belum memiliki ckbtc_btc_address atau ckETH addresses, jangan cache hit (lanjut fetch baru)
+      if (cached && typeof cached.ckbtc === "string" && cached.ckbtc && typeof cached.cketh_helper === "string" && cached.cketh_helper && typeof cached.cketh_minter === "string" && cached.cketh_minter) {
         setAddresses(cached);
         setAddressesReady(true);
         return;
@@ -258,7 +261,7 @@ export const WalletProvider = ({ children }) => {
 
       const result = await wallet.wallet_addresses();
 
-      // Jalankan fetch ckBTC BTC deposit address secara parallel
+      // Jalankan fetch ckBTC BTC deposit address dan ckETH addresses secara parallel
       // Hanya jika principal tersedia
       const principal = identity?.getPrincipal();
       const promises = [];
@@ -273,10 +276,43 @@ export const WalletProvider = ({ children }) => {
         promises.push(ckbtcPromise);
       }
 
-      // Tunggu semua promise parallel (saat ini hanya ckBTC, mudah ditambah kedepan)
+      // ckETH helper contract address promise
+      let ckethHelperAddress = "";
+      if (cketh_minter && typeof cketh_minter.smart_contract_address === "function") {
+        const ckethHelperPromise = cketh_minter
+          .smart_contract_address()
+          .then((addr) => (typeof addr === "string" ? addr : ""))
+          .catch((_e) => "");
+        promises.push(ckethHelperPromise);
+      }
+
+      // ckETH minter address promise
+      let ckethMinterAddress = "";
+      if (cketh_minter && typeof cketh_minter.minter_address === "function") {
+        const ckethMinterPromise = cketh_minter
+          .minter_address()
+          .then((addr) => (typeof addr === "string" ? addr : ""))
+          .catch((_e) => "");
+        promises.push(ckethMinterPromise);
+      }
+
+      // Tunggu semua promise parallel
       const results = await Promise.all(promises);
-      if (results.length > 0) {
-        ckbtcBtcAddress = results[0] || "";
+      let resultIndex = 0;
+
+      if (ckbtc_minter && principal && typeof ckbtc_minter.get_btc_address === "function") {
+        ckbtcBtcAddress = results[resultIndex] || "";
+        resultIndex++;
+      }
+
+      if (cketh_minter && typeof cketh_minter.smart_contract_address === "function") {
+        ckethHelperAddress = results[resultIndex] || "";
+        resultIndex++;
+      }
+
+      if (cketh_minter && typeof cketh_minter.minter_address === "function") {
+        ckethMinterAddress = results[resultIndex] || "";
+        resultIndex++;
       }
 
       const newAddresses = {
@@ -284,8 +320,10 @@ export const WalletProvider = ({ children }) => {
         ethereum: result?.ethereum || "",
         solana: result?.solana || "",
         icp_principal: result?.icp_principal || "",
-        icp_account: result?.icp_account || "",
+        icp_account: (result?.icp_account || "").toLowerCase(),
         ckbtc: ckbtcBtcAddress,
+        cketh_helper: ckethHelperAddress,
+        cketh_minter: ckethMinterAddress,
       };
 
       saveAddressesToStorage(newAddresses);

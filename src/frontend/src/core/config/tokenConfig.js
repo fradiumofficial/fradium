@@ -74,6 +74,18 @@ export const TOKENS_CONFIG = [
     type: "icrc",
     canisterId: "mc6ru-gyaaa-aaaar-qaaaq-cai",
   },
+  {
+    id: 7,
+    name: "ckETH Sepolia",
+    symbol: "ckETH",
+    chain: "Internet Computer",
+    decimals: null,
+    imageUrl: "assets/images/coins/cketh.webp",
+    mainnet: false,
+    // Token type
+    type: "icrc",
+    canisterId: "ss2fx-dyaaa-aaaar-qacoq-cai",
+  },
 ];
 
 // API Keys for different services
@@ -151,6 +163,7 @@ export const COINGECKO_IDS = {
   ICP: "internet-computer",
   FADM: "fradium", // Note: Fradium might not be on CoinGecko, we'll handle this
   ckBTC: "bitcoin", // ckBTC uses BTC price
+  ckETH: "ethereum", // ckETH uses ETH price
 };
 
 // CoinMarketCap IDs
@@ -159,6 +172,8 @@ export const COINMARKETCAP_IDS = {
   ETH: "1027",
   SOL: "5426",
   ICP: "8916",
+  ckBTC: "1", // ckBTC uses BTC price
+  ckETH: "1027", // ckETH uses ETH price
 };
 
 // CoinPaprika IDs
@@ -167,6 +182,8 @@ export const COINPAPRIKA_IDS = {
   ETH: "eth-ethereum",
   SOL: "sol-solana",
   ICP: "icp-internet-computer",
+  ckBTC: "btc-bitcoin", // ckBTC uses BTC price
+  ckETH: "eth-ethereum", // ckETH uses ETH price
 };
 
 // Fallback prices for tokens not supported by major APIs
@@ -177,6 +194,7 @@ export const FALLBACK_PRICES = {
   ICP: 0,
   FADM: 0, // Placeholder price for Fradium
   ckBTC: 0, // ckBTC uses BTC price, fallback to 0
+  ckETH: 0, // ckETH uses ETH price, fallback to 0
 };
 
 // Token type mappings
@@ -195,6 +213,7 @@ export const DEFAULT_DECIMALS = {
   ICP: 8,
   FRADIUM: 8,
   ckBTC: 8,
+  ckETH: 18,
 };
 
 // Cache configuration
