@@ -29,6 +29,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
     solana: null,
     icp_principal: null,
     icp_account: null,
+    ckbtc: null,
   });
   // Fetch addresses using WalletProvider (simple)
   useEffect(() => {
@@ -38,6 +39,25 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
       });
     }
   }, [isOpen, fetchAddresses]);
+
+  // Disable page scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Disable scroll
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = "0px"; // Prevent layout shift
+    } else {
+      // Enable scroll
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    }
+
+    // Cleanup function to restore scroll when component unmounts
+    return () => {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    };
+  }, [isOpen]);
 
   // Handle address errors and validation
   useEffect(() => {
@@ -84,19 +104,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
   const copyToClipboard = async (address) => {
     try {
       await navigator.clipboard.writeText(address);
-      toast.success("Address copied to clipboard!", {
-        position: "bottom-center",
-        duration: 2000,
-        style: {
-          background: "#23272F",
-          color: "#9BE4A0",
-          border: "1px solid #393E4B",
-          borderRadius: "8px",
-          fontSize: "14px",
-          fontWeight: "500",
-        },
-        icon: "📋",
-      });
+      return true; // feedback visual akan ditangani pada icon
     } catch (error) {
       console.error("Failed to copy address:", error);
       toast.error("Failed to copy address", {
@@ -112,6 +120,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
         },
         icon: "❌",
       });
+      return false;
     }
   };
 
@@ -140,6 +149,7 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
 
   // Address Item Component with Framer Motion Animation
   const AddressItem = ({ title, description, address, error, onCopy, onQrClick }) => {
+    const [copied, setCopied] = useState(false);
     const hasError = error || !address;
     const displayText = hasError ? error || "Address not available" : address;
     const isError = hasError;
@@ -169,8 +179,27 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
                 <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onQrClick(title, address)} aria-label="Show QR">
                   <img src="/assets/icons/qr_code.svg" alt="QR Code" className="w-4 h-4 opacity-80" />
                 </motion.button>
-                <motion.button type="button" className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} onClick={() => onCopy(address)} aria-label="Copy Address">
-                  <img src="/assets/icons/content_copy.svg" alt="Copy" className="w-4 h-4 opacity-80" />
+                <motion.button
+                  type="button"
+                  className="grid place-items-center w-8 h-8 rounded-full hover:bg-white/[0.1] transition-colors"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={async () => {
+                    const ok = await onCopy(address);
+                    if (ok) {
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1500);
+                    }
+                  }}
+                  aria-label={copied ? "Copied" : "Copy Address"}>
+                  {copied ? (
+                    <svg className="w-4 h-4 text-[#9BE4A0]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <motion.path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.35 }} />
+                    </svg>
+                  ) : (
+                    <img src="/assets/icons/content_copy.svg" alt="Copy" className="w-4 h-4 opacity-80" />
+                  )}
                 </motion.button>
               </>
             )}
@@ -194,42 +223,39 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/70 backdrop-blur-md p-4">
-      <div className={`relative w-full ${qrDetail.open ? "max-w-sm" : "max-w-[480px]"} bg-[#171A1C] rounded-[24px] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.65)]`}>
-        <div className="pointer-events-none absolute -inset-x-8 -top-8 h-20 bg-[#A6F3AE]/10 blur-3xl opacity-25 rounded-full" />
-        <button
-          className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
-          onClick={() => {
-            if (qrDetail.open) {
-              handleCloseQr();
-            } else {
-              onClose();
-            }
-          }}
-          aria-label="Close">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="p-5 sm:p-6">
-          <div className="text-white text-[16px] pl-4 sm:text-[16px] font-medium leading-tight mb-4">{qrDetail.open ? `Receive ${qrDetail.coin}` : "Copy or scan barcode here to Receive Coin"}</div>
-          <AnimatePresence mode="wait">
-            {getAddressesLoadingState() ? (
-              <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                <SkeletonReceiveModal />
-              </motion.div>
-            ) : qrDetail.open ? (
-              // QR Detail View
-              <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col items-center gap-3 w-full">
-                <div className="w-full rounded-2xl bg-white/[0.04] border border-white/10 p-5 flex flex-col items-center">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+      <div className="flex min-h-full items-start justify-center pt-8 pl-4 pr-4 pb-4">
+        <div className={`relative w-full ${qrDetail.open ? "max-w-[450px]" : "max-w-[500px]"} mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10`}>
+          <button
+            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+            onClick={() => {
+              if (qrDetail.open) {
+                handleCloseQr();
+              } else {
+                onClose();
+              }
+            }}
+            aria-label="Close">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="flex flex-col items-center p-4 gap-4 h-auto">
+            <div className="w-full text-center text-white text-lg font-medium">{qrDetail.open ? `Receive ${qrDetail.coin}` : "Copy or scan barcode here to Receive Coin"}</div>
+            <AnimatePresence mode="wait">
+              {getAddressesLoadingState() ? (
+                <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <SkeletonReceiveModal />
+                </motion.div>
+              ) : qrDetail.open ? (
+                // QR Detail View
+                <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6 flex flex-col items-center text-center">
                   {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="QR Code" className="w-full max-w-56 h-auto object-contain rounded" style={{ imageRendering: "crisp-edges" }} />}
                   <div className="text-[#B0B6BE] text-sm mt-3">Scan to receive {qrDetail.coin}</div>
-                </div>
-              </motion.div>
-            ) : (
-              // Address List View
-              <motion.div key="addresses" initial="hidden" animate="visible" variants={containerVariants} transition={{ duration: 0.2 }}>
-                <div className="rounded-[20px] bg-white/[0.03] border border-white/5 p-4 sm:p-5">
+                </motion.div>
+              ) : (
+                // Address List View
+                <motion.div key="addresses" initial="hidden" animate="visible" variants={containerVariants} transition={{ duration: 0.2 }} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
                   <div className="flex flex-col gap-4">
                     {/* Define address items with their configurations */}
                     {[
@@ -261,75 +287,34 @@ const ReceiveAddressModal = ({ isOpen, onClose }) => {
                       <AddressItem key={item.key} title={item.title} description={item.description} address={item.address} error={item.error} onCopy={copyToClipboard} onQrClick={handleQrClick} />
                     ))}
                   </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {qrDetail.open ? (
+              // QR View Actions
+              <div className="w-full px-2 sm:px-3 pb-2">
+                <div className="text-[#B0B6BE] text-sm mb-1">Your {qrDetail.coin} address:</div>
+                <div className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 mb-3">
+                  <span className="text-white text-sm truncate flex-1">{qrDetail.address}</span>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {qrDetail.open ? (
-            // QR View Actions
-            <div className="mt-4">
-              <div className="text-[#B0B6BE] text-sm mb-1">Your {qrDetail.coin} address:</div>
-              <div className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 mb-3">
-                <span className="text-white text-sm truncate flex-1">{qrDetail.address}</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="py-2.5 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={() => copyToClipboard(qrDetail.address)}>
+                    Copy Address
+                  </button>
+                  <ButtonGreen fullWidth className="rounded-full" onClick={handleCloseQr} size="md" textSize="text-base" fontWeight="medium">
+                    Share
+                  </ButtonGreen>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button className="py-2.5 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={() => copyToClipboard(qrDetail.address)}>
-                  Copy Address
-                </button>
-                <ButtonGreen fullWidth className="rounded-full" onClick={handleCloseQr} size="md" textSize="text-base" fontWeight="medium">
-                  Share
-                </ButtonGreen>
-              </div>
-            </div>
-          ) : (
-            // Address List Actions
-            <div className="mt-4 space-y-3">
-              <div className="flex gap-3">
-                <button
-                  className="flex-1 py-2.5 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors text-sm"
-                  onClick={() => {
-                    fetchAddresses()
-                      .then(() => {
-                        toast.success("Addresses refreshed!", {
-                          position: "bottom-center",
-                          duration: 2000,
-                          style: {
-                            background: "#23272F",
-                            color: "#9BE4A0",
-                            border: "1px solid #393E4B",
-                            borderRadius: "8px",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                          },
-                          icon: "🔄",
-                        });
-                      })
-                      .catch((error) => {
-                        console.error("Failed to refresh addresses:", error);
-                        toast.error("Failed to refresh addresses", {
-                          position: "bottom-center",
-                          duration: 2000,
-                          style: {
-                            background: "#23272F",
-                            color: "#FF6B6B",
-                            border: "1px solid #393E4B",
-                            borderRadius: "8px",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                          },
-                          icon: "❌",
-                        });
-                      });
-                  }}
-                  disabled={getAddressesLoadingState()}>
-                  {getAddressesLoadingState() ? "Refreshing..." : "Refresh"}
-                </button>
-                <ButtonGreen fullWidth onClick={onClose} size="md" textSize="text-base" fontWeight="medium" className="flex-1">
+            ) : (
+              // Address List Actions
+              <div className="w-full px-2 sm:px-3 pb-2">
+                <ButtonGreen fullWidth onClick={onClose} size="md" textSize="text-base" fontWeight="medium">
                   Done
                 </ButtonGreen>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>,

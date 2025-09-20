@@ -156,33 +156,41 @@ export default function AssetsPage() {
   };
 
   // Filter tokens based on network selection, search query, and zero value filter
-  const filteredTokens = TOKENS_CONFIG.filter((token) => {
-    // First, filter by network selection
-    let networkMatch = true;
-    if (network !== "All Networks") {
-      // Find the network in NETWORK_CONFIG to get the correct name
-      const selectedNetwork = NETWORK_CONFIG.find((net) => net.name.toLowerCase() === network.toLowerCase());
-      if (selectedNetwork) {
-        networkMatch = token.chain.toLowerCase() === selectedNetwork.name.toLowerCase();
+  const filteredTokens = useMemo(() => {
+    return TOKENS_CONFIG.filter((token) => {
+      // First, check if the token's network is enabled in networkFilters
+      const isNetworkEnabled = networkFilters[token.chain];
+      if (!isNetworkEnabled) {
+        return false; // Hide token if its network is disabled
       }
-    }
 
-    // Then, filter by search query if provided
-    let searchMatch = true;
-    if (searchQuery.trim()) {
-      searchMatch = token.name.toLowerCase().includes(searchQuery.toLowerCase()) || token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || token.chain.toLowerCase().includes(searchQuery.toLowerCase());
-    }
+      // Then, filter by network selection
+      let networkMatch = true;
+      if (network !== "All Networks") {
+        // Find the network in NETWORK_CONFIG to get the correct name
+        const selectedNetwork = NETWORK_CONFIG.find((net) => net.name.toLowerCase() === network.toLowerCase());
+        if (selectedNetwork) {
+          networkMatch = token.chain.toLowerCase() === selectedNetwork.name.toLowerCase();
+        }
+      }
 
-    // Finally, filter by zero value if hideZeroValue is enabled
-    let zeroValueMatch = true;
-    if (hideZeroValue) {
-      const balance = balances[token.id];
-      const numericBalance = parseFloat(balance || "0");
-      zeroValueMatch = numericBalance > 0;
-    }
+      // Then, filter by search query if provided
+      let searchMatch = true;
+      if (searchQuery.trim()) {
+        searchMatch = token.name.toLowerCase().includes(searchQuery.toLowerCase()) || token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || token.chain.toLowerCase().includes(searchQuery.toLowerCase());
+      }
 
-    return networkMatch && searchMatch && zeroValueMatch;
-  });
+      // Finally, filter by zero value if hideZeroValue is enabled
+      let zeroValueMatch = true;
+      if (hideZeroValue) {
+        const balance = balances[token.id];
+        const numericBalance = parseFloat(balance || "0");
+        zeroValueMatch = numericBalance > 0;
+      }
+
+      return networkMatch && searchMatch && zeroValueMatch;
+    });
+  }, [networkFilters, network, searchQuery, hideZeroValue, balances]);
 
   // Calculate total portfolio value
   const { totalPortfolioValue, isPortfolioLoading } = useMemo(() => {
@@ -390,7 +398,7 @@ export default function AssetsPage() {
                   )}
                 </AnimatePresence>
               </div>
-              <motion.img src="/assets/icons/refresh.webp" alt="Refresh Balance" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={isRefreshingBalances ? { rotate: { duration: 1, repeat: Infinity, ease: "linear" } } : { type: "spring", stiffness: 280, damping: 20 }} />
+              <motion.img src="/assets/icons/refresh.svg" alt="Refresh Balance" className="md:w-5 md:h-5 w-4 h-4 cursor-pointer" onMouseEnter={() => setHoverFilter(true)} onMouseLeave={() => setHoverFilter(false)} onClick={refreshAllBalances} animate={isRefreshingBalances ? { rotate: 360 } : hoverFilter ? { y: -1, scale: 1.05 } : { y: 0, scale: 1 }} transition={isRefreshingBalances ? { rotate: { duration: 1, repeat: Infinity, ease: "linear" } } : { type: "spring", stiffness: 280, damping: 20 }} />
             </div>
           </div>
 

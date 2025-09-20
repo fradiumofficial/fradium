@@ -2,6 +2,7 @@ import { API_URLS } from "@/core/config/tokenConfig.js";
 import { icp_index } from "declarations/icp_index";
 import { fradium_index } from "declarations/fradium_index";
 import { ckbtc_index } from "declarations/ckbtc_index";
+import { cketh_index } from "declarations/cketh_index";
 import { Principal } from "@dfinity/principal";
 import { jsonStringify } from "@/core/lib/canisterUtils";
 
@@ -496,6 +497,94 @@ export async function getICRCTransactionHistory(tokenType, principal, icpAccount
               return null;
             })
             .filter((tx) => tx !== null); // Remove null transactions
+        }
+        break;
+
+      case "cketh":
+        const ckethResult = await cketh_index.get_account_transactions({
+          account: { owner: principalObj, subaccount: [] },
+          start: [],
+          max_results: limit,
+        });
+
+        // Handle the actual structure from ckETH index canister (supports transfer, mint, burn)
+        if (ckethResult && ckethResult.Ok && ckethResult.Ok.transactions) {
+          transactions = ckethResult.Ok.transactions
+            .map((tx) => {
+              // Check for transfer transaction
+              const transfer = tx.transaction?.transfer?.[0];
+              if (transfer) {
+                const fromPrincipal = transfer.from?.owner?.__principal__ || transfer.from?.owner;
+                const toPrincipal = transfer.to?.owner?.__principal__ || transfer.to?.owner;
+
+                const isSent = fromPrincipal.toString() === principalObj.toString();
+                const otherParty = isSent ? toPrincipal.toString() : fromPrincipal.toString();
+                const otherPartyStr = otherParty || "Unknown";
+
+                return {
+                  hash: tx.id.toString(),
+                  chain: "Internet Computer",
+                  title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+                  amount: isSent ? -Number(transfer.amount || 0) / 1e18 : Number(transfer.amount || 0) / 1e18, // Convert e18s to ckETH
+                  status: "Completed",
+                  timestamp: Number(tx.transaction.timestamp || 0) / 1000000, // Convert nanoseconds to milliseconds
+                  from: fromPrincipal.toString() || "Unknown",
+                  to: toPrincipal.toString() || "Unknown",
+                  fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e18 : 0,
+                  memo: transfer.memo || [],
+                  kind: "Transfer",
+                  tokenType: "cketh",
+                };
+              }
+
+              // Check for mint transaction
+              const mint = tx.transaction?.mint?.[0];
+              if (mint) {
+                const toPrincipal = mint.to?.owner?.__principal__ || mint.to?.owner;
+                const isMintToUser = toPrincipal.toString() === principalObj.toString();
+
+                return {
+                  hash: tx.id.toString(),
+                  chain: "Internet Computer",
+                  title: isMintToUser ? `Minted ckETH` : `Mint to ${toPrincipal.toString().slice(0, 6)}...${toPrincipal.toString().slice(-4)}`,
+                  amount: isMintToUser ? Number(mint.amount || 0) / 1e18 : 0,
+                  status: "Completed",
+                  timestamp: Number(tx.transaction.timestamp || 0) / 1000000,
+                  from: "Mint",
+                  to: toPrincipal.toString() || "Unknown",
+                  fee: 0,
+                  memo: mint.memo || [],
+                  kind: "Mint",
+                  tokenType: "cketh",
+                };
+              }
+
+              // Check for burn transaction
+              const burn = tx.transaction?.burn?.[0];
+              if (burn) {
+                const fromPrincipal = burn.from?.owner?.__principal__ || burn.from?.owner;
+                const isBurnFromUser = fromPrincipal.toString() === principalObj.toString();
+
+                return {
+                  hash: tx.id.toString(),
+                  chain: "Internet Computer",
+                  title: isBurnFromUser ? `Burned ckETH` : `Burn from ${fromPrincipal.toString().slice(0, 6)}...${fromPrincipal.toString().slice(-4)}`,
+                  amount: isBurnFromUser ? -Number(burn.amount || 0) / 1e18 : 0,
+                  status: "Completed",
+                  timestamp: Number(tx.transaction.timestamp || 0) / 1000000,
+                  from: fromPrincipal.toString() || "Unknown",
+                  to: "Burn",
+                  fee: burn.fee?.[0] ? Number(burn.fee[0]) / 1e18 : 0,
+                  memo: burn.memo || [],
+                  kind: "Burn",
+                  tokenType: "cketh",
+                };
+              }
+
+              // If no supported transaction type found, return null
+              return null;
+            })
+            .filter((tx) => tx !== null);
         }
         break;
 
