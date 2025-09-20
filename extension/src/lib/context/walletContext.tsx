@@ -58,9 +58,9 @@ const EFFECTIVE_WALLET_CANISTER_ID =
   (typeof process !== "undefined" &&
     ((process as any).env?.VITE_CANISTER_ID_WALLET ||
       (process as any).env?.NEXT_PUBLIC_CANISTER_ID_WALLET ||
-      (process as any).env?.CANISTER_ID_WALLET)) ||
+      (process as any).env?.PLASMO_PUBLI_CANISTER_ID_WALLET)) ||
   // As a last resort, fall back to mainnet canister ID in canister_ids.json
-  "ufxgi-4p777-77774-qaadq-cai"
+  "v3x23-lyaaa-aaaam-aej2a-cai"
 
 // Resolve ICP and Fradium ledger canister IDs for extension builds
 const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
@@ -76,7 +76,7 @@ const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
 const EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID =
   fradiumLedgerCanisterId ||
   (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_FRADIUM_LEDGER ||
+    (
       (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
       (process as any).env?.NEXT_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
       (process as any).env?.CANISTER_ID_FRADIUM_LEDGER)) ||
@@ -658,6 +658,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
               const resolvedIndexId = EFFECTIVE_ICP_INDEX_CANISTER_ID || icpIndexCanisterId
               if (!resolvedIndexId) throw new Error("ICP index canister ID not configured")
               const agentIndex = createAgentForCanister(resolvedIndexId as any, undefined)
+              console.log("ICP Index Agent:", agentIndex)
               const icpIndexActor = createIcpIndexActor(resolvedIndexId as any, { agent: agentIndex as any }) as any
               const owner = identity.getPrincipal()
               const icpRaw = await icpIndexActor.icrc1_balance_of({ owner, subaccount: [] })
@@ -676,22 +677,20 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
           case "fradium":
             try {
-              const resolvedId = EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID
-              if (!resolvedId)
-                throw new Error("Fradium ledger canister ID not configured")
-              const agent = createAgentForCanister(resolvedId as any, undefined)
-              const fradiumActor = createFradiumLedgerActor(resolvedId as any, {
-                agent: agent as any
-              }) as any
+              const resolvedLedgerId = EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID || fradiumLedgerCanisterId
+              const resolvedIndexId = EFFECTIVE_FRADIUM_INDEX_CANISTER_ID || fradiumIndexCanisterId
+              if (!resolvedLedgerId) throw new Error("Fradium ledger canister ID not configured")
+              const agent = createAgentForCanister(resolvedLedgerId as any, undefined)
+              console.log("FUM Agent:", agent)
+              const agentIndex = createAgentForCanister(resolvedIndexId as any, undefined)
+              console.log("FUM Index Agent:", agentIndex)
+              const fradiumIndexActor = createFradiumIndexActor(resolvedIndexId as any, { agent: agentIndex as any}) as any
+              const fradiumActor = createFradiumLedgerActor(resolvedLedgerId as any, { agent: agent as any}) as any
               const owner = identity.getPrincipal()
-              const fumRaw = await fradiumActor.icrc1_balance_of({
-                owner,
-                subaccount: []
-              })
+              const fumRaw = await fradiumIndexActor.icrc1_balance_of({owner, subaccount: []})
+              console.log("FUM Raw:", fumRaw)
               let decimals = 8
-              try {
-                decimals = (await fradiumActor.icrc1_decimals?.()) ?? 8
-              } catch {}
+              try { decimals = (await fradiumActor.icrc1_decimals?.()) ?? 8} catch {}
               const fumValue = Number(fumRaw) / Math.pow(10, Number(decimals))
               balance = fumValue.toFixed(6)
             } catch (e) {

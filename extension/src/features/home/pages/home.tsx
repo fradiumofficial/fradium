@@ -10,8 +10,6 @@ import AllNetwork from "~features/network/pages/all_network";
 
 function Home() {
   const {
-    getNetworkValue,
-    principalText,
     balances,
     balanceLoading,
     balanceErrors,
@@ -21,10 +19,8 @@ function Home() {
     usdPriceLoading,
     usdPriceErrors,
     hideBalance,
-    setHideBalance,
     extensionTokens,
     networkFilters,
-    // Add loading/fetching helpers
     isAuthenticated,
     walletActor,
     fetchAllBalances,
