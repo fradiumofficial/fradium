@@ -31,6 +31,18 @@ import {
   createActor as createCkbTcMinterActor
 } from "../../declarations/ckbtc_minter"
 import {
+  canisterId as ckethIndexCanisterId,
+  createActor as createCkEthIndexActor
+} from "../../declarations/cketh_index"
+import {
+  canisterId as ckethLedgerCanisterId,
+  createActor as createCkEthLedgerActor
+} from "../../declarations/cketh_ledger"
+import {
+  canisterId as ckethMinterCanisterId,
+  createActor as createCkEthMinterActor
+} from "../../declarations/cketh_minter"
+import {
   createActor as createFradiumIndexActor,
   canisterId as fradiumIndexCanisterId
 } from "../../declarations/fradium_index"
@@ -58,9 +70,9 @@ const EFFECTIVE_WALLET_CANISTER_ID =
   (typeof process !== "undefined" &&
     ((process as any).env?.VITE_CANISTER_ID_WALLET ||
       (process as any).env?.NEXT_PUBLIC_CANISTER_ID_WALLET ||
-      (process as any).env?.CANISTER_ID_WALLET)) ||
+      (process as any).env?.PLASMO_PUBLI_CANISTER_ID_WALLET)) ||
   // As a last resort, fall back to mainnet canister ID in canister_ids.json
-  "ufxgi-4p777-77774-qaadq-cai"
+  "v3x23-lyaaa-aaaam-aej2a-cai"
 
 // Resolve ICP and Fradium ledger canister IDs for extension builds
 const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
@@ -76,8 +88,7 @@ const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
 const EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID =
   fradiumLedgerCanisterId ||
   (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_FRADIUM_LEDGER ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
+    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
       (process as any).env?.NEXT_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
       (process as any).env?.CANISTER_ID_FRADIUM_LEDGER)) ||
   // Project mainnet value from canister_ids.json
@@ -143,6 +154,28 @@ const EFFECTIVE_CKBTC_KYT_CANISTER_ID =
   // ckBTC mainnet KYT
   "pvm5g-xaaaa-aaaar-qaaia-cai"
 
+// ckETH effective canister IDs
+const EFFECTIVE_CKETH_LEDGER_CANISTER_ID =
+  ckethLedgerCanisterId ||
+  (typeof process !== "undefined" &&
+    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKETH_LEDGER ||
+      (process as any).env?.CANISTER_ID_CKETH_LEDGER)) ||
+  "apia6-jaaaa-aaaar-qabma-cai"
+
+const EFFECTIVE_CKETH_INDEX_CANISTER_ID =
+  ckethIndexCanisterId ||
+  (typeof process !== "undefined" &&
+    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKETH_INDEX ||
+      (process as any).env?.CANISTER_ID_CKETH_INDEX)) ||
+  "sh5u2-cqaaa-aaaar-qacna-cai"
+
+const EFFECTIVE_CKETH_MINTER_CANISTER_ID =
+  ckethMinterCanisterId ||
+  (typeof process !== "undefined" &&
+    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKETH_MINTER ||
+      (process as any).env?.CANISTER_ID_CKETH_MINTER)) ||
+  "jzenf-aiaaa-aaaar-qaa7q-cai"
+
 interface NetworkFilters {
   Bitcoin: boolean
   Solana: boolean
@@ -150,6 +183,7 @@ interface NetworkFilters {
   Ethereum: boolean
   ICP: boolean
   ckBTC: boolean
+  ckETH: boolean
 }
 
 interface NetworkValues {
@@ -159,6 +193,7 @@ interface NetworkValues {
   Fradium: number
   Ethereum: number
   ckBTC: number
+  ckETH: number
 }
 
 interface WalletAddresses {
@@ -168,6 +203,8 @@ interface WalletAddresses {
   icp_principal?: string
   icp_account?: string
   ckbtc?: string
+  cketh_helper?: string
+  cketh_minter?: string
 }
 
 interface BalanceStates {
@@ -262,12 +299,12 @@ interface WalletContextType {
 
   // ICRC actions
   sendIcrcTransfer: (
-    token: "icp" | "fradium" | "ckbtc",
+    token: "icp" | "fradium" | "ckbtc" | "cketh",
     toPrincipalText: string,
     amount: number
   ) => Promise<{ success: boolean; error?: string }>
   fetchIcrcHistory: (
-    token: "icp" | "fradium" | "ckbtc",
+    token: "icp" | "fradium" | "ckbtc" | "cketh",
     limit?: number
   ) => Promise<any[]>
 
@@ -318,7 +355,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     Solana: 0,
     Fradium: 0,
     Ethereum: 0,
-    ckBTC: 0
+    ckBTC: 0,
+    ckETH: 0
   })
 
   // Initialize network filters with default values
@@ -328,7 +366,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     Fradium: true,
     Ethereum: true,
     ICP: true,
-    ckBTC: true
+    ckBTC: true,
+    ckETH: true
   })
 
   // Load network filters from storage on mount
@@ -440,6 +479,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
       icon: TOKENS_CONFIG[TokenType.BITCOIN].icon, // Reuse BTC icon for ckBTC
       networkKey: "ckbtc",
       type: "icrc"
+    },
+    {
+      id: "cketh",
+      symbol: "ckETH",
+      name: "Chain Key ETH",
+      chain: "Internet Computer",
+      icon: TOKENS_CONFIG[TokenType.ETHEREUM].icon,
+      networkKey: "cketh",
+      type: "icrc"
     }
   ]
 
@@ -482,7 +530,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
             (networkFilters.Ethereum ? updated.Ethereum : 0) +
             (networkFilters.Solana ? updated.Solana : 0) +
             (networkFilters.Fradium ? updated.Fradium : 0) +
-            (networkFilters.ckBTC ? updated.ckBTC : 0)
+            (networkFilters.ckBTC ? updated.ckBTC : 0) +
+            (networkFilters.ckETH ? updated.ckETH : 0)
         }
         return updated
       })
@@ -578,7 +627,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           { agent: minterAgent as any }
         ) as any
         const addr = await minterActor.get_btc_address({
-          owner: identity.getPrincipal(),
+          owner: [identity.getPrincipal()],
           subaccount: []
         })
         if (addr && typeof addr === "string") {
@@ -655,17 +704,40 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
           case "icp":
             try {
-              const resolvedIndexId = EFFECTIVE_ICP_INDEX_CANISTER_ID || icpIndexCanisterId
-              if (!resolvedIndexId) throw new Error("ICP index canister ID not configured")
-              const agentIndex = createAgentForCanister(resolvedIndexId as any, undefined)
-              const icpIndexActor = createIcpIndexActor(resolvedIndexId as any, { agent: agentIndex as any }) as any
+              const resolvedIndexId =
+                EFFECTIVE_ICP_INDEX_CANISTER_ID || icpIndexCanisterId
+              if (!resolvedIndexId)
+                throw new Error("ICP index canister ID not configured")
+              const agentIndex = createAgentForCanister(
+                resolvedIndexId as any,
+                undefined
+              )
+              console.log("ICP Index Agent:", agentIndex)
+              const icpIndexActor = createIcpIndexActor(
+                resolvedIndexId as any,
+                { agent: agentIndex as any }
+              ) as any
               const owner = identity.getPrincipal()
-              const icpRaw = await icpIndexActor.icrc1_balance_of({ owner, subaccount: [] })
+              const icpRaw = await icpIndexActor.icrc1_balance_of({
+                owner,
+                subaccount: []
+              })
               const resolvedLedgerId = EFFECTIVE_ICP_LEDGER_CANISTER_ID
-              const agentLedger = createAgentForCanister(resolvedLedgerId as any, undefined)
-              const icpLedgerActor = createIcpLedgerActor(resolvedLedgerId as any, { agent: agentLedger as any }) as any
+              const agentLedger = createAgentForCanister(
+                resolvedLedgerId as any,
+                undefined
+              )
+              const icpLedgerActor = createIcpLedgerActor(
+                resolvedLedgerId as any,
+                { agent: agentLedger as any }
+              ) as any
               let decimals = 8
-              try { decimals = (await icpLedgerActor.icrc1_decimals?.()) ?? (await icpLedgerActor.decimals?.()) ?? 8 } catch {}
+              try {
+                decimals =
+                  (await icpLedgerActor.icrc1_decimals?.()) ??
+                  (await icpLedgerActor.decimals?.()) ??
+                  8
+              } catch {}
               const icpValue = Number(icpRaw) / Math.pow(10, Number(decimals))
               balance = icpValue.toFixed(6)
             } catch (e) {
@@ -676,18 +748,36 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
           case "fradium":
             try {
-              const resolvedId = EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID
-              if (!resolvedId)
+              const resolvedLedgerId =
+                EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID || fradiumLedgerCanisterId
+              const resolvedIndexId =
+                EFFECTIVE_FRADIUM_INDEX_CANISTER_ID || fradiumIndexCanisterId
+              if (!resolvedLedgerId)
                 throw new Error("Fradium ledger canister ID not configured")
-              const agent = createAgentForCanister(resolvedId as any, undefined)
-              const fradiumActor = createFradiumLedgerActor(resolvedId as any, {
-                agent: agent as any
-              }) as any
+              const agent = createAgentForCanister(
+                resolvedLedgerId as any,
+                undefined
+              )
+              console.log("FUM Agent:", agent)
+              const agentIndex = createAgentForCanister(
+                resolvedIndexId as any,
+                undefined
+              )
+              console.log("FUM Index Agent:", agentIndex)
+              const fradiumIndexActor = createFradiumIndexActor(
+                resolvedIndexId as any,
+                { agent: agentIndex as any }
+              ) as any
+              const fradiumActor = createFradiumLedgerActor(
+                resolvedLedgerId as any,
+                { agent: agent as any }
+              ) as any
               const owner = identity.getPrincipal()
-              const fumRaw = await fradiumActor.icrc1_balance_of({
+              const fumRaw = await fradiumIndexActor.icrc1_balance_of({
                 owner,
                 subaccount: []
               })
+              console.log("FUM Raw:", fumRaw)
               let decimals = 8
               try {
                 decimals = (await fradiumActor.icrc1_decimals?.()) ?? 8
@@ -703,22 +793,74 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           case "ckbtc":
             try {
               const resolvedLedgerId = EFFECTIVE_CKBTC_LEDGER_CANISTER_ID
-              if (!resolvedLedgerId) throw new Error("ckBTC ledger canister ID not configured")
+              if (!resolvedLedgerId)
+                throw new Error("ckBTC ledger canister ID not configured")
               try {
-                const minterAgent = createAgentForCanister(EFFECTIVE_CKBTC_MINTER_CANISTER_ID as any, undefined)
-                const minter = createCkbTcMinterActor(EFFECTIVE_CKBTC_MINTER_CANISTER_ID as any, { agent: minterAgent as any }) as any
-                await minter.update_balance({ owner: [identity.getPrincipal()], subaccount: [] })
+                const minterAgent = createAgentForCanister(
+                  EFFECTIVE_CKBTC_MINTER_CANISTER_ID as any,
+                  undefined
+                )
+                const minter = createCkbTcMinterActor(
+                  EFFECTIVE_CKBTC_MINTER_CANISTER_ID as any,
+                  { agent: minterAgent as any }
+                ) as any
+                await minter.update_balance({
+                  owner: [identity.getPrincipal()],
+                  subaccount: []
+                })
               } catch (_e) {}
-              const agent = createAgentForCanister(resolvedLedgerId as any, undefined)
-              const ckbtcActor = createCkbTcLedgerActor(resolvedLedgerId as any, { agent: agent as any }) as any
+              const agent = createAgentForCanister(
+                resolvedLedgerId as any,
+                undefined
+              )
+              const ckbtcActor = createCkbTcLedgerActor(
+                resolvedLedgerId as any,
+                { agent: agent as any }
+              ) as any
               const owner = identity.getPrincipal()
-              const ckbtcRaw = await ckbtcActor.icrc1_balance_of({ owner, subaccount: [] })
+              const ckbtcRaw = await ckbtcActor.icrc1_balance_of({
+                owner,
+                subaccount: []
+              })
               let decimals = 8
-              try { decimals = (await ckbtcActor.icrc1_decimals?.()) ?? 8 } catch {}
-              const ckbtcValue = Number(ckbtcRaw) / Math.pow(10, Number(decimals))
+              try {
+                decimals = (await ckbtcActor.icrc1_decimals?.()) ?? 8
+              } catch {}
+              const ckbtcValue =
+                Number(ckbtcRaw) / Math.pow(10, Number(decimals))
               balance = ckbtcValue.toFixed(8)
             } catch (e) {
               console.warn("Failed to fetch ckBTC balance:", e)
+              balance = "0.000000"
+            }
+            break
+
+          case "cketh":
+            try {
+              const resolvedLedgerId = EFFECTIVE_CKETH_LEDGER_CANISTER_ID
+              if (!resolvedLedgerId)
+                throw new Error("ckETH ledger canister ID not configured")
+              const agent = createAgentForCanister(
+                resolvedLedgerId as any,
+                undefined
+              )
+              const ckethActor = createCkEthLedgerActor(
+                resolvedLedgerId as any,
+                { agent: agent as any }
+              ) as any
+              const owner = identity.getPrincipal()
+              const raw = await ckethActor.icrc1_balance_of({
+                owner,
+                subaccount: []
+              })
+              let decimals = 18
+              try {
+                decimals = (await ckethActor.icrc1_decimals?.()) ?? 18
+              } catch {}
+              const value = Number(raw) / Math.pow(10, Number(decimals))
+              balance = value.toFixed(6)
+            } catch (e) {
+              console.warn("Failed to fetch ckETH balance:", e)
               balance = "0.000000"
             }
             break
@@ -817,7 +959,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   // Send ICRC transfer (ICP, Fradium, or ckBTC)
   const sendIcrcTransfer = useCallback(
     async (
-      token: "icp" | "fradium" | "ckbtc",
+      token: "icp" | "fradium" | "ckbtc" | "cketh",
       toPrincipalText: string,
       amount: number
     ) => {
@@ -831,17 +973,20 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
             ? (EFFECTIVE_ICP_LEDGER_CANISTER_ID as any)
             : token === "fradium"
               ? (EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID as any)
-              : (EFFECTIVE_CKBTC_LEDGER_CANISTER_ID as any)
+              : token === "ckbtc"
+                ? (EFFECTIVE_CKBTC_LEDGER_CANISTER_ID as any)
+                : (EFFECTIVE_CKETH_LEDGER_CANISTER_ID as any)
 
-        if (!ledgerCanisterId) throw new Error("Ledger canister ID not configured")
+        if (!ledgerCanisterId)
+          throw new Error("Ledger canister ID not configured")
 
         // Use authenticated agent for update (transfer)
         const agent = createHttpAgent(identity)
-        
+
         // Fetch root key for local development
         if (process.env.DFX_NETWORK !== "ic") {
-          try { 
-            await agent.fetchRootKey() 
+          try {
+            await agent.fetchRootKey()
           } catch (err) {
             console.warn("Unable to fetch root key:", err)
           }
@@ -849,17 +994,30 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const actor =
           token === "icp"
-            ? (createIcpLedgerActor(ledgerCanisterId, { agent: agent as any }) as any)
+            ? (createIcpLedgerActor(ledgerCanisterId, {
+                agent: agent as any
+              }) as any)
             : token === "fradium"
-              ? (createFradiumLedgerActor(ledgerCanisterId, { agent: agent as any }) as any)
-              : (createCkbTcLedgerActor(ledgerCanisterId, { agent: agent as any }) as any)
+              ? (createFradiumLedgerActor(ledgerCanisterId, {
+                  agent: agent as any
+                }) as any)
+              : token === "ckbtc"
+                ? (createCkbTcLedgerActor(ledgerCanisterId, {
+                    agent: agent as any
+                  }) as any)
+                : (createCkEthLedgerActor(ledgerCanisterId, {
+                    agent: agent as any
+                  }) as any)
 
         // decimals -> convert to e8s
         let decimals = 8
         try {
-          decimals = (await actor.icrc1_decimals?.()) ?? (await actor.decimals?.()) ?? 8
+          decimals =
+            (await actor.icrc1_decimals?.()) ?? (await actor.decimals?.()) ?? 8
         } catch {}
-        const amountE8s = BigInt(Math.floor(amount * Math.pow(10, Number(decimals))))
+        const amountE8s = BigInt(
+          Math.floor(amount * Math.pow(10, Number(decimals)))
+        )
 
         const res = await actor.icrc1_transfer({
           from_subaccount: [],
@@ -869,8 +1027,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           memo: [],
           created_at_time: []
         })
-        if (res && (res as any).Err) throw new Error(JSON.stringify((res as any).Err))
-        const blockIndex = (res as any)?.Ok ? String((res as any).Ok) : undefined
+        if (res && (res as any).Err)
+          throw new Error(JSON.stringify((res as any).Err))
+        const blockIndex = (res as any)?.Ok
+          ? String((res as any).Ok)
+          : undefined
         // Kickoff a background refresh
         refreshAllBalances().catch(() => {})
         return { success: true, blockIndex }
@@ -883,7 +1044,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Fetch ICRC history via index canisters (raw entries)
   const fetchIcrcHistory = useCallback(
-    async (token: "icp" | "fradium" | "ckbtc", limit = 20) => {
+    async (token: "icp" | "fradium" | "ckbtc" | "cketh", limit = 20) => {
       try {
         if (!identity) return []
         const agent = createAgentForCanister(
@@ -897,9 +1058,12 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
         const owner = identity.getPrincipal()
         if (token === "icp") {
           if (!EFFECTIVE_ICP_INDEX_CANISTER_ID) return []
-          const indexActor = createIcpIndexActor(EFFECTIVE_ICP_INDEX_CANISTER_ID as any, {
-            agent: agent as any
-          }) as any
+          const indexActor = createIcpIndexActor(
+            EFFECTIVE_ICP_INDEX_CANISTER_ID as any,
+            {
+              agent: agent as any
+            }
+          ) as any
           const res = await indexActor.get_account_transactions({
             account: { owner, subaccount: [] },
             start: [],
@@ -924,6 +1088,19 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           if (!EFFECTIVE_CKBTC_INDEX_CANISTER_ID) return []
           const indexActor = createCkbTcIndexActor(
             EFFECTIVE_CKBTC_INDEX_CANISTER_ID as any,
+            { agent: agent as any }
+          ) as any
+          const res = await indexActor.get_account_transactions({
+            account: { owner, subaccount: [] },
+            start: [],
+            max_results: BigInt(limit)
+          })
+          if (res && res.Ok && res.Ok.transactions) return res.Ok.transactions
+          return []
+        } else if (token === "cketh") {
+          if (!EFFECTIVE_CKETH_INDEX_CANISTER_ID) return []
+          const indexActor = createCkEthIndexActor(
+            EFFECTIVE_CKETH_INDEX_CANISTER_ID as any,
             { agent: agent as any }
           ) as any
           const res = await indexActor.get_account_transactions({

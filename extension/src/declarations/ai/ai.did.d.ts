@@ -21,7 +21,10 @@ export interface _SERVICE {
     [Array<[string, number]>, string, number],
     Result
   >,
-  'analyze_icp_address' : ActorMethod<[string], Result>,
+  'analyze_icp_address' : ActorMethod<
+    [Array<[string, number]>, string, number],
+    Result
+  >,
   'analyze_sol_address' : ActorMethod<
     [Array<[string, number]>, string, number],
     Result

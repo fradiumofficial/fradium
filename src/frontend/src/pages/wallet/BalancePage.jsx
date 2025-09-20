@@ -21,6 +21,7 @@ export default function BalancePage() {
   // User balance state
   const [userBalance, setUserBalance] = useState(0);
   const [walletAddress, setWalletAddress] = useState("");
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
   // Transaction history state
   const [transactions, setTransactions] = useState([]);
@@ -105,12 +106,11 @@ export default function BalancePage() {
         let description = "";
         let txHash = `tx_${index}_${timestamp}`; // Generate unique hash
 
-        // Determine transaction type and amount based on operation
-        if ("Transfer" in tx.operation) {
-          const transfer = tx.operation.Transfer;
-
-          const fromPrincipal = transfer.from.owner.toText();
-          const toPrincipal = transfer.to.owner.toText();
+        // Determine transaction type and amount based on transaction structure
+        if (tx.transfer) {
+          const transfer = tx.transfer;
+          const fromPrincipal = transfer.from.owner.toString();
+          const toPrincipal = transfer.to.owner.toString();
           const txAmount = convertE8sToToken(BigInt(transfer.amount));
 
           if (fromPrincipal === userPrincipal && toPrincipal !== userPrincipal) {
@@ -129,19 +129,25 @@ export default function BalancePage() {
             const memoText = String.fromCharCode(...memoBytes);
             description = memoText;
           }
-        } else if ("Mint" in tx.operation) {
-          const mint = tx.operation.Mint;
-          const toPrincipal = mint.to.owner.toText();
+        } else if (tx.mint) {
+          const mint = tx.mint;
+          const toPrincipal = mint.to.owner.toString();
 
           if (toPrincipal === userPrincipal) {
             type = "receive";
             amount = convertE8sToToken(BigInt(mint.amount));
             description = "Token minted";
           }
-        } else if ("Burn" in tx.operation) {
-          const burn = tx.operation.Burn;
 
-          const fromPrincipal = burn.from.owner.toText();
+          // Decode memo if available
+          if (mint.memo && mint.memo.length > 0) {
+            const memoBytes = Object.values(mint.memo[0]);
+            const memoText = String.fromCharCode(...memoBytes);
+            description = memoText;
+          }
+        } else if (tx.burn) {
+          const burn = tx.burn;
+          const fromPrincipal = burn.from.owner.toString();
 
           if (fromPrincipal === userPrincipal) {
             type = "sent";
@@ -155,10 +161,9 @@ export default function BalancePage() {
             const memoText = String.fromCharCode(...memoBytes);
             description = memoText;
           }
-        } else if ("Approve" in tx.operation) {
-          const approve = tx.operation.Approve;
-
-          const fromPrincipal = approve.from.owner.toText();
+        } else if (tx.approve) {
+          const approve = tx.approve;
+          const fromPrincipal = approve.from.owner.toString();
 
           if (fromPrincipal === userPrincipal) {
             type = "sent";
@@ -191,12 +196,14 @@ export default function BalancePage() {
   // Fetch user balance and transactions from token canister
   useEffect(() => {
     const fetchData = async () => {
-      if (!isConnected || !identity) return;
+      if (!isConnected || !identity) {
+        return;
+      }
 
       try {
         if (useMockData) {
           // Mock balance
-          setUserBalance(5);
+          setUserBalance(4.9996);
           setWalletAddress(identity.getPrincipal().toString());
 
           // Mock transactions
@@ -207,7 +214,7 @@ export default function BalancePage() {
               id: 1,
               type: "sent",
               description: "Report Stake",
-              amount: -5,
+              amount: -4.9996,
               date: new Date(now - 1000 * 60 * 60 * 1).toISOString(),
               txHash: "tx_a_1234567890abcdef",
               timestamp: now - 1000 * 60 * 60 * 1,
@@ -235,27 +242,51 @@ export default function BalancePage() {
           setFilteredTransactions(mock);
         } else {
           // Fetch balance
+          setIsLoadingBalance(true);
           const balance = await token.icrc1_balance_of({
             owner: identity.getPrincipal(),
             subaccount: [],
           });
-          setUserBalance(convertE8sToToken(balance));
+          const convertedBalance = convertE8sToToken(balance);
+
+          setUserBalance(convertedBalance);
           setWalletAddress(identity.getPrincipal().toString());
+          setIsLoadingBalance(false);
 
           // Fetch transactions
           setIsLoadingTransactions(true);
-          const backendTransactions = await token.get_transaction_history_of({
-            owner: identity.getPrincipal(),
-            subaccount: [],
+          const backendTransactions = await token.get_transactions({
+            start: 0,
+            length: 100, // Get last 100 transactions
           });
 
-          const convertedTransactions = convertTransactionData(backendTransactions, identity.getPrincipal().toString());
+          // Filter transactions for this user
+          const userPrincipal = identity.getPrincipal().toString();
+          const userTransactions = backendTransactions.transactions.filter(tx => {
+            // Check if transaction involves this user
+            if (tx.transfer) {
+              return tx.transfer.from.owner.toString() === userPrincipal ||
+                tx.transfer.to.owner.toString() === userPrincipal;
+            }
+            if (tx.mint) {
+              return tx.mint.to.owner.toString() === userPrincipal;
+            }
+            if (tx.burn) {
+              return tx.burn.from.owner.toString() === userPrincipal;
+            }
+            if (tx.approve) {
+              return tx.approve.from.owner.toString() === userPrincipal;
+            }
+            return false;
+          });
+
+          const convertedTransactions = convertTransactionData(userTransactions, userPrincipal);
           setTransactions(convertedTransactions);
           setFilteredTransactions(convertedTransactions);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-      } finally {
+        setIsLoadingBalance(false);
         setIsLoadingTransactions(false);
       }
     };
@@ -377,7 +408,7 @@ export default function BalancePage() {
           ) : (
             <div className="space-y-8">
               {/* Current Balance with Top Up (with skeleton + reveal) */}
-              {isLoadingTransactions ? (
+              {isLoadingBalance ? (
                 <SkeletonBalanceCard />
               ) : (
                 <Reveal>
@@ -386,8 +417,8 @@ export default function BalancePage() {
                       <div>
                         <p className="text-xs text-white/70 mb-1">Current Balance</p>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-semibold text-white">{userBalance.toLocaleString()}</span>
-                          <span className="text-sm text-white/70">FUM</span>
+                          <span className="text-2xl font-semibold text-white">{userBalance ? userBalance : '0'}</span>
+                          <span className="text-sm text-white/70">FADM</span>
                         </div>
                       </div>
                       <ButtonGreen size="now" fontWeight="medium">Top Up</ButtonGreen>
@@ -456,7 +487,7 @@ export default function BalancePage() {
                                   <div className="flex items-start justify-between mb-1">
                                     <h3 className="font-medium text-white truncate pr-2">{transaction.description}</h3>
                                     <div className={`ml-2 font-medium text-lg sm:text-xl ${getTransactionColor(transaction.type)}`}>
-                                      {transaction.amount > 0 ? "+" : ""}{transaction.amount} FUM
+                                      {transaction.amount > 0 ? "+" : ""}{transaction.amount} FADM
                                     </div>
                                   </div>
 

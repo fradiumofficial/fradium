@@ -53,8 +53,8 @@ const ProductsExtension = () => {
     return (
       <>
         <div className="min-h-screen bg-[#000510] text-white font-inter w-full pb-16 relative overflow-hidden">
-          {/* Background layer - starts further below navbar to avoid scratch */}
-          <div className="absolute inset-x-0 top-36 md:top-44 bottom-0 z-0 pointer-events-none select-none">
+          {/* Background layer - starts from bottom with natural height */}
+          <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
             <img
               src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
               alt=""
@@ -62,7 +62,7 @@ const ProductsExtension = () => {
               decoding="async"
               loading="lazy"
               draggable={false}
-              className="absolute inset-0 w-full h-full object-cover object-top"
+              className="w-full h-auto object-contain object-bottom"
             />
           </div>
           {/* Soft fade at top edge to blend with navbar */}
@@ -135,8 +135,8 @@ const ProductsExtension = () => {
   return (
     <>
       <div className="min-h-screen bg-[#000510] text-white font-inter w-full relative overflow-hidden">
-        {/* Background layer - starts further below navbar to avoid scratch */}
-        <div className="absolute inset-x-0 top-36 md:top-44 bottom-0 z-0 pointer-events-none select-none">
+        {/* Background layer - starts from bottom with natural height */}
+        <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
           <img
             src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
             alt=""
@@ -144,7 +144,7 @@ const ProductsExtension = () => {
             decoding="async"
             loading="lazy"
             draggable={false}
-            className="absolute inset-0 w-full h-full object-cover object-top"
+            className="w-full h-auto object-contain object-bottom"
           />
         </div>
         {/* Soft fade at top edge to blend with navbar */}

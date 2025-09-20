@@ -10,8 +10,6 @@ import AllNetwork from "~features/network/pages/all_network";
 
 function Home() {
   const {
-    getNetworkValue,
-    principalText,
     balances,
     balanceLoading,
     balanceErrors,
@@ -21,10 +19,8 @@ function Home() {
     usdPriceLoading,
     usdPriceErrors,
     hideBalance,
-    setHideBalance,
     extensionTokens,
     networkFilters,
-    // Add loading/fetching helpers
     isAuthenticated,
     walletActor,
     fetchAllBalances,
@@ -61,6 +57,7 @@ function Home() {
           case "fra": return networkFilters?.Fradium ?? true;
           case "icp": return networkFilters?.ICP ?? true;
           case "ckbtc": return networkFilters?.ckBTC ?? true;
+          case "cketh": return networkFilters?.ckETH ?? true;
           default: return true;
         }
       });
@@ -72,7 +69,8 @@ function Home() {
         sol: "sol",
         fra: "fra",
         icp: "icp",
-        ckbtc: "ckbtc"
+        ckbtc: "ckbtc",
+        cketh: "cketh"
       };
 
       const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
@@ -86,6 +84,7 @@ function Home() {
             case "fra": return networkFilters?.Fradium ?? true;
             case "icp": return networkFilters?.ICP ?? true;
             case "ckbtc": return networkFilters?.ckBTC ?? true;
+            case "cketh": return networkFilters?.ckETH ?? true;
             default: return true;
           }
         })();
@@ -307,6 +306,8 @@ function Home() {
       case "ICP":
         return "Internet Computer";
       case "CKBTC":
+        return "Internet Computer";
+      case "CKETH":
         return "Internet Computer";
       default:
         return token?.name || "";

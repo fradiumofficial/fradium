@@ -10,6 +10,9 @@ import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/cha
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { Principal } from "@dfinity/principal";
 import PrimaryButton from "@/core/components/Button";
+import { backend } from "declarations/backend";
+import { fradium_ledger as token } from "declarations/fradium_ledger";
+import Footer from "@/core/components/Footer";
 
 export default function DetailReportPage() {
   const { id } = useParams();
@@ -327,12 +330,39 @@ export default function DetailReportPage() {
       setIsLoading(true);
       try {
         console.log("Fetching report with ID:", id, "Type:", typeof id);
-        // Try different conversion methods
+
+        // First, try to get all reports to see what's available
+        console.log("Getting all reports to debug...");
+        const allReportsResponse = await backend.get_reports();
+        console.log("All reports response:", allReportsResponse);
+
+        if (allReportsResponse.Ok && allReportsResponse.Ok.length > 0) {
+          console.log("Available report IDs:", allReportsResponse.Ok.map(r => r.report_id));
+          console.log("Looking for report ID:", id, "in available IDs");
+
+          // Try to find the report by different ID comparisons
+          let foundReport = allReportsResponse.Ok.find(r => r.report_id.toString() === id);
+          if (!foundReport) {
+            foundReport = allReportsResponse.Ok.find(r => Number(r.report_id) === Number(id));
+          }
+          if (!foundReport) {
+            foundReport = allReportsResponse.Ok.find(r => r.report_id === parseInt(id));
+          }
+
+          if (foundReport) {
+            console.log("Found report by search:", foundReport);
+            setReportData(foundReport);
+            return;
+          }
+        }
+
+        // If not found in all reports, try direct backend call
+        console.log("Trying direct backend call...");
         const reportId = parseInt(id);
         console.log("Converted to parseInt:", reportId);
-        // Try with different data types
-        console.log("Trying with parseInt:", reportId);
+
         let response = await backend.get_report(reportId);
+        console.log("Backend response:", response);
 
         if (response.Err) {
           console.log("parseInt failed, trying with Number:", Number(id));
@@ -343,23 +373,10 @@ export default function DetailReportPage() {
           console.log("Number failed, trying with BigInt:", BigInt(id));
           response = await backend.get_report(BigInt(id));
         }
+
         console.log("Final backend response:", response);
         if (response.Err) {
-          console.error("All conversion methods failed. Report not found error:", response.Err);
-          // Let's also try to get all reports to see what's available
-          console.log("Trying to get all reports to debug...");
-          const allReportsResponse = await backend.get_reports();
-          console.log("All reports:", allReportsResponse);
-          if (allReportsResponse.Ok && allReportsResponse.Ok.length > 0) {
-            console.log("Available report IDs:", allReportsResponse.Ok.map(r => r.report_id));
-            console.log("Looking for report ID:", id, "in available IDs");
-            const foundReport = allReportsResponse.Ok.find(r => r.report_id.toString() === id);
-            if (foundReport) {
-              console.log("Found report by string comparison:", foundReport);
-              setReportData(foundReport);
-              return;
-            }
-          }
+          console.error("All methods failed. Report not found error:", response.Err);
           toast.error("Report not found. Please check the URL or try again.");
         } else {
           console.log("Report data received successfully:", response.Ok);
@@ -393,6 +410,7 @@ export default function DetailReportPage() {
           <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Report Not Found</h2>
           <p className="text-gray-400 mb-4">The report you're looking for doesn't exist or has been removed.</p>
+          <p className="text-gray-500 mb-4 text-sm">Report ID: {id}</p>
           <Link to="/reports" className="inline-flex items-center text-blue-400 hover:text-blue-300">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
@@ -403,11 +421,21 @@ export default function DetailReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
-      {/* Subtle Green Background Splash - Fixed to follow scroll */}
-      <div className="fixed inset-0 pointer-events-none z-5">
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-500/5 rounded-full blur-3xl"></div>
+    <div className="bg-[#000510] text-white relative overflow-hidden min-h-screen">
+      {/* Background layer - starts from bottom with natural height */}
+      <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
+        <img
+          src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          loading="lazy"
+          draggable={false}
+          className="w-full h-auto object-contain object-bottom"
+        />
       </div>
+      {/* Soft fade at top edge to blend with navbar */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />
 
       {/* Main Content */}
       <main className="pt-24 mb-32 pb-16 px-4 sm:px-6 relative z-10">
@@ -425,33 +453,28 @@ export default function DetailReportPage() {
             {/* Left Column - Main Content */}
             <div className="xl:col-span-2 space-y-6 sm:space-y-8">
               {/* Report Title & Status */}
-              <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-6 space-y-4 lg:space-y-0">
-                <div>
-                  <h1 className="text-3xl sm:text-4xl font-bold mb-4">{uiData.category} Report</h1>
-                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                    <div className={`inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(uiData.status)} h-8`}>
-                      {getStatusIcon(uiData.status)}
-                      <span>{uiData.status}</span>
-                    </div>
-                    <div className="inline-flex items-center justify-center px-4 py-2 bg-red-400/10 text-red-400 rounded-full text-sm font-medium h-8">{uiData.riskLevel} Risk</div>
+              <div className="mb-8">
+                <h1 className="text-3xl sm:text-4xl font-bold mb-4 capitalize">{uiData.category} Report</h1>
+                <p className="text-gray-300 text-sm sm:text-base mb-6">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                  <div className={`inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(uiData.status)} h-8`}>
+                    {getStatusIcon(uiData.status)}
+                    <span>{uiData.status}</span>
                   </div>
-                </div>
-                <div className="text-left lg:text-right">
-                  <div className="text-sm text-gray-400 mb-1">Report ID</div>
-                  <div className="font-mono text-lg">#{uiData.id.toString().padStart(4, "0")}</div>
+                  <div className="inline-flex items-center justify-center px-4 py-2 bg-red-400/10 text-red-400 rounded-full text-sm font-medium h-8">{uiData.riskLevel} Risk</div>
                 </div>
               </div>
 
               {/* Reported Address - Hero Style */}
-              <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-400/20 rounded-xl p-4 sm:p-6">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
                   <div className="min-w-0 flex-1">
-                    <div className="text-red-400 text-sm font-medium mb-2">FLAGGED ADDRESS</div>
-                    <div className="font-mono text-xl sm:text-2xl font-bold mb-2 break-all">{uiData.shortAddress}</div>
-                    <div className="font-mono text-sm text-gray-400 break-all">{uiData.address}</div>
+                    <div className="font-mono text-xl sm:text-2xl font-bold mb-2">{uiData.shortAddress}</div>
+                    <div className="text-sm text-gray-400 capitalize">{uiData.category} • Reported {uiData.createdAt.toLocaleDateString()}</div>
                   </div>
-                  <Button onClick={() => copyToClipboard(uiData.address)} className="bg-red-400/20 border border-red-400/30 hover:bg-red-400/30 text-red-400 self-start sm:self-center">
-                    <Copy className="w-4 h-4" />
+                  <Button onClick={() => copyToClipboard(uiData.address)} className="bg-white/10 border border-white/20 hover:bg-white/20 text-white self-start sm:self-center">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
                   </Button>
                 </div>
               </div>
@@ -508,41 +531,35 @@ export default function DetailReportPage() {
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6 sm:space-y-8">
-              {/* Voting Panel */}
+              {/* Community Vote Panel */}
               <Card>
-                <div className="text-center mb-6">
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">Community Vote</h3>
-                  <div className="text-sm text-gray-400 flex items-center justify-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {timeRemaining}
-                  </div>
+                <h3 className="text-lg font-semibold mb-4">Community Vote</h3>
+
+                {/* Timer */}
+                <div className="text-sm text-gray-400 mb-4 flex items-center">
+                  <Clock className="w-4 h-4 mr-2" />
+                  {timeRemaining}
                 </div>
 
                 {/* Vote Progress Circle */}
-                <div className="relative w-28 sm:w-32 h-28 sm:h-32 mx-auto mb-6">
-                  <svg className="w-28 sm:w-32 h-28 sm:h-32 transform -rotate-90" viewBox="0 0 100 100">
+                <div className="relative w-24 h-24 mx-auto mb-4">
+                  <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-700" />
                     <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={`${yesPercentage * 2.51} 251`} className="text-red-400" />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-xl sm:text-2xl font-bold text-red-400">{yesPercentage}%</div>
+                      <div className="text-lg font-bold text-red-400">{yesPercentage}%</div>
                       <div className="text-xs text-gray-400">Unsafe</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Vote Stats */}
-                <div className="mb-6 px-6">
-                  {/* Progress Bar */}
-                  <div className="mb-2">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-red-400">Unsafe: {uiData.yesPercentage}%</span>
-                      <span className="text-green-400">Safe: {uiData.noPercentage}%</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div className="bg-red-400 h-2 rounded-full transition-all duration-300" style={{ width: `${uiData.yesPercentage}%` }}></div>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-red-400">Unsafe: {uiData.yesPercentage}%</span>
+                    <span className="text-green-400">Safe: {uiData.noPercentage}%</span>
                   </div>
                 </div>
 
@@ -586,9 +603,9 @@ export default function DetailReportPage() {
                 )}
               </Card>
 
-              {/* Report Details */}
+              {/* Reports Note */}
               <Card>
-                <h3 className="text-lg font-semibold mb-4">Report Details</h3>
+                <h3 className="text-lg font-semibold mb-4">Reports Note</h3>
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <Hash className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -601,7 +618,7 @@ export default function DetailReportPage() {
                     <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="text-sm text-gray-400">Category</div>
-                      <div className="font-medium">{uiData.category}</div>
+                      <div className="font-medium capitalize">{uiData.category}</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -623,18 +640,12 @@ export default function DetailReportPage() {
 
               {/* Chain Explorer Link */}
               {getExplorerName(uiData.chain) !== "Explorer" && (
-                <>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <span className="mr-2">{getExplorerIcon(uiData.chain)}</span>
-                    {getExplorerName(uiData.chain)}
-                  </h3>
-                  <a href={getExplorerUrl(uiData.chain, uiData.address)} target="_blank" rel="noopener noreferrer" className="block">
-                    <Button className="w-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      View on {getExplorerName(uiData.chain)}
-                    </Button>
-                  </a>
-                </>
+                <a href={getExplorerUrl(uiData.chain, uiData.address)} target="_blank" rel="noopener noreferrer" className="block">
+                  <Button className="w-full bg-green-400 hover:bg-green-500 text-black font-semibold">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View on {getExplorerName(uiData.chain)}
+                  </Button>
+                </a>
               )}
             </div>
           </div>
@@ -712,6 +723,7 @@ export default function DetailReportPage() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

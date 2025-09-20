@@ -16,15 +16,21 @@ export function getInternetIdentityNetwork() {
 
 export function convertE8sToToken(e8s) {
   if (!e8s) return 0;
-  const cleanE8s = e8s.toString().replace(/,/g, "").replace(/_/g, "");
-  const number = parseInt(cleanE8s) / 100_000_000;
-  const decimalStr = number.toString();
 
-  if (!decimalStr.includes(".") || !parseFloat(decimalStr.split(".")[1])) {
-    return Math.floor(number);
+  // Handle BigInt properly
+  let e8sValue;
+  if (typeof e8s === 'bigint') {
+    e8sValue = e8s;
+  } else {
+    const cleanE8s = e8s.toString().replace(/,/g, "").replace(/_/g, "");
+    e8sValue = BigInt(cleanE8s);
   }
 
-  return parseFloat(number.toString());
+  // Convert to number and divide by 100_000_000
+  const number = Number(e8sValue) / 100_000_000;
+
+  // Return the number with proper decimal handling
+  return parseFloat(number.toFixed(8));
 }
 
 export const formatAddress = (address) => {

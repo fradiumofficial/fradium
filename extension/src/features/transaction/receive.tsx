@@ -25,6 +25,7 @@ function Receive() {
     solana?: string
     icp_principal?: string
     icp_account?: string
+    ckbtc?: string
   } | null>(null)
 
   // Load from LocalStorageService
@@ -175,6 +176,41 @@ function Receive() {
               }
             />
             <CopyButton text={localAddresses?.bitcoin} />
+          </div>
+        </div>
+
+        {/* ckBTC (BTC Deposit Address) */}
+        <h1 className="text-[14px] font-medium text-white mb-[6px]">
+          ckBTC (BTC Deposit):
+        </h1>
+        <div className="flex flex-row w-full bg-white/10 border border-white/10 p-2 text-white justify-between mb-[16px] rounded-[12px]">
+          <input
+            type="text"
+            placeholder={
+              isFetchingAddresses
+                ? "Loading..."
+                : "ckBTC BTC deposit address will appear here"
+            }
+            className="bg-transparent outline-none flex-1 text-sm"
+            value={localAddresses?.ckbtc || ""}
+            readOnly
+            disabled={!localAddresses?.ckbtc}
+          />
+          <div className="flex flex-row gap-[12px]">
+            <img
+              src={CDN.icons.qrCode}
+              alt="QR Code"
+              className="w-5 h-5 cursor-pointer"
+              onClick={() =>
+                navigate(ROUTES.RECEIVE_DETAIL, {
+                  state: {
+                    address: localAddresses?.ckbtc,
+                    network: "ckbtc"
+                  }
+                })
+              }
+            />
+            <CopyButton text={localAddresses?.ckbtc} />
           </div>
         </div>
 
