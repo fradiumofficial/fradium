@@ -69,7 +69,7 @@ export default function ReportPage() {
     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)] animate-pulse">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
-          <div className="flex ml-4 mb-2 items-center gap-2">
+          <div className="flex mb-2 items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]" />
             <div className="h-4 w-32 bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] rounded animate-[shimmer_2s_ease-in-out_infinite]" />
             <div className="h-5 w-20 bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] rounded-full ml-3 animate-[shimmer_2s_ease-in-out_infinite]" />
@@ -513,7 +513,7 @@ export default function ReportPage() {
                             <div className="flex items-start justify-between mb-4">
                               <div className="flex-1 min-w-0">
                                 {/* Network and Address */}
-                                <div className="flex ml-4 mb-2">
+                                <div className="flex mb-2">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-lg group-hover:shadow-orange-500/30">
                                       <span className="text-white text-xs font-bold group-hover:scale-110 transition-transform duration-200">₿</span>

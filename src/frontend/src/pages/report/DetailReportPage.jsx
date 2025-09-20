@@ -11,6 +11,7 @@ import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { Principal } from "@dfinity/principal";
 import PrimaryButton from "@/core/components/Button";
 import { backend } from "declarations/backend";
+import Footer from "@/core/components/Footer";
 
 export default function DetailReportPage() {
   const { id } = useParams();
@@ -419,11 +420,21 @@ export default function DetailReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
-      {/* Subtle Green Background Splash - Fixed to follow scroll */}
-      <div className="fixed inset-0 pointer-events-none z-5">
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-500/5 rounded-full blur-3xl"></div>
+    <div className="bg-[#000510] text-white relative overflow-hidden min-h-screen">
+      {/* Background layer - starts from bottom with natural height */}
+      <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
+        <img
+          src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          loading="lazy"
+          draggable={false}
+          className="w-full h-auto object-contain object-bottom"
+        />
       </div>
+      {/* Soft fade at top edge to blend with navbar */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />
 
       {/* Main Content */}
       <main className="pt-24 mb-32 pb-16 px-4 sm:px-6 relative z-10">
@@ -728,6 +739,7 @@ export default function DetailReportPage() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }
