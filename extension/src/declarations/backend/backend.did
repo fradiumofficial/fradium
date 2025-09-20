@@ -10,14 +10,7 @@ type VoteReportParams =
    stake_amount: nat;
    vote_type: bool;
  };
-type TokenType = 
- variant {
-   Bitcoin;
-   Ethereum;
-   Fradium;
-   Solana;
-   Unknown;
- };
+type TokenType = text;
 type Time = int;
 type Result_7 = 
  variant {

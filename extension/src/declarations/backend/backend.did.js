@@ -30,13 +30,7 @@ export const idlFactory = ({ IDL }) => {
     'Ok' : GetAnalyzeAddressResult,
     'Err' : IDL.Text,
   });
-  const TokenType = IDL.Variant({
-    'Fradium' : IDL.Null,
-    'Ethereum' : IDL.Null,
-    'Solana' : IDL.Null,
-    'Unknown' : IDL.Null,
-    'Bitcoin' : IDL.Null,
-  });
+  const TokenType = IDL.Text;
   const AnalyzeHistoryType = IDL.Variant({
     'AIAnalysis' : IDL.Null,
     'CommunityVote' : IDL.Null,

@@ -60,7 +60,7 @@ const EFFECTIVE_WALLET_CANISTER_ID =
       (process as any).env?.NEXT_PUBLIC_CANISTER_ID_WALLET ||
       (process as any).env?.PLASMO_PUBLI_CANISTER_ID_WALLET)) ||
   // As a last resort, fall back to mainnet canister ID in canister_ids.json
-  "v3x23-lyaaa-aaaam-aej2a-cai"
+  "ufxgi-4p777-77774-qaadq-cai"
 
 // Resolve ICP and Fradium ledger canister IDs for extension builds
 const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
@@ -578,7 +578,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
           { agent: minterAgent as any }
         ) as any
         const addr = await minterActor.get_btc_address({
-          owner: identity.getPrincipal(),
+          owner: [identity.getPrincipal()],
           subaccount: []
         })
         if (addr && typeof addr === "string") {

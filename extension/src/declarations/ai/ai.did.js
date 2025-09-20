@@ -22,7 +22,11 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
-    'analyze_icp_address' : IDL.Func([IDL.Text], [Result], []),
+    'analyze_icp_address' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64)), IDL.Text, IDL.Nat32],
+        [Result],
+        [],
+      ),
     'analyze_sol_address' : IDL.Func(
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Float64)), IDL.Text, IDL.Nat32],
         [Result],

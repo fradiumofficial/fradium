@@ -9,6 +9,7 @@ import {
   getETHTransactionHistory,
   getSolanaTransactionHistory,
   getICRCTransactionHistory,
+  getCkBtcTransactionHistory,
   type UnifiedTx,
 } from "~service/transactionHistoryService";
 
@@ -49,6 +50,7 @@ function History() {
         if (solAddr) tasks.push(getSolanaTransactionHistory(solAddr, 'devnet', 30));
         if (icpPrincipal) tasks.push(getICRCTransactionHistory('icp', icpPrincipal, icpAccount, 30));
         if (icpPrincipal) tasks.push(getICRCTransactionHistory('fradium', icpPrincipal, null, 30));
+        if (icpPrincipal) tasks.push(getCkBtcTransactionHistory(icpPrincipal, 30));
 
         const results = await Promise.allSettled(tasks);
         const onchain = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
