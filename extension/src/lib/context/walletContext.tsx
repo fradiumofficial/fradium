@@ -178,22 +178,17 @@ const EFFECTIVE_CKETH_MINTER_CANISTER_ID =
 
 interface NetworkFilters {
   Bitcoin: boolean
-  Solana: boolean
-  Fradium: boolean
   Ethereum: boolean
-  ICP: boolean
-  ckBTC: boolean
-  ckETH: boolean
+  Solana: boolean
+  "Internet Computer": boolean
 }
 
 interface NetworkValues {
   "All Networks": number
   Bitcoin: number
-  Solana: number
-  Fradium: number
   Ethereum: number
-  ckBTC: number
-  ckETH: number
+  Solana: number
+  "Internet Computer": number
 }
 
 interface WalletAddresses {
@@ -352,22 +347,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   const [networkValues, setNetworkValues] = useState<NetworkValues>({
     "All Networks": 0,
     Bitcoin: 0,
-    Solana: 0,
-    Fradium: 0,
     Ethereum: 0,
-    ckBTC: 0,
-    ckETH: 0
+    Solana: 0,
+    "Internet Computer": 0
   })
 
   // Initialize network filters with default values
   const [networkFilters, setNetworkFilters] = useState<NetworkFilters>({
     Bitcoin: true,
-    Solana: true,
-    Fradium: true,
     Ethereum: true,
-    ICP: true,
-    ckBTC: true,
-    ckETH: true
+    Solana: true,
+    "Internet Computer": true
   })
 
   // Load network filters from storage on mount
@@ -529,9 +519,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
             (networkFilters.Bitcoin ? updated.Bitcoin : 0) +
             (networkFilters.Ethereum ? updated.Ethereum : 0) +
             (networkFilters.Solana ? updated.Solana : 0) +
-            (networkFilters.Fradium ? updated.Fradium : 0) +
-            (networkFilters.ckBTC ? updated.ckBTC : 0) +
-            (networkFilters.ckETH ? updated.ckETH : 0)
+            (networkFilters["Internet Computer"] ? updated["Internet Computer"] : 0)
         }
         return updated
       })

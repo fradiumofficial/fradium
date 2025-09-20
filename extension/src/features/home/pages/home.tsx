@@ -7,6 +7,7 @@ import { useWallet } from "~lib/context/walletContext";
 import { useNetwork } from "~features/network/context/networkContext";
 import { Search, Settings2 } from "lucide-react";
 import AllNetwork from "~features/network/pages/all_network";
+import { getTokenPriceKey } from "~lib/utils/utils";
 
 function Home() {
   const {
@@ -54,10 +55,10 @@ function Home() {
           case "btc": return networkFilters?.Bitcoin ?? true;
           case "eth": return networkFilters?.Ethereum ?? true;
           case "sol": return networkFilters?.Solana ?? true;
-          case "fra": return networkFilters?.Fradium ?? true;
-          case "icp": return networkFilters?.ICP ?? true;
-          case "ckbtc": return networkFilters?.ckBTC ?? true;
-          case "cketh": return networkFilters?.ckETH ?? true;
+          case "fra": return networkFilters?.["Internet Computer"] ?? true;
+          case "icp": return networkFilters?.["Internet Computer"] ?? true;
+          case "ckbtc": return networkFilters?.["Internet Computer"] ?? true;
+          case "cketh": return networkFilters?.["Internet Computer"] ?? true;
           default: return true;
         }
       });
@@ -67,10 +68,7 @@ function Home() {
         btc: "btc",
         eth: "eth",
         sol: "sol",
-        fra: "fra",
-        icp: "icp",
-        ckbtc: "ckbtc",
-        cketh: "cketh"
+        icp: "icp"
       };
 
       const targetNetwork = networkMap[selectedNetwork as keyof typeof networkMap];
@@ -81,16 +79,21 @@ function Home() {
             case "btc": return networkFilters?.Bitcoin ?? true;
             case "eth": return networkFilters?.Ethereum ?? true;
             case "sol": return networkFilters?.Solana ?? true;
-            case "fra": return networkFilters?.Fradium ?? true;
-            case "icp": return networkFilters?.ICP ?? true;
-            case "ckbtc": return networkFilters?.ckBTC ?? true;
-            case "cketh": return networkFilters?.ckETH ?? true;
+            case "icp": return networkFilters?.["Internet Computer"] ?? true;
             default: return true;
           }
         })();
 
         if (!isNetworkEnabled) return [];
-        tokens = tokens.filter(token => token.networkKey === targetNetwork);
+        
+        if (selectedNetwork === "icp") {
+          // For ICP network, show all ICP-based tokens (ICP, ckBTC, ckETH, Fradium)
+          tokens = tokens.filter(token => 
+            ["icp", "ckbtc", "cketh", "fradium"].includes(token.id)
+          );
+        } else {
+          tokens = tokens.filter(token => token.networkKey === targetNetwork);
+        }
       }
     }
 
@@ -158,9 +161,10 @@ function Home() {
   const formatUSDValue = useCallback((tokenId: string, balance: string) => {
     if (hideBalance) return "••••";
 
-    const usdPrice = usdPrices[tokenId];
-    const isPriceLoading = usdPriceLoading[tokenId];
-    const hasPriceError = usdPriceErrors[tokenId];
+    const priceKey = getTokenPriceKey(tokenId);
+    const usdPrice = usdPrices[priceKey];
+    const isPriceLoading = usdPriceLoading[priceKey];
+    const hasPriceError = usdPriceErrors[priceKey];
 
     if (isPriceLoading || hasPriceError || !usdPrice) {
       return "$0.00";
@@ -318,7 +322,8 @@ function Home() {
   const usdBreakdown = useMemo(() => {
     const breakdown = (filteredTokens || []).map(token => {
       const balance = balances[token.id] || "0";
-      const usdPrice = usdPrices[token.id];
+      const priceKey = getTokenPriceKey(token.id);
+      const usdPrice = usdPrices[priceKey];
       const numericBalance = parseFloat(balance);
 
       if (!usdPrice || isNaN(numericBalance) || numericBalance === 0) {

@@ -14,7 +14,7 @@ function AnalyzeAdressResult() {
   const result = location.state?.result as AnalysisResult
   const address = location.state?.address as string
   const sendContext = location.state?.sendContext as
-    | { amount?: string; selectedNetwork?: "btc" | "eth" | "sol" | "icp" }
+    | { amount?: string; selectedNetwork?: "btc" | "eth" | "sol" | "icp" | "fra" | "ckbtc" | "cketh" }
     | undefined
 
   // Inisialisasi state dengan nilai yang benar langsung

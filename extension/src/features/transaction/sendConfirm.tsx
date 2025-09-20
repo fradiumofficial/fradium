@@ -6,7 +6,7 @@ import { useAuth } from "~lib/context/authContext"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { TxHistoryService } from "~service/txHistoryService"
 
-type NetworkKey = "btc" | "eth" | "sol" | "icp"
+type NetworkKey = "btc" | "eth" | "sol" | "icp" | "fra" | "ckbtc" | "cketh"
 
 export default function SendConfirm() {
   const navigate = useNavigate()
@@ -21,54 +21,97 @@ export default function SendConfirm() {
   const [error, setError] = useState<string | null>(null)
 
   const tokenMeta = useMemo(() => {
-    const map: Record<NetworkKey, { symbol: string; tokenType: string }> = {
+    const map: Record<string, { symbol: string; tokenType: string }> = {
+      // Network keys
       btc: { symbol: "BTC", tokenType: "Bitcoin" },
       eth: { symbol: "ETH", tokenType: "Ethereum" },
       sol: { symbol: "SOL", tokenType: "Solana" },
       icp: { symbol: "ICP", tokenType: "Internet Computer" },
+      fra: { symbol: "FUM", tokenType: "Fradium" },
+      ckbtc: { symbol: "ckBTC", tokenType: "Chain Key BTC" },
+      cketh: { symbol: "ckETH", tokenType: "Chain Key ETH" },
+      // Token IDs (from send.tsx)
+      bitcoin: { symbol: "BTC", tokenType: "Bitcoin" },
+      ethereum: { symbol: "ETH", tokenType: "Ethereum" },
+      solana: { symbol: "SOL", tokenType: "Solana" },
+      fradium: { symbol: "FUM", tokenType: "Fradium" },
     }
-    return map[(selectedNetwork as NetworkKey) || "btc"]
+    return map[selectedNetwork] || map["btc"]
   }, [selectedNetwork])
 
   const convertToUnits = useCallback((amountStr: string): bigint => {
     const v = parseFloat(amountStr || "0")
-    switch (selectedNetwork as NetworkKey) {
+    switch (selectedNetwork) {
       case "btc":
+      case "bitcoin":
         return BigInt(Math.floor(v * 100000000))
       case "eth":
+      case "ethereum":
         return BigInt(Math.floor(v * 1e18))
       case "sol":
+      case "solana":
         return BigInt(Math.floor(v * 1e9))
       case "icp":
         return BigInt(Math.floor(v * 1e8))
+      case "fra":
+      case "fradium":
+        return BigInt(Math.floor(v * 1e8))
+      case "ckbtc":
+        return BigInt(Math.floor(v * 1e8))
+      case "cketh":
+        return BigInt(Math.floor(v * 1e18))
       default:
         return 0n
     }
   }, [selectedNetwork])
 
   const handleConfirm = useCallback(async () => {
-    if (!walletActor || !identity) {
+    if (!identity) {
       setError("Wallet not connected")
       return
     }
     setIsLoading(true)
     setError(null)
     try {
-      const amt = convertToUnits(amount)
       let txResult: string
-      switch (selectedNetwork as NetworkKey) {
+      switch (selectedNetwork) {
         case "btc":
-          txResult = await walletActor.bitcoin_send({ destination_address: recipientAddress, amount_in_satoshi: amt })
+        case "bitcoin":
+          if (!walletActor) throw new Error("Wallet actor not available")
+          txResult = await walletActor.bitcoin_send({ destination_address: recipientAddress, amount_in_satoshi: convertToUnits(amount) })
           break
         case "eth":
-          txResult = await walletActor.ethereum_send(recipientAddress, amt)
+        case "ethereum":
+          if (!walletActor) throw new Error("Wallet actor not available")
+          txResult = await walletActor.ethereum_send(recipientAddress, convertToUnits(amount))
           break
         case "sol":
-          txResult = await walletActor.solana_send(recipientAddress, amt)
+        case "solana":
+          if (!walletActor) throw new Error("Wallet actor not available")
+          txResult = await walletActor.solana_send(recipientAddress, convertToUnits(amount))
           break
         case "icp": {
           const res = await sendIcrcTransfer("icp", recipientAddress, parseFloat(amount))
           if (!res?.success) throw new Error(res?.error || "ICP transfer failed")
+          txResult = res?.blockIndex || ""
+          break
+        }
+        case "fra":
+        case "fradium": {
+          const res = await sendIcrcTransfer("fradium", recipientAddress, parseFloat(amount))
+          if (!res?.success) throw new Error(res?.error || "Fradium transfer failed")
+          txResult = res?.blockIndex || ""
+          break
+        }
+        case "ckbtc": {
+          const res = await sendIcrcTransfer("ckbtc", recipientAddress, parseFloat(amount))
+          if (!res?.success) throw new Error(res?.error || "ckBTC transfer failed")
+          txResult = res?.blockIndex || ""
+          break
+        }
+        case "cketh": {
+          const res = await sendIcrcTransfer("cketh", recipientAddress, parseFloat(amount))
+          if (!res?.success) throw new Error(res?.error || "ckETH transfer failed")
           txResult = res?.blockIndex || ""
           break
         }
@@ -98,7 +141,7 @@ export default function SendConfirm() {
     } finally {
       setIsLoading(false)
     }
-  }, [walletActor, identity, amount, recipientAddress, selectedNetwork, tokenMeta, navigate, convertToUnits])
+  }, [walletActor, identity, amount, recipientAddress, selectedNetwork, tokenMeta, navigate, convertToUnits, sendIcrcTransfer])
 
   return (
     <div className="w-[375px] space-y-4 text-white shadow-md overflow-y-auto">
