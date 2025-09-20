@@ -401,6 +401,30 @@ export async function getBalance(tokenId, principal, useCache = true) {
   // Get principal string for caching
   const principalString = principal?.toString() || null;
 
+  // Retry mechanism - try up to 3 times
+  const maxRetries = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetchBalanceWithRetry(token, principal, principalString, useCache);
+    } catch (error) {
+      lastError = error;
+      console.warn(`Balance fetch attempt ${attempt}/${maxRetries} failed for ${token.symbol}:`, error.message);
+
+      // If this is not the last attempt, wait a bit before retrying
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+      }
+    }
+  }
+
+  // If all retries failed, throw the last error
+  throw new Error(`Failed to fetch ${token.symbol} balance after ${maxRetries} attempts: ${lastError?.message || "Unknown error"}`);
+}
+
+// Helper function to fetch balance (extracted from original getBalance logic)
+async function fetchBalanceWithRetry(token, principal, principalString, useCache) {
   if (token.type === "native") {
     try {
       switch (token.id) {
@@ -534,7 +558,7 @@ export async function getBalance(tokenId, principal, useCache = true) {
 
           // Save to cache if useCache is enabled
           if (useCache && principalString) {
-            saveBalanceToStorage(principalString, tokenId, resultString);
+            saveBalanceToStorage(principalString, token.id, resultString);
           }
 
           return resultString;
@@ -577,7 +601,7 @@ export async function getBalance(tokenId, principal, useCache = true) {
 
           // Save to cache if useCache is enabled
           if (useCache && principalString) {
-            saveBalanceToStorage(principalString, tokenId, resultString);
+            saveBalanceToStorage(principalString, token.id, resultString);
           }
 
           return resultString;
@@ -637,12 +661,36 @@ export async function getUSD(tokenId) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
-  const coinGeckoId = COINGECKO_IDS[token.symbol];
-
   // Special handling for Fradium token - return 0 directly since it's not available on major APIs
   if (token.symbol === "FADM") {
     return 0;
   }
+
+  // Retry mechanism - try up to 3 times
+  const maxRetries = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetchUSDPriceWithRetry(token);
+    } catch (error) {
+      lastError = error;
+      console.warn(`USD price fetch attempt ${attempt}/${maxRetries} failed for ${token.symbol}:`, error.message);
+
+      // If this is not the last attempt, wait a bit before retrying
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+      }
+    }
+  }
+
+  // If all retries failed, throw the last error
+  throw new Error(`Failed to fetch ${token.symbol} USD price after ${maxRetries} attempts: ${lastError?.message || "Unknown error"}`);
+}
+
+// Helper function to fetch USD price (extracted from original getUSD logic)
+async function fetchUSDPriceWithRetry(token) {
+  const coinGeckoId = COINGECKO_IDS[token.symbol];
 
   // Primary API: CoinGecko
   try {
