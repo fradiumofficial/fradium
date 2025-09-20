@@ -4,8 +4,9 @@
 import { Principal } from '@dfinity/principal'
 import { icp_index } from '../declarations/icp_index'
 import { fradium_index } from '../declarations/fradium_index'
+import { ckbtc_index } from '../declarations/ckbtc_index'
 
-export type NetworkKey = 'ethereum' | 'bitcoin' | 'solana' | 'icp' | 'fradium' | 'internet_computer'
+export type NetworkKey = 'ethereum' | 'bitcoin' | 'solana' | 'icp' | 'fradium' | 'ckbtc' | 'internet_computer'
 
 export type UnifiedTx = {
   hash: string
@@ -26,6 +27,8 @@ export type UnifiedTx = {
   blockHeight?: number
   size?: number
   weight?: number
+  // ICRC token discriminator for IC chain tokens
+  tokenType?: 'icp' | 'fradium' | 'ckbtc'
 }
 
 // Environment configuration (use same keys as other extension services)
@@ -49,6 +52,58 @@ const API_URLS = {
     devnet: 'https://api.devnet.solana.com',
     mainnet: 'https://api.mainnet-beta.solana.com'
   }
+}
+
+// ---------------------------------
+// Simple persistence (best-effort)
+// ---------------------------------
+const STORAGE_PREFIX = 'txHistory'
+
+async function saveTransactionsSnapshot(key: string, items: UnifiedTx[]): Promise<void> {
+  const payload = { items, savedAt: Date.now() }
+  try {
+    if (typeof chrome !== 'undefined' && (chrome as any).storage?.local) {
+      await new Promise<void>((resolve) => {
+        ;(chrome as any).storage.local.set({ [key]: payload }, () => resolve())
+      })
+    } else {
+      localStorage.setItem(key, JSON.stringify(payload))
+    }
+  } catch (_) {
+    // ignore persistence errors
+  }
+}
+
+async function loadTransactionsSnapshot(key: string): Promise<{ items: UnifiedTx[]; savedAt: number } | null> {
+  try {
+    if (typeof chrome !== 'undefined' && (chrome as any).storage?.local) {
+      const res = await new Promise<any>((resolve) => {
+        ;(chrome as any).storage.local.get([key], (data: any) => resolve(data?.[key]))
+      })
+      if (res && res.items) return res
+      return null
+    } else {
+      const raw = localStorage.getItem(key)
+      if (!raw) return null
+      const parsed = JSON.parse(raw)
+      if (parsed && parsed.items) return parsed
+      return null
+    }
+  } catch (_) {
+    return null
+  }
+}
+
+function buildHistoryStorageKey(addressOrPrincipal: string, network: NetworkKey, extra?: string | null): string {
+  const norm = String(addressOrPrincipal || '').toLowerCase()
+  const suffix = extra ? `:${extra}` : ''
+  return `${STORAGE_PREFIX}:${network}:${norm}${suffix}`
+}
+
+export async function getCachedTransactionHistory(addressOrPrincipal: string, network: NetworkKey, options?: { icpAccount?: string | null }): Promise<UnifiedTx[]> {
+  const key = buildHistoryStorageKey(addressOrPrincipal, network, options?.icpAccount || null)
+  const cached = await loadTransactionsSnapshot(key)
+  return cached?.items || []
 }
 
 // -----------------------------
@@ -268,7 +323,8 @@ export async function getICRCTransactionHistory(tokenType: 'icp' | 'fradium', pr
               timestamp: Number(tx.transaction.timestamp?.[0]?.timestamp_nanos || 0) / 1_000_000,
               from: String(fromPrincipal || 'Unknown'),
               to: String(toPrincipal || 'Unknown'),
-              fee: transfer.fee?.e8s ? Number(transfer.fee.e8s) / 1e8 : 0
+              fee: transfer.fee?.e8s ? Number(transfer.fee.e8s) / 1e8 : 0,
+              tokenType: 'icp'
             } as UnifiedTx
           })
           .filter(Boolean) as UnifiedTx[]
@@ -294,7 +350,8 @@ export async function getICRCTransactionHistory(tokenType: 'icp' | 'fradium', pr
               timestamp: Number(tx.transaction.timestamp || 0) / 1_000_000,
               from: String(fromPrincipal || 'Unknown'),
               to: String(toPrincipal || 'Unknown'),
-              fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e8 : 0
+              fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e8 : 0,
+              tokenType: 'fradium'
             } as UnifiedTx
           })
           .filter(Boolean) as UnifiedTx[]
@@ -319,6 +376,48 @@ export async function getICRCTransactionHistory(tokenType: 'icp' | 'fradium', pr
 }
 
 // -----------------------------
+// ckBTC via ckbtc_index (ICRC)
+// -----------------------------
+export async function getCkBtcTransactionHistory(principalText: string, limit = 20): Promise<UnifiedTx[]> {
+  try {
+    if (!principalText) throw new Error('Principal is required')
+    const principalObj = Principal.fromText(principalText)
+    const result = await (ckbtc_index as any).get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
+    if (result && (result as any).Ok && (result as any).Ok.transactions) {
+      const txs = (result as any).Ok.transactions
+      const transactions = txs
+        .map((tx: any) => {
+          const transfer = tx.transaction?.transfer?.[0]
+          if (!transfer) return null
+          const fromPrincipal = transfer.from?.owner?.__principal__ || transfer.from?.owner
+          const toPrincipal = transfer.to?.owner?.__principal__ || transfer.to?.owner
+          const isSent = String(fromPrincipal) === principalObj.toString()
+          const otherPartyStr = String(isSent ? toPrincipal : fromPrincipal)
+          return {
+            hash: String(tx.id),
+            chain: 'Internet Computer',
+            title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+            amount: (Number(transfer.amount || 0) / 1e8) * (isSent ? -1 : 1),
+            status: 'Completed',
+            timestamp: Number(tx.transaction.timestamp || 0) / 1_000_000,
+            from: String(fromPrincipal || 'Unknown'),
+            to: String(toPrincipal || 'Unknown'),
+            fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e8 : 0,
+            tokenType: 'ckbtc'
+          } as UnifiedTx
+        })
+        .filter(Boolean) as UnifiedTx[]
+      transactions.sort((a, b) => b.timestamp - a.timestamp)
+      return transactions
+    }
+    return []
+  } catch (e: any) {
+    console.error('Error fetching ckBTC transaction history:', e)
+    return []
+  }
+}
+
+// -----------------------------
 // Aggregator
 // -----------------------------
 export async function getTransactionHistory(
@@ -328,24 +427,38 @@ export async function getTransactionHistory(
   options?: { icpAccount?: string | null }
 ): Promise<UnifiedTx[]> {
   try {
+    let items: UnifiedTx[] = []
     switch (network.toLowerCase()) {
       case 'ethereum':
       case 'sepolia':
-        return await getETHTransactionHistory(addressOrPrincipal, 'sepolia', limit)
+        items = await getETHTransactionHistory(addressOrPrincipal, 'sepolia', limit)
+        break
       case 'bitcoin':
       case 'testnet':
-        return await getBitcoinTransactionHistory(addressOrPrincipal, 'testnet', limit)
+        items = await getBitcoinTransactionHistory(addressOrPrincipal, 'testnet', limit)
+        break
       case 'solana':
       case 'devnet':
-        return await getSolanaTransactionHistory(addressOrPrincipal, 'devnet', limit)
+        items = await getSolanaTransactionHistory(addressOrPrincipal, 'devnet', limit)
+        break
       case 'internet_computer':
       case 'icp':
-        return await getICRCTransactionHistory('icp', addressOrPrincipal, options?.icpAccount ?? null, limit)
+        items = await getICRCTransactionHistory('icp', addressOrPrincipal, options?.icpAccount ?? null, limit)
+        break
       case 'fradium':
-        return await getICRCTransactionHistory('fradium', addressOrPrincipal, null, limit)
+        items = await getICRCTransactionHistory('fradium', addressOrPrincipal, null, limit)
+        break
+      case 'ckbtc':
+        items = await getCkBtcTransactionHistory(addressOrPrincipal, limit)
+        break
       default:
         throw new Error(`Unsupported network: ${network}`)
     }
+
+    // Persist snapshot best-effort
+    const key = buildHistoryStorageKey(addressOrPrincipal, network, options?.icpAccount || null)
+    saveTransactionsSnapshot(key, items).catch(() => {})
+    return items
   } catch (e) {
     console.error(`Error fetching transaction history for ${network}:`, e)
     return []
@@ -357,6 +470,7 @@ export default {
   getSolanaTransactionHistory,
   getBitcoinTransactionHistory,
   getICRCTransactionHistory,
+  getCkBtcTransactionHistory,
   getTransactionHistory
 }
 

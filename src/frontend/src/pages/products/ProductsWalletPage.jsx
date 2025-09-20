@@ -201,10 +201,10 @@ const ProductsWallet = () => {
 
         {/* Content over background */}
         <div className="relative z-10 mx-auto w-full max-w-[1300px] pt-12 pb-[380px] md:pb-[600px]">
-          {/* Cards row */}
+          {/* Cards row with reveal */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
             {[0, 1, 2].map((_, idx) => (
-              <div key={idx} className="rounded-2xl border border-white/10 bg-[#0B0F18]/60 backdrop-blur-[2px] p-5">
+              <div key={idx} className="rounded-2xl border border-white/10 bg-[#0B0F18]/60 backdrop-blur-[2px] p-5 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
                 <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5" />
                 <div className="flex items-end justify-between">
                   <div>

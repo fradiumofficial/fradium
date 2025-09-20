@@ -326,15 +326,48 @@ export default function DetailReportPage() {
 
       setIsLoading(true);
       try {
-        const response = await backend.get_report(parseInt(id));
+        console.log("Fetching report with ID:", id, "Type:", typeof id);
+        // Try different conversion methods
+        const reportId = parseInt(id);
+        console.log("Converted to parseInt:", reportId);
+        // Try with different data types
+        console.log("Trying with parseInt:", reportId);
+        let response = await backend.get_report(reportId);
+
         if (response.Err) {
-          toast.error(response.Err);
+          console.log("parseInt failed, trying with Number:", Number(id));
+          response = await backend.get_report(Number(id));
+        }
+
+        if (response.Err) {
+          console.log("Number failed, trying with BigInt:", BigInt(id));
+          response = await backend.get_report(BigInt(id));
+        }
+        console.log("Final backend response:", response);
+        if (response.Err) {
+          console.error("All conversion methods failed. Report not found error:", response.Err);
+          // Let's also try to get all reports to see what's available
+          console.log("Trying to get all reports to debug...");
+          const allReportsResponse = await backend.get_reports();
+          console.log("All reports:", allReportsResponse);
+          if (allReportsResponse.Ok && allReportsResponse.Ok.length > 0) {
+            console.log("Available report IDs:", allReportsResponse.Ok.map(r => r.report_id));
+            console.log("Looking for report ID:", id, "in available IDs");
+            const foundReport = allReportsResponse.Ok.find(r => r.report_id.toString() === id);
+            if (foundReport) {
+              console.log("Found report by string comparison:", foundReport);
+              setReportData(foundReport);
+              return;
+            }
+          }
+          toast.error("Report not found. Please check the URL or try again.");
         } else {
+          console.log("Report data received successfully:", response.Ok);
           setReportData(response.Ok);
         }
       } catch (error) {
-        toast.error("Failed to fetch report");
         console.error("Error fetching report:", error);
+        toast.error("Failed to fetch report");
       } finally {
         setIsLoading(false);
       }
