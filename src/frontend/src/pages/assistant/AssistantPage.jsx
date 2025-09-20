@@ -84,15 +84,7 @@ function getTimeNow() {
 
 const LOCAL_KEY = "fradium-assistant-history";
 
-const suggestedQuestions = [
-  "How do I scan a wallet address?",
-  "How can I report a suspicious address?",
-  "How does voting on reports work?",
-  "How do I earn FUM tokens?",
-  "How do I stake tokens for voting?",
-  "Does Fradium support Bitcoin and Solana?",
-  "What is Proof of Credible Contribution?",
-];
+const suggestedQuestions = ["How do I scan a wallet address?", "How can I report a suspicious address?", "How does voting on reports work?", "How do I earn FUM tokens?", "How do I stake tokens for voting?", "Does Fradium support Bitcoin and Solana?", "What is Proof of Credible Contribution?"];
 
 const Assistant = () => {
   const [input, setInput] = useState("");
@@ -108,17 +100,13 @@ const Assistant = () => {
         const parsedHistory = JSON.parse(saved);
         setHistory(parsedHistory);
       } else {
-        const initialHistory = [
-          { type: "bot", message: "I'm Fradium Assistant, your guide to safe Web3 interactions and credible contributions. How can I help you today?", time: getTimeNow() },
-        ];
+        const initialHistory = [{ type: "bot", message: "I'm Fradium Assistant, your guide to safe Web3 interactions and credible contributions. How can I help you today?", time: getTimeNow() }];
         setHistory(initialHistory);
         localStorage.setItem(LOCAL_KEY, JSON.stringify(initialHistory));
       }
     } catch (error) {
       console.error("Error loading chat history:", error);
-      const initialHistory = [
-        { type: "bot", message: "I'm Fradium Assistant, your guide to safe Web3 interactions and credible contributions. How can I help you today?", time: getTimeNow() },
-      ];
+      const initialHistory = [{ type: "bot", message: "I'm Fradium Assistant, your guide to safe Web3 interactions and credible contributions. How can I help you today?", time: getTimeNow() }];
       setHistory(initialHistory);
       localStorage.setItem(LOCAL_KEY, JSON.stringify(initialHistory));
     }
@@ -187,9 +175,7 @@ const Assistant = () => {
 
   // Clear history
   const handleClear = () => {
-    const initialHistory = [
-      { type: "bot", message: "I'm Fradium Assistant, your guide to safe Web3 interactions and credible contributions. How can I help you today?", time: getTimeNow() },
-    ];
+    const initialHistory = [{ type: "bot", message: "I'm Fradium Assistant, your guide to safe Web3 interactions and credible contributions. How can I help you today?", time: getTimeNow() }];
     updateHistory(initialHistory);
   };
 
@@ -210,7 +196,7 @@ const Assistant = () => {
 
       <div className="relative z-10">
         {/* MOBILE ONLY */}
-        <div className="block md:hidden h-screen pt-[70px] pb-[90px] px-0 w-full">
+        <div className="block md:hidden h-screen pt-[70px] pb-[90px] px-4 w-full">
           <div className="flex flex-col h-full w-full max-w-full">
             {/* Header */}
             <div className="flex items-center justify-between px-3 pt-2 pb-1">
@@ -282,8 +268,7 @@ const Assistant = () => {
                         updateHistory(errorHistory);
                       }
                       setLoading(false);
-                    }}
-                  >
+                    }}>
                     {q}
                   </li>
                 ))}
@@ -293,9 +278,9 @@ const Assistant = () => {
         </div>
 
         {/* DESKTOP ONLY */}
-        <div className="hidden md:flex overflow-hidden pt-[110px] px-0 md:px-8 flex-col md:flex-row gap-x-8">
+        <div className="hidden md:flex overflow-hidden pt-[110px] px-8 lg:px-16 xl:px-24 flex-col md:flex-row gap-x-4">
           {/* Left: Chat Area */}
-          <div className="flex-1 mx-auto rounded-[16px] border border-white/10 bg-[#000000]/50 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)]">
+          <div className="flex-1 max-w-4xl mx-auto rounded-[16px] border border-white/10 bg-[#000000]/50 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)]">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -317,22 +302,14 @@ const Assistant = () => {
             </div>
             {/* Input */}
             <div className="flex items-center gap-2 mt-auto bg-[#FFFFFF1A] rounded-3xl border border-[#2C3240] px-4 py-2 shadow-inner">
-              <input
-                type="text"
-                placeholder="Message Fradium Assistant..."
-                className="flex-1 bg-transparent outline-none border-none text-white text-base placeholder-[#B0B6BE] py-2"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={loading}
-              />
+              <input type="text" placeholder="Message Fradium Assistant..." className="flex-1 bg-transparent outline-none border-none text-white text-base placeholder-[#B0B6BE] py-2" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} disabled={loading} />
               <ButtonGreen size="sm" className="!rounded-full !px-3 !py-3" onClick={handleSend} disabled={loading || !input.trim()}>
                 <img src="/assets/icons/submit.svg" alt="Send" />
               </ButtonGreen>
             </div>
           </div>
           {/* Right: Suggested Question */}
-          <div className="w-full md:w-[340px] mx-auto rounded-[16px] border border-white/10 bg-[#000000]/60 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)] md:mt-0 overflow-hidden">
+          <div className="w-full md:w-[300px] mx-auto rounded-[16px] border border-white/10 bg-[#000000]/60 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-6 md:p-8 flex flex-col h-[calc(100vh-180px)] md:mt-0 overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <div className="text-lg font-medium text-white">Suggested Question</div>
             </div>
@@ -378,8 +355,7 @@ const Assistant = () => {
                       updateHistory(errorHistory);
                     }
                     setLoading(false);
-                  }}
-                >
+                  }}>
                   {q}
                 </li>
               ))}

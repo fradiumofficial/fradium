@@ -56,9 +56,8 @@ export default function ReportPage() {
         className={`transition-all ease-out ${show ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95"}`}
         style={{
           transitionDelay: `${delay}ms`,
-          transitionDuration: `${duration}ms`
-        }}
-      >
+          transitionDuration: `${duration}ms`,
+        }}>
         {children}
       </div>
     );
@@ -266,7 +265,6 @@ export default function ReportPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredAndSortedData.slice(startIndex, endIndex);
 
-
   // Handle sort change
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -327,7 +325,7 @@ export default function ReportPage() {
       setIsLoading(true);
 
       // Add a small delay to show loading animation
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       const response = await backend.get_reports();
       setIsLoading(false);
@@ -353,7 +351,7 @@ export default function ReportPage() {
             background-position: 200% 0;
           }
         }
-        
+
         @keyframes progressFill {
           0% {
             width: 0%;
@@ -362,11 +360,11 @@ export default function ReportPage() {
             width: var(--progress-width);
           }
         }
-        
+
         .animate-shimmer {
           animation: shimmer 2s ease-in-out infinite;
         }
-        
+
         .animate-progress-fill {
           animation: progressFill 0.8s ease-out;
         }
@@ -392,14 +390,21 @@ export default function ReportPage() {
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium mb-3 sm:mb-4">Community Vote Reports</h1>
                   </Reveal>
                   <Reveal delay={200} duration={600}>
-                    <p className="text-base sm:text-base font-normal text-gray-300 max-w-4xl">Review wallet addresses reported by the community for suspicious or fraudulent activity. Your action might help protect the Web3 ecosystem by participating in our decentralized security network. <a href="#" className="underline text-[#99E39E] hover:text-[#99E39E]/80 transition-colors duration-200">How Community Voting Works?</a></p>
+                    <p className="text-base sm:text-base font-normal text-gray-300 max-w-4xl">
+                      Review wallet addresses reported by the community for suspicious or fraudulent activity. Your action might help protect the Web3 ecosystem by participating in our decentralized security network.{" "}
+                      <a href="#" className="underline text-[#99E39E] hover:text-[#99E39E]/80 transition-colors duration-200">
+                        How Community Voting Works?
+                      </a>
+                    </p>
                   </Reveal>
                 </div>
 
                 {/* Create Report Button */}
                 <div className="flex-shrink-0 mt-2 md:mt-0">
                   <Reveal delay={300} duration={600}>
-                    <ButtonGreen size="sm" fontWeight="medium" onClick={() => navigate("/reports/create")}>Create Report</ButtonGreen>
+                    <ButtonGreen size="sm" fontWeight="medium" onClick={() => navigate("/reports/create")}>
+                      Create Report
+                    </ButtonGreen>
                   </Reveal>
                 </div>
               </div>
@@ -410,14 +415,11 @@ export default function ReportPage() {
                   <div className="flex max-w-6xl mx-auto mt-16 items-stretch gap-3">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors duration-200 group-focus-within:text-[#99E39E]" />
-                      <Input
-                        placeholder="Search addresses, status, risk level..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="h-12 rounded-full pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-[#99E39E]/50 focus:ring-2 focus:ring-[#99E39E]/20 transition-all duration-300 ease-out hover:bg-white/8 hover:border-white/20 group"
-                      />
+                      <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="h-12 rounded-full pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-[#99E39E]/50 focus:ring-2 focus:ring-[#99E39E]/20 transition-all duration-300 ease-out hover:bg-white/8 hover:border-white/20 group" />
                     </div>
-                    <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => { }}>Filter</ButtonGreen>
+                    <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => {}}>
+                      Filter
+                    </ButtonGreen>
                   </div>
                 </Reveal>
 
@@ -433,12 +435,9 @@ export default function ReportPage() {
                         { field: "category", label: "Category" },
                         { field: "chain", label: "Chain" },
                       ].map((sortOption, index) => (
-                        <Reveal key={sortOption.field} delay={600 + (index * 50)} duration={400}>
+                        <Reveal key={sortOption.field} delay={600 + index * 50} duration={400}>
                           <div>
-                            <Button
-                              onClick={() => handleSort(sortOption.field)}
-                              className="rounded-full h-9 px-4 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10"
-                            >
+                            <Button onClick={() => handleSort(sortOption.field)} className="rounded-full h-9 px-4 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10">
                               {sortOption.label}
                               {getSortIcon(sortOption.field)}
                             </Button>
@@ -463,7 +462,6 @@ export default function ReportPage() {
             <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
             <div className="relative z-10">
               <div className="container mx-auto">
-
                 {/* Filters/Search moved to header */}
 
                 {/* Reports Cards */}
@@ -536,8 +534,7 @@ export default function ReportPage() {
                                 onClick={() => {
                                   console.log("Navigating to report ID:", report.id, "Type:", typeof report.id);
                                   navigate(`/reports/${report.id}`);
-                                }}
-                              >
+                                }}>
                                 View Details
                                 <ArrowUpRight className="w-3 h-3 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                               </Button>
@@ -553,7 +550,7 @@ export default function ReportPage() {
                                 className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all duration-500 ease-out group-hover:from-red-300 group-hover:to-red-400"
                                 style={{
                                   width: `${report.yesPercentage}%`,
-                                  '--progress-width': `${report.yesPercentage}%`
+                                  "--progress-width": `${report.yesPercentage}%`,
                                 }}
                               />
                             </div>
@@ -571,11 +568,7 @@ export default function ReportPage() {
                           Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} reports
                         </span>
                         <div className="flex items-center space-x-2">
-                          <Button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10"
-                          >
+                          <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10">
                             <ChevronLeft className="w-4 h-4 sm:mr-1 transition-transform duration-200 hover:-translate-x-0.5" />
                             <span className="hidden sm:inline">Previous</span>
                           </Button>
@@ -595,25 +588,14 @@ export default function ReportPage() {
                               }
 
                               return (
-                                <Button
-                                  key={pageNum}
-                                  onClick={() => handlePageChange(pageNum)}
-                                  className={`w-8 h-8 p-0 text-sm transition-all duration-200 ease-out ${currentPage === pageNum
-                                    ? "bg-white text-black scale-110 shadow-lg"
-                                    : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white hover:shadow-lg hover:shadow-white/10"
-                                    }`}
-                                >
+                                <Button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`w-8 h-8 p-0 text-sm transition-all duration-200 ease-out ${currentPage === pageNum ? "bg-white text-black scale-110 shadow-lg" : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white hover:shadow-lg hover:shadow-white/10"}`}>
                                   {pageNum}
                                 </Button>
                               );
                             })}
                           </div>
 
-                          <Button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10"
-                          >
+                          <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10">
                             <span className="hidden sm:inline">Next</span>
                             <ChevronRight className="w-4 h-4 sm:ml-1 transition-transform duration-200 hover:translate-x-0.5" />
                           </Button>

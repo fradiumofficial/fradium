@@ -11,7 +11,7 @@ export default function AIAssistantWidget() {
   const { user, identity } = useAuth();
   const walletContext = useWallet();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [messages, setMessages] = React.useState([{ id: "m1", role: "assistant", text: "Hello! I'm your Fradium AI Assistant. How can I help you today?", ts: Date.now() }]);
+  const [messages, setMessages] = React.useState([{ id: "m1", role: "assistant", text: "Hello! I'm your Fradium Wallet Agent. How can I help you today?", ts: Date.now() }]);
   const [input, setInput] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [imageLoaded, setImageLoaded] = React.useState(false);
@@ -227,7 +227,7 @@ export default function AIAssistantWidget() {
         }
       }
       if (!didLoadFromStorageRef.current) {
-        setMessages([{ id: `m1-${Date.now()}`, role: "assistant", text: "Hello! I'm your Fradium AI Assistant. How can I help you today?", ts: Date.now() }]);
+        setMessages([{ id: `m1-${Date.now()}`, role: "assistant", text: "Hello! I'm your Fradium Wallet Agent. How can I help you today?", ts: Date.now() }]);
       }
     } catch (_e) {}
   }, [getStorageKey]);
@@ -310,7 +310,7 @@ export default function AIAssistantWidget() {
           {/* Fallback loading circle */}
           {!imageLoaded && <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 animate-pulse"></div>}
           {/* Fradium Agent Image */}
-          <img src="/assets/images/fradium-agent.webp" alt="Fradium Agent" className={`w-8 h-8 md:w-9 md:h-9 rounded-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} onLoad={() => setImageLoaded(true)} onError={() => setImageLoaded(false)} />
+          <img src="/assets/images/fradium-agent.webp" alt="Fradium Wallet Agent" className={`w-8 h-8 md:w-9 md:h-9 rounded-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} onLoad={() => setImageLoaded(true)} onError={() => setImageLoaded(false)} />
           <span className="sr-only">AI Assistant</span>
         </button>
       </div>
@@ -354,9 +354,9 @@ export default function AIAssistantWidget() {
                     {/* Fallback loading circle */}
                     {!imageLoaded && <div className="w-5 h-5 rounded-full bg-white/20 animate-pulse"></div>}
                     {/* Fradium Agent Image */}
-                    <img src="/assets/images/fradium-agent.webp" alt="Fradium Agent" className={`w-5 h-5 rounded-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} onLoad={() => setImageLoaded(true)} onError={() => setImageLoaded(false)} />
+                    <img src="/assets/images/fradium-agent.webp" alt="Fradium Wallet Agent" className={`w-5 h-5 rounded-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} onLoad={() => setImageLoaded(true)} onError={() => setImageLoaded(false)} />
                   </div>
-                  <div className="text-white font-medium">Fradium Agent</div>
+                  <div className="text-white font-medium">Fradium Wallet Agent</div>
                 </div>
                 <button onClick={handleToggle} className="text-white/70 hover:text-white transition-colors">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
