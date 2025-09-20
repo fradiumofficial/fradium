@@ -63,7 +63,7 @@ export interface AIAnalysisResult {
 
 export interface CombinedAnalysisResult extends AIAnalysisResult {
   analysisSource: 'ai' | 'ai_and_community' | 'community' | 'community_and_ai';
-  finalStatus: 'safe_by_both' | 'safe_by_ai' | 'unsafe_by_ai' | 'unsafe_by_community';
+  finalStatus: 'safe_by_both' | 'safe_by_ai' | 'unsafe_by_ai' | 'unsafe_by_community' | 'safe_by_community';
   communityAnalysis?: AnalysisResult;
   aiAnalysis?: AnalysisResult;
 }

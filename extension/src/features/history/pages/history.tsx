@@ -55,7 +55,9 @@ function History() {
 
         const mapped: TransactionHistoryItem[] = onchain.map((t) => ({
           id: t.hash,
-          tokenType: t.chain === 'Bitcoin' ? 'Bitcoin' : t.chain === 'Ethereum' ? 'Ethereum' : t.chain === 'Solana' ? 'Solana' : 'ICP',
+          tokenType: t.tokenType
+            ? (t.tokenType === 'icp' ? 'ICP' : t.tokenType === 'fradium' ? 'Fradium' : t.tokenType === 'ckbtc' ? 'ckBTC' : (t.chain === 'Bitcoin' ? 'Bitcoin' : t.chain === 'Ethereum' ? 'Ethereum' : t.chain === 'Solana' ? 'Solana' : 'ICP'))
+            : (t.chain === 'Bitcoin' ? 'Bitcoin' : t.chain === 'Ethereum' ? 'Ethereum' : t.chain === 'Solana' ? 'Solana' : 'ICP'),
           direction: t.amount >= 0 ? 'Receive' as const : 'Send' as const,
           amount: Math.abs(t.amount),
           status: t.status as any,
@@ -92,10 +94,16 @@ function History() {
     switch (tokenType) {
       case 'Bitcoin':
         return CDN.tokens.bitcoin;
+      case 'Ethereum':
+        return CDN.tokens.eth;
       case 'Solana':
         return CDN.tokens.solana;
+      case 'ICP':
+        return CDN.tokens.icp;
       case 'Fradium':
         return CDN.tokens.fum;
+      case 'ckBTC':
+        return CDN.tokens.bitcoin;
       default:
         return CDN.tokens.unknown;
     }

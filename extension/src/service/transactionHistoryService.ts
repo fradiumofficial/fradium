@@ -2,9 +2,10 @@
 // Adapted from src/frontend/src/core/services/historyTransactionService.js
 
 import { Principal } from '@dfinity/principal'
-import { icp_index } from '../declarations/icp_index'
-import { fradium_index } from '../declarations/fradium_index'
-import { ckbtc_index } from '../declarations/ckbtc_index'
+import { createActor as createIcpIndexActor, canisterId as icpIndexCanisterId } from '../declarations/icp_index'
+import { createActor as createFradiumIndexActor, canisterId as fradiumIndexCanisterId } from '../declarations/fradium_index'
+import { createActor as createCkbtcIndexActor, canisterId as ckbtcIndexCanisterId } from '../declarations/ckbtc_index'
+import { createAgentForCanister } from '~lib/utils/utils'
 
 export type NetworkKey = 'ethereum' | 'bitcoin' | 'solana' | 'icp' | 'fradium' | 'ckbtc' | 'internet_computer'
 
@@ -31,6 +32,12 @@ export type UnifiedTx = {
   tokenType?: 'icp' | 'fradium' | 'ckbtc'
 }
 
+// Pageable ICP history response
+export type IcrcPage = {
+  items: UnifiedTx[]
+  nextStart?: string
+}
+
 // Environment configuration (use same keys as other extension services)
 const ETHERSCAN_API_KEY = (typeof process !== 'undefined' && (
   (process as any)?.env?.PLASMO_PUBLIC_ETHERSCAN_API_KEY ||
@@ -53,6 +60,39 @@ const API_URLS = {
     mainnet: 'https://api.mainnet-beta.solana.com'
   }
 }
+
+// ---------------------------------
+// Resolve effective canister IDs with sane fallbacks (mirrors walletContext)
+// ---------------------------------
+const EFFECTIVE_ICP_INDEX_CANISTER_ID =
+  icpIndexCanisterId ||
+  (typeof process !== 'undefined' && (
+    (process as any).env?.VITE_CANISTER_ID_ICP_INDEX ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_ICP_INDEX ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_ICP_INDEX ||
+    (process as any).env?.CANISTER_ID_ICP_INDEX
+  )) ||
+  'qhbym-qaaaa-aaaaa-aaafq-cai'
+
+const EFFECTIVE_FRADIUM_INDEX_CANISTER_ID =
+  fradiumIndexCanisterId ||
+  (typeof process !== 'undefined' && (
+    (process as any).env?.VITE_CANISTER_ID_FRADIUM_INDEX ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_INDEX ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_FRADIUM_INDEX ||
+    (process as any).env?.CANISTER_ID_FRADIUM_INDEX
+  )) ||
+  'vjrnc-hiaaa-aaaam-aejza-cai'
+
+const EFFECTIVE_CKBTC_INDEX_CANISTER_ID =
+  ckbtcIndexCanisterId ||
+  (typeof process !== 'undefined' && (
+    (process as any).env?.VITE_CANISTER_ID_CKBTC_INDEX ||
+    (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_INDEX ||
+    (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_INDEX ||
+    (process as any).env?.CANISTER_ID_CKBTC_INDEX
+  )) ||
+  'mm444-5iaaa-aaaar-qaabq-cai'
 
 // ---------------------------------
 // Simple persistence (best-effort)
@@ -301,17 +341,20 @@ export async function getICRCTransactionHistory(tokenType: 'icp' | 'fradium', pr
 
     let transactions: UnifiedTx[] = []
     if (tokenType === 'icp') {
-      const result = await (icp_index as any).get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
+      const agent = createAgentForCanister(EFFECTIVE_ICP_INDEX_CANISTER_ID as any, undefined)
+      const indexActor = createIcpIndexActor(EFFECTIVE_ICP_INDEX_CANISTER_ID as any, { agent: agent as any }) as any
+      const result = await indexActor.get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
       if (result && (result as any).Ok && (result as any).Ok.transactions) {
         const txs = (result as any).Ok.transactions
         transactions = txs
           .map((tx: any) => {
             const transfer = tx.transaction?.operation?.Transfer
             if (!transfer) return null
-            if (!icpAccount) throw new Error('ICP account identifier is required for ICP transaction comparison')
             const fromPrincipal = transfer.from
             const toPrincipal = transfer.to
-            const isSent = fromPrincipal === String(icpAccount).toLowerCase()
+            const fromId = String(fromPrincipal || '').toLowerCase()
+            const myId = String(icpAccount || '').toLowerCase()
+            const isSent = myId ? (fromId === myId) : false
             const otherParty = isSent ? toPrincipal : fromPrincipal
             const otherPartyStr = String(otherParty)
             return {
@@ -330,7 +373,9 @@ export async function getICRCTransactionHistory(tokenType: 'icp' | 'fradium', pr
           .filter(Boolean) as UnifiedTx[]
       }
     } else if (tokenType === 'fradium') {
-      const result = await (fradium_index as any).get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
+      const agent = createAgentForCanister(EFFECTIVE_FRADIUM_INDEX_CANISTER_ID as any, undefined)
+      const indexActor = createFradiumIndexActor(EFFECTIVE_FRADIUM_INDEX_CANISTER_ID as any, { agent: agent as any }) as any
+      const result = await indexActor.get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
       if (result && (result as any).Ok && (result as any).Ok.transactions) {
         const txs = (result as any).Ok.transactions
         transactions = txs
@@ -375,6 +420,68 @@ export async function getICRCTransactionHistory(tokenType: 'icp' | 'fradium', pr
   }
 }
 
+// ---------------------------------
+// ICP pageable history via icp_index (supports 'start' cursor)
+// ---------------------------------
+export async function getICPTransactionHistoryPage(
+  principalText: string,
+  icpAccount: string | null,
+  limit = 20,
+  start?: string | bigint
+): Promise<IcrcPage> {
+  try {
+    if (!principalText) throw new Error('Principal is required')
+    const principalObj = Principal.fromText(principalText)
+    const agent = createAgentForCanister(EFFECTIVE_ICP_INDEX_CANISTER_ID as any, undefined)
+    const indexActor = createIcpIndexActor(EFFECTIVE_ICP_INDEX_CANISTER_ID as any, { agent: agent as any }) as any
+    const result = await indexActor.get_account_transactions({
+      account: { owner: principalObj as any, subaccount: [] },
+      start: typeof start !== 'undefined' ? [BigInt(start as any)] : [],
+      max_results: BigInt(limit)
+    })
+
+    let items: UnifiedTx[] = []
+    let nextStart: string | undefined
+    if (result && (result as any).Ok && (result as any).Ok.transactions) {
+      const txs = (result as any).Ok.transactions as any[]
+      items = txs
+        .map((tx: any) => {
+          const transfer = tx.transaction?.operation?.Transfer
+          if (!transfer) return null
+          const fromId = String(transfer.from || '').toLowerCase()
+          const myId = String(icpAccount || '').toLowerCase()
+          const isSent = myId ? (fromId === myId) : false
+          const otherPartyStr = String(isSent ? transfer.to : transfer.from)
+          return {
+            hash: String(tx.id),
+            chain: 'Internet Computer',
+            title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+            amount: (Number(transfer.amount?.e8s || 0) / 1e8) * (isSent ? -1 : 1),
+            status: 'Completed',
+            timestamp: Number(tx.transaction.timestamp?.[0]?.timestamp_nanos || 0) / 1_000_000,
+            from: String(transfer.from || 'Unknown'),
+            to: String(transfer.to || 'Unknown'),
+            fee: transfer.fee?.e8s ? Number(transfer.fee.e8s) / 1e8 : 0,
+            tokenType: 'icp'
+          } as UnifiedTx
+        })
+        .filter(Boolean) as UnifiedTx[]
+
+      // Compute nextStart using the last tx id in this page
+      if (txs.length > 0) {
+        const last = txs[txs.length - 1]
+        nextStart = String(last?.id)
+      }
+    }
+
+    items.sort((a, b) => b.timestamp - a.timestamp)
+    return { items, nextStart }
+  } catch (e: any) {
+    console.error('Error fetching pageable ICP transaction history:', e)
+    return { items: [], nextStart: undefined }
+  }
+}
+
 // -----------------------------
 // ckBTC via ckbtc_index (ICRC)
 // -----------------------------
@@ -382,7 +489,9 @@ export async function getCkBtcTransactionHistory(principalText: string, limit = 
   try {
     if (!principalText) throw new Error('Principal is required')
     const principalObj = Principal.fromText(principalText)
-    const result = await (ckbtc_index as any).get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
+    const agent = createAgentForCanister(EFFECTIVE_CKBTC_INDEX_CANISTER_ID as any, undefined)
+    const indexActor = createCkbtcIndexActor(EFFECTIVE_CKBTC_INDEX_CANISTER_ID as any, { agent: agent as any }) as any
+    const result = await indexActor.get_account_transactions({ account: { owner: principalObj as any, subaccount: [] }, start: [], max_results: BigInt(limit) })
     if (result && (result as any).Ok && (result as any).Ok.transactions) {
       const txs = (result as any).Ok.transactions
       const transactions = txs
@@ -470,6 +579,7 @@ export default {
   getSolanaTransactionHistory,
   getBitcoinTransactionHistory,
   getICRCTransactionHistory,
+  getICPTransactionHistoryPage,
   getCkBtcTransactionHistory,
   getTransactionHistory
 }

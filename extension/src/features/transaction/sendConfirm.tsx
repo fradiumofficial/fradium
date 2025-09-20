@@ -6,12 +6,12 @@ import { useAuth } from "~lib/context/authContext"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { TxHistoryService } from "~service/txHistoryService"
 
-type NetworkKey = "btc" | "eth" | "sol"
+type NetworkKey = "btc" | "eth" | "sol" | "icp"
 
 export default function SendConfirm() {
   const navigate = useNavigate()
   const location = useLocation() as any
-  const { walletActor } = useWallet() as any
+  const { walletActor, sendIcrcTransfer } = useWallet() as any
   const { identity } = useAuth() as any
 
   // Context passed from analyze result page
@@ -25,6 +25,7 @@ export default function SendConfirm() {
       btc: { symbol: "BTC", tokenType: "Bitcoin" },
       eth: { symbol: "ETH", tokenType: "Ethereum" },
       sol: { symbol: "SOL", tokenType: "Solana" },
+      icp: { symbol: "ICP", tokenType: "Internet Computer" },
     }
     return map[(selectedNetwork as NetworkKey) || "btc"]
   }, [selectedNetwork])
@@ -38,6 +39,8 @@ export default function SendConfirm() {
         return BigInt(Math.floor(v * 1e18))
       case "sol":
         return BigInt(Math.floor(v * 1e9))
+      case "icp":
+        return BigInt(Math.floor(v * 1e8))
       default:
         return 0n
     }
@@ -63,6 +66,12 @@ export default function SendConfirm() {
         case "sol":
           txResult = await walletActor.solana_send(recipientAddress, amt)
           break
+        case "icp": {
+          const res = await sendIcrcTransfer("icp", recipientAddress, parseFloat(amount))
+          if (!res?.success) throw new Error(res?.error || "ICP transfer failed")
+          txResult = res?.blockIndex || ""
+          break
+        }
         default:
           throw new Error("Unsupported network")
       }
