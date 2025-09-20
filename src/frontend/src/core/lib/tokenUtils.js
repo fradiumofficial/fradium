@@ -7,7 +7,7 @@ import { ckbtc_minter } from "declarations/ckbtc_minter";
 import { cketh_ledger } from "declarations/cketh_ledger";
 import { cketh_minter } from "declarations/cketh_minter";
 import { Principal } from "@dfinity/principal";
-import { TOKENS_CONFIG, API_KEYS, API_URLS, NETWORK_CONFIG, COINGECKO_IDS, COINMARKETCAP_IDS, COINPAPRIKA_IDS, FALLBACK_PRICES, TOKEN_TYPE_MAPPINGS, DEFAULT_DECIMALS, CACHE_CONFIG } from "@/core/config/tokenConfig.js";
+import { TOKENS_CONFIG, API_KEYS, NETWORK_CONFIG, COINGECKO_IDS, COINMARKETCAP_IDS, COINPAPRIKA_IDS, FALLBACK_PRICES, TOKEN_TYPE_MAPPINGS, DEFAULT_DECIMALS, CACHE_CONFIG } from "@/core/config/tokenConfig.js";
 
 // Helper function to safely stringify objects that may contain BigInt
 function safeStringify(obj) {
@@ -411,11 +411,6 @@ export async function getBalance(tokenId, principal, useCache = true) {
     } catch (error) {
       lastError = error;
       console.warn(`Balance fetch attempt ${attempt}/${maxRetries} failed for ${token.symbol}:`, error.message);
-
-      // If this is not the last attempt, wait a bit before retrying
-      if (attempt < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
-      }
     }
   }
 
@@ -676,11 +671,6 @@ export async function getUSD(tokenId) {
     } catch (error) {
       lastError = error;
       console.warn(`USD price fetch attempt ${attempt}/${maxRetries} failed for ${token.symbol}:`, error.message);
-
-      // If this is not the last attempt, wait a bit before retrying
-      if (attempt < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
-      }
     }
   }
 

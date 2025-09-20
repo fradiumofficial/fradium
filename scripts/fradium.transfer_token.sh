@@ -7,7 +7,7 @@ if [ -z "${1:-}" ]; then
 fi
 
 DESTINATION_ADDRESS="$1"
-AMOUNT="${2:-150010000}"  # Default amount if not provided
+AMOUNT="${2:-15001000000}"  # Default amount if not provided
 
 
 echo "Transferring ${AMOUNT} tokens to ${DESTINATION_ADDRESS}..."
