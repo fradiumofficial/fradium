@@ -5,42 +5,55 @@ import { useNavigate } from "react-router";
 import SidebarButton from "@/core/components/SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
 
-// Custom hook untuk deteksi mobile
+// Custom hook untuk deteksi mobile - optimized
 function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 600;
+    }
+    return false;
+  });
+
   React.useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 600);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    let timeoutId;
+    const check = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsMobile(window.innerWidth <= 600);
+      }, 100); // Debounce untuk menghindari terlalu banyak re-render
+    };
+
+    window.addEventListener("resize", check, { passive: true });
+    return () => {
+      window.removeEventListener("resize", check);
+      clearTimeout(timeoutId);
+    };
   }, []);
+
   return isMobile;
 }
 
-// Tambahkan komponen carousel mobile di atas HomePage
-function HowItWorksMobileCarousel() {
-  const steps = [
-    {
-      img: "/assets/images/step1.png",
-    },
-    {
-      img: "/assets/images/step2.png",
-    },
-    {
-      img: "/assets/images/step3.png",
-    },
-  ];
+// Tambahkan komponen carousel mobile di atas HomePage - optimized
+const HowItWorksMobileCarousel = React.memo(() => {
+  const steps = React.useMemo(() => [
+    { img: "/assets/images/step1.png" },
+    { img: "/assets/images/step2.png" },
+    { img: "/assets/images/step3.png" },
+  ], []);
+
   const [active, setActive] = React.useState(0);
   const touchStartX = React.useRef(null);
   const touchEndX = React.useRef(null);
 
-  const handleTouchStart = (e) => {
+  const handleTouchStart = React.useCallback((e) => {
     touchStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchMove = (e) => {
+  }, []);
+
+  const handleTouchMove = React.useCallback((e) => {
     touchEndX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = () => {
+  }, []);
+
+  const handleTouchEnd = React.useCallback(() => {
     if (touchStartX.current === null || touchEndX.current === null) return;
     const diff = touchStartX.current - touchEndX.current;
     if (Math.abs(diff) > 40) {
@@ -52,7 +65,7 @@ function HowItWorksMobileCarousel() {
     }
     touchStartX.current = null;
     touchEndX.current = null;
-  };
+  }, [active, steps.length]);
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -70,14 +83,15 @@ function HowItWorksMobileCarousel() {
       </div>
     </div>
   );
-}
+});
 
 const HomePage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, handleLogin } = useAuth();
+  const isMobile = useIsMobile();
 
   // Fungsi untuk handle launch wallet - cek login dulu
-  const handleLaunchWallet = async () => {
+  const handleLaunchWallet = React.useCallback(async () => {
     if (!isAuthenticated) {
       // Jika belum login, lakukan login dulu
       await handleLogin(({ user, isAuthenticated: authStatus }) => {
@@ -88,7 +102,7 @@ const HomePage = () => {
       // Jika sudah login, langsung redirect ke wallet
       navigate("/wallet");
     }
-  };
+  }, [isAuthenticated, handleLogin, navigate]);
 
   return (
     <div className="mt-10 bg-transparent" style={{ background: "transparent" }}>
@@ -138,7 +152,7 @@ const HomePage = () => {
         </div>
       </section>
       {/* How it works section */}
-      {useIsMobile() ? (
+      {isMobile ? (
         // MOBILE LAYOUT
         <section className="w-full flex flex-col items-center mt-16 px-4 bg-transparent" style={{ background: "transparent" }}>
           <div className="text-center mb-6">
@@ -232,7 +246,7 @@ const HomePage = () => {
 
       {/* KEY FEATURE SECTION */}
       <section>
-        {useIsMobile() ? (
+        {isMobile ? (
           // MOBILE LAYOUT
           <div className="w-full flex flex-col items-center px-4 py-10 bg-transparent">
             <span className="text-[#7be495] text-[13px] font-medium tracking-[0.18em] uppercase mb-2">KEY FEATURE</span>
