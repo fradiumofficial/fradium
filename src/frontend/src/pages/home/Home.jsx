@@ -210,6 +210,72 @@ const Home = React.memo(() => {
           box-shadow: 0 30px 60px rgba(0,0,0,0.6);
         }
         
+        /* Custom Fraud Detection Card Hover */
+        .fraud-detection-hover {
+          transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          position: relative;
+          overflow: hidden;
+        }
+        .fraud-detection-hover:hover {
+          transform: translateY(-10px) scale(1.05);
+          box-shadow: 
+            0 25px 50px rgba(0,0,0,0.6),
+            0 0 20px rgba(153, 227, 158, 0.15);
+          border-color: rgba(153, 227, 158, 0.2);
+        }
+        
+        /* Fraud Detection Background Image Hover */
+        .fraud-bg-hover {
+          transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .fraud-detection-hover:hover .fraud-bg-hover {
+          transform: scale(1.1);
+          filter: brightness(1.1) contrast(1.05);
+        }
+        
+        /* Fraud Detection Content Hover */
+        .fraud-content-hover {
+          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .fraud-detection-hover:hover .fraud-content-hover {
+          transform: translateY(-3px);
+          text-shadow: 0 0 8px rgba(153, 227, 158, 0.3);
+        }
+        
+        /* Fraud Detection Search Icon Hover */
+        .fraud-search-hover {
+          transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .fraud-detection-hover:hover .fraud-search-hover {
+          transform: scale(1.08);
+          filter: drop-shadow(0 0 12px rgba(153, 227, 158, 0.4));
+        }
+        
+        /* Fraud Detection Ring Hover */
+        .fraud-ring-hover {
+          transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .fraud-detection-hover:hover .fraud-ring-hover {
+          transform: scale(1.05);
+          opacity: 0.9;
+        }
+        
+        /* Glow effect for Fraud Detection */
+        .fraud-glow {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(circle at center, rgba(153, 227, 158, 0.03) 0%, transparent 60%);
+          opacity: 0;
+          transition: opacity 0.4s ease;
+          pointer-events: none;
+        }
+        .fraud-detection-hover:hover .fraud-glow {
+          opacity: 1;
+        }
+        
         /* Smooth scale animation */
         .card-scale {
           transition: transform 0.3s ease-out;
@@ -322,11 +388,24 @@ const Home = React.memo(() => {
         <div className="relative z-10 mx-auto w-full max-w-6xl pt-14">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
             {/* Card kiri: About Fradium Web3 Security */}
-            <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] card-hover card-entrance stagger-1">
+            <motion.div
+              className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] fraud-detection-hover card-entrance stagger-1"
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              whileHover={{
+                y: -10,
+                scale: 1.05,
+                transition: { duration: 0.4, ease: "easeOut" }
+              }}
+            >
+              {/* Glow effect overlay */}
+              <div className="fraud-glow"></div>
+
               {/* decorative grid/beam overlay */}
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(800px_300px_at_70%_-80px,rgba(153,227,158,0.10),transparent_65%)] opacity-60" />
               {/* Header row: title only; CTA moved to absolute top-right */}
-              <div className="relative z-[1] flex items-center gap-4">
+              <div className="relative z-[1] flex items-center gap-4 fraud-content-hover">
                 <h3 className="text-xl md:text-2xl lg:text-3xl leading-[1.1] font-medium text-white">
                   About <span className="text-[#99E39E]">Fradium</span>
                   <br /> Web3 Security
@@ -334,28 +413,31 @@ const Home = React.memo(() => {
               </div>
               {/* CTA button pinned to top-right corner */}
               <div className="absolute top-6 right-6 md:top-8 md:right-8 lg:top-10 lg:right-10 z-[2]">
-                <div className="btn-hover gentle-pulse">
+                <div className="btn-hover rounded-full gentle-pulse">
                   <ButtonGreen size="md" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[23px] h-[23px]" fontWeight="medium" onClick={handleLaunchWallet}>
                     Launch Wallet
                   </ButtonGreen>
                 </div>
               </div>
               {/* Description block (controlled by padding) */}
-              <div className="relative z-[1] pt-16 md:pt-20 lg:pt-32">
+              <div className="relative z-[1] pt-16 md:pt-20 lg:pt-32 fraud-content-hover">
                 <p className="max-w-md md:max-w-lg text-xs md:text-sm font-normal text-white/75">With Fradium, you can easily analyse wallet addresses before making any interaction. Our mission is simple, to help you identify risks, prevent fraud, and navigate the blockchain ecosystem with confidence.</p>
               </div>
               {/* Bento artwork (right bottom, slightly cropped, aligned with button) */}
-              <div className="absolute right-[-40px] md:right-[-64px] bottom-[-84px] md:bottom-[-84px] w-[270px] md:w-[350px] lg:w-[400px] pointer-events-none select-none floating-slow">
+              <div className="absolute right-[-40px] md:right-[-64px] bottom-[-84px] md:bottom-[-84px] w-[270px] md:w-[350px] lg:w-[400px] pointer-events-none select-none floating-slow fraud-bg-hover">
                 <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/bento.webp" alt="Fradium Bento" className="w-full h-auto object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.45)]" decoding="async" loading="lazy" draggable={false} />
               </div>
               {/* Hover glow highlight */}
               <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(520px_220px_at_60%_-40px,rgba(16,185,129,0.18),rgba(34,197,94,0.12)_55%,transparent_80%)]" />
-            </div>
+            </motion.div>
 
             {/* Card kanan: Fraud Detection */}
-            <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] card-hover-enhanced card-entrance stagger-2">
+            <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] fraud-detection-hover card-entrance stagger-2">
+              {/* Glow effect overlay */}
+              <div className="fraud-glow"></div>
+
               {/* Background image */}
-              <div className="absolute inset-0 z-0 card-scale">
+              <div className="absolute inset-0 z-0 fraud-bg-hover">
                 <img
                   src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fraud-detection-frame.webp"
                   alt="Fraud Detection"
@@ -365,17 +447,17 @@ const Home = React.memo(() => {
               </div>
 
               {/* Content overlay */}
-              <div className="relative z-10 card-scale">
+              <div className="relative z-10 fraud-content-hover">
                 <h3 className="text-2xl md:text-3xl leading-[1.1] font-normal text-white">Fraud Detection</h3>
                 <p className="mt-3 max-w-xl text-xs md:text-sm font-normal text-white/75">Discover and map crypto projects while identifying potential wallet risks early, before making any transaction.</p>
               </div>
 
               {/* Animated Search Icon in Center */}
-              <div className="absolute inset-0 z-10 flex items-center justify-center mt-16 card-scale">
+              <div className="absolute inset-0 z-10 flex items-center justify-center mt-16 fraud-search-hover">
                 <div className="relative w-[280px] h-[280px] flex items-center justify-center">
                   {/* Outer Ring - Optimized with CSS animation */}
                   <div
-                    className="absolute w-[200px] h-[200px] bg-gradient-to-b from-[rgba(34,197,94,0.15)] to-[rgba(34,197,94,0.08)] rounded-full animate-pulse"
+                    className="absolute w-[200px] h-[200px] bg-gradient-to-b from-[rgba(34,197,94,0.15)] to-[rgba(34,197,94,0.08)] rounded-full animate-pulse fraud-ring-hover"
                     style={{
                       animation: 'fradium-ring-pulse 2s ease-in-out infinite'
                     }}
@@ -383,7 +465,7 @@ const Home = React.memo(() => {
 
                   {/* Middle Ring - Optimized with CSS animation */}
                   <div
-                    className="absolute w-[150px] h-[150px] bg-gradient-to-b from-[rgba(34,197,94,0.2)] to-[rgba(34,197,94,0.1)] rounded-full"
+                    className="absolute w-[150px] h-[150px] bg-gradient-to-b from-[rgba(34,197,94,0.2)] to-[rgba(34,197,94,0.1)] rounded-full fraud-ring-hover"
                     style={{
                       animation: 'fradium-ring-pulse 2s ease-in-out infinite 0.3s'
                     }}
@@ -391,7 +473,7 @@ const Home = React.memo(() => {
 
                   {/* Inner Ring - Optimized with CSS animation */}
                   <div
-                    className="absolute w-[100px] h-[100px] bg-gradient-to-b from-[rgba(34,197,94,0.25)] to-[rgba(34,197,94,0.15)] rounded-full"
+                    className="absolute w-[100px] h-[100px] bg-gradient-to-b from-[rgba(34,197,94,0.25)] to-[rgba(34,197,94,0.15)] rounded-full fraud-ring-hover"
                     style={{
                       animation: 'fradium-ring-pulse 2s ease-in-out infinite 0.6s'
                     }}
@@ -434,7 +516,17 @@ const Home = React.memo(() => {
           <div className="grid grid-cols-1 gap-2 md:grid-cols-12 md:gap-4">
             {/* Kolom kiri (panjang) */}
             <div className="md:col-span-5">
-              <div className="group relative min-h-[400px] md:min-h-[500px] lg:min-h-[735px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 pt-8 pl-4 pr-4 pb-4 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+              <motion.div
+                className="group relative min-h-[400px] md:min-h-[500px] lg:min-h-[735px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 pt-8 pl-4 pr-4 pb-4 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]"
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+                whileHover={{
+                  y: -8,
+                  scale: 1.02,
+                  transition: { duration: 0.3, ease: "easeOut" }
+                }}
+              >
                 {/* Header center: logo + title */}
                 <div className="flex w-full items-center justify-center gap-3">
                   <img src={LOGO_IMG} alt="Fradium" className="h-10 w-10  select-none" />
@@ -566,8 +658,8 @@ const Home = React.memo(() => {
                   </div>
                 </div>
 
-                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(460px_220px_at_50%_-60px,rgba(20,184,166,0.18),rgba(163,230,53,0.12)_55%,transparent_80%)]" />
-              </div>
+                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(520px_220px_at_60%_-40px,rgba(16,185,129,0.18),rgba(34,197,94,0.12)_55%,transparent_80%)]" />
+              </motion.div>
             </div>
 
             {/* Kolom kanan (dua kartu setengah tinggi) */}
@@ -683,7 +775,7 @@ const Home = React.memo(() => {
               With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about the risks.
             </p>
             <div className="mt-6">
-              <div className="btn-hover gentle-pulse">
+              <div className="btn-hover rounded-full gentle-pulse">
                 <ButtonGreen size="md" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[23px] h-[23px]" onClick={handleLaunchWallet}>
                   Try it free
                 </ButtonGreen>
