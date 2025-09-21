@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import Footer from "../../core/components/Footer.jsx";
 import { useNavigate } from "react-router-dom";
@@ -10,12 +11,12 @@ const LOGO_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main
 const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
 const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp";
 
-const Home = () => {
+const Home = React.memo(() => {
   const { isAuthenticated, handleLogin } = useAuth();
   const navigate = useNavigate();
 
   // Fungsi untuk handle launch wallet - cek login dulu
-  const handleLaunchWallet = async () => {
+  const handleLaunchWallet = React.useCallback(async () => {
     if (!isAuthenticated) {
       // Jika belum login, lakukan login dulu
       await handleLogin(({ user, isAuthenticated: authStatus }) => {
@@ -26,53 +27,49 @@ const Home = () => {
       // Jika sudah login, langsung redirect ke wallet
       navigate("/wallet");
     }
-  };
+  }, [isAuthenticated, handleLogin, navigate]);
 
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState(true); // Start with true to avoid initial re-render
 
   useEffect(() => {
-    const t = setTimeout(() => setIsMounted(true), 0);
-    return () => clearTimeout(t);
+    // Remove the timeout that causes re-render
+    setIsMounted(true);
   }, []);
 
-  const appear = isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2";
+  const appear = "opacity-100 translate-y-0"; // Simplified, no conditional rendering
 
   return (
     <section className="relative bg-[#000510] w-full overflow-hidden">
       <style>{`
         @keyframes fradium-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-12px); }
+          0%, 100% { 
+            transform: translateY(0); 
+          }
+          50% { 
+            transform: translateY(-12px); 
+          }
         }
         .floating-slow { 
           animation: fradium-float 6s ease-in-out infinite; 
           will-change: transform;
         }
-        @keyframes fradium-bg-drift {
-          0% { transform: scale(1) translateY(0px); }
-          50% { transform: scale(1.02) translateY(-6px); }
-          100% { transform: scale(1) translateY(0px); }
+        @keyframes fradium-ring-pulse {
+          0%, 100% { 
+            transform: scale(1);
+            opacity: 0.15;
+          }
+          50% { 
+            transform: scale(1.1);
+            opacity: 0.25;
+          }
         }
-        .bg-drift-1 {
-          animation: fradium-bg-drift 30s ease-in-out infinite;
-          transform-origin: center;
-          will-change: transform;
-        }
-        .bg-drift-2 {
-          animation: fradium-bg-drift 36s ease-in-out infinite;
-          animation-delay: 0.8s;
-          transform-origin: center;
-          will-change: transform;
-        }
-        .bg-drift-3 {
-          animation: fradium-bg-drift 42s ease-in-out infinite;
-          animation-delay: 1.6s;
-          transform-origin: center;
-          will-change: transform;
-        }
-        .bg-soft-blur {
-          filter: blur(1.2px);
-          will-change: filter;
+        @keyframes fradium-icon-float {
+          0%, 100% { 
+            transform: scale(1) rotate(0deg);
+          }
+          50% { 
+            transform: scale(1.05) rotate(2.5deg);
+          }
         }
       `}</style>
       {/* Tagline di atas background */}
@@ -84,7 +81,7 @@ const Home = () => {
       <div className={`relative mx-auto mt-4 overflow-hidden transition-all duration-700 ease-out ${appear}`}>
         {/* Background layer */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover bg-drift-1 bg-soft-blur" />
+          <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
         </div>
 
         {/* Content di atas background */}
@@ -97,7 +94,7 @@ const Home = () => {
           <p className="mx-auto mt-6 max-w-3xl text-gray-300 text-sm md:text-base">Here is Your Digital Asset Guardian to Analyse, Protect, Transact with Confidence.</p>
         </div>
         {/* Row pertama: dua card */}
-        <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-14 transition-all duration-700 ease-out ${appear}`}>
+        <div className={`relative z-10 mx-auto w-full max-w-6xl pt-14 transition-all duration-700 ease-out ${appear}`}>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
             {/* Card kiri: About Fradium Web3 Security */}
             <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
@@ -130,9 +127,74 @@ const Home = () => {
 
             {/* Card kanan: Fraud Detection */}
             <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
-              <h3 className="text-2xl md:text-3xl leading-[1.1] font-normal text-white">Fraud Detection</h3>
-              <p className="mt-3 max-w-xl text-xs md:text-sm font-normal text-white/75">Discover and map crypto projects while identifying potential wallet risks early, before making any transaction.</p>
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(560px_260px_at_70%_-40px,rgba(139,92,246,0.18),rgba(59,130,246,0.10)_55%,transparent_80%)] opacity-60" />
+              {/* Background image */}
+              <div className="absolute inset-0 z-0">
+                <img
+                  src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fraud-detection-frame.webp"
+                  alt="Fraud Detection"
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
+              </div>
+
+              {/* Content overlay */}
+              <div className="relative z-10">
+                <h3 className="text-2xl md:text-3xl leading-[1.1] font-normal text-white">Fraud Detection</h3>
+                <p className="mt-3 max-w-xl text-xs md:text-sm font-normal text-white/75">Discover and map crypto projects while identifying potential wallet risks early, before making any transaction.</p>
+              </div>
+
+              {/* Animated Search Icon in Center */}
+              <div className="absolute inset-0 z-10 flex items-center justify-center mt-16">
+                <div className="relative w-[280px] h-[280px] flex items-center justify-center">
+                  {/* Outer Ring - Optimized with CSS animation */}
+                  <div
+                    className="absolute w-[200px] h-[200px] bg-gradient-to-b from-[rgba(34,197,94,0.15)] to-[rgba(34,197,94,0.08)] rounded-full animate-pulse"
+                    style={{
+                      animation: 'fradium-ring-pulse 2s ease-in-out infinite'
+                    }}
+                  />
+
+                  {/* Middle Ring - Optimized with CSS animation */}
+                  <div
+                    className="absolute w-[150px] h-[150px] bg-gradient-to-b from-[rgba(34,197,94,0.2)] to-[rgba(34,197,94,0.1)] rounded-full"
+                    style={{
+                      animation: 'fradium-ring-pulse 2s ease-in-out infinite 0.3s'
+                    }}
+                  />
+
+                  {/* Inner Ring - Optimized with CSS animation */}
+                  <div
+                    className="absolute w-[100px] h-[100px] bg-gradient-to-b from-[rgba(34,197,94,0.25)] to-[rgba(34,197,94,0.15)] rounded-full"
+                    style={{
+                      animation: 'fradium-ring-pulse 2s ease-in-out infinite 0.6s'
+                    }}
+                  />
+
+                  {/* Magnifying Glass Icon - Optimized with CSS animation */}
+                  <div
+                    className="relative w-[80px] h-[80px]"
+                    style={{
+                      animation: 'fradium-icon-float 1.5s ease-in-out infinite'
+                    }}
+                  >
+                    <img
+                      src="/assets/images/analisis.png"
+                      alt="Analyzing"
+                      className="w-full h-full drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation dots */}
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
+                <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
+              </div>
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10">
+                <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
+              </div>
+
+              {/* Bottom gradient overlay */}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 to-transparent" />
             </div>
           </div>
@@ -144,13 +206,13 @@ const Home = () => {
       {/* Background kedua di bawah background pertama, dengan jarak margin-8 */}
       <div className={`relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[760px] overflow-hidden transition-all duration-700 ease-out ${appear}`}>
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <img src={BACKGROUND_URL_2} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover bg-drift-2 bg-soft-blur" />
+          <img src={BACKGROUND_URL_2} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
         </div>
         {/* Fade dari warna dasar ke background-2 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
 
         {/* Row kedua: kolom kiri panjang, kolom kanan dua kartu setengah tinggi */}
-        <div className={`relative z-10 mx-auto w-full max-w-7xl px-4 pt-6 pb-12 transition-all duration-700 ease-out ${appear}`}>
+        <div className={`relative z-10 mx-auto w-full max-w-6xl pt-6 pb-12 transition-all duration-700 ease-out ${appear}`}>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-12 md:gap-4">
             {/* Kolom kiri (panjang) */}
             <div className="md:col-span-5">
@@ -174,23 +236,41 @@ const Home = () => {
               {/* Row pertama: dua kartu sejajar */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
                 {/* Kartu kiri */}
-                <div className="group relative min-h-[260px] md:min-h-[300px] lg:min-h-[340px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+                <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
                   <h3 className="text-xl md:text-2xl font-medium text-white">Fradium Wallet</h3>
                   <p className="mt-2 max-w-2xl text-sm md:text-base text-white/75">Fradium Wallet safeguards your assets by scanning every transaction in real time.</p>
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(560px_260px_at_70%_-40px,rgba(139,92,246,0.18),rgba(59,130,246,0.10)_55%,transparent_80%)] opacity-60" />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
                 </div>
                 {/* Kartu kanan */}
-                <div className="group relative min-h-[260px] md:min-h-[300px] lg:min-h-[340px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
-                  <h3 className="text-xl md:text-2xl font-medium text-white">Extension</h3>
-                  <p className="mt-2 max-w-2xl text-sm md:text-base text-white/75">Helps you check the safety of your transaction while browsing Web3.</p>
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_220px_at_60%_-40px,rgba(126,58,242,0.16),rgba(236,72,153,0.12)_55%,transparent_80%)] opacity-50" />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+                  {/* Background image - half card size with padding */}
+                  <div className="relative z-0 mb-6">
+                    <img
+                      src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/extensions.webp"
+                      alt="Extension"
+                      className="w-full h-[120px] md:h-[140px] lg:h-[160px] object-cover rounded-lg"
+                      draggable={false}
+                    />
+                  </div>
+
+                  {/* Content below the image */}
+                  <div className="relative z-10">
+                    <h3 className="text-xl md:text-2xl font-medium text-white mb-3">Extension</h3>
+                    <div className="flex items-start justify-between">
+                      <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Helps you check the safety of your transaction while browsing Web3.</p>
+                      <div className="w-12 h-12 bg-white/5 border border-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7V17" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Row kedua: satu kartu memanjang */}
-              <div className="group relative min-h-[260px] md:min-h-[300px] lg:min-h-[340px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+              <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
                 <h3 className="text-xl md:text-2xl font-medium text-white">Community</h3>
                 <p className="mt-2 max-w-3xl text-sm md:text-base text-white/75">Collaboratively submit, review, and validate fraud cases to defense against scams.</p>
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(680px_300px_at_50%_0px,rgba(255,255,255,0.08),transparent_70%)] opacity-30" />
@@ -206,7 +286,7 @@ const Home = () => {
       {/* Background ketiga paling bawah, konten akan diletakkan di atasnya */}
       <div className={`relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible transition-all duration-700 ease-out ${appear}`}>
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover bg-drift-3 bg-soft-blur" />
+          <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
         </div>
         {/* Fade dari warna dasar ke background-3 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
@@ -228,6 +308,6 @@ const Home = () => {
       <Footer />
     </section>
   );
-};
+});
 
 export default Home;
