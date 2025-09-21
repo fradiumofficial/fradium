@@ -363,7 +363,7 @@ const Home = React.memo(() => {
       `}</style>
       {/* Tagline di atas background */}
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-12 sm:pt-16 md:pt-24 mt-4 sm:mt-6 md:mt-8 text-center">
-        <p className="text-xs sm:text-[14px] font-medium tracking-[0.2em] sm:tracking-[0.28em] text-[#C1FFC5]">REINVENTED BLOCKCHAIN SECURITY</p>
+        <p className="text-xs sm:text-[14px] font-medium tracking-[0.2em] sm:tracking-[0.28em] text-[#C1FFC5] mt-4 sm:mt-0">REINVENTED BLOCKCHAIN SECURITY</p>
       </div>
 
       {/* Hero background dimulai di bawah tagline, mengikuti pola layering dari App.jsx */}
@@ -518,7 +518,7 @@ const Home = React.memo(() => {
             {/* Kolom kiri (panjang) */}
             <div className="md:col-span-5">
               <motion.div
-                className="group relative min-h-[400px] sm:min-h-[450px] md:min-h-[500px] lg:min-h-[735px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 pt-4 sm:pt-6 md:pt-8 pl-3 sm:pl-4 pr-3 sm:pr-4 pb-3 sm:pb-4 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]"
+                className="group relative min-h-[320px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[735px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 pt-3 sm:pt-4 md:pt-8 pl-3 sm:pl-4 pr-3 sm:pr-4 pb-2 sm:pb-3 md:pb-4 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]"
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
@@ -530,13 +530,13 @@ const Home = React.memo(() => {
               >
                 {/* Header center: logo + title */}
                 <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
-                  <img src={LOGO_IMG} alt="Fradium" className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 select-none" />
-                  <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl leading-[1.1] font-normal text-[#C1FFC5]">How it works?</h3>
+                  <img src={LOGO_IMG} alt="Fradium" className="h-5 w-5 sm:h-6 sm:w-6 md:h-10 md:w-10 select-none" />
+                  <h3 className="text-base sm:text-lg md:text-2xl lg:text-3xl leading-[1.1] font-normal text-[#C1FFC5]">How it works?</h3>
                 </div>
 
                 {/* Description text */}
-                <div className="text-center mt-3 sm:mt-4 md:mt-6 mb-4 sm:mb-6 md:mb-8">
-                  <p className="text-white text-sm sm:text-base md:text-2xl leading-relaxed">
+                <div className="text-center mt-2 sm:mt-3 md:mt-6 mb-3 sm:mb-4 md:mb-8">
+                  <p className="text-white text-xs sm:text-sm md:text-2xl leading-relaxed">
                     Create a wallet, enter<br />
                     an address, and get<br />
                     instant results.
@@ -546,29 +546,29 @@ const Home = React.memo(() => {
                 {/* Animated action buttons - Marquee */}
                 <div className="mb-4 sm:mb-6 md:mb-8 overflow-hidden">
                   <div className="flex gap-1 sm:gap-2 animate-marquee">
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Address
                     </div>
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Send Coin
                     </div>
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Receive Coin
                     </div>
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Analyze
                     </div>
                     {/* Duplicate for seamless loop */}
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Address
                     </div>
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Send Coin
                     </div>
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Receive Coin
                     </div>
-                    <div className="bg-white/10 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
                       Analyze
                     </div>
                   </div>
@@ -580,77 +580,77 @@ const Home = React.memo(() => {
                 </div>
 
                 {/* Steps card - positioned at bottom */}
-                <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3 md:bottom-4 md:left-4 md:right-4 z-10 bg-[#ffffff]/5 rounded-[16px] sm:rounded-[20px] border border-white/3 p-3 sm:p-4 md:p-6 shadow-[0_0_26.59px_rgba(20,20,23,1)] backdrop-blur-[20px]">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
-                    <h4 className="text-white text-sm sm:text-base md:text-lg lg:text-xl">
+                <div className="absolute bottom-1 left-1 right-1 sm:bottom-2 sm:left-2 sm:right-2 md:bottom-4 md:left-4 md:right-4 z-10 bg-[#ffffff]/5 rounded-[8px] sm:rounded-[12px] md:rounded-[20px] border border-white/3 p-1.5 sm:p-2 md:p-6 shadow-[0_0_26.59px_rgba(20,20,23,1)] backdrop-blur-[20px]">
+                  <div className="flex items-center justify-between mb-1.5 sm:mb-2 md:mb-6">
+                    <h4 className="text-white text-[10px] sm:text-xs md:text-lg lg:text-xl">
                       <span className="font-medium">3 Step</span> to protect your transaction!
                     </h4>
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 bg-[#99E39E] rounded-full flex items-center justify-center">
-                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 md:w-8 md:h-8 bg-[#99E39E] rounded-full flex items-center justify-center">
+                      <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-5 md:h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                   </div>
 
                   {/* Horizontal line separator */}
-                  <div className="w-full h-px bg-white/20 mb-3 sm:mb-4 md:mb-6"></div>
+                  <div className="w-full h-px bg-white/20 mb-1.5 sm:mb-2 md:mb-6"></div>
 
                   {/* Steps list with stepper */}
                   <div className="relative">
-                    <div className="space-y-2 sm:space-y-3 md:space-y-4">
+                    <div className="space-y-1 sm:space-y-1.5 md:space-y-4">
                       {/* Step 1 */}
-                      <div className="flex items-center gap-2 sm:gap-3 bg-[#000000]/20 rounded-lg p-2 sm:p-3 border border-white/10 relative">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
+                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-xs sm:text-sm">Launch Wallet</h5>
-                          <p className="text-white/75 text-xs">Create your new wallet instantly</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Launch Wallet</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs">Create your new wallet instantly</p>
                         </div>
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                          <svg className="w-2 h-2 sm:w-3 sm:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
+                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                           </svg>
                         </div>
                         {/* Stepper line to next step */}
-                        <div className="absolute left-5 sm:left-7 top-full w-0.5 h-3 sm:h-4 bg-white/30"></div>
+                        <div className="absolute left-3.5 sm:left-4 md:left-7 top-full w-0.5 h-1.5 sm:h-2 md:h-4 bg-white/30"></div>
                       </div>
 
                       {/* Step 2 */}
-                      <div className="flex items-center gap-2 sm:gap-3 bg-[#000000]/20 rounded-lg p-2 sm:p-3 border border-white/10 relative">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
+                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-xs sm:text-sm">Copy Addres</h5>
-                          <p className="text-white/75 text-xs">Paste it into the input field</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Copy Addres</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs">Paste it into the input field</p>
                         </div>
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                          <svg className="w-2 h-2 sm:w-3 sm:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
+                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                           </svg>
                         </div>
                         {/* Stepper line to next step */}
-                        <div className="absolute left-5 sm:left-7 top-full w-0.5 h-3 sm:h-4 bg-white/30"></div>
+                        <div className="absolute left-3.5 sm:left-4 md:left-7 top-full w-0.5 h-1.5 sm:h-2 md:h-4 bg-white/30"></div>
                       </div>
 
                       {/* Step 3 */}
-                      <div className="flex items-center gap-2 sm:gap-3 bg-[#000000]/20 rounded-lg p-2 sm:p-3 border border-white/10 relative">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
+                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-xs sm:text-sm">Get Result</h5>
-                          <p className="text-white/75 text-xs">You're Done! wait a moment for the result!</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Get Result</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs">You're Done! wait a moment for the result!</p>
                         </div>
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                          <svg className="w-2 h-2 sm:w-3 sm:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
+                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                           </svg>
                         </div>
