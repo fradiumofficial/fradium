@@ -782,8 +782,62 @@ const Home = React.memo(() => {
               </div>
             </div>
           </div>
+
+          {/* Laptop Image - positioned within background 3 content */}
+          <div className="relative flex justify-center items-end mt-8">
+            <div className="relative w-full max-w-5xl mx-auto">
+              {/* Laptop Frame */}
+              <img
+                src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/macbook-frame.webp"
+                alt="MacBook"
+                className="w-full h-auto object-contain"
+                style={{
+                  transform: 'translateY(0px)',
+                  marginBottom: '-10%'
+                }}
+                draggable={false}
+              />
+
+              {/* Video Overlay - positioned over the full screen area */}
+              <div className="absolute 
+                top-[6%] left-[8%] w-[84%] h-[82%] 
+                md:top-[7%] md:left-[9%] md:w-[82%] md:h-[80%] 
+                lg:top-[8%] lg:left-[10%] lg:w-[80%] lg:h-[78%] 
+                rounded-lg overflow-hidden">
+
+                {/* Placeholder sementara - ganti dengan video nanti */}
+                <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-600 rounded-lg flex items-center justify-center">
+                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium">Video Coming Soon</p>
+                    <p className="text-xs text-gray-400 mt-1">Replace this placeholder with your video</p>
+                  </div>
+                </div>
+
+                {/* Uncomment dan ganti dengan video nanti:
+                <video
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                >
+                  <source src="/path/to/your-video.mp4" type="video/mp4" />
+                  <source src="/path/to/your-video.webm" type="video/webm" />
+                  <img src="/path/to/placeholder.jpg" alt="Screen Content" className="w-full h-full object-cover" />
+                </video>
+                */}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
       <Footer />
     </section>
   );
