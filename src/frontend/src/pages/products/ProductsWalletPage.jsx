@@ -161,84 +161,158 @@ const ProductsWallet = () => {
 
   // Layout desktop lama
   return (
-    <section className="relative bg-[#000510] w-full overflow-hidden">
-      {/* Top content before background */}
-      <div className="relative z-10 mx-auto w-full max-w-[1300px] pt-28">
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex-1 min-w-[320px]">
-            <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-3 uppercase">FRADIUM WALLET</span>
-            <h1 className="text-white text-[36px] font-medium leading-tight mb-3">Manage your assets with protection</h1>
-            <p className="text-[#B0B6BE] text-[14px] md:text-[15px] max-w-3xl">Fradium Extension lets you analyse wallet addresses and smart contracts directly in your browser, showing instant risk checks so you can spot threats without leaving the page.</p>
-          </div>
-          <div className="shrink-0 hidden md:block pt-4">
-            <ButtonGreen
-              textSize="text-[16px]"
-              fontWeight="medium"
-              onClick={() => {
-                window.open("https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc", "_blank");
-              }}
-            >
-              Download Extension
-            </ButtonGreen>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#000510] text-white relative overflow-hidden flex flex-col">
+      {/* Background layer - starts below navbar (not from top) */}
+      <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
+        <img
+          src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          loading="lazy"
+          draggable={false}
+          className="absolute inset-0 w-full h-full object-cover object-top"
+        />
       </div>
+      {/* Soft fade at top edge to blend with navbar */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
 
-      {/* Background section with cards and laptop */}
-      <div className="relative mx-auto mt-8 overflow-hidden">
-        {/* Background layer - starts from bottom with natural height */}
-        <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
-          <img
-            src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            loading="lazy"
-            draggable={false}
-            className="w-full h-auto object-contain object-bottom"
-          />
-        </div>
+      {/* Main Content */}
+      <main className="relative z-10 pt-28 px-4 sm:px-6 flex-1">
+        <div className="container mx-auto max-w-[1300px]">
+          {/* Top content before background */}
+          <div className="flex items-start justify-between gap-6 mb-12">
+            <div className="flex-1 min-w-[320px]">
+              <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-3 uppercase">FRADIUM WALLET</span>
+              <h1 className="text-white text-[36px] font-medium leading-tight mb-3">Manage your assets with protection</h1>
+              <p className="text-[#B0B6BE] text-[14px] md:text-[15px] max-w-3xl">Fradium Extension lets you analyse wallet addresses and smart contracts directly in your browser, showing instant risk checks so you can spot threats without leaving the page.</p>
+            </div>
+            <div className="shrink-0 hidden md:block pt-4">
+              <ButtonGreen
+                textSize="text-[16px]"
+                fontWeight="medium"
+                onClick={() => {
+                  window.open("https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc", "_blank");
+                }}
+              >
+                Download Extension
+              </ButtonGreen>
+            </div>
+          </div>
 
-        {/* Content over background */}
-        <div className="relative z-10 mx-auto w-full max-w-[1300px] pt-12 pb-[380px] md:pb-[600px]">
-          {/* Cards row with reveal */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
-            {[0, 1, 2].map((_, idx) => (
-              <div key={idx} className="rounded-2xl border border-white/10 bg-[#0B0F18]/60 backdrop-blur-[2px] p-5 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-                <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5" />
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-white text-[18px] md:text-[20px] font-medium">Extension</div>
-                    <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Helps you check the safety of your transaction while browsing Web3.</div>
+          {/* Cards section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 md:gap-4 mb-16 justify-items-center">
+            {/* Card 1: Safe Transactions */}
+            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
+              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
+                <img
+                  src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/safe-transaction.webp"
+                  alt="Safe Transactions"
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white text-[18px] md:text-[20px] font-medium">Safe Transactions</div>
+                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                </div>
+                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Card 2: Analyze Address */}
+            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
+              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
+                <img
+                  src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/analyze-address.webp"
+                  alt="Analyze Address"
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white text-[18px] md:text-[20px] font-medium">Analyze Address</div>
+                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Check wallet address for past fraud activity</div>
+                </div>
+                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Card 3: History */}
+            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
+              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
+                <img
+                  src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/history.webp"
+                  alt="History"
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white text-[18px] md:text-[20px] font-medium">History</div>
+                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">View past transactions and scan records in one place</div>
+                </div>
+                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* MacBook section */}
+          <div className="flex justify-center pt-8 items-center">
+            <div className="relative max-w-4xl w-full">
+              <img
+                src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/macbook-wallet.webp"
+                alt="MacBook with Fradium Wallet"
+                className="w-full h-auto max-h-[500px] object-contain mx-auto"
+                draggable={false}
+              />
+              {/* Video overlay for MacBook screen */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative w-full h-full flex items-center justify-center">
+                  {/* Video area positioned on MacBook screen */}
+                  <div className="absolute w-[83.7%] h-[54%] top-[23%] left-[8.15%] overflow-hidden rounded-[8px]">
+                    <video
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="metadata"
+                      poster="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp"
+                    >
+                      <source src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-demo.mp4" type="video/mp4" />
+                      {/* Fallback image if video doesn't load */}
+                      <img
+                        src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp"
+                        alt="Fradium Wallet Dashboard"
+                        className="w-full h-full object-cover"
+                      />
+                    </video>
                   </div>
-                  <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 16L16 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M9 8H16V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
+        </div>
+      </main>
 
-          {/* Laptop image moved to absolute bottom full-width */}
-        </div>
-        {/* Full-width laptop at the very bottom */}
-        <div className="absolute inset-x-0 bottom-[-40px] md:bottom-[-80px] z-10">
-          <div className="relative w-full overflow-hidden pointer-events-none select-none">
-            <img
-              src="/assets/images/laptop.png"
-              alt="Laptop"
-              className="relative w-full max-w-none h-auto block"
-              style={{ objectFit: "contain" }}
-            />
-          </div>
-        </div>
-      </div>
-      {/* Footer visuals spacing area if needed */}
       <Footer />
-    </section>
+    </div>
   );
 };
 
