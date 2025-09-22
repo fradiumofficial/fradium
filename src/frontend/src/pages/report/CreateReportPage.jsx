@@ -690,14 +690,14 @@ export default function CreateReportPage() {
 
   return (
     <>
-      <div className=" bg-[#000510] text-white relative overflow-hidden min-h-[900px] md:min-h-[1000px] lg:min-h-[1100px]">
+      <div className=" bg-[#000510] text-white relative overflow-hidden min-h-screen md:min-h-[1000px] lg:min-h-[1100px]">
         {/* Background layer */}
         <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
           <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
         </div>
         {/* Soft fade at top edge */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
-        <main className="pt-24 px-4 sm:px-6">
+        <main className="pt-24 sm:px-6">
           <div className="relative z-10 container mx-auto max-w-6xl">
             {/* Back Button */}
             <div className="mb-6 sm:mb-8">
@@ -708,19 +708,19 @@ export default function CreateReportPage() {
             </div>
 
             {/* Page Title */}
-            <div className="mb-8 sm:mb-8">
-              <h1 className="text-3xl sm:text-4xl font-medium mb-4">Create New Report</h1>
-              <p className="text-lg sm:text-base text-gray-300">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-4xl font-medium mb-3 sm:mb-4">Create New Report</h1>
+              <p className="text-sm sm:text-base text-gray-300">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
             </div>
 
             {/* Login Required Alert */}
             {!isAuthenticated && (
-              <div className="mb-8 bg-[#99E39E12] backdrop-blur-sm border border-[#99E39E33] rounded-2xl p-6 pb-8">
+              <div className="mb-6 sm:mb-8 bg-[#99E39E12] backdrop-blur-sm border border-[#99E39E33] rounded-2xl p-4 sm:p-6 pb-6 sm:pb-8">
                 <div className="flex items-start space-x-4">
                   <AlertTriangle className="w-6 h-6 text-[#99e39e] flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-[#99e39e] mb-2">Login Required</h3>
-                    <p className="text-gray-300 mb-4">You need to login to create a new report. This ensures secure submission and allows you to stake FUM tokens for the community validation process.</p>
+                    <h3 className="text-base sm:text-lg font-semibold text-[#99e39e] mb-2">Login Required</h3>
+                    <p className="text-gray-300 mb-3 sm:mb-4 text-sm sm:text-base">You need to login to create a new report. This ensures secure submission and allows you to stake FUM tokens for the community validation process.</p>
                     <ButtonGreen size="sm" fontWeight="medium" onClick={handleLogin}>
                       Login to Continue
                     </ButtonGreen>
@@ -730,7 +730,7 @@ export default function CreateReportPage() {
             )}
 
             {/* Main Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 sm:gap-8">
               {/* Left Sidebar - Steps */}
               <div className="hidden lg:block lg:col-span-1">
                 <div className="space-y-4">
@@ -761,14 +761,14 @@ export default function CreateReportPage() {
 
               {/* Right Content - Form */}
               <div className="lg:col-span-3">
-                <div className={`${!isAuthenticated ? "opacity-50" : ""} bg-[#00000080] backdrop-blur-sm border border-white/10 rounded-2xl p-5 sm:p-6 lg:p-7 shadow-[0_16px_48px_rgba(0,0,0,0.30)]`}>
+                <div className={`${!isAuthenticated ? "opacity-50" : ""} bg-[#00000080] backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-6 lg:p-7 shadow-[0_16px_48px_rgba(0,0,0,0.30)]`}>
                   {/* Mobile Progress Indicator */}
-                  <div className="lg:hidden mb-6">
+                  <div className="lg:hidden mb-4 sm:mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">
+                      <h3 className="text-base sm:text-lg font-semibold">
                         Step {currentStep} of {steps.length}
                       </h3>
-                      <span className="text-sm text-gray-400">{steps[currentStep - 1].title}</span>
+                      <span className="text-xs sm:text-sm text-gray-400">{steps[currentStep - 1].title}</span>
                     </div>
                     <div className="flex space-x-2">
                       {steps.map((step, index) => (

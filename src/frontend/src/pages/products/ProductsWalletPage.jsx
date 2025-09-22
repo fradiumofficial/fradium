@@ -103,7 +103,7 @@ const ProductsWallet = () => {
         {/* Glow background */}
         <img src="/assets/images/glow.png" alt="Glow" className="absolute top-0 left-0 w-[340px] h-[200px] opacity-40 z-0 pointer-events-none select-none" style={{ objectFit: "cover" }} />
         {/* Main Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center pt-14 pb-2 px-4">
+        <div className="relative z-10 flex flex-col items-center justify-center pt-14 pb-2 px-3">
           {/* Section label */}
           <span className="text-[#9beb83] text-[13px] font-semibold tracking-[0.18em] mb-3 uppercase">FRADIUM WALLET</span>
           {/* Heading (same as desktop) */}
@@ -129,7 +129,7 @@ const ProductsWallet = () => {
         </div>
 
         {/* Cards section (same content as desktop, stacked) */}
-        <div className="z-10 relative grid grid-cols-1 gap-4 mb-8 px-4 mt-2">
+        <div className="z-10 relative grid grid-cols-1 gap-4 mb-8 px-3 mt-2">
           {/* Card 1 */}
           <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2">
             <div className="w-full h-[200px] rounded-[12px] bg-white/5 mb-4 overflow-hidden">
@@ -186,9 +186,9 @@ const ProductsWallet = () => {
         </div>
 
         {/* MacBook section for mobile */}
-        <div className="relative z-10 flex justify-center items-center mt-8 px-4">
+        <div className="relative z-10 flex justify-center items-center mt-8 px-3">
           <div className="relative w-full max-w-xl">
-            <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/macbook-wallet.webp" alt="MacBook with Fradium Wallet" className="w-full h-auto object-contain mx-auto" draggable={false} />
+            <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/macbook-wallet.webp" alt="MacBook with Fradium Wallet" className="w-full h-auto object-cover mx-auto" draggable={false} />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative w-full h-full flex items-center justify-center">
                 <div className="absolute w-[83.7%] h-[54%] top-[23%] left-[8.15%] overflow-hidden rounded-[6px]">

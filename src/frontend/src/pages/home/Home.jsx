@@ -387,7 +387,7 @@ const Home = React.memo(() => {
           <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 md:gap-4">
             {/* Card kiri: About Fradium Web3 Security */}
             <motion.div
-              className="group relative min-h-[280px] sm:min-h-[320px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 p-3 pr-20 sm:p-4 sm:pr-24 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] fraud-detection-hover card-entrance stagger-1"
+              className="group relative min-h-[300px] sm:min-h-[320px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 p-3 pr-28 sm:p-4 sm:pr-24 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] fraud-detection-hover card-entrance stagger-1"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
@@ -418,11 +418,11 @@ const Home = React.memo(() => {
                 </div>
               </div>
               {/* Description block (controlled by padding) */}
-              <div className="relative z-[1] pt-8 sm:pt-12 md:pt-20 lg:pt-32 fraud-content-hover">
-                <p className="max-w-[200px] sm:max-w-[250px] md:max-w-md lg:max-w-lg text-xs sm:text-sm md:text-sm font-normal text-white/75 leading-relaxed">With Fradium, you can easily analyse wallet addresses before making any interaction. Our mission is simple, to help you identify risks, prevent fraud, and navigate the blockchain ecosystem with confidence.</p>
+              <div className="relative z-[1] pt-14 sm:pt-12 md:pt-20 lg:pt-32 fraud-content-hover">
+                <p className="max-w-[160px] sm:max-w-[250px] md:max-w-md lg:max-w-lg text-xs sm:text-sm md:text-sm font-normal text-white/75 leading-relaxed">With Fradium, you can easily analyse wallet addresses before making any interaction. Our mission is simple, to help you identify risks, prevent fraud, and navigate the blockchain ecosystem with confidence.</p>
               </div>
               {/* Bento artwork (positioned below button on mobile, right top on desktop) */}
-              <div className="absolute right-[-10px] top-[50px] sm:right-[-15px] sm:top-[60px] md:right-[-50px] md:top-[30px] lg:top-[80px] w-[120px] sm:w-[200px] md:w-[280px] lg:w-[320px] pointer-events-none select-none floating-slow fraud-bg-hover">
+              <div className="absolute right-[-35px] top-[50px] sm:right-[-15px] sm:top-[60px] md:right-[-50px] md:top-[30px] lg:top-[80px] w-[200px] sm:w-[200px] md:w-[280px] lg:w-[320px] pointer-events-none select-none floating-slow fraud-bg-hover">
                 <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/about-fradiums.webp" alt="Fradium Bento" className="w-full h-auto object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.45)]" decoding="async" loading="lazy" draggable={false} />
               </div>
               {/* Hover glow highlight */}
@@ -732,7 +732,7 @@ const Home = React.memo(() => {
           </div>
 
           {/* Laptop Image - positioned within background 3 content */}
-          <div className="relative flex justify-center items-end mt-4 sm:mt-6 md:mt-8">
+          <div className="relative flex justify-center items-end mt-16 sm:mt-6 md:mt-8">
             <div className="relative w-full max-w-3xl sm:max-w-4xl md:max-w-5xl mx-auto">
               {/* Laptop Frame */}
               <img
@@ -749,9 +749,9 @@ const Home = React.memo(() => {
               {/* Video Overlay - positioned over the full screen area */}
               <div
                 className="absolute 
-                top-[6%] left-[8%] w-[84%] h-[82%] 
-                md:top-[7%] md:left-[9%] md:w-[82%] md:h-[80%] 
-                lg:top-[8%] lg:left-[10%] lg:w-[80%] lg:h-[78%] 
+                top-[2%] left-[9%] w-[82%] h-[105%]
+                md:top-[2%] md:left-[9%] md:w-[82%] md:h-[105%]
+                lg:top-[2%] lg:left-[9%] lg:w-[82%] lg:h-[105%]
                 rounded-lg overflow-hidden">
                 {/* Placeholder sementara - ganti dengan video nanti */}
                 {/* <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
