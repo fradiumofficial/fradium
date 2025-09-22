@@ -260,14 +260,16 @@ export class AgentService {
               });
             }
 
+            const formattedBalance = this.formatBalanceForToken(token, balance);
+
             return jsonStringify({
               success: true,
               address: targetAddress,
               network: network,
-              balance: balance,
+              balance: formattedBalance,
               currency: token.symbol,
               tokenName: token.name,
-              message: `Your ${token.symbol} balance is ${balance} ${token.symbol}`,
+              message: `Your ${token.symbol} balance is ${formattedBalance} ${token.symbol}`,
             });
           } catch (error) {
             console.error("Error getting balance:", error);
@@ -375,14 +377,16 @@ export class AgentService {
               });
             }
 
+            const formattedBalance = this.formatBalanceForToken(token, balance);
+
             return jsonStringify({
               success: true,
               address: address,
               network: network,
-              balance: balance,
+              balance: formattedBalance,
               currency: token.symbol,
               tokenName: token.name,
-              message: `Balance for ${token.symbol} at ${address} is ${balance} ${token.symbol}`,
+              message: `Balance for ${token.symbol} at ${address} is ${formattedBalance} ${token.symbol}`,
             });
           } catch (error) {
             console.error("Error getting balance:", error);

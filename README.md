@@ -30,47 +30,6 @@ Our solution introduces **Fradium**, a fully on-chain security and analytics pla
 - Docs: https://fradium.gitbook.io/docs
 - Extension Chrome store: https://chromewebstore.google.com/detail/fradium-crypto-security-e/jjjgmhagdcpbccnpgafnopdbfnfelffb
 
-## 🎉 Whats New in the National Round
-
-### Fradium Wallet - Browser Extension
-
-A lightweight, on-chain security wallet that runs directly in your browser. **Scan, Explain, and Protect before you sign.**
-
-**Why it matters**
-
-- One-click **pre-send safety check** on any recipient address
-- Inline risk explanation with reason codes (drainer proximity, mixer exposure, scam clusters)
-- Cross-chain token support: Look up and analyze multiple supported coins seamlessly from a single UI.
-- On-chain evidence links for every flagged entity
-
-### ⚙️ Quickstart (Extension)
-
-```bash
-# 1) Clone
-git clone https://github.com/FradiumOfficial/fradium
-cd fradium/extension
-
-# 2) Install & build
-npm install
-npm run build
-
-# 3) Load in browser
-# Chrome/Edge: chrome://extensions → Enable Developer Mode → Load unpacked → dist/
-# Firefox: about:debugging#/runtime/this-firefox → Load Temporary Add-on → dist/manifest.json
-```
-
-**Browser Extension Preview**
-
-| Dashboard                                                                                                                   | History                                                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| ![Dashboard](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-dashboard.png) | ![History](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-history.png) |
-
-| Address Threat Analyzer                                                                                                                        | Analyze Menu                                                                                                                      |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| ![Address Threat Analyzer](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-result.png) | ![Analyze Menu](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/extension-analyze-page.png) |
-
----
-
 ## 🌟 Features of Fradium
 
 ### Fradium Wallet App (Cross-Chain & On-Chain)
