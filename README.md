@@ -26,7 +26,7 @@ Our solution introduces **Fradium**, a fully on-chain security and analytics pla
 
 - Mainnet: https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io
 - Video Demo: https://youtu.be/-j6LzwI1Df8
-- Pitch Deck: https://drive.google.com/file/d/1WuzlsoFHoZEb9zIQQohGaBz3mQPe8f2B/view?usp=sharing
+- Pitch Deck: https://drive.google.com/file/d/1x5Ow79NvpL58VqSLkqNf8o9VOg_UfAKm/view?usp=sharing
 - Docs: https://fradium.gitbook.io/docs
 - Extension Chrome store: [Chrome store](https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp)
 
@@ -43,6 +43,20 @@ No extra setup, no heavy installs — just seamless access to your wallet wherev
 - Multi-chain token support in one unified UI
 - On-chain evidence links for flagged entities
 
+### 🔍 ICP AI Address Analyzer
+
+Introducing **ICP AI Address Analyzer**, an advanced AI-powered tool built specifically for the Internet Computer ecosystem.
+Unlike generic scanners, this analyzer is trained to **understand and evaluate ICP addresses**, including those following the **ICRC-1 token standard**.
+
+With it, users can:
+
+- **Scan and analyze ICP addresses** with full ICRC-1 support
+- **Detect risks** such as scam clusters, drainer proximity, or suspicious transaction histories
+- **Generate explanations backed by on-chain data** for transparency and trust
+- **Empower safer decision-making** before sending or signing any transaction
+
+📖 For more details, see [technical explanation](#-how-the-fradium-ai-threat-detection-works-white-box-view).
+
 ### 🎨 Redesigned User Interface
 
 We’ve completely **redesigned the Fradium UI** to deliver a modern, cleaner, and more intuitive experience.
@@ -56,25 +70,11 @@ This gave us concrete feedback on clarity, efficiency, and user confidence.
 | ![Image 1](docs/images/testing/fieldwork.png) ![Image 2](docs/images/testing/experience.png) | ![Image 2](docs/images/testing/complex.png) ![Image 2](docs/images/testing/confident.png) |
 | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 
-🎥 Below is a short video recap of the beta testing process and user feedback:
-[Watch the video](https://youtu.be/9H5q75SkUJg)
-
 | [![Watch the video](https://img.youtube.com/vi/9H5q75SkUJg/maxresdefault.jpg)](https://youtu.be/9H5q75SkUJg) |
 | ------------------------------------------------------------------------------------------------------------ |
 
-### 🔍 ICP AI Address Analyzer
-
-Introducing **ICP AI Address Analyzer**, an advanced AI-powered tool built specifically for the Internet Computer ecosystem.
-Unlike generic scanners, this analyzer is trained to **understand and evaluate ICP addresses**, including those following the **ICRC-1 token standard**.
-
-With it, users can:
-
-- **Scan and analyze ICP addresses** with full ICRC-1 support
-- **Detect risks** such as scam clusters, drainer proximity, or suspicious transaction histories
-- **Generate explanations backed by on-chain data** for transparency and trust
-- **Empower safer decision-making** before sending or signing any transaction
-
-📖 For more details, see the [technical explanation](src/ai/readme.md).
+🎥 Above is a short video recap of the beta testing process and user feedback:
+[Watch the video](https://youtu.be/9H5q75SkUJg)
 
 ---
 
@@ -118,51 +118,59 @@ With it, users can:
 - Used for staking, voting, and rewarding credible reports.
 - All token actions are handled securely on-chain.
 
-## 📎 Demo App
+---
 
-| Landing Page                                                                                                       | Extension Section                                                                                                       |
-| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/landing-page.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/landing-extension.png) |
+## 📃 How the Fradium AI Threat Detection Works (White-Box View):
 
-| Wallet App                                                                                                       | Community Create                                                                                                    |
-| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/wallet-app.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/create-report.png) |
+- **Real-Time Address Analysis**: Constantly analyzes blockchain addresses across multiple chains (Bitcoin, Ethereum, Solana, ICP) as transactions occur.
+- **Advanced Feature Engineering**: Extracts 100+ behavioral and transactional features, including:
 
-| Transaction History                                                                                                       | AI Address Threat Detection Report                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| ![Image 1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/transaction-history.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/analyze-address.png) |
+  - _Transaction Patterns_: Frequency, timing, and amount distributions of address activity.
+  - _Network Relationships_: Address clustering, interaction patterns, and connection analysis.
+  - _Behavioral Signatures_: UTXO spending patterns, smart contract interactions, and gas usage.
+  - _Risk Indicators_: Known scam patterns, suspicious activity flags, and anomaly detection.
 
-| Unstake $FUM Token                                                                                                       | Fradium LLM Assistant                                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| ![Unstake FUM1](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/unstake-token.png) | ![Image 2](https://raw.githubusercontent.com/FradiumOfficial/fradium/refs/heads/main/docs/images/assistant.png) |
+- **Multi-Chain Intelligence**: Builds comprehensive threat profiles by analyzing chain-specific behaviors and cross-chain patterns, modeling different attack vectors and fraud techniques.
+- **Predictive Modeling**: Uses Neural Networks (MLP) via ONNX to predict threat levels, highlighting the most influential features driving security assessments.
 
-## 🤖 How the Fradium AI Threat Detection Works
+#### What the AI Prioritizes:
 
-Fradium's core security layer is powered by advanced machine learning models that analyze blockchain addresses in real-time to detect potential threats, scams, and malicious activity.
+Our model has learned that the most critical predictors of malicious activity are:
 
-### Multi-Chain AI Models
+- **Transaction Clustering Patterns** – How addresses group together and interact with known threat actors has the strongest impact on threat scoring.
+- **Behavioral Anomalies** – Deviations from normal spending/interaction patterns significantly affect risk assessment.
+- **Network Position & Gas Usage** – How addresses position themselves in the network and their resource consumption patterns.
+- **Temporal Analysis** – Timing patterns, activity bursts, and coordination with other suspicious addresses.
+
+Other factors such as transaction amounts, contract interactions, and validator patterns still contribute, but with less influence compared to the above.
+
+| Technical Architecture | Model Performance                                 |
+| ---------------------- | ------------------------------------------------- |
+| **ML Framework**       | Neural Networks (MLP) via ONNX                    |
+| **Inference Engine**   | tract-onnx on Internet Computer                   |
+| **Model Training**     | Python (scikit-learn)                             |
+| **Deployment**         | Embedded ONNX models in Wasm canisters            |
+| **Processing**         | On-chain inference for trustless predictions      |
+| **Learning**           | Continuous improvement through community feedback |
+
+#### Multi-Chain Coverage:
 
 - **Bitcoin Detection**: Analyzes UTXO patterns, transaction clustering, and spending behaviors
 - **Ethereum Detection**: Examines smart contract interactions, ERC-20 token flows, and gas usage patterns
 - **Solana Detection**: Evaluates program interactions, token account behaviors, and validator patterns
+- \*\*ICP Detection: Monitors canister interaction patterns, cycles consumption behavior, principal authentication analysis, and inter-canister communication patterns
 
-### Key AI Features
+| Features Importance                     | Confusion Matrix                         |
+| --------------------------------------- | ---------------------------------------- |
+| ![Image 1](docs/images/ai/features.png) | ![Image 2](docs/images/ai/confusion.png) |
 
-- **On-Chain Inference**: ML models run directly on Internet Computer canisters for trustless predictions
-- **Hybrid Processing**: Optimized architectures for each blockchain's unique characteristics
-- **Real-Time Analysis**: Instant threat assessment before transaction execution
-- **Continuous Learning**: Models improve through community feedback and new threat data
+| Precision Recall                         | True/False Positive                | Training Loss                           |
+| ---------------------------------------- | ---------------------------------- | --------------------------------------- |
+| ![Image 1](docs/images/ai/precision.png) | ![Image 2](docs/images/ai/roc.png) | ![Image 3](docs/images/ai/training.png) |
 
-### Technical Highlights
+📖 For more details, see the [technical explanation](src/ai/readme.md).
 
-| Component            | Technology                             |
-| -------------------- | -------------------------------------- |
-| **ML Framework**     | Neural Networks (MLP) via ONNX         |
-| **Inference Engine** | tract-onnx on Internet Computer        |
-| **Model Training**   | Python (scikit-learn)                  |
-| **Deployment**       | Embedded ONNX models in Wasm canisters |
-
-The AI system processes thousands of behavioral features per address, including transaction patterns, timing analysis, amount distributions, and network relationships to provide accurate threat assessments with minimal false positives.
+---
 
 ## 🚀 Build and Deployment Instructions
 
@@ -221,11 +229,11 @@ Once bitcoind is running successfully on your local machine, you can proceed to 
    dfx deploy
   ```
 
-- Run build fradium token script
+- Run the script to mint Fradium tokens to the backend
 
   ```sh
-   chmod +x ./scripts/build.fradium_token.sh
-   ./script/build.fradium_token.sh
+   chmod +x ./scripts/fradium.mint_backend.sh
+   ./script/fradium.mint_backend.sh
   ```
 
 ## 🏗️ Architecture Overview
