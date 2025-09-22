@@ -168,7 +168,7 @@ Other factors such as transaction amounts, contract interactions, and validator 
 | ---------------------------------------- | ---------------------------------- | --------------------------------------- |
 | ![Image 1](docs/images/ai/precision.png) | ![Image 2](docs/images/ai/roc.png) | ![Image 3](docs/images/ai/training.png) |
 
-📖 For more details, see the [technical explanation](src/ai/readme.md).
+📖 For more details, see the [technical explanation](src/ai/README.md).
 
 ---
 
