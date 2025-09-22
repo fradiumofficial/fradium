@@ -4,7 +4,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { detectAddressNetwork, getBalance as fetchTokenBalance, getFeeInfo, sendTokenToBackend } from "@/core/lib/tokenUtils.js";
+import { detectAddressNetwork, getBalance as fetchTokenBalance, getFeeInfo, sendTokenToBackend, formatAmount } from "@/core/lib/tokenUtils.js";
 import { jsonStringify } from "@/core/lib/canisterUtils.js";
 import { AIAnalyzeService } from "@/core/services/ai/aiAnalyze.js";
 
@@ -878,7 +878,19 @@ Remember: You are part of the Fradium ecosystem that helps users understand and 
       }
 
       const result = await getBalanceTool.func({ address });
-      return JSON.parse(result);
+      const parsed = JSON.parse(result);
+      if (parsed && parsed.success && typeof parsed.balance !== "undefined") {
+        parsed.balance = formatAmount(parsed.balance);
+        if (typeof parsed.message === "string") {
+          // Optionally reflect formatted amount in message if present
+          // Try to replace the first number-like occurrence with formatted value (non-destructive fallback)
+          try {
+            const formatted = parsed.balance;
+            parsed.message = parsed.message.replace(/(\d+(?:\.\d+)?)/, formatted);
+          } catch (_e) {}
+        }
+      }
+      return parsed;
     } catch (error) {
       console.error("Error getting balance:", error);
       return {
