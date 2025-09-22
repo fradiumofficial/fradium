@@ -59,7 +59,8 @@ This gave us concrete feedback on clarity, efficiency, and user confidence.
 🎥 Below is a short video recap of the beta testing process and user feedback:
 [Watch the video](https://youtu.be/9H5q75SkUJg)
 
-[![Watch the video](https://img.youtube.com/vi/9H5q75SkUJg/maxresdefault.jpg)](https://youtu.be/9H5q75SkUJg)
+| [![Watch the video](https://img.youtube.com/vi/9H5q75SkUJg/maxresdefault.jpg)](https://youtu.be/9H5q75SkUJg) |
+| ------------------------------------------------------------------------------------------------------------ |
 
 ### 🔍 ICP AI Address Analyzer
 
