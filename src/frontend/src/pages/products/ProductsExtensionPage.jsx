@@ -38,11 +38,7 @@ const ProductsExtension = () => {
       return () => io.disconnect();
     }, []);
     return (
-      <div
-        ref={ref}
-        className={`transition-all duration-300 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"}`}
-        style={{ transitionDelay: `${delay}ms` }}
-      >
+      <div ref={ref} className={`transition-all duration-300 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"}`} style={{ transitionDelay: `${delay}ms` }}>
         {children}
       </div>
     );
@@ -55,15 +51,7 @@ const ProductsExtension = () => {
         <div className="min-h-screen bg-[#000510] text-white font-inter w-full pb-16 relative overflow-hidden">
           {/* Background layer - starts from bottom with natural height */}
           <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
-            <img
-              src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
-              alt=""
-              aria-hidden="true"
-              decoding="async"
-              loading="lazy"
-              draggable={false}
-              className="w-full h-auto object-contain object-bottom"
-            />
+            <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
           </div>
           {/* Soft fade at top edge to blend with navbar */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -73,10 +61,21 @@ const ProductsExtension = () => {
               <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-2">FRADIUM EXTENSION</span>
             </Reveal>
             <Reveal delay={80}>
-              <h1 className="text-[24px] font-medium leading-tight mb-8 text-center">Security that follows you,<br />anywhere you Browse</h1>
+              <h1 className="text-[24px] font-medium leading-tight mb-8 text-center">
+                Security that follows you,
+                <br />
+                anywhere you Browse
+              </h1>
             </Reveal>
             <Reveal delay={140}>
-              <ButtonGreen size="md" fontWeight="medium" className="w-full max-w-xs" textClassName="text-center leading-tight">
+              <ButtonGreen
+                size="md"
+                onClick={() => {
+                  window.open("https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp", "_blank");
+                }}
+                fontWeight="medium"
+                className="w-full max-w-xs"
+                textClassName="text-center leading-tight">
                 Download Extension
               </ButtonGreen>
             </Reveal>
@@ -137,15 +136,7 @@ const ProductsExtension = () => {
       <div className="min-h-screen bg-[#000510] text-white font-inter w-full relative overflow-hidden">
         {/* Background layer - starts from bottom with natural height */}
         <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
-          <img
-            src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            loading="lazy"
-            draggable={false}
-            className="w-full h-auto object-contain object-bottom"
-          />
+          <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
         </div>
         {/* Soft fade at top edge to blend with navbar */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -168,10 +159,9 @@ const ProductsExtension = () => {
                 fontWeight="medium"
                 className=" h-[48px] text-[18px]"
                 onClick={() => {
-                  window.open("https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc", "_blank");
+                  window.open("https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp", "_blank");
                 }}
-                textClassName="text-center leading-tight"
-              >
+                textClassName="text-center leading-tight">
                 Download Extension
               </ButtonGreen>
             </Reveal>

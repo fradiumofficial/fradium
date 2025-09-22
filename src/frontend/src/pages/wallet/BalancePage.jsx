@@ -10,6 +10,7 @@ import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
+import { getICRCTransactionHistory } from "@/core/services/historyTransactionService";
 
 import Card from "@/core/components/Card";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
@@ -236,6 +237,7 @@ export default function BalancePage() {
           ];
           setTransactions(mock);
           setFilteredTransactions(mock);
+          setIsLoadingTransactions(false);
         } else {
           // Fetch balance
           setIsLoadingBalance(true);
@@ -249,35 +251,54 @@ export default function BalancePage() {
           setWalletAddress(identity.getPrincipal().toString());
           setIsLoadingBalance(false);
 
-          // Fetch transactions
+          // Fetch transactions via index service (Fradium only)
           setIsLoadingTransactions(true);
-          const backendTransactions = await token.get_transactions({
-            start: 0,
-            length: 100, // Get last 100 transactions
-          });
+          let fradiumTx = await getICRCTransactionHistory("fradium", identity.getPrincipal(), null, 100);
+          // Fallback ke ledger langsung jika indexer belum ada data
+          if (!fradiumTx || fradiumTx.length === 0) {
+            try {
+              const backendTransactions = await token.get_transactions({ start: 0, length: 100 });
+              const userPrincipal = identity.getPrincipal().toString();
+              const userTransactions = backendTransactions.transactions.filter((tx) => {
+                if (tx.transfer) {
+                  return tx.transfer.from.owner.toString() === userPrincipal || tx.transfer.to.owner.toString() === userPrincipal;
+                }
+                if (tx.mint) {
+                  return tx.mint.to.owner.toString() === userPrincipal;
+                }
+                if (tx.burn) {
+                  return tx.burn.from.owner.toString() === userPrincipal;
+                }
+                if (tx.approve) {
+                  return tx.approve.from.owner.toString() === userPrincipal;
+                }
+                return false;
+              });
+              const converted = convertTransactionData(userTransactions, userPrincipal);
+              setTransactions(converted);
+              setFilteredTransactions(converted);
+              setIsLoadingTransactions(false);
+              return;
+            } catch (_e) {
+              // ignore fallback error; will proceed with empty list
+            }
+          }
 
-          // Filter transactions for this user
-          const userPrincipal = identity.getPrincipal().toString();
-          const userTransactions = backendTransactions.transactions.filter((tx) => {
-            // Check if transaction involves this user
-            if (tx.transfer) {
-              return tx.transfer.from.owner.toString() === userPrincipal || tx.transfer.to.owner.toString() === userPrincipal;
-            }
-            if (tx.mint) {
-              return tx.mint.to.owner.toString() === userPrincipal;
-            }
-            if (tx.burn) {
-              return tx.burn.from.owner.toString() === userPrincipal;
-            }
-            if (tx.approve) {
-              return tx.approve.from.owner.toString() === userPrincipal;
-            }
-            return false;
+          const mapped = fradiumTx.map((t, idx) => {
+            const type = t.amount < 0 ? "sent" : "receive";
+            return {
+              id: idx + 1,
+              type,
+              description: t.title || (type === "sent" ? "Token transfer" : "Token received"),
+              amount: t.amount, // already in FRADIUM units; negative for sent
+              date: new Date(Number(t.timestamp)).toISOString(),
+              txHash: t.hash || `tx_${idx}_${t.timestamp}`,
+              timestamp: Number(t.timestamp),
+            };
           });
-
-          const convertedTransactions = convertTransactionData(userTransactions, userPrincipal);
-          setTransactions(convertedTransactions);
-          setFilteredTransactions(convertedTransactions);
+          setTransactions(mapped);
+          setFilteredTransactions(mapped);
+          setIsLoadingTransactions(false);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -408,9 +429,6 @@ export default function BalancePage() {
                           <span className="text-sm text-white/70">FRADIUM</span>
                         </div>
                       </div>
-                      <ButtonGreen size="now" fontWeight="medium">
-                        Top Up
-                      </ButtonGreen>
                     </div>
                   </Card>
                 </Reveal>
@@ -429,7 +447,7 @@ export default function BalancePage() {
                       <Button onClick={() => setFilterType("receive")} className={`text-sm rounded-full px-4 py-1.5 border ${filterType === "receive" ? "bg-green-400 text-black border-green-400" : "bg-transparent text-white/80 border-white/15 hover:bg-white/10 hover:text-white"}`}>
                         Received
                       </Button>
-                      <Button onClick={() => setFilterType("sent")} className={`text-sm rounded-full px-4 py-1.5 border ${filterType === "sent" ? "bg-red-400 text-white border-red-400" : "bg-transparent text_white/80 border-white/15 hover:bg-white/10 hover:text-white"}`}>
+                      <Button onClick={() => setFilterType("sent")} className={`text-sm rounded-full px-4 py-1.5 border ${filterType === "sent" ? "bg-red-400 text-white border-red-400" : "bg-transparent text-white/80 border-white/15 hover:bg-white/10 hover:text-white"}`}>
                         Sent
                       </Button>
                     </div>
@@ -464,7 +482,7 @@ export default function BalancePage() {
                       const { date, time } = formatDate(transaction.date);
                       return (
                         <Reveal key={transaction.id} delay={idx * 80}>
-                          <Card className="relative overflow-hidden rounded-2xl border border-white/10 bg_white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.35)] p-4 sm:p-5">
+                          <Card className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.35)] p-4 sm:p-5">
                             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-20%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_60%)]" />
                             <div className="relative z-[1] flex items-start justify-between">
                               <div className="flex items-start space-x-4 flex-1 min-w-0">

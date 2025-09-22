@@ -31,7 +31,6 @@ export default function MyReportPage() {
   const { isAuthenticated: isConnected, identity } = useAuth();
   const navigate = useNavigate();
 
-
   // Simple reveal component without complex intersection observer
   const Reveal = ({ children, delay = 0, duration = 300 }) => {
     const [show, setShow] = useState(false);
@@ -44,9 +43,8 @@ export default function MyReportPage() {
       <div
         className={`transition-all ease-out ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
         style={{
-          transitionDuration: `${duration}ms`
-        }}
-      >
+          transitionDuration: `${duration}ms`,
+        }}>
         {children}
       </div>
     );
@@ -166,6 +164,8 @@ export default function MyReportPage() {
     setIsLoadingCreated(true);
     try {
       const response = await backend.get_my_reports();
+
+      console.log("response", response);
       if (response.Err) {
         toast.error(response.Err);
         setCreatedReports([]);
@@ -240,7 +240,6 @@ export default function MyReportPage() {
     }
   }, [isConnected]);
 
-
   // Filter reports based on search and status
   const filterReports = (reports) => {
     let filtered = reports;
@@ -289,21 +288,53 @@ export default function MyReportPage() {
   };
 
   // Handle unstake click
-  const handleUnstakeClick = (report, type) => {
+  const handleUnstakeClick = async (report, type) => {
     // Use actual stake amount from backend data
     const stakedAmount = report.stakeAmount || 0;
     setStakedAmount(stakedAmount);
-    setUnstakeReport({ ...report, type });
+
+    // Calculate reward based on type and status
+    let reward = 0;
+    if (type === "created" && report.status === "Validated") {
+      // 25% reward for validated created reports
+      reward = stakedAmount * 0.25;
+    } else if (type === "voted" && report.status === "Validated") {
+      // 10% reward for validated voted reports
+      reward = stakedAmount * 0.1;
+    }
+
+    setUnstakeReport({ ...report, type, reward });
     setShowUnstakeModal(true);
   };
 
   // Handle confirm unstake
   const handleConfirmUnstake = async () => {
+    if (!unstakeReport) return;
     setIsUnstaking(true);
-
     try {
-      throw new Error("Not implemented");
+      const reportId = unstakeReport.id;
+      let result;
+      if (unstakeReport.type === "created") {
+        result = await backend.unstake_created_report(reportId);
+      } else {
+        result = await backend.unstake_voted_report(reportId);
+      }
 
+      if (result && result.Err) {
+        toast.error(result.Err);
+      } else if (result && result.Ok) {
+        toast.success(result.Ok);
+        setShowUnstakeModal(false);
+        setUnstakeReport(null);
+        try {
+          await Promise.all([fetchMyReports(), fetchMyVotedReports()]);
+        } catch (_e) {}
+        try {
+          window.dispatchEvent(new Event("balance-updated"));
+        } catch (_e) {}
+      } else {
+        toast.error("Unstake failed: Unknown response");
+      }
     } catch (error) {
       console.error("Error during unstake:", error);
       toast.error("Failed to unstake tokens");
@@ -329,7 +360,7 @@ export default function MyReportPage() {
             background-position: 200% 0;
           }
         }
-        
+
         @keyframes progressFill {
           0% {
             width: 0%;
@@ -338,11 +369,11 @@ export default function MyReportPage() {
             width: var(--progress-width);
           }
         }
-        
+
         .animate-shimmer {
           animation: shimmer 2s ease-in-out infinite;
         }
-        
+
         .animate-progress-fill {
           animation: progressFill 0.8s ease-out;
         }
@@ -350,15 +381,7 @@ export default function MyReportPage() {
       <div className="bg-[#000510] text-white relative overflow-hidden min-h-screen">
         {/* Background layer - starts from bottom with natural height */}
         <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
-          <img
-            src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            loading="lazy"
-            draggable={false}
-            className="w-full h-auto object-contain object-bottom"
-          />
+          <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
         </div>
         {/* Soft fade at top edge to blend with navbar */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -378,9 +401,7 @@ export default function MyReportPage() {
               </div>
               <Reveal delay={100} duration={300}>
                 <Link to="/reports/create">
-                  <ButtonGreen size="sm" fontWeight="medium"
-                    onClick={() => navigate("/reports/create")}
-                  >
+                  <ButtonGreen size="sm" fontWeight="medium" onClick={() => navigate("/reports/create")}>
                     Create New Report
                   </ButtonGreen>
                 </Link>
@@ -438,7 +459,9 @@ export default function MyReportPage() {
                           <h2 className="text-xl font-medium">Reported Addresses</h2>
                           <p className="text-xs text-gray-400 mt-1">Community-reported wallet addresses under review for potential security threats</p>
                         </div>
-                        <div className="text-xs text-gray-400">Showing {filteredCreatedReports.length}-{filteredCreatedReports.length} of {createdReports.length} results</div>
+                        <div className="text-xs text-gray-400">
+                          Showing {filteredCreatedReports.length}-{filteredCreatedReports.length} of {createdReports.length} results
+                        </div>
                       </div>
                     </Reveal>
 
@@ -460,7 +483,7 @@ export default function MyReportPage() {
                     ) : (
                       <div className="grid grid-cols-1 gap-4 sm:gap-6">
                         {filteredCreatedReports.map((report, index) => {
-                          const canUnstake = report.status === "Unsafe" && !report.isUnstaked;
+                          const canUnstake = (report.status === "Validated" || report.status === "Unsafe") && !report.isUnstaked;
                           return (
                             <Reveal key={report.id} delay={index * 30} duration={300}>
                               <div className="group">
@@ -502,18 +525,12 @@ export default function MyReportPage() {
 
                                     <div className="flex items-center space-x-2">
                                       {canUnstake && (
-                                        <Button
-                                          onClick={() => handleUnstakeClick(report, "created")}
-                                          className="bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-400/30 hover:from-green-500/30 hover:to-green-600/30 hover:border-green-400/50 text-green-400 text-sm font-semibold px-3 py-1.5 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20"
-                                        >
+                                        <Button onClick={() => handleUnstakeClick(report, "created")} className="bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-400/30 hover:from-green-500/30 hover:to-green-600/30 hover:border-green-400/50 text-green-400 text-sm font-semibold px-3 py-1.5 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20">
                                           <Coins className="w-3 h-3 mr-1" />
                                           Unstake
                                         </Button>
                                       )}
-                                      <Button
-                                        className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]"
-                                        onClick={() => navigate(`/reports/${report.id}`)}
-                                      >
+                                      <Button className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]" onClick={() => navigate(`/reports/${report.id}`)}>
                                         View Details
                                         <Eye className="w-3 h-3 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                                       </Button>
@@ -530,7 +547,7 @@ export default function MyReportPage() {
                                       className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all duration-500 ease-out group-hover:from-red-300 group-hover:to-red-400"
                                       style={{
                                         width: `${report.yesPercentage}%`,
-                                        '--progress-width': `${report.yesPercentage}%`
+                                        "--progress-width": `${report.yesPercentage}%`,
                                       }}
                                     />
                                   </div>
@@ -540,11 +557,11 @@ export default function MyReportPage() {
                                     <div className="flex items-center space-x-4">
                                       <span>ID: #{report.id.toString().padStart(4, "0")}</span>
                                       <span>Evidence: {report.evidence.length}</span>
-                                      <span>Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FUM</span></span>
+                                      <span>
+                                        Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FUM</span>
+                                      </span>
                                     </div>
-                                    {report.reward > 0 && (
-                                      <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FUM</span>
-                                    )}
+                                    {report.reward > 0 && <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FUM</span>}
                                   </div>
                                 </div>
                               </div>
@@ -581,7 +598,7 @@ export default function MyReportPage() {
                     ) : (
                       <div className="grid grid-cols-1 gap-4 sm:gap-6">
                         {filteredVotedReports.map((report, index) => {
-                          const canUnstake = report.status === "Unsafe" && !report.isUnstaked;
+                          const canUnstake = (report.status === "Validated" || report.status === "Unsafe") && !report.isUnstaked;
                           return (
                             <Reveal key={report.id} delay={index * 30} duration={300}>
                               <div className="group">
@@ -615,9 +632,7 @@ export default function MyReportPage() {
                                           <>
                                             <span className="group-hover:animate-pulse">•</span>
                                             <div className={`w-2 h-2 rounded-full ${report.voteType ? "bg-red-400" : "bg-green-400"}`} />
-                                            <span className={`font-medium ${report.voteType ? "text-red-400" : "text-green-400"} group-hover:${report.voteType ? "text-red-300" : "text-green-300"} transition-colors duration-200`}>
-                                              Voted: {report.voteType ? "Unsafe" : "Safe"}
-                                            </span>
+                                            <span className={`font-medium ${report.voteType ? "text-red-400" : "text-green-400"} group-hover:${report.voteType ? "text-red-300" : "text-green-300"} transition-colors duration-200`}>Voted: {report.voteType ? "Unsafe" : "Safe"}</span>
                                           </>
                                         )}
                                         {report.isUnstaked && (
@@ -632,18 +647,12 @@ export default function MyReportPage() {
 
                                     <div className="flex items-center space-x-2">
                                       {canUnstake && (
-                                        <Button
-                                          onClick={() => handleUnstakeClick(report, "voted")}
-                                          className="bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-400/30 hover:from-green-500/30 hover:to-green-600/30 hover:border-green-400/50 text-green-400 text-sm font-semibold px-3 py-1.5 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20"
-                                        >
+                                        <Button onClick={() => handleUnstakeClick(report, "voted")} className="bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-400/30 hover:from-green-500/30 hover:to-green-600/30 hover:border-green-400/50 text-green-400 text-sm font-semibold px-3 py-1.5 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20">
                                           <Coins className="w-3 h-3 mr-1" />
                                           Unstake
                                         </Button>
                                       )}
-                                      <Button
-                                        className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]"
-                                        onClick={() => navigate(`/reports/${report.id}`)}
-                                      >
+                                      <Button className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]" onClick={() => navigate(`/reports/${report.id}`)}>
                                         View Details
                                         <Eye className="w-3 h-3 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                                       </Button>
@@ -660,7 +669,7 @@ export default function MyReportPage() {
                                       className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all duration-500 ease-out group-hover:from-red-300 group-hover:to-red-400"
                                       style={{
                                         width: `${report.yesPercentage}%`,
-                                        '--progress-width': `${report.yesPercentage}%`
+                                        "--progress-width": `${report.yesPercentage}%`,
                                       }}
                                     />
                                   </div>
@@ -670,11 +679,11 @@ export default function MyReportPage() {
                                     <div className="flex items-center space-x-4">
                                       <span>ID: #{report.id.toString().padStart(4, "0")}</span>
                                       <span>Evidence: {report.evidence.length}</span>
-                                      <span>Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FUM</span></span>
+                                      <span>
+                                        Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FUM</span>
+                                      </span>
                                     </div>
-                                    {report.reward > 0 && (
-                                      <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FUM</span>
-                                    )}
+                                    {report.reward > 0 && <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FUM</span>}
                                   </div>
                                 </div>
                               </div>
@@ -695,82 +704,93 @@ export default function MyReportPage() {
 
       {/* Unstake Modal */}
       {showUnstakeModal && unstakeReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black" onClick={handleCancelUnstake}></div>
-          <div className="relative bg-black border border-white/20 rounded-xl sm:rounded-2xl p-6 sm:p-8 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl sm:text-2xl font-bold">Unstake Tokens</h3>
-              <Button onClick={handleCancelUnstake} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg">
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+        <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+          <div className="flex min-h-full items-start justify-center pt-8 pl-4 pr-4 pb-4">
+            <div className="relative bg-[#171A1C] border border-white/10 rounded-2xl p-6 sm:p-8 w-full max-w-md mx-auto my-8">
+              <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={handleCancelUnstake} aria-label="Close">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
 
-            <div className="space-y-6">
-              {/* Report Info */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Report ID:</span>
-                  <span className="font-mono text-white">{unstakeReport.id}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Status:</span>
-                  <div className={`inline-flex items-center space-x-2 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(unstakeReport.status)}`}>
-                    {getStatusIcon(unstakeReport.status)}
-                    <span>{unstakeReport.status}</span>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl sm:text-2xl font-bold">Unstake Tokens</h3>
+              </div>
+
+              <div className="space-y-6">
+                {/* Report Info */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-400">Report ID:</span>
+                    <span className="font-mono text-white">{unstakeReport.id}</span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Address:</span>
-                  <span className="font-mono text-sm text-white">{unstakeReport.shortAddress}</span>
-                </div>
-                {unstakeReport.type === "voted" && unstakeReport.voteType !== undefined && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-400">Status:</span>
+                    <div className={`inline-flex items-center space-x-2 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(unstakeReport.status)} bg-white/[0.02]`}>
+                      {getStatusIcon(unstakeReport.status)}
+                      <span>{unstakeReport.status}</span>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">Your vote:</span>
-                    <span className={`text-sm font-medium ${unstakeReport.voteType ? "text-red-400" : "text-green-400"}`}>{unstakeReport.voteType ? "Unsafe" : "Safe"}</span>
+                    <span className="text-sm text-gray-400">Address:</span>
+                    <span className="font-mono text-sm text-white">{unstakeReport.shortAddress}</span>
                   </div>
-                )}
-              </div>
+                  {unstakeReport.type === "voted" && unstakeReport.voteType !== undefined && (
+                    <div className="flex items_center justify_between mt-2">
+                      <span className="text-sm text-gray-400">Your vote:</span>
+                      <span className={`text-sm font-medium ${unstakeReport.voteType ? "text-red-400" : "text-green-400"}`}>{unstakeReport.voteType ? "Unsafe" : "Safe"}</span>
+                    </div>
+                  )}
+                </div>
 
-              {/* Unstake Details */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm sm:text-base">Your current balance:</span>
-                  <span className="font-bold text-white">{userBalance.toLocaleString()} FUM</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm sm:text-base">Staked amount:</span>
-                  <span className="font-bold text-white">{stakedAmount} FUM</span>
-                </div>
-                {unstakeReport.type === "voted" && unstakeReport.reward > 0 && (
+                {/* Unstake Details */}
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300 text-sm sm:text-base">Potential reward (10%):</span>
-                    <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
+                    <span className="text-gray-300 text-sm sm:text-base">Your current balance:</span>
+                    <span className="font-bold text-white">{userBalance.toLocaleString()} FUM</span>
                   </div>
-                )}
-                {unstakeReport.type === "created" && unstakeReport.reward > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300 text-sm sm:text-base">Validation reward (25%):</span>
-                    <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
+                    <span className="text-gray-300 text-sm sm:text-base">Staked amount:</span>
+                    <span className="font-bold text-white">{stakedAmount.toLocaleString()} FUM</span>
                   </div>
-                )}
-              </div>
-
-              {/* Total Amount */}
-              <div className="p-4 bg-green-400/10 rounded-xl border border-green-400/20">
-                <div className="flex justify-between items-center">
-                  <span className="text-green-400 font-medium">Total to receive:</span>
-                  <span className="font-bold text-green-400 text-lg">{(stakedAmount + unstakeReport.reward).toFixed(2)} FUM</span>
+                  {unstakeReport.type === "voted" && unstakeReport.reward > 0 && unstakeReport.status === "Validated" && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 text-sm sm:text-base">Voting reward (10%):</span>
+                      <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
+                    </div>
+                  )}
+                  {unstakeReport.type === "created" && unstakeReport.reward > 0 && unstakeReport.status === "Validated" && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 text-sm sm:text-base">Validation reward (25%):</span>
+                      <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
+                    </div>
+                  )}
+                  {unstakeReport.status !== "Validated" && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300 text-sm sm:text-base">Reward:</span>
+                      <span className="font-bold text-gray-400">No reward (report not validated)</span>
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                <Button onClick={handleCancelUnstake} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
-                  Cancel
-                </Button>
-                <Button onClick={handleConfirmUnstake} disabled={isUnstaking} className="flex-1 bg-green-400 hover:bg-green-500 text-black disabled:opacity-50 disabled:cursor-not-allowed">
-                  {isUnstaking ? "Unstaking..." : "Confirm Unstake"}
-                </Button>
+                {/* Total Amount */}
+                <div className="p-4 bg-green-400/10 rounded-xl border border-green-400/20">
+                  <div className="flex justify-between items-center">
+                    <span className="text-green-400 font-medium">Total to receive:</span>
+                    <span className="font-bold text-green-400 text-lg">{(stakedAmount + (unstakeReport.reward || 0)).toFixed(2)} FUM</span>
+                  </div>
+                  <div className="text-xs text-green-400/70 mt-1">{unstakeReport.status === "Validated" ? `${unstakeReport.type === "created" ? "Stake + 25% validation reward" : "Stake + 10% voting reward"}` : "Stake only (no reward - report not validated)"}</div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={handleCancelUnstake} className="py-2.5 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors">
+                    Cancel
+                  </button>
+                  <ButtonGreen fullWidth onClick={handleConfirmUnstake} disabled={isUnstaking} size="md" textSize="text-base" fontWeight="medium">
+                    {isUnstaking ? "Unstaking..." : "Confirm Unstake"}
+                  </ButtonGreen>
+                </div>
               </div>
             </div>
           </div>
