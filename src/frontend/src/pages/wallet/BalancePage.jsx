@@ -49,11 +49,7 @@ export default function BalancePage() {
       return () => io.disconnect();
     }, []);
     return (
-      <div
-        ref={ref}
-        className={`transition-all duration-300 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"}`}
-        style={{ transitionDelay: `${delay}ms` }}
-      >
+      <div ref={ref} className={`transition-all duration-300 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"}`} style={{ transitionDelay: `${delay}ms` }}>
         {children}
       </div>
     );
@@ -262,11 +258,10 @@ export default function BalancePage() {
 
           // Filter transactions for this user
           const userPrincipal = identity.getPrincipal().toString();
-          const userTransactions = backendTransactions.transactions.filter(tx => {
+          const userTransactions = backendTransactions.transactions.filter((tx) => {
             // Check if transaction involves this user
             if (tx.transfer) {
-              return tx.transfer.from.owner.toString() === userPrincipal ||
-                tx.transfer.to.owner.toString() === userPrincipal;
+              return tx.transfer.from.owner.toString() === userPrincipal || tx.transfer.to.owner.toString() === userPrincipal;
             }
             if (tx.mint) {
               return tx.mint.to.owner.toString() === userPrincipal;
@@ -350,15 +345,7 @@ export default function BalancePage() {
     <div className="min-h-screen bg-[#000510] text-white relative overflow-hidden flex flex-col">
       {/* Background layer - starts below navbar (not from top) */}
       <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
-        <img
-          src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
-          alt=""
-          aria-hidden="true"
-          decoding="async"
-          loading="lazy"
-          draggable={false}
-          className="absolute inset-0 w-full h-full object-cover object-top"
-        />
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -417,11 +404,13 @@ export default function BalancePage() {
                       <div>
                         <p className="text-xs text-white/70 mb-1">Current Balance</p>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-semibold text-white">{userBalance ? userBalance : '0'}</span>
-                          <span className="text-sm text-white/70">FADM</span>
+                          <span className="text-2xl font-semibold text-white">{userBalance ? userBalance : "0"}</span>
+                          <span className="text-sm text-white/70">FRADIUM</span>
                         </div>
                       </div>
-                      <ButtonGreen size="now" fontWeight="medium">Top Up</ButtonGreen>
+                      <ButtonGreen size="now" fontWeight="medium">
+                        Top Up
+                      </ButtonGreen>
                     </div>
                   </Card>
                 </Reveal>
@@ -487,7 +476,8 @@ export default function BalancePage() {
                                   <div className="flex items-start justify-between mb-1">
                                     <h3 className="font-medium text-white truncate pr-2">{transaction.description}</h3>
                                     <div className={`ml-2 font-medium text-lg sm:text-xl ${getTransactionColor(transaction.type)}`}>
-                                      {transaction.amount > 0 ? "+" : ""}{transaction.amount} FADM
+                                      {transaction.amount > 0 ? "+" : ""}
+                                      {transaction.amount} FRADIUM
                                     </div>
                                   </div>
 
@@ -495,7 +485,9 @@ export default function BalancePage() {
                                     <div className="flex items-center space-x-3 text-sm text-white/70">
                                       <span className="capitalize">{transaction.type}</span>
                                       <span>•</span>
-                                      <span>{date} at {time}</span>
+                                      <span>
+                                        {date} at {time}
+                                      </span>
                                     </div>
                                     <div className="font-mono text-xs text-white/60">{formatTxHash(transaction.txHash)}</div>
                                   </div>
@@ -526,4 +518,3 @@ export default function BalancePage() {
     </div>
   );
 }
-

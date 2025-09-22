@@ -10,6 +10,7 @@ import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/cha
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { Principal } from "@dfinity/principal";
 import ButtonPurple from "@/core/components/ButtonPurple";
+import ButtonGreen from "@/core/components/ButtonGreen";
 import { backend } from "declarations/backend";
 import { fradium_ledger as token } from "declarations/fradium_ledger";
 import Footer from "@/core/components/Footer";
@@ -26,6 +27,10 @@ export default function DetailReportPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userVote, setUserVote] = useState(null); // null, 'yes', 'no'
   const [timeRemaining, setTimeRemaining] = useState("");
+  const [imageLoading, setImageLoading] = useState({});
+  const [thumbnailLoading, setThumbnailLoading] = useState({});
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
 
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [voteType, setVoteType] = useState(null); // 'yes' or 'no'
@@ -224,37 +229,87 @@ export default function DetailReportPage() {
     }
   };
 
+  const handleImageLoad = (index, type = "main") => {
+    if (type === "main") {
+      setImageLoading((prev) => ({ ...prev, [index]: false }));
+    } else {
+      setThumbnailLoading((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const handleImageError = (index, type = "main") => {
+    if (type === "main") {
+      setImageLoading((prev) => ({ ...prev, [index]: false }));
+    } else {
+      setThumbnailLoading((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const openImageModal = (index) => {
+    setModalImageIndex(index);
+    setShowImageModal(true);
+    try {
+      window.dispatchEvent(new CustomEvent("image-modal-toggle", { detail: { open: true } }));
+    } catch (_e) {}
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    try {
+      window.dispatchEvent(new CustomEvent("image-modal-toggle", { detail: { open: false } }));
+    } catch (_e) {}
+  };
+
+  const navigateModalImage = (direction) => {
+    if (!uiData || !uiData.evidence || uiData.evidence.length === 0) return;
+    if (direction === "next") {
+      setModalImageIndex((prev) => (prev + 1) % uiData.evidence.length);
+    } else {
+      setModalImageIndex((prev) => (prev - 1 + uiData.evidence.length) % uiData.evidence.length);
+    }
+  };
+
+  useEffect(() => {
+    if (!showImageModal) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeImageModal();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        navigateModalImage("next");
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        navigateModalImage("prev");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showImageModal, uiData]);
+
+  useEffect(() => {
+    // Lock body scroll when image modal is open
+    if (showImageModal) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        try {
+          window.dispatchEvent(new CustomEvent("image-modal-toggle", { detail: { open: false } }));
+        } catch (_e) {}
+      };
+    }
+  }, [showImageModal]);
+
+  const [copiedAddress, setCopiedAddress] = useState(false);
+
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Copied to clipboard!", {
-        position: "bottom-center",
-        duration: 2000,
-        style: {
-          background: "#23272F",
-          color: "#9BE4A0",
-          border: "1px solid #393E4B",
-          borderRadius: "8px",
-          fontSize: "14px",
-          fontWeight: "500",
-        },
-        icon: "📋",
-      });
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 1500);
     } catch (error) {
       console.error("Failed to copy text:", error);
-      toast.error("Failed to copy text", {
-        position: "bottom-center",
-        duration: 2000,
-        style: {
-          background: "#23272F",
-          color: "#FF6B6B",
-          border: "1px solid #393E4B",
-          borderRadius: "8px",
-          fontSize: "14px",
-          fontWeight: "500",
-        },
-        icon: "❌",
-      });
     }
   };
 
@@ -283,10 +338,65 @@ export default function DetailReportPage() {
     try {
       setIsSubmitting(true);
 
-      throw new Error("Not implemented");
+      // Convert stake amount to e8s (8 decimal places)
+      const stakeAmountE8s = BigInt(Math.floor(Number.parseFloat(stakeAmount) * 1e8));
+
+      // Approve allowance (ICRC-2) for backend canister before voting
+      const backendCanisterId = "oqcob-6iaaa-aaaar-qbr7q-cai";
+      const approvalAmount = stakeAmountE8s + BigInt(200000000); // +2 $FRADIUM buffer
+
+      const approveResult = await token.icrc2_approve({
+        from_subaccount: [],
+        spender: {
+          owner: Principal.fromText(backendCanisterId),
+          subaccount: [],
+        },
+        amount: approvalAmount,
+        fee: [],
+        memo: [],
+        created_at_time: [],
+        expected_allowance: [],
+        expires_at: [],
+      });
+
+      if (!approveResult || approveResult.Err) {
+        if (approveResult?.Err?.InsufficientFunds) {
+          throw new Error("Insufficient funds. Please top up your balance.");
+        } else if (approveResult?.Err?.InsufficientAllowance) {
+          throw new Error("Insufficient allowance. Please try again.");
+        } else if (approveResult?.Err?.BadFee) {
+          throw new Error(`Bad fee. Expected: ${approveResult.Err.BadFee.expected_fee}`);
+        } else if (approveResult?.Err?.AllowanceChanged) {
+          throw new Error(`Allowance changed. Current: ${approveResult.Err.AllowanceChanged.current_allowance}`);
+        } else if (approveResult?.Err?.GenericError) {
+          throw new Error(approveResult.Err.GenericError.message || "Approve failed");
+        } else {
+          throw new Error("Failed to approve tokens");
+        }
+      }
+
+      // Call backend vote_report function
+      const voteParams = {
+        report_id: parseInt(uiData.id),
+        stake_amount: stakeAmountE8s,
+        vote_type: voteType === "yes", // true for unsafe, false for safe
+      };
+
+      const result = await backend.vote_report(voteParams);
+
+      if (result.Err) {
+        throw new Error(result.Err);
+      }
+
+      // Success - close modal and show success
+      setShowVoteModal(false);
+      setShowSuccessModal(true);
+
+      // Refresh the report data to show updated vote counts
+      window.location.reload();
     } catch (error) {
-      console.log("error", error);
-      toast.error("Failed to submit vote");
+      console.error("Vote submission error:", error);
+      toast.error(error.message || "Failed to submit vote");
     } finally {
       setIsSubmitting(false);
     }
@@ -301,6 +411,36 @@ export default function DetailReportPage() {
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
   };
+
+  // Disable page scroll when vote modal is open (match other modals)
+  useEffect(() => {
+    if (showVoteModal) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = "0px";
+    } else {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    };
+  }, [showVoteModal]);
+
+  // Disable page scroll when success modal is open
+  useEffect(() => {
+    if (showSuccessModal) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = "0px";
+    } else {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    };
+  }, [showSuccessModal]);
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -337,21 +477,35 @@ export default function DetailReportPage() {
         console.log("All reports response:", allReportsResponse);
 
         if (allReportsResponse.Ok && allReportsResponse.Ok.length > 0) {
-          console.log("Available report IDs:", allReportsResponse.Ok.map(r => r.report_id));
+          console.log(
+            "Available report IDs:",
+            allReportsResponse.Ok.map((r) => r.report_id)
+          );
           console.log("Looking for report ID:", id, "in available IDs");
 
           // Try to find the report by different ID comparisons
-          let foundReport = allReportsResponse.Ok.find(r => r.report_id.toString() === id);
+          let foundReport = allReportsResponse.Ok.find((r) => r.report_id.toString() === id);
           if (!foundReport) {
-            foundReport = allReportsResponse.Ok.find(r => Number(r.report_id) === Number(id));
+            foundReport = allReportsResponse.Ok.find((r) => Number(r.report_id) === Number(id));
           }
           if (!foundReport) {
-            foundReport = allReportsResponse.Ok.find(r => r.report_id === parseInt(id));
+            foundReport = allReportsResponse.Ok.find((r) => r.report_id === parseInt(id));
           }
 
           if (foundReport) {
             console.log("Found report by search:", foundReport);
             setReportData(foundReport);
+            // Initialize loading states for images
+            if (foundReport.evidence && foundReport.evidence.length > 0) {
+              const initialImageLoading = {};
+              const initialThumbnailLoading = {};
+              foundReport.evidence.forEach((_, index) => {
+                initialImageLoading[index] = true;
+                initialThumbnailLoading[index] = true;
+              });
+              setImageLoading(initialImageLoading);
+              setThumbnailLoading(initialThumbnailLoading);
+            }
             return;
           }
         }
@@ -381,6 +535,17 @@ export default function DetailReportPage() {
         } else {
           console.log("Report data received successfully:", response.Ok);
           setReportData(response.Ok);
+          // Initialize loading states for images
+          if (response.Ok.evidence && response.Ok.evidence.length > 0) {
+            const initialImageLoading = {};
+            const initialThumbnailLoading = {};
+            response.Ok.evidence.forEach((_, index) => {
+              initialImageLoading[index] = true;
+              initialThumbnailLoading[index] = true;
+            });
+            setImageLoading(initialImageLoading);
+            setThumbnailLoading(initialThumbnailLoading);
+          }
         }
       } catch (error) {
         console.error("Error fetching report:", error);
@@ -424,15 +589,7 @@ export default function DetailReportPage() {
     <div className="bg-[#000510] text-white relative overflow-hidden min-h-screen">
       {/* Background layer - starts from bottom with natural height */}
       <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
-        <img
-          src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
-          alt=""
-          aria-hidden="true"
-          decoding="async"
-          loading="lazy"
-          draggable={false}
-          className="w-full h-auto object-contain object-bottom"
-        />
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -471,12 +628,20 @@ export default function DetailReportPage() {
                   <div className="min-w-0 flex-1">
                     <div className="text-red-400 text-sm font-medium mb-2 uppercase tracking-wider">FLAGGED ADDRESS</div>
                     <div className="font-mono text-xl sm:text-2xl font-bold mb-2 text-white">{uiData.shortAddress}</div>
-                    <div className="text-sm text-gray-400 capitalize">{uiData.category} • Reported {uiData.createdAt.toLocaleDateString()}</div>
+                    <div className="text-sm text-gray-400 capitalize">
+                      {uiData.category} • Reported {uiData.createdAt.toLocaleDateString()}
+                    </div>
                   </div>
-                  <Button onClick={() => copyToClipboard(uiData.address)} className="bg-white/5 border border-white/50 hover:bg-gray-700/80 text-white self-start sm:self-center px-4 py-2 rounded-full shadow-md">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy
-                  </Button>
+                  <button onClick={() => copyToClipboard(uiData.address)} className="bg-white/5 border border-white/50 hover:bg-gray-700/80 text-white self-start sm:self-center px-4 py-2 rounded-full shadow-md transition-colors flex items-center gap-2">
+                    {copiedAddress ? (
+                      <svg className="w-4 h-4 text-[#9BE4A0]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                    {copiedAddress ? "Copied!" : "Copy"}
+                  </button>
                 </div>
               </div>
 
@@ -498,22 +663,38 @@ export default function DetailReportPage() {
                   <div className="relative mb-6">
                     <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden aspect-video">
                       {uiData.evidence[currentImageIndex] ? (
-                        <img
-                          src={uiData.evidence[currentImageIndex]}
-                          alt={`Evidence ${currentImageIndex + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                          }}
-                        />
+                        <>
+                          {/* Loading Skeleton */}
+                          {imageLoading[currentImageIndex] && (
+                            <div className="absolute inset-0 bg-gray-800 animate-pulse">
+                              <div className="w-full h-full flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-12 h-12 bg-gray-600 rounded-lg mx-auto mb-2 animate-pulse"></div>
+                                  <div className="w-24 h-4 bg-gray-600 rounded mx-auto mb-1 animate-pulse"></div>
+                                  <div className="w-16 h-3 bg-gray-600 rounded mx-auto animate-pulse"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Actual Image */}
+                          <img
+                            src={uiData.evidence[currentImageIndex]}
+                            alt={`Evidence ${currentImageIndex + 1}`}
+                            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading[currentImageIndex] ? "opacity-0" : "opacity-100"} cursor-zoom-in`}
+                            onLoad={() => handleImageLoad(currentImageIndex, "main")}
+                            onError={(e) => {
+                              handleImageError(currentImageIndex, "main");
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                            onClick={() => openImageModal(currentImageIndex)}
+                          />
+                        </>
                       ) : null}
 
                       {/* Fallback for missing or broken images */}
-                      <div
-                        className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400"
-                        style={{ display: uiData.evidence[currentImageIndex] ? 'none' : 'flex' }}
-                      >
+                      <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400" style={{ display: uiData.evidence[currentImageIndex] ? "none" : "flex" }}>
                         <div className="text-center">
                           <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           <p className="text-sm">Evidence {currentImageIndex + 1}</p>
@@ -543,28 +724,35 @@ export default function DetailReportPage() {
                   {/* Thumbnail Strip */}
                   <div className="flex space-x-3 overflow-x-auto pb-2">
                     {uiData.evidence.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex ? "border-white" : "border-white/20 hover:border-white/40"}`}
-                      >
+                      <button key={index} onClick={() => setCurrentImageIndex(index)} className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all relative ${index === currentImageIndex ? "border-white" : "border-white/20 hover:border-white/40"}`}>
                         {image ? (
-                          <img
-                            src={image}
-                            alt={`Evidence thumbnail ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
+                          <>
+                            {/* Thumbnail Loading Skeleton */}
+                            {thumbnailLoading[index] && (
+                              <div className="absolute inset-0 bg-gray-700 animate-pulse">
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <div className="w-6 h-6 bg-gray-600 rounded animate-pulse"></div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Actual Thumbnail Image */}
+                            <img
+                              src={image}
+                              alt={`Evidence thumbnail ${index + 1}`}
+                              className={`w-full h-full object-cover transition-opacity duration-300 ${thumbnailLoading[index] ? "opacity-0" : "opacity-100"}`}
+                              onLoad={() => handleImageLoad(index, "thumbnail")}
+                              onError={(e) => {
+                                handleImageError(index, "thumbnail");
+                                e.target.style.display = "none";
+                                e.target.nextSibling.style.display = "flex";
+                              }}
+                            />
+                          </>
                         ) : null}
 
                         {/* Fallback for missing thumbnails */}
-                        <div
-                          className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400"
-                          style={{ display: image ? 'none' : 'flex' }}
-                        >
+                        <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400" style={{ display: image ? "none" : "flex" }}>
                           <ImageIcon className="w-6 h-6 opacity-50" />
                         </div>
                       </button>
@@ -614,14 +802,14 @@ export default function DetailReportPage() {
                 {/* Vote Buttons */}
                 {uiData.status === "Pending" && !uiData.hasUserVoted && isAuthenticated && !uiData.isUserReporter && (
                   <div className="space-y-4 mt-6">
-                    <Button onClick={() => handleVoteClick("yes")} className={`w-full py-3 ${userVote === "yes" ? "bg-red-400 text-white" : "bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400"}`}>
-                      <AlertTriangle className="w-4 h-4 mr-2" />
+                    <button onClick={() => handleVoteClick("yes")} className={`w-full py-3 rounded-full transition-all duration-200 flex items-center justify-center gap-2 ${userVote === "yes" ? "bg-red-400 text-white" : "bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400"}`}>
+                      <AlertTriangle className="w-4 h-4" />
                       Vote Unsafe
-                    </Button>
-                    <Button onClick={() => handleVoteClick("no")} className={`w-full py-3 ${userVote === "no" ? "bg-green-400 text-black" : "bg-green-400/10 border border-green-400/20 hover:bg-green-400/20 text-green-400"}`}>
-                      <CheckCircle className="w-4 h-4 mr-2" />
+                    </button>
+                    <button onClick={() => handleVoteClick("no")} className={`w-full py-3 rounded-full transition-all duration-200 flex items-center justify-center gap-2 ${userVote === "no" ? "bg-green-400 text-black" : "bg-green-400/10 border border-green-400/20 hover:bg-green-400/20 text-green-400"}`}>
+                      <CheckCircle className="w-4 h-4" />
                       Vote Safe
-                    </Button>
+                    </button>
                   </div>
                 )}
 
@@ -689,10 +877,10 @@ export default function DetailReportPage() {
               {/* View on Blockcharm Button */}
               {getExplorerName(uiData.chain) !== "Explorer" && (
                 <a href={getExplorerUrl(uiData.chain, uiData.address)} target="_blank" rel="noopener noreferrer" className="block">
-                  <Button className="w-full bg-white/5 border border-white/20 hover:bg-white/10 text-white font-semibold py-3 rounded-full transition-all duration-200">
-                    <ExternalLink className="w-4 h-4 mr-2" />
+                  <button className="w-full bg-white/5 border border-white/20 hover:bg-white/10 text-white font-semibold py-3 rounded-full transition-all duration-200 flex items-center justify-center gap-2">
+                    <ExternalLink className="w-4 h-4" />
                     View on {getExplorerName(uiData.chain)}
-                  </Button>
+                  </button>
                 </a>
               )}
             </div>
@@ -700,51 +888,60 @@ export default function DetailReportPage() {
         </div>
         {/* Vote Modal */}
         {showVoteModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black" onClick={handleCancelVote}></div>
-            <div className="relative bg-black border border-white/20 rounded-xl sm:rounded-2xl p-6 sm:p-8 w-full max-w-md mx-4">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl sm:text-2xl font-bold">Vote {voteType === "yes" ? "Unsafe" : "Safe"}</h3>
-                <Button onClick={handleCancelVote} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+          <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <div className="relative w-full max-w-[500px] mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10">
+                <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={handleCancelVote} aria-label="Close">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
 
-              <div className="space-y-6">
-                {/* User Stats */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300 text-sm sm:text-base">Your current balance:</span>
-                    <span className="font-bold text-white">{isBalanceLoading ? "Loading..." : userBalance ? `${convertE8sToToken(userBalance)} FUM` : "0 FUM"}</span>
+                <div className="flex flex-col items-center p-4 gap-4 h-auto">
+                  <div className={`w-full text-center text-lg font-medium bg-clip-text text-transparent ${voteType === "yes" ? "bg-gradient-to-r from-red-400/80 via-red-300/80 to-red-400/80" : "bg-gradient-to-r from-green-400/80 via-green-300/80 to-green-400/80"}`}>Vote {voteType === "yes" ? "Unsafe" : "Safe"}</div>
+
+                  <div className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-white/90 text-[13px] font-medium">Your current balance</span>
+                      <span className="text-white text-sm font-mono">{isBalanceLoading ? "Loading..." : userBalance ? `${convertE8sToToken(userBalance)} $FRADIUM` : "0 $FRADIUM"}</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Stake Input */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Enter amount of FUM to stake</label>
-                  <Input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="0" min="0" max={userBalance ? convertE8sToToken(userBalance) : 0} className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10" />
-                </div>
-
-                {/* Live Calculations */}
-                <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/10">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300 text-sm sm:text-base">Your vote weight:</span>
-                    <span className="font-bold text-white">{calculateVoteWeight()}</span>
+                  <div className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                    <div className="text-white/90 text-[13px] font-medium mb-2">Enter amount of $FRADIUM to stake</div>
+                    <div className="rounded-full border border-white/10 pl-4 pr-2 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="0" min="0" max={userBalance ? convertE8sToToken(userBalance) : 0} className="flex-1 bg-transparent text-white placeholder:text-white/40 text-sm outline-none font-mono" />
+                        {stakeAmount && (
+                          <button type="button" className="text-xs font-medium text-[#9BEB83] hover:text-white transition-colors" onClick={() => setStakeAmount("")}>
+                            CLEAR
+                          </button>
+                        )}
+                        <button type="button" className="text-xs font-medium text-[#9BE4A0] hover:text-white transition-colors px-2 py-1 border border-[#9BE4A0]/30 rounded-full hover:bg-[#9BE4A0]/10" onClick={() => userBalance && setStakeAmount(convertE8sToToken(userBalance).toString())} disabled={!userBalance || convertE8sToToken(userBalance) <= 0}>
+                          MAX
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-start">
-                    <span className="text-gray-300 text-sm sm:text-base">If your vote is correct, estimated reward:</span>
-                    <span className="font-bold text-green-400">+{calculateEstimatedReward()} FUM</span>
-                  </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                  <Button onClick={handleCancelVote} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSubmit} disabled={isSubmitting || !stakeAmount || Number.parseFloat(stakeAmount) <= 0 || Number.parseFloat(stakeAmount) > (userBalance ? convertE8sToToken(userBalance) : 0)} className={`flex-1 ${voteType === "yes" ? "bg-red-400 hover:bg-red-500 text-white" : "bg-green-400 hover:bg-green-500 text-black"} disabled:opacity-50 disabled:cursor-not-allowed`}>
-                    {isSubmitting ? "Submitting..." : "Confirm Vote"}
-                  </Button>
+                  <div className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/90 text-[13px] font-medium">Your vote weight</span>
+                        <span className="text-white text-sm font-mono">{calculateVoteWeight()}</span>
+                      </div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-[#B0B6BE] text-xs">If your vote is correct, estimated reward</span>
+                        <span className="text-white text-sm font-mono">+{calculateEstimatedReward()} $FRADIUM</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="w-full px-2 sm:px-3 pb-2">
+                    <ButtonGreen fullWidth disabled={isSubmitting || !stakeAmount || Number.parseFloat(stakeAmount) <= 0 || Number.parseFloat(stakeAmount) > (userBalance ? convertE8sToToken(userBalance) : 0)} onClick={handleSubmit} size="md" textSize="text-base" fontWeight="medium">
+                      {isSubmitting ? "Submitting..." : "Confirm Vote"}
+                    </ButtonGreen>
+                  </div>
                 </div>
               </div>
             </div>
@@ -753,20 +950,59 @@ export default function DetailReportPage() {
 
         {/* Success Modal */}
         {showSuccessModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black" onClick={handleSuccessModalClose}></div>
-            <div className="relative bg-black border border-white/20 rounded-xl sm:rounded-2xl p-6 sm:p-8 w-full max-w-md mx-4 text-center">
-              <div className="mb-6">
-                <div className="w-16 h-16 bg-green-400/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-400" />
+          <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <div className="relative w-full max-w-[500px] mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10">
+                <div className="flex flex-col items-center p-4 gap-4 h-auto text-center">
+                  <div className="w-16 h-16 bg-green-400/10 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-400" />
+                  </div>
+                  <div className="text-white text-lg font-medium mb-2">Vote Submitted!</div>
+                  <div className="text-[#B0B6BE] text-sm">Your vote has been submitted successfully!</div>
+
+                  <div className="w-full px-2 sm:px-3 pb-2">
+                    <ButtonGreen fullWidth onClick={handleSuccessModalClose} size="md" textSize="text-base" fontWeight="medium">
+                      Continue
+                    </ButtonGreen>
+                  </div>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold mb-2">Vote Submitted!</h3>
-                <p className="text-gray-300">Your vote has been submitted successfully!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Image Fullscreen Modal */}
+        {showImageModal && uiData && uiData.evidence && uiData.evidence.length > 0 && (
+          <div className="fixed inset-0 z-[9999]">
+            <div className="absolute inset-0 bg-black" onClick={closeImageModal}></div>
+            <div className="relative z-[10000] w-full h-full flex items-center justify-center p-4">
+              <div className="absolute top-4 right-4">
+                <Button onClick={closeImageModal} className="bg-white/10 hover:bg-white/20 text-white rounded-full px-3 py-2">
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
 
-              <Button onClick={handleSuccessModalClose} className="w-full bg-white text-black hover:bg-gray-200">
-                Continue
-              </Button>
+              {/* Navigation Buttons */}
+              {uiData.evidence.length > 1 && (
+                <>
+                  <Button onClick={() => navigateModalImage("prev")} className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3">
+                    <ChevronLeft className="w-6 h-6" />
+                  </Button>
+                  <Button onClick={() => navigateModalImage("next")} className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3">
+                    <ChevronRight className="w-6 h-6" />
+                  </Button>
+                </>
+              )}
+
+              {/* Counter */}
+              <div className="absolute top-4 left-4 text-white/80 text-sm bg-white/10 rounded px-2 py-1 border border-white/20">
+                {modalImageIndex + 1} / {uiData.evidence.length}
+              </div>
+
+              {/* Image */}
+              <div className="max-w-[92vw] max-h-[86vh]">
+                <img src={uiData.evidence[modalImageIndex]} alt={`Evidence fullscreen ${modalImageIndex + 1}`} className="w-auto h-auto max-w-full max-h-[86vh] object-contain select-none" draggable={false} />
+              </div>
             </div>
           </div>
         )}

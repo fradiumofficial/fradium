@@ -91,7 +91,7 @@ const Navbar = () => {
           subaccount: [],
         });
         setBalance(response);
-      } catch (error) { }
+      } catch (error) {}
     }
 
     fetchBalance();
@@ -190,7 +190,7 @@ const Navbar = () => {
 
             navigate("/balance");
           }}>
-          <span className="text-sm font-medium h-5">{isAuthenticated ? convertE8sToToken(balance) : 0} FADM</span>
+          <span className="text-sm font-medium h-5">{isAuthenticated ? convertE8sToToken(balance) : 0} FRADIUM</span>
         </ButtonShad>
         {/* User Profile Desktop */}
         {isAuthenticated ? (

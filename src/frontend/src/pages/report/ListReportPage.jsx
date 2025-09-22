@@ -11,6 +11,7 @@ import Footer from "../../core/components/Footer.jsx";
 
 import Card from "@/core/components/Card";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import { getIconByChain } from "@/core/lib/tokenUtils";
 
 const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/dao-1.webp";
 const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/dao-2.webp";
@@ -165,7 +166,7 @@ export default function ReportPage() {
       console.log("Converting report data:", report.report_id, "Type:", typeof report.report_id);
 
       // Ensure report_id is properly converted to number
-      const reportId = typeof report.report_id === 'bigint' ? Number(report.report_id) : report.report_id;
+      const reportId = typeof report.report_id === "bigint" ? Number(report.report_id) : report.report_id;
       console.log("Converted report ID:", reportId, "Type:", typeof reportId);
 
       return {
@@ -425,7 +426,7 @@ export default function ReportPage() {
                         <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="h-11 sm:h-12 rounded-full pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white text-sm sm:text-base placeholder-gray-400 focus:bg-white/10 focus:border-[#99E39E]/50 focus:ring-2 focus:ring-[#99E39E]/20 transition-all duration-300 ease-out hover:bg-white/8 hover:border-white/20 group" />
                       </div>
                       <div className="shrink-0">
-                        <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => { }}>
+                        <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => {}}>
                           Filter
                         </ButtonGreen>
                       </div>
@@ -519,8 +520,16 @@ export default function ReportPage() {
                                 {/* Network and Address */}
                                 <div className="flex flex-wrap items-center mb-2 gap-y-2">
                                   <div className="flex items-center space-x-2">
-                                    <div className="w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-lg group-hover:shadow-orange-500/30">
-                                      <span className="text-white text-[10px] sm:text-xs font-bold group-hover:scale-110 transition-transform duration-200">₿</span>
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-lg group-hover:shadow-orange-500/30 overflow-hidden">
+                                      <img
+                                        src={getIconByChain(report.chain)}
+                                        alt={`${report.chain} icon`}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                        onError={(e) => {
+                                          // Fallback to Bitcoin icon if image fails to load
+                                          e.target.src = "/assets/images/coins/bitcoin.webp";
+                                        }}
+                                      />
                                     </div>
                                     <span className="text-xs sm:text-sm text-gray-300 group-hover:text-gray-200 transition-colors duration-200">{report.chain} Network</span>
                                   </div>
@@ -553,8 +562,7 @@ export default function ReportPage() {
                                   console.log("Using report ID for navigation:", reportId);
 
                                   navigate(`/reports/${reportId}`);
-                                }}
-                              >
+                                }}>
                                 View Details
                                 <ArrowUpRight className="w-3 h-3 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                               </Button>

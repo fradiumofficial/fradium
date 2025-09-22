@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 import { Shield, Clock, Zap } from "lucide-react";
 
@@ -7,6 +8,7 @@ import { backend as backend } from "declarations/backend";
 
 import { Button } from "@/core/components/ui/button";
 import PrimaryButton from "@/core/components/Button";
+import ButtonGreen from "@/core/components/ButtonGreen";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { useToast } from "@/core/hooks/use-toast";
 import { formatAddress, convertE8sToToken } from "@/core/lib/canisterUtils";
@@ -150,81 +152,160 @@ export default function FaucetPage() {
   };
 
   return (
-    <div className="pb-20 mb-20 bg-black text-white">
+    <div className="relative bg-[#000510] w-full overflow-hidden min-h-screen">
+      <style>{`
+        @keyframes fradium-float {
+          0%, 100% { 
+            transform: translateY(0); 
+          }
+          50% { 
+            transform: translateY(-12px); 
+          }
+        }
+        .floating-slow { 
+          animation: fradium-float 6s ease-in-out infinite; 
+          will-change: transform;
+        }
+        @keyframes fradium-ring-pulse {
+          0%, 100% { 
+            transform: scale(1);
+            opacity: 0.15;
+          }
+          50% { 
+            transform: scale(1.1);
+            opacity: 0.25;
+          }
+        }
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(153, 227, 158, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(153, 227, 158, 0.6);
+          }
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+        .animate-scale-in {
+          animation: scaleIn 0.6s ease-out forwards;
+        }
+        .animate-glow {
+          animation: glow 2s ease-in-out infinite;
+        }
+        .card-hover {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+      `}</style>
+
+      {/* Background layer */}
+      <div className="absolute inset-0 z-0 pointer-events-none select-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#000510] via-[#0a0a0a] to-[#000510]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(800px_300px_at_70%_-80px,rgba(153,227,158,0.05),transparent_65%)] opacity-60"></div>
+      </div>
+
       {/* Main Content */}
-      <main className="pt-24 pb-16 px-4 sm:px-6">
+      <main className="relative z-10 pt-24 pb-16 px-4 sm:px-6">
         <div className="container mx-auto max-w-4xl mt-[8rem]">
           {!isConnected ? (
-            <div className="text-center py-16">
-              <Shield className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-              <h2 className="text-2xl font-bold mb-4">Login Required</h2>
-              <p className="text-gray-300 mb-6">Please log in to your account to claim free FUM tokens and participate in the Fradium ecosystem.</p>
-              <Button onClick={handleLogin} className="bg-white text-black hover:bg-gray-200 px-8 py-3 text-lg">
-                Login
-              </Button>
-            </div>
+            <motion.div className="text-center py-16" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+              <div className="relative">
+                <div className="absolute inset-0 bg-[radial-gradient(400px_200px_at_center,rgba(153,227,158,0.1),transparent_70%)] opacity-50"></div>
+                <div className="relative bg-[#000000]/60 backdrop-blur-[2px] border border-white/10 rounded-[20px] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.40)]">
+                  <Shield className="w-16 h-16 text-[#99E39E] mx-auto mb-6 animate-glow" />
+                  <h2 className="text-2xl font-bold mb-4 text-white">Login Required</h2>
+                  <p className="text-gray-300 mb-6">Please log in to your account to claim free FUM tokens and participate in the Fradium ecosystem.</p>
+                  <ButtonGreen onClick={handleLogin} size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] md:w-[23px] md:h-[23px]">
+                    Login
+                  </ButtonGreen>
+                </div>
+              </div>
+            </motion.div>
           ) : (
-            <>
-              <div className="space-y-16">
-                {/* Claim Section */}
-                <div className="text-center">
-                  <h2 className="text-3xl font-bold mb-4">Claim Free Tokens</h2>
-                  <p className="text-gray-300 mb-12">
-                    Get free {CLAIM_AMOUNT} FUM tokens every {COOLDOWN_HOURS} hours to participate in community voting, staking, and reporting activities.
-                  </p>
+            <motion.div className="space-y-16" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+              {/* Claim Section */}
+              <div className="text-center">
+                <h2 className="text-3xl font-bold mb-4 text-white animate-fade-in-up">Claim Free Tokens</h2>
+                <p className="text-gray-300 mb-12 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+                  Get free {CLAIM_AMOUNT} FUM tokens every {COOLDOWN_HOURS} hours to participate in community voting, staking, and reporting activities.
+                </p>
 
-                  {/* Current Balance */}
-                  <div className="mb-12">
-                    <div className="text-gray-400 text-sm mb-2">Your Current Balance</div>
-                    <div className="text-5xl font-bold text-white mb-4">{userBalance.toLocaleString()} FUM</div>
-                    <div className="flex items-center justify-center space-x-2 text-gray-400">
-                      <span className="font-mono text-sm">{formatAddress(walletAddress)}</span>
+                {/* Current Balance Card */}
+                <motion.div className="mb-12" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }}>
+                  <div className="relative bg-[#000000]/60 backdrop-blur-[2px] border border-white/10 rounded-[20px] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.40)] card-hover">
+                    <div className="absolute inset-0 bg-[radial-gradient(400px_200px_at_center,rgba(153,227,158,0.08),transparent_70%)] opacity-50 rounded-[20px]"></div>
+                    <div className="relative">
+                      <div className="text-[#99E39E] text-sm mb-2 font-medium">Your Current Balance</div>
+                      <div className="text-5xl font-bold text-white mb-4">{userBalance.toLocaleString()} FRADIUM</div>
+                      <div className="flex items-center justify-center space-x-2 text-gray-400">
+                        <span className="font-mono text-sm">{formatAddress(walletAddress)}</span>
+                      </div>
                     </div>
                   </div>
+                </motion.div>
 
-                  {/* Claim Button */}
-                  {isLoading ? (
-                    <div className="text-center">
-                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6 mb-6">
-                        <Clock className="w-8 h-8 text-green-400 mx-auto mb-3 animate-spin" />
-                        <h3 className="text-lg font-semibold text-green-400 mb-2">Checking Claim Status</h3>
+                {/* Claim Button Section */}
+                {isLoading ? (
+                  <motion.div className="text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.3 }}>
+                    <div className="relative bg-[#000000]/60 backdrop-blur-[2px] border border-[#99E39E]/20 rounded-[20px] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.40)]">
+                      <div className="absolute inset-0 bg-[radial-gradient(400px_200px_at_center,rgba(153,227,158,0.1),transparent_70%)] opacity-50 rounded-[20px]"></div>
+                      <div className="relative">
+                        <Clock className="w-8 h-8 text-[#99E39E] mx-auto mb-3 animate-spin" />
+                        <h3 className="text-lg font-semibold text-[#99E39E] mb-2">Checking Claim Status</h3>
                         <p className="text-gray-300 text-sm">Please wait while we check your claim eligibility...</p>
                       </div>
                     </div>
-                  ) : canClaim ? (
-                    <div className="text-center">
-                      {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
-                          <p className="text-red-400 text-sm">{error}</p>
-                        </div>
-                      )}
-                      <PrimaryButton onClick={claimTokens} disabled={isClaiming} className="">
-                        {isClaiming ? (
-                          <>
-                            <Clock className="w-5 h-5 mr-2 animate-spin" />
-                            Claiming...
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-5 h-5 mr-2" />
-                            Claim {CLAIM_AMOUNT} FUM
-                          </>
-                        )}
-                      </PrimaryButton>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-6">
+                  </motion.div>
+                ) : canClaim ? (
+                  <motion.div className="text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.3 }}>
+                    {error && (
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-[16px] p-4 mb-6">
+                        <p className="text-red-400 text-sm">{error}</p>
+                      </div>
+                    )}
+                    <ButtonGreen onClick={claimTokens} disabled={isClaiming} size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] md:w-[23px] md:h-[23px]">
+                      {isClaiming ? <>Claiming...</> : <>Claim {CLAIM_AMOUNT} FRADIUM</>}
+                    </ButtonGreen>
+                  </motion.div>
+                ) : (
+                  <motion.div className="text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.3 }}>
+                    <div className="relative bg-[#000000]/60 backdrop-blur-[2px] border border-red-500/20 rounded-[20px] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.40)]">
+                      <div className="absolute inset-0 bg-[radial-gradient(400px_200px_at_center,rgba(239,68,68,0.1),transparent_70%)] opacity-50 rounded-[20px]"></div>
+                      <div className="relative">
                         <Clock className="w-8 h-8 text-red-400 mx-auto mb-3" />
                         <h3 className="text-lg font-semibold text-red-400 mb-2">Cannot Claim Yet</h3>
                         <p className="text-gray-300 text-sm">{remainingTime || "Please wait for the cooldown period to complete."}</p>
                       </div>
-                      <div className="text-gray-400 text-xs">You can claim once every {COOLDOWN_HOURS} hours</div>
                     </div>
-                  )}
-                </div>
+                    <div className="text-gray-400 text-xs mt-4">You can claim once every {COOLDOWN_HOURS} hours</div>
+                  </motion.div>
+                )}
               </div>
-            </>
+            </motion.div>
           )}
         </div>
       </main>
