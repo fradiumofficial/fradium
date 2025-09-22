@@ -9,7 +9,7 @@ import { useAuth } from "@/core/providers/AuthProvider";
 import { getExplorerUrl, getExplorerName, getExplorerIcon } from "@/core/lib/chainExplorers";
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
 import { Principal } from "@dfinity/principal";
-import PrimaryButton from "@/core/components/Button";
+import ButtonPurple from "@/core/components/ButtonPurple";
 import { backend } from "declarations/backend";
 import { fradium_ledger as token } from "declarations/fradium_ledger";
 import Footer from "@/core/components/Footer";
@@ -644,9 +644,9 @@ export default function DetailReportPage() {
                 {uiData.status === "Pending" && !isAuthenticated && (
                   <div className="text-center py-4 px-6">
                     <p className="text-gray-400 text-sm mb-3">Please login to vote on this report</p>
-                    <PrimaryButton className="w-full" onClick={() => handleLogin()}>
+                    <ButtonPurple size="sm" fullWidth onClick={() => handleLogin()} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
                       Login to Vote
-                    </PrimaryButton>
+                    </ButtonPurple>
                   </div>
                 )}
               </div>
