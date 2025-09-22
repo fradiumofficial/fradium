@@ -58,11 +58,7 @@ This gave us concrete feedback on clarity, efficiency, and user confidence.
 
 🎥 Below is a short video recap of the beta testing process and user feedback:
 
-<iframe width="560" height="315" src="
-https://youtu.be/9H5q75SkUJg?si=o-yowPGmk-g3V5P9" 
-title="YouTube video player" frameborder="0" 
-allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-allowfullscreen></iframe>
+[![Watch the video](https://img.youtube.com/vi/9H5q75SkUJg/maxresdefault.jpg)](https://youtu.be/9H5q75SkUJg)
 
 ### 🔍 ICP Analyzer
 
