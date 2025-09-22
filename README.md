@@ -57,23 +57,25 @@ This gave us concrete feedback on clarity, efficiency, and user confidence.
 | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 
 🎥 Below is a short video recap of the beta testing process and user feedback:
+[Watch the video](https://youtu.be/9H5q75SkUJg)
 
 [![Watch the video](https://img.youtube.com/vi/9H5q75SkUJg/maxresdefault.jpg)](https://youtu.be/9H5q75SkUJg)
 
-### 🔍 ICP Analyzer
+### 🔍 ICP AI Address Analyzer
 
-Introducing **ICP Analyzer**, an AI-powered analysis tool designed specifically for the Internet Computer ecosystem.
+Introducing **ICP AI Address Analyzer**, an advanced AI-powered tool built specifically for the Internet Computer ecosystem.
+Unlike generic scanners, this analyzer is trained to **understand and evaluate ICP addresses**, including those following the **ICRC-1 token standard**.
 
 With it, users can:
 
-- Scan and analyze token addresses on ICP
-- Identify risks such as scam clusters or drainer proximity
-- Receive **explanations backed by on-chain data** for transparency
-- Make safer and more informed decisions before signing any transaction
+- **Scan and analyze ICP addresses** with full ICRC-1 support
+- **Detect risks** such as scam clusters, drainer proximity, or suspicious transaction histories
+- **Generate explanations backed by on-chain data** for transparency and trust
+- **Empower safer decision-making** before sending or signing any transaction
 
-👉 Together, these updates mark a **big step forward** for Fradium — focusing on **security, usability, and intelligence** for every user.
+📖 For more details, see the [technical explanation](src/ai/readme.md).
 
-Would you like me to also add a **separate block for “Fradium Wallet Agent”** (AI assistant) here, styled in the same format, or should it stay outside this _regional round updates_ section?
+---
 
 ## 🌟 Features of Fradium
 
