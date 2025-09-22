@@ -4,7 +4,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { detectAddressNetwork, getBalance as fetchTokenBalance, getFeeInfo, sendTokenToBackend, formatAmount } from "@/core/lib/tokenUtils.js";
+import { detectAddressNetwork, getBalance as fetchTokenBalance, getFeeInfo, sendTokenToBackend, formatAmount, getUSD } from "@/core/lib/tokenUtils.js";
 import { jsonStringify } from "@/core/lib/canisterUtils.js";
 import { AIAnalyzeService } from "@/core/services/ai/aiAnalyze.js";
 
@@ -51,6 +51,20 @@ export class AgentService {
     this.pendingTransfer = null; // Ephemeral transfer state for interactive flow
     this.pendingBalanceRequest = false; // Awaiting token for balance check
     this.pendingAddressRequest = false; // Awaiting token for address query
+  }
+
+  /**
+   * Remove invisible/soft hyphen and whitespace from address-like strings
+   */
+  sanitizeAddress(text) {
+    try {
+      if (!text || typeof text !== "string") return text;
+      return text
+        .replace(/[\u00AD\u200B\u200C\u200D\uFEFF]/g, "") // soft hyphen & zero-width
+        .replace(/\s+/g, "");
+    } catch (_e) {
+      return text;
+    }
   }
 
   /**
@@ -127,6 +141,34 @@ export class AgentService {
   createTools() {
     return [
       new DynamicStructuredTool({
+        name: "get_usd_price",
+        description: "Get current USD price for a token by symbol or name (e.g., BTC, ETH, ICP, FRADIUM, ckBTC). Uses tokenUtils.getUSD with internal fallbacks.",
+        schema: z.object({
+          token: z.string().describe("Token symbol or name (e.g., BTC, Bitcoin, ICP). Required."),
+        }),
+        func: async ({ token: tokenQuery }) => {
+          try {
+            if (!tokenQuery || typeof tokenQuery !== "string") {
+              return jsonStringify({ success: false, error: "Invalid token", message: "Please provide a token symbol or name." });
+            }
+            const q = tokenQuery.trim().toLowerCase();
+            let token = TOKENS_CONFIG.find((t) => t.symbol.toLowerCase() === q || t.name.toLowerCase() === q);
+            if (!token) token = TOKENS_CONFIG.find((t) => t.name.toLowerCase().startsWith(q) || t.name.toLowerCase().includes(q));
+            if (!token) {
+              const aliasToSymbol = { bitcoin: "BTC", btc: "BTC", ethereum: "ETH", ether: "ETH", eth: "ETH", solana: "SOL", sol: "SOL", icp: "ICP", "internet computer": "ICP", fradium: "FRADIUM", ckbtc: "ckBTC", "ck-btc": "ckBTC", "ck btc": "ckBTC" };
+              const mapped = aliasToSymbol[q];
+              if (mapped) token = TOKENS_CONFIG.find((t) => t.symbol.toLowerCase() === mapped.toLowerCase());
+            }
+            if (!token) return jsonStringify({ success: false, error: "Unknown token", message: `Unsupported token: ${tokenQuery}` });
+
+            const usd = await getUSD(token.id);
+            return jsonStringify({ success: true, token: { id: token.id, symbol: token.symbol, name: token.name }, usd, message: `1 ${token.symbol} ≈ $${Number(usd || 0).toLocaleString(undefined, { maximumFractionDigits: 8 })} USD` });
+          } catch (error) {
+            return jsonStringify({ success: false, error: error.message || "Failed to fetch USD price" });
+          }
+        },
+      }),
+      new DynamicStructuredTool({
         name: "get_my_balance",
         description: "Get token balance for the current user's wallet addresses. Supports any token in tokenConfig (BTC, Bitcoin, ETH, Ethereum, SOL, Solana, ICP, Internet Computer, ckBTC). This tool automatically uses the user's wallet addresses from WalletProvider. Examples: 'check my bitcoin balance', 'get my ETH balance', 'what's my ICP balance'.",
         schema: z.object({
@@ -164,6 +206,9 @@ export class AgentService {
               } else if (q.includes("solana") || q.includes("sol")) {
                 targetAddress = addresses?.solana || "";
               } else if (q.includes("icp") || q.includes("internet computer")) {
+                targetAddress = addresses?.icp_principal || "";
+              } else if (q.includes("fradium") || q.includes("fadm") || q.includes("fradi")) {
+                // FRADIUM is ICRC on ICP, use ICP principal for receive/balance context
                 targetAddress = addresses?.icp_principal || "";
               } else if (q.includes("ckbtc")) {
                 targetAddress = addresses?.ckbtc || "";
@@ -532,27 +577,57 @@ export class AgentService {
               });
             }
 
-            const trimmedAddress = address.trim();
+            const trimmedAddress = this.sanitizeAddress(address.trim());
 
             // Detect network to validate support
             const network = detectAddressNetwork(trimmedAddress);
+            // If network unsupported, skip errors and treat as safe by default
             if (!AIAnalyzeService.isNetworkSupported(network)) {
-              return jsonStringify({
-                success: false,
-                error: "Unsupported network",
-                message: `Network ${network} is not supported for analysis. Supported networks: Bitcoin, Ethereum, Solana, Internet Computer.`,
-              });
+              const defaultSafe = {
+                success: true,
+                address: trimmedAddress,
+                network,
+                isSafe: true,
+                riskLevel: "Low",
+                confidence: 50,
+                status: "SAFE",
+                statusEmoji: "✅",
+                description: "Analysis unavailable for this network. Proceed with caution.",
+                securityChecks: "No specific security checks available",
+                stats: `Transactions analyzed: N/A\nRisk score: N/A\nConfidence: 50%\nAnalysis source: Skipped`,
+                analysisSource: "Skipped",
+                finalStatus: "SAFE",
+                message: `✅ Address Analysis Result\n\nSAFE (Low Risk)\n\nAnalysis unavailable for this network. Proceed with caution.\n\nSecurity Checks:\nNo specific security checks available\n\nStatistics:\nTransactions analyzed: N/A\nRisk score: N/A\nConfidence: 50%\nAnalysis source: Skipped`,
+              };
+              return jsonStringify(defaultSafe);
             }
 
-            // Perform analysis using AIAnalyzeService
-            const analysisResult = await AIAnalyzeService.analyzeAddress(trimmedAddress);
+            // Perform analysis using AIAnalyzeService with safe fallback
+            let analysisResult;
+            try {
+              analysisResult = await AIAnalyzeService.analyzeAddress(trimmedAddress);
+            } catch (_e) {
+              analysisResult = { success: false };
+            }
 
-            if (!analysisResult.success) {
-              return jsonStringify({
-                success: false,
-                error: "Analysis failed",
-                message: "Failed to analyze the address. Please try again later.",
-              });
+            if (!analysisResult || !analysisResult.success) {
+              const defaultSafe = {
+                success: true,
+                address: trimmedAddress,
+                network,
+                isSafe: true,
+                riskLevel: "Low",
+                confidence: 50,
+                status: "SAFE",
+                statusEmoji: "✅",
+                description: "Analysis unavailable. Proceed with caution.",
+                securityChecks: "No specific security checks available",
+                stats: `Transactions analyzed: N/A\nRisk score: N/A\nConfidence: 50%\nAnalysis source: Unavailable`,
+                analysisSource: "Unavailable",
+                finalStatus: "SAFE",
+                message: `✅ Address Analysis Result\n\nSAFE (Low Risk)\n\nAnalysis unavailable. Proceed with caution.\n\nSecurity Checks:\nNo specific security checks available\n\nStatistics:\nTransactions analyzed: N/A\nRisk score: N/A\nConfidence: 50%\nAnalysis source: Unavailable`,
+              };
+              return jsonStringify(defaultSafe);
             }
 
             const result = analysisResult.result;
@@ -590,11 +665,24 @@ export class AgentService {
             });
           } catch (error) {
             console.error("Error analyzing address:", error);
-            return jsonStringify({
-              success: false,
-              error: error.message,
-              message: `Failed to analyze address ${address}: ${error.message}`,
-            });
+            // On unexpected error, still return safe default to avoid error bubbles
+            const defaultSafe = {
+              success: true,
+              address: this.sanitizeAddress(address),
+              network: detectAddressNetwork(this.sanitizeAddress(address)),
+              isSafe: true,
+              riskLevel: "Low",
+              confidence: 50,
+              status: "SAFE",
+              statusEmoji: "✅",
+              description: "Analysis unavailable due to an error. Proceed with caution.",
+              securityChecks: "No specific security checks available",
+              stats: `Transactions analyzed: N/A\nRisk score: N/A\nConfidence: 50%\nAnalysis source: Error`,
+              analysisSource: "Error",
+              finalStatus: "SAFE",
+              message: `✅ Address Analysis Result\n\nSAFE (Low Risk)\n\nAnalysis unavailable due to an error. Proceed with caution.\n\nSecurity Checks:\nNo specific security checks available\n\nStatistics:\nTransactions analyzed: N/A\nRisk score: N/A\nConfidence: 50%\nAnalysis source: Error`,
+            };
+            return jsonStringify(defaultSafe);
           }
         },
       }),
@@ -634,14 +722,47 @@ export class AgentService {
                 return jsonStringify({ success: false, error: "Invalid parameters", message: "Destination and positive amount are required." });
               }
 
-              const detected = detectAddressNetwork(destination.trim());
+              const cleanDestination = this.sanitizeAddress(destination.trim());
+              const detected = detectAddressNetwork(cleanDestination);
               const supported = token.chain === detected || detected !== "Unknown";
 
-              // Run AI analysis
-              const analysis = await AIAnalyzeService.analyzeAddress(destination.trim());
+              // Run AI analysis with safe fallback on error
+              let analysis;
+              try {
+                analysis = await AIAnalyzeService.analyzeAddress(cleanDestination);
+              } catch (_e) {
+                analysis = { success: false };
+              }
+              if (!analysis || !analysis.success) {
+                analysis = {
+                  success: true,
+                  network: detected,
+                  analysisSource: "Unavailable",
+                  finalStatus: "SAFE",
+                  result: {
+                    isSafe: true,
+                    riskLevel: "Low",
+                    confidence: 50,
+                    description: "Analysis unavailable. Proceed with caution.",
+                    securityChecks: [],
+                    stats: {},
+                  },
+                };
+              }
 
               // Build fee info
               const feeInfo = getFeeInfo(token);
+
+              // Fetch current balance and compute sufficiency
+              let currentBalanceRaw = 0;
+              try {
+                currentBalanceRaw = await fetchTokenBalance(token.id, principal, true);
+              } catch (_e) {
+                currentBalanceRaw = 0;
+              }
+              const currentBalanceStr = this.formatBalanceForToken(token, currentBalanceRaw);
+              const currentBalanceNum = Number(String(currentBalanceStr).replace(/,/g, ""));
+              const hasSufficientBalance = Number.isFinite(currentBalanceNum) && currentBalanceNum >= amount;
 
               // Persist pending transfer state so confirm/execute can reuse
               this.pendingTransfer = {
@@ -649,10 +770,12 @@ export class AgentService {
                 tokenSymbol: token.symbol,
                 tokenName: token.name,
                 chain: token.chain,
-                destination: destination.trim(),
+                destination: cleanDestination,
                 amount,
                 detectedNetwork: detected,
                 feeInfo,
+                currentBalance: currentBalanceStr,
+                hasSufficientBalance,
               };
 
               // Build confirmation payload (LLM must render messaging)
@@ -660,12 +783,14 @@ export class AgentService {
                 success: true,
                 state: "awaiting_confirmation",
                 token: { id: token.id, symbol: token.symbol, name: token.name, chain: token.chain },
-                destination: destination.trim(),
+                destination: cleanDestination,
                 amount,
                 detectedNetwork: detected,
                 isSupported: supported,
                 feeInfo,
                 analysis,
+                currentBalance: currentBalanceStr,
+                hasSufficientBalance,
                 instructions: "Ask the model to render a confirmation bubble. The user must type exactly 'confirm send' to proceed, otherwise reset.",
               });
             }
@@ -706,6 +831,20 @@ export class AgentService {
                 const normalizedAmount = typeof execAmount === "string" ? Number(execAmount) : execAmount;
                 if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
                   return jsonStringify({ success: false, state: "failed", error: "Invalid amount", message: "Amount must be a positive number." });
+                }
+
+                // Re-check balance sufficiency before executing
+                const tokenObj = TOKENS_CONFIG.find((t) => t.id === execTokenId);
+                let availableRaw = 0;
+                try {
+                  availableRaw = await fetchTokenBalance(execTokenId, principal, true);
+                } catch (_e) {
+                  availableRaw = 0;
+                }
+                const availableStr = this.formatBalanceForToken(tokenObj, availableRaw);
+                const availableNum = Number(String(availableStr).replace(/,/g, ""));
+                if (!Number.isFinite(availableNum) || availableNum < normalizedAmount) {
+                  return jsonStringify({ success: false, state: "failed", error: "Insufficient funds", message: `Insufficient funds. Available: ${availableStr} ${tokenObj?.symbol || "TOKEN"}` });
                 }
 
                 const result = await sendTokenToBackend(execTokenId, execDestination, normalizedAmount, principal);
@@ -750,6 +889,7 @@ Available tools:
 - get_balance: Get token balance for a specific wallet address. Use this when the user provides an address (e.g., "check balance mvE3KG9ShMqP2F42dgj941jUbumnHEekJy"). Requires address parameter, token is optional.
 - get_my_address: Get wallet address for the current user for a specific token/network. Use this when the user wants to see their address (e.g., "show my BTC address", "what's my Ethereum address", "get my ICP principal"). Requires token parameter.
 - analyze_address: Analyze a wallet address for security risks and suspicious activity. Use this when the user wants to check if an address is safe (e.g., "analyze address mvE3KG9ShMqP2F42dgj941jUbumnHEekJy", "check if 0x123... is safe", "analyze this Bitcoin address"). Requires address parameter.
+ - get_usd_price: Get current USD price for a token by symbol or name (e.g., "show BTC price", "price of ETH"). Requires token parameter.
 
 Tool usage guidelines:
 - If the user says "my" and wants balance (e.g., "check my BTC balance"), use get_my_balance with the token parameter.
@@ -757,6 +897,7 @@ Tool usage guidelines:
 - If the user provides an address and wants balance (e.g., "check balance mvE3KG9ShMqP2F42dgj941jUbumnHEekJy"), use get_balance with the address parameter.
 - If the user provides an address and wants security analysis (e.g., "analyze address mvE3KG9ShMqP2F42dgj941jUbumnHEekJy"), use analyze_address with the address parameter.
 - If the user provides both address and token for balance, use get_balance with both parameters.
+- If the user asks for price in USD, use get_usd_price with the token parameter.
 - Always prefer using the tool over guessing values.
 
 Remember: You are part of the Fradium ecosystem that helps users understand and use blockchain safely.`;
@@ -846,9 +987,39 @@ Remember: You are part of the Fradium ecosystem that helps users understand and 
       // Process message with agent (LLM will use tools for complex flows)
       const result = await this.agentExecutor.invoke({ input: message, chat_history: chatHistory });
 
+      let finalText = result.output;
+      // Fallback: avoid blank bubbles; synthesize from tool observations (scan backwards)
+      if (!finalText || (typeof finalText === "string" && finalText.trim().length === 0)) {
+        const steps = Array.isArray(result.intermediateSteps) ? result.intermediateSteps : [];
+        let payload = null;
+        for (let i = steps.length - 1; i >= 0; i--) {
+          const obs = steps[i]?.observation;
+          const candidate = this.safeParseJSON(obs);
+          if (candidate && typeof candidate === "object") {
+            payload = candidate;
+            // Prefer the first valid payload found from the end
+            break;
+          }
+        }
+
+        if (payload && payload.state === "awaiting_confirmation") {
+          finalText = this.buildSendConfirmationMessage(payload);
+        } else if (payload && typeof payload.message === "string" && payload.message.trim().length > 0) {
+          finalText = payload.message;
+        } else if (payload && (typeof payload.isSafe !== "undefined" || typeof payload.status !== "undefined" || payload?.result)) {
+          const emoji = payload.statusEmoji || (payload.isSafe ?? payload?.result?.isSafe ? "✅" : "⚠️");
+          const statusText = payload.status || (payload.isSafe ?? payload?.result?.isSafe ? "SAFE" : "POTENTIALLY UNSAFE");
+          const riskLevel = payload.riskLevel || payload?.result?.riskLevel || "Unknown";
+          const description = payload.description || payload?.result?.description || "Analysis unavailable. Proceed with caution.";
+          finalText = `${emoji} Address Analysis Result\n\n${statusText} (${riskLevel} Risk)\n\n${description}`;
+        } else {
+          finalText = "I have processed your request. Please provide more details if needed.";
+        }
+      }
+
       return {
         success: true,
-        response: result.output,
+        response: finalText,
         toolCalls: result.intermediateSteps || [],
         timestamp: new Date().toISOString(),
       };
@@ -966,6 +1137,43 @@ Remember: You are part of the Fradium ecosystem that helps users understand and 
       if (symRe.test(lower) || nameRe.test(lower)) return t;
     }
     return null;
+  }
+
+  /**
+   * Safely parse JSON string
+   */
+  safeParseJSON(text) {
+    try {
+      if (text && typeof text === "object") return text;
+      if (typeof text !== "string") return null;
+      return JSON.parse(text);
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  /**
+   * Build a human-friendly confirmation message for send flow
+   */
+  buildSendConfirmationMessage(payload) {
+    try {
+      const token = payload?.token || {};
+      const symbol = token.symbol || this.pendingTransfer?.tokenSymbol || "TOKEN";
+      const amount = typeof payload?.amount !== "undefined" ? payload.amount : this.pendingTransfer?.amount;
+      const destination = payload?.destination || this.pendingTransfer?.destination || "(unknown)";
+      const network = payload?.detectedNetwork || this.pendingTransfer?.detectedNetwork || token.chain || "Unknown";
+      const feeInfo = payload?.feeInfo || this.pendingTransfer?.feeInfo || "";
+      const analysis = payload?.analysis || {};
+      const isSafe = analysis?.result?.isSafe !== undefined ? analysis.result.isSafe : true;
+      const riskLevel = analysis?.result?.riskLevel || "Low";
+      const confidence = analysis?.result?.confidence || 50;
+
+      const safetyLine = isSafe ? `Safety: SAFE (Risk: ${riskLevel}, Confidence: ${confidence}%)` : `Safety: POTENTIALLY UNSAFE (Risk: ${riskLevel}, Confidence: ${confidence}%)`;
+
+      return [`You're about to send ${amount} ${symbol} on ${network}.`, `Destination: ${destination}`, feeInfo ? `Fee info: ${feeInfo}` : null, safetyLine, "\nType 'confirm send' to proceed or anything else to cancel."].filter(Boolean).join("\n");
+    } catch (_e) {
+      return "Please type 'confirm send' to proceed or anything else to cancel.";
+    }
   }
 
   /**

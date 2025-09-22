@@ -470,7 +470,7 @@ export default function AIAssistantWidget() {
                       const walk = (x - startX) * 1;
                       el.scrollLeft = startLeft - walk;
                     }}>
-                    {["Check my ETH balance", "I want to send 0.1 ICP coin to this address: issvv-4a....", "Check my Bitcoin balance", "Check Solana balance", "Analyze address risk", "Show Bitcoin price", "Analyze this address: 0x123..."].map((sample) => (
+                    {["Check my BTC balance", "Send 0.1 ICP to issvv-4a...", "Check my solana address", "Analyze this address: 0x123...", "Show Bitcoin price"].map((sample) => (
                       <button key={sample} type="button" onClick={() => handleSampleClick(sample)} className="shrink-0 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs border border-white/10 hover:border-white/20 transition-colors" title={sample}>
                         {sample}
                       </button>
