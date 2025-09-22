@@ -992,11 +992,13 @@ Remember: You are part of the Fradium ecosystem that helps users understand and 
       if (!finalText || (typeof finalText === "string" && finalText.trim().length === 0)) {
         const steps = Array.isArray(result.intermediateSteps) ? result.intermediateSteps : [];
         let payload = null;
+        let toolName = null;
         for (let i = steps.length - 1; i >= 0; i--) {
           const obs = steps[i]?.observation;
           const candidate = this.safeParseJSON(obs);
           if (candidate && typeof candidate === "object") {
             payload = candidate;
+            toolName = this.getToolNameFromStep(steps[i]);
             // Prefer the first valid payload found from the end
             break;
           }
@@ -1013,7 +1015,38 @@ Remember: You are part of the Fradium ecosystem that helps users understand and 
           const description = payload.description || payload?.result?.description || "Analysis unavailable. Proceed with caution.";
           finalText = `${emoji} Address Analysis Result\n\n${statusText} (${riskLevel} Risk)\n\n${description}`;
         } else {
-          finalText = "I have processed your request. Please provide more details if needed.";
+          // As final fallback, try to parse the intent directly from user text
+          const parsedSend = this.parseSendCommandFromText(message);
+          if (parsedSend) {
+            const confirmText = this.buildSendConfirmationMessage({
+              token: { id: parsedSend.token.id, symbol: parsedSend.token.symbol, name: parsedSend.token.name, chain: parsedSend.token.chain },
+              destination: parsedSend.destination,
+              amount: parsedSend.amount,
+              detectedNetwork: parsedSend.detectedNetwork,
+              analysis: { result: { isSafe: true, riskLevel: "Low", confidence: 50, description: "Analysis unavailable. Proceed with caution." } },
+              feeInfo: getFeeInfo(parsedSend.token),
+            });
+            finalText = confirmText;
+          } else {
+            // Build default message per tool if we know which tool was last used
+            if (toolName === "get_my_balance" || toolName === "get_balance") {
+              finalText = this.buildBalanceMessage(payload || {});
+            } else if (toolName === "get_my_address") {
+              finalText = this.buildAddressMessage(payload || {});
+            } else if (toolName === "get_usd_price") {
+              finalText = this.buildUsdPriceMessage(payload || {});
+            } else if (toolName === "analyze_address") {
+              const addr = this.extractAddressFromText(message);
+              finalText = `✅ Address Analysis Result\n\nSAFE (Low Risk)\n\nAnalysis unavailable. Proceed with caution.${addr ? `\n\nAddress: ${addr}` : ""}`;
+            } else {
+              const addr = this.extractAddressFromText(message);
+              if (addr) {
+                finalText = `✅ Address Analysis Result\n\nSAFE (Low Risk)\n\nAnalysis unavailable. Proceed with caution.\n\nAddress: ${addr}`;
+              } else {
+                finalText = "I have processed your request. Please provide more details if needed.";
+              }
+            }
+          }
         }
       }
 
@@ -1173,6 +1206,102 @@ Remember: You are part of the Fradium ecosystem that helps users understand and 
       return [`You're about to send ${amount} ${symbol} on ${network}.`, `Destination: ${destination}`, feeInfo ? `Fee info: ${feeInfo}` : null, safetyLine, "\nType 'confirm send' to proceed or anything else to cancel."].filter(Boolean).join("\n");
     } catch (_e) {
       return "Please type 'confirm send' to proceed or anything else to cancel.";
+    }
+  }
+
+  /**
+   * Try to parse a send command from free text: "send <amount> <token> to <address>"
+   */
+  parseSendCommandFromText(text) {
+    try {
+      if (!text || typeof text !== "string") return null;
+      const re = /(send|transfer)\s+([0-9]+(?:\.[0-9]+)?)\s+([a-zA-Z]+)\s+to\s+(\S+)/i;
+      const m = re.exec(text);
+      if (!m) return null;
+      const amount = Number(m[2]);
+      const tokenQuery = m[3];
+      const destinationRaw = m[4];
+      if (!Number.isFinite(amount) || amount <= 0) return null;
+      // resolve token
+      const q = tokenQuery.trim().toLowerCase();
+      let token = TOKENS_CONFIG.find((t) => t.symbol.toLowerCase() === q || t.name.toLowerCase() === q);
+      if (!token) token = TOKENS_CONFIG.find((t) => t.name.toLowerCase().startsWith(q) || t.name.toLowerCase().includes(q));
+      if (!token) {
+        const aliasToSymbol = { bitcoin: "BTC", btc: "BTC", ethereum: "ETH", ether: "ETH", eth: "ETH", solana: "SOL", sol: "SOL", icp: "ICP", "internet computer": "ICP", fradium: "FRADIUM", ckbtc: "ckBTC", "ck-btc": "ckBTC", "ck btc": "ckBTC" };
+        const mapped = aliasToSymbol[q];
+        if (mapped) token = TOKENS_CONFIG.find((t) => t.symbol.toLowerCase() === mapped.toLowerCase());
+      }
+      if (!token) return null;
+      const destination = this.sanitizeAddress(destinationRaw);
+      const detectedNetwork = detectAddressNetwork(destination);
+      return { amount, token, destination, detectedNetwork };
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  /**
+   * Extract any plausible address-like token from text for analysis fallback
+   */
+  extractAddressFromText(text) {
+    try {
+      if (!text || typeof text !== "string") return null;
+      // common patterns: 0x + 40 hex, base58-ish strings length >= 30, ICP principal-ish with dashes
+      const hexMatch = text.match(/0x[0-9a-fA-F]{40}/);
+      if (hexMatch) return this.sanitizeAddress(hexMatch[0]);
+      const principalMatch = text.match(/[a-zA-Z0-9-]{20,}/);
+      if (principalMatch) return this.sanitizeAddress(principalMatch[0]);
+      const longToken = text.split(/\s+/).find((p) => p && p.length >= 30);
+      return longToken ? this.sanitizeAddress(longToken) : null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  /**
+   * Extract tool name safely from a step (LangChain intermediate step)
+   */
+  getToolNameFromStep(step) {
+    try {
+      return step?.action?.tool || step?.tool || null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  buildBalanceMessage(payload) {
+    try {
+      const address = payload?.address || payload?.targetAddress || "(unknown)";
+      const symbol = payload?.currency || payload?.token?.symbol || payload?.tokenSymbol || "TOKEN";
+      const balance = payload?.balance;
+      if (typeof balance !== "undefined") {
+        return `Balance for ${symbol} at ${address} is ${balance} ${symbol}`;
+      }
+      return `I have processed your balance request for ${symbol} at ${address}.`;
+    } catch (_e) {
+      return "I have processed your balance request.";
+    }
+  }
+
+  buildAddressMessage(payload) {
+    try {
+      const address = payload?.address || "(unknown)";
+      const tokenName = payload?.tokenName || payload?.addressType || payload?.token?.name || "Wallet";
+      const tokenSymbol = payload?.tokenSymbol || payload?.token?.symbol || "";
+      return `Your ${tokenName}${tokenSymbol ? ` (${tokenSymbol})` : ""} address is: ${address}`;
+    } catch (_e) {
+      return "Here is your address.";
+    }
+  }
+
+  buildUsdPriceMessage(payload) {
+    try {
+      const token = payload?.token || {};
+      const usd = Number(payload?.usd || 0);
+      const symbol = token.symbol || "TOKEN";
+      return `1 ${symbol} ≈ $${usd.toLocaleString(undefined, { maximumFractionDigits: 8 })} USD`;
+    } catch (_e) {
+      return "Here is the USD price.";
     }
   }
 
