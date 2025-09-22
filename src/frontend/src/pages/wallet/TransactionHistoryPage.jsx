@@ -598,13 +598,13 @@ export default function TransactionHistoryPage() {
                           {tx.chain} •{" "}
                           {tx.timestamp
                             ? new Date(tx.timestamp).toLocaleString("id-ID", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: false,
-                              })
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                            })
                             : "Unknown date"}
                         </div>
                       </div>

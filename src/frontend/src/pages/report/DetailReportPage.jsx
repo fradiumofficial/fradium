@@ -454,7 +454,7 @@ export default function DetailReportPage() {
             <div className="xl:col-span-2 space-y-6 sm:space-y-8">
               {/* Report Title & Status */}
               <div className="mb-8">
-                <h1 className="text-3xl sm:text-4xl font-bold mb-4 capitalize">{uiData.category} Report</h1>
+                <h1 className="text-3xl sm:text-4xl font-medium mb-4 capitalize">{uiData.category} Report</h1>
                 <p className="text-gray-300 text-sm sm:text-base mb-6">Help protect the community by reporting suspicious wallet addresses and fraudulent activities.</p>
                 <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                   <div className={`inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(uiData.status)} h-8`}>
@@ -465,14 +465,15 @@ export default function DetailReportPage() {
                 </div>
               </div>
 
-              {/* Reported Address - Hero Style */}
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+              {/* FLAGGED ADDRESS Card */}
+              <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-400/20 rounded-2xl p-6 shadow-lg">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
                   <div className="min-w-0 flex-1">
-                    <div className="font-mono text-xl sm:text-2xl font-bold mb-2">{uiData.shortAddress}</div>
+                    <div className="text-red-400 text-sm font-medium mb-2 uppercase tracking-wider">FLAGGED ADDRESS</div>
+                    <div className="font-mono text-xl sm:text-2xl font-bold mb-2 text-white">{uiData.shortAddress}</div>
                     <div className="text-sm text-gray-400 capitalize">{uiData.category} • Reported {uiData.createdAt.toLocaleDateString()}</div>
                   </div>
-                  <Button onClick={() => copyToClipboard(uiData.address)} className="bg-white/10 border border-white/20 hover:bg-white/20 text-white self-start sm:self-center">
+                  <Button onClick={() => copyToClipboard(uiData.address)} className="bg-white/5 border border-white/50 hover:bg-gray-700/80 text-white self-start sm:self-center px-4 py-2 rounded-full shadow-md">
                     <Copy className="w-4 h-4 mr-2" />
                     Copy
                   </Button>
@@ -495,8 +496,30 @@ export default function DetailReportPage() {
 
                   {/* Main Image Display */}
                   <div className="relative mb-6">
-                    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden aspect-video">
-                      <img src={uiData.evidence[currentImageIndex] || "/placeholder.svg"} alt={`Evidence ${currentImageIndex + 1}`} className="w-full h-full object-cover" />
+                    <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden aspect-video">
+                      {uiData.evidence[currentImageIndex] ? (
+                        <img
+                          src={uiData.evidence[currentImageIndex]}
+                          alt={`Evidence ${currentImageIndex + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+
+                      {/* Fallback for missing or broken images */}
+                      <div
+                        className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400"
+                        style={{ display: uiData.evidence[currentImageIndex] ? 'none' : 'flex' }}
+                      >
+                        <div className="text-center">
+                          <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Evidence {currentImageIndex + 1}</p>
+                          <p className="text-xs text-gray-500">No image available</p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Navigation Overlay */}
@@ -518,10 +541,32 @@ export default function DetailReportPage() {
                   </div>
 
                   {/* Thumbnail Strip */}
-                  <div className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-2">
+                  <div className="flex space-x-3 overflow-x-auto pb-2">
                     {uiData.evidence.map((image, index) => (
-                      <button key={index} onClick={() => setCurrentImageIndex(index)} className={`flex-shrink-0 w-16 sm:w-20 h-16 sm:h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex ? "border-white" : "border-white/20 hover:border-white/40"}`}>
-                        <img src={image || "/placeholder.svg"} alt={`Evidence thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex ? "border-white" : "border-white/20 hover:border-white/40"}`}
+                      >
+                        {image ? (
+                          <img
+                            src={image}
+                            alt={`Evidence thumbnail ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+
+                        {/* Fallback for missing thumbnails */}
+                        <div
+                          className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400"
+                          style={{ display: image ? 'none' : 'flex' }}
+                        >
+                          <ImageIcon className="w-6 h-6 opacity-50" />
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -531,46 +576,49 @@ export default function DetailReportPage() {
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6 sm:space-y-8">
-              {/* Community Vote Panel */}
-              <Card>
-                <h3 className="text-lg font-semibold mb-4">Community Vote</h3>
+              {/* Community Vote Panel - Aligned with FLAGGED ADDRESS card */}
+              <div className="bg-black/50 backdrop-blur-sm border border-white/10 rounded-2xl p-6 shadow-lg mt-16">
+                <h3 className="text-lg font-semibold mb-4 text-white">Community Vote</h3>
 
                 {/* Timer */}
-                <div className="text-sm text-gray-400 mb-4 flex items-center">
+                <div className="text-sm text-gray-400 mb-6 flex items-center">
                   <Clock className="w-4 h-4 mr-2" />
                   {timeRemaining}
                 </div>
 
                 {/* Vote Progress Circle */}
-                <div className="relative w-24 h-24 mx-auto mb-4">
-                  <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                <div className="relative w-28 h-28 mx-auto mb-6">
+                  <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-700" />
-                    <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={`${yesPercentage * 2.51} 251`} className="text-red-400" />
+                    <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={`${uiData.yesPercentage * 2.51} 251`} className="text-red-400" />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-red-400">{yesPercentage}%</div>
-                      <div className="text-xs text-gray-400">Unsafe</div>
+                      <div className="text-2xl font-bold text-red-400">{uiData.yesPercentage}%</div>
+                      <div className="text-sm text-red-400 font-medium">Unsafe</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Vote Stats */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-red-400">Unsafe: {uiData.yesPercentage}%</span>
                     <span className="text-green-400">Safe: {uiData.noPercentage}%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="bg-red-400 h-2 rounded-full transition-all duration-300" style={{ width: `${uiData.yesPercentage}%` }}></div>
                   </div>
                 </div>
 
                 {/* Vote Buttons */}
                 {uiData.status === "Pending" && !uiData.hasUserVoted && isAuthenticated && !uiData.isUserReporter && (
-                  <div className="space-y-3">
-                    <Button onClick={() => handleVoteClick("yes")} className={`w-full ${userVote === "yes" ? "bg-red-400 text-white" : "bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400"}`}>
+                  <div className="space-y-4 mt-6">
+                    <Button onClick={() => handleVoteClick("yes")} className={`w-full py-3 ${userVote === "yes" ? "bg-red-400 text-white" : "bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400"}`}>
                       <AlertTriangle className="w-4 h-4 mr-2" />
                       Vote Unsafe
                     </Button>
-                    <Button onClick={() => handleVoteClick("no")} className={`w-full ${userVote === "no" ? "bg-green-400 text-black" : "bg-green-400/10 border border-green-400/20 hover:bg-green-400/20 text-green-400"}`}>
+                    <Button onClick={() => handleVoteClick("no")} className={`w-full py-3 ${userVote === "no" ? "bg-green-400 text-black" : "bg-green-400/10 border border-green-400/20 hover:bg-green-400/20 text-green-400"}`}>
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Vote Safe
                     </Button>
@@ -601,47 +649,47 @@ export default function DetailReportPage() {
                     </PrimaryButton>
                   </div>
                 )}
-              </Card>
+              </div>
 
               {/* Reports Note */}
-              <Card>
-                <h3 className="text-lg font-semibold mb-4">Reports Note</h3>
-                <div className="space-y-4">
+              <div className="bg-black/50 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-lg">
+                <h3 className="text-2xl font-medium mb-6 text-white">Reports Note</h3>
+                <div className="space-y-5">
                   <div className="flex items-center space-x-3">
                     <Hash className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="text-sm text-gray-400">Chain</div>
-                      <div className="font-medium">{uiData.chain}</div>
+                      <div className="text-base font-medium text-white">{uiData.chain}</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="text-sm text-gray-400">Category</div>
-                      <div className="font-medium capitalize">{uiData.category}</div>
+                      <div className="text-base font-medium text-white capitalize">{uiData.category}</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="text-sm text-gray-400">Reporter</div>
-                      <div className="font-mono text-sm truncate">{uiData.reporterShort}</div>
+                      <div className="text-base font-medium text-white font-mono truncate">{uiData.reporterShort}</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="text-sm text-gray-400">Created</div>
-                      <div className="text-sm">{uiData.createdAt.toLocaleDateString()}</div>
+                      <div className="text-base font-medium text-white">{uiData.createdAt.toLocaleDateString()}</div>
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
 
-              {/* Chain Explorer Link */}
+              {/* View on Blockcharm Button */}
               {getExplorerName(uiData.chain) !== "Explorer" && (
                 <a href={getExplorerUrl(uiData.chain, uiData.address)} target="_blank" rel="noopener noreferrer" className="block">
-                  <Button className="w-full bg-green-400 hover:bg-green-500 text-black font-semibold">
+                  <Button className="w-full bg-white/5 border border-white/20 hover:bg-white/10 text-white font-semibold py-3 rounded-full transition-all duration-200">
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View on {getExplorerName(uiData.chain)}
                   </Button>
