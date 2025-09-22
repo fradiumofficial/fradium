@@ -785,7 +785,7 @@ const Home = React.memo(() => {
           </div>
 
           {/* Laptop Image - positioned within background 3 content */}
-          <div className="relative flex justify-center items-end mt-4 sm:mt-6 md:mt-8">
+          <div className="relative flex justify-center items-end mt-16 sm:mt-6 md:mt-8">
             <div className="relative w-full max-w-3xl sm:max-w-4xl md:max-w-5xl mx-auto">
               {/* Laptop Frame */}
               <img
