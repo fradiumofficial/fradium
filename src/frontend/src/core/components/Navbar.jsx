@@ -76,7 +76,7 @@ const Navbar = () => {
 
   const desktopItemClass = (active) => `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 text-center ${active ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"}`;
 
-  const mobileItemClass = (active) => `font-[General Sans, sans-serif] text-lg ${active ? "text-white font-semibold" : "text-white/70 font-medium"} no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95`;
+  const mobileItemClass = (active) => `font-[General Sans, sans-serif] text-lg ${active ? "text-white font-medium" : "text-white/70 font-medium"} no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95`;
 
   const isProductsActive = pathname.startsWith("/products");
   const productsBtnClass = `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 flex items-center gap-1 ${isProductsActive ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"}`;
@@ -260,14 +260,14 @@ const Navbar = () => {
                   {item.label}
                 </a>
               ) : (
-                <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
                   {item.label}
                 </Link>
               )
             )}
             {/* Products Dropdown Mobile */}
             <div className="w-full">
-              <div className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
+              <div className="font-[General Sans, sans-serif] text-lg font-medium text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
                 Products <ChevronDown className="w-4 h-4" />
               </div>
               {productsDropdown && (

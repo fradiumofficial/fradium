@@ -375,7 +375,7 @@ export default function ReportPage() {
           animation: progressFill 0.8s ease-out;
         }
       `}</style>
-      <div className="min-h-screen max-w-full mt-16 bg-[#000510] text-white ">
+      <div className="min-h-screen max-w-full mt-12 md:mt-16 bg-[#000510] text-white ">
         {/* Main Content */}
         <main className="pt-18">
           {/* Loading state handled inline in list section below */}
@@ -396,7 +396,7 @@ export default function ReportPage() {
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium mb-3 sm:mb-4">Community Vote Reports</h1>
                   </Reveal>
                   <Reveal delay={200} duration={600}>
-                    <p className="text-base sm:text-base font-normal text-gray-300 max-w-4xl">
+                    <p className="text-sm sm:text-base font-normal text-gray-300 max-w-4xl">
                       Review wallet addresses reported by the community for suspicious or fraudulent activity. Your action might help protect the Web3 ecosystem by participating in our decentralized security network.{" "}
                       <a href="#" className="underline text-[#99E39E] hover:text-[#99E39E]/80 transition-colors duration-200">
                         How Community Voting Works?
@@ -418,38 +418,44 @@ export default function ReportPage() {
               {/* Search and Filters inside background-1 */}
               <div className="mt-6">
                 <Reveal delay={400} duration={600}>
-                  <div className="flex max-w-6xl mx-auto mt-16 items-stretch gap-3">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors duration-200 group-focus-within:text-[#99E39E]" />
-                      <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="h-12 rounded-full pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-[#99E39E]/50 focus:ring-2 focus:ring-[#99E39E]/20 transition-all duration-300 ease-out hover:bg-white/8 hover:border-white/20 group" />
+                  <div className="max-w-6xl mx-auto mt-8 sm:mt-12 lg:mt-16">
+                    <div className="flex items-stretch gap-3">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 transition-colors duration-200 group-focus-within:text-[#99E39E]" />
+                        <Input placeholder="Search addresses, status, risk level..." value={searchTerm} onChange={handleSearch} className="h-11 sm:h-12 rounded-full pl-10 bg-white/5 backdrop-blur-sm border-white/10 text-white text-sm sm:text-base placeholder-gray-400 focus:bg-white/10 focus:border-[#99E39E]/50 focus:ring-2 focus:ring-[#99E39E]/20 transition-all duration-300 ease-out hover:bg-white/8 hover:border-white/20 group" />
+                      </div>
+                      <div className="shrink-0">
+                        <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => { }}>
+                          Filter
+                        </ButtonGreen>
+                      </div>
                     </div>
-                    <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/filter.svg" onClick={() => { }}>
-                      Filter
-                    </ButtonGreen>
                   </div>
                 </Reveal>
 
                 {/* Sort chips */}
                 <Reveal delay={500} duration={600}>
-                  <div className="mt-4 max-w-6xl mx-auto flex items-center gap-3">
-                    <span className="text-gray-400 text-sm">Sort by:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { field: "timestamp", label: "Latest" },
-                        { field: "totalVotes", label: "Votes" },
-                        { field: "status", label: "Status" },
-                        { field: "category", label: "Category" },
-                        { field: "chain", label: "Chain" },
-                      ].map((sortOption, index) => (
-                        <Reveal key={sortOption.field} delay={600 + index * 50} duration={400}>
-                          <div>
-                            <Button onClick={() => handleSort(sortOption.field)} className="rounded-full h-9 px-4 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10">
-                              {sortOption.label}
-                              {getSortIcon(sortOption.field)}
-                            </Button>
-                          </div>
-                        </Reveal>
-                      ))}
+                  <div className="mt-4 max-w-6xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <span className="text-gray-400 text-sm">Sort by:</span>
+                      <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:grid-cols-none sm:flex sm:flex-wrap">
+                        {[
+                          { field: "timestamp", label: "Latest" },
+                          { field: "totalVotes", label: "Votes" },
+                          { field: "status", label: "Status" },
+                          { field: "category", label: "Category" },
+                          { field: "chain", label: "Chain" },
+                        ].map((sortOption, index) => (
+                          <Reveal key={sortOption.field} delay={600 + index * 50} duration={400}>
+                            <div className="w-full sm:w-auto">
+                              <Button onClick={() => handleSort(sortOption.field)} className="rounded-full h-10 sm:h-9 px-3 sm:px-4 w-full sm:w-auto bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 active:scale-95 text-white text-sm transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10">
+                                {sortOption.label}
+                                {getSortIcon(sortOption.field)}
+                              </Button>
+                            </div>
+                          </Reveal>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </Reveal>
@@ -461,7 +467,7 @@ export default function ReportPage() {
           </div>
 
           {/* Rest of Content - overlap up to blend with background-1 */}
-          <div className={`relative md:px-6 overflow-hidden -mt-10 md:-mt-6 min-h-[900px] md:min-h-[1000px] transition-all duration-700 ease-out ${pageTransitionClass}`}>
+          <div className={`relative md:px-6 overflow-hidden -mt-6 md:-mt-6 min-h-[700px] md:min-h-[1000px] transition-all duration-700 ease-out ${pageTransitionClass}`}>
             <div className="absolute inset-0 z-0 pointer-events-none select-none">
               <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
             </div>
@@ -506,37 +512,37 @@ export default function ReportPage() {
                     <div className="grid grid-cols-1 gap-4 sm:gap-6">
                       {currentData.map((report, index) => (
                         <Reveal key={report.report_id} delay={index * 100} duration={600}>
-                          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)] hover:bg-white/8 hover:border-white/20 hover:shadow-[0_12px_32px_rgba(0,0,0,0.30)] hover:scale-[1.02] transition-all duration-300 ease-out group cursor-pointer">
+                          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.20)] hover:bg-white/8 hover:border-white/20 hover:shadow-[0_12px_32px_rgba(0,0,0,0.30)] hover:scale-[1.02] transition-all duration-300 ease-out group cursor-pointer">
                             {/* Card Header */}
-                            <div className="flex items-start justify-between mb-4">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-3 sm:mb-4">
                               <div className="flex-1 min-w-0">
                                 {/* Network and Address */}
-                                <div className="flex mb-2">
+                                <div className="flex flex-wrap items-center mb-2 gap-y-2">
                                   <div className="flex items-center space-x-2">
-                                    <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-lg group-hover:shadow-orange-500/30">
-                                      <span className="text-white text-xs font-bold group-hover:scale-110 transition-transform duration-200">₿</span>
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-lg group-hover:shadow-orange-500/30">
+                                      <span className="text-white text-[10px] sm:text-xs font-bold group-hover:scale-110 transition-transform duration-200">₿</span>
                                     </div>
-                                    <span className="text-sm text-gray-300 group-hover:text-gray-200 transition-colors duration-200">{report.chain} Network</span>
+                                    <span className="text-xs sm:text-sm text-gray-300 group-hover:text-gray-200 transition-colors duration-200">{report.chain} Network</span>
                                   </div>
-                                  <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full ml-4 text-xs font-medium border transition-all duration-200 group-hover:scale-105 ${getStatusColor(report.status)}`}>
+                                  <div className={`inline-flex items-center space-x-2 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full ml-3 sm:ml-4 text-[10px] sm:text-xs font-medium border transition-all duration-200 group-hover:scale-105 ${getStatusColor(report.status)}`}>
                                     <span className="group-hover:animate-pulse">{getStatusIcon(report.status)}</span>
                                     <span className="group-hover:text-white transition-colors duration-200">{report.status}</span>
                                   </div>
                                 </div>
 
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="font-mono text-lg font-semibold text-white group-hover:text-[#99E39E] transition-colors duration-200">{report.shortAddress}</span>
+                                  <span className="font-mono text-base sm:text-lg font-semibold text-white group-hover:text-[#99E39E] transition-colors duration-200">{report.shortAddress}</span>
                                 </div>
 
                                 <div className="flex items-center space-x-2 text-sm text-gray-400 mb-4">
-                                  <span className="group-hover:text-gray-300 transition-colors duration-200">{report.category}</span>
+                                  <span className="text-xs sm:text-sm group-hover:text-gray-300 transition-colors duration-200">{report.category}</span>
                                   <span className="group-hover:animate-pulse">•</span>
-                                  <span className="group-hover:text-gray-300 transition-colors duration-200">Reported {report.dateReported}</span>
+                                  <span className="text-xs sm:text-sm group-hover:text-gray-300 transition-colors duration-200">Reported {report.dateReported}</span>
                                 </div>
                               </div>
 
                               <Button
-                                className="!bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-sm px-4 py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]"
+                                className="self-end sm:self-auto !bg-gray-800/50 backdrop-blur-sm !border border-gray-600/50 hover:!bg-gray-700/50 hover:scale-105 active:scale-95 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 !rounded-full transition-all duration-200 ease-out group-hover:!bg-[#99E39E]/20 group-hover:!border-[#99E39E]/50 group-hover:text-[#99E39E]"
                                 onClick={() => {
                                   console.log("Navigating to report ID:", report.report_id, "Type:", typeof report.report_id);
                                   console.log("Full report object:", report);
@@ -555,13 +561,13 @@ export default function ReportPage() {
                             </div>
 
                             {/* Vote Information */}
-                            <div className="flex justify-between text-xs mb-2">
+                            <div className="flex justify-between text-[11px] sm:text-xs mb-2">
                               <span className="text-red-400 transition-colors duration-200 group-hover:text-red-300">Unsafe: {report.yesPercentage}%</span>
                               <span className="text-green-400 transition-colors duration-200 group-hover:text-green-300">Safe: {report.noPercentage}%</span>
                             </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div className="w-full bg-gray-700 rounded-full h-1.5 sm:h-2 overflow-hidden">
                               <div
-                                className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all duration-500 ease-out group-hover:from-red-300 group-hover:to-red-400"
+                                className="bg-gradient-to-r from-red-400 to-red-500 h-1.5 sm:h-2 rounded-full transition-all duration-500 ease-out group-hover:from-red-300 group-hover:to-red-400"
                                 style={{
                                   width: `${report.yesPercentage}%`,
                                   "--progress-width": `${report.yesPercentage}%`,
@@ -622,7 +628,7 @@ export default function ReportPage() {
                 {/* Info Section */}
                 <div className="my-16 mx-auto">
                   <Reveal delay={0} duration={600}>
-                    <h3 className="text-2xl font-medium mb-8 text-white">How Community Voting Works?</h3>
+                    <h3 className="text-xl md:text-2xl font-medium mb-8 text-white">How Community Voting Works?</h3>
                   </Reveal>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
