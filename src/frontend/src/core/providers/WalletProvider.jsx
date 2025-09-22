@@ -154,7 +154,7 @@ export const WalletProvider = ({ children }) => {
       Bitcoin: true,
       Ethereum: true,
       Solana: true,
-      Fradium: true,
+      "Internet Computer": true,
     };
   }, [getNetworkFiltersKey]);
 
