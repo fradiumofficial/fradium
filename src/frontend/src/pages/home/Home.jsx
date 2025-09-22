@@ -801,9 +801,9 @@ const Home = React.memo(() => {
 
               {/* Video Overlay - positioned over the full screen area */}
               <div className="absolute 
-                top-[6%] left-[8%] w-[84%] h-[82%] 
-                md:top-[7%] md:left-[9%] md:w-[82%] md:h-[80%] 
-                lg:top-[8%] lg:left-[10%] lg:w-[80%] lg:h-[78%] 
+                top-[2%] left-[9%] w-[82%] h-[105%]
+                md:top-[2%] md:left-[9%] md:w-[82%] md:h-[105%]
+                lg:top-[2%] lg:left-[9%] lg:w-[82%] lg:h-[105%]
                 rounded-lg overflow-hidden">
 
                 {/* Placeholder sementara - ganti dengan video nanti */}
