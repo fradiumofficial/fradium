@@ -238,45 +238,55 @@ Illustrates the journey of a user interacting with Fradium — from scanning an 
 
 ## 🔥 Complex Features Implemented
 
-💳 **Cross-Chain Ledger Support**: Unified integration with multiple blockchain networks, allowing address lookups, transaction insights, and security checks across different ecosystems from a single platform.
+- **Chain fusion Technology**: Unified integration with multiple blockchain networks, allowing address lookups, transaction insights, and security checks across different ecosystems from a single platform.
+- **AI On-Chain Address Analyzer**: Advanced machine learning models trained on complex datasets of blockchain activity, converted into **ONNX format** and deployed directly on Internet Computer canisters for real-time, trustless threat detection.
+- **Fradium Wallet Extension**: A browser-based companion tool that adds pre-send safety checks, risk explanations, and cross-chain token support, helping users stay safe while interacting with dApps, wallets, and explorers.
+- **LLM On-Chain Interaction**: Large Language Model successfully deployed inside an ICP canister, enabling intelligent on-chain AI interaction without relying on off-chain servers.
+- **DAO-Driven Community Reporting & Voting**: A fully on-chain governance system where users can report suspicious addresses, validate evidence, and participate in decentralized voting—forming a security-focused DAO that strengthens collective trust in Web3.
+- **Custom $FUM Token**: Native utility and governance token built with **ICRC-1 and ICRC-2 standards**, powering staking, voting, and rewarding credible community contributions.
 
-🧠 **AI On-Chain Address Analyzer**: Advanced machine learning models trained on complex datasets of blockchain activity, converted into **ONNX format** and deployed directly on Internet Computer canisters for real-time, trustless threat detection.
+# **Fradium Roadmap**
 
-🌐 **Fradium Wallet Extension**: A browser-based companion tool that adds pre-send safety checks, risk explanations, and cross-chain token support, helping users stay safe while interacting with dApps, wallets, and explorers.
+### Phase 1 – Ecosystem Foundation
 
-🤖 **LLM On-Chain Interaction**: Large Language Model successfully deployed inside an ICP canister, enabling intelligent on-chain AI interaction without relying on off-chain servers.
-
-👥 **DAO-Driven Community Reporting & Voting**: A fully on-chain governance system where users can report suspicious addresses, validate evidence, and participate in decentralized voting—forming a security-focused DAO that strengthens collective trust in Web3.
-
-💎 **Custom $FUM Token**: Native utility and governance token built with **ICRC-1 and ICRC-2 standards**, powering staking, voting, and rewarding credible community contributions.
-
-## 🛣️ Fradium Roadmap
-
-### 🧱 Phase 1 – Ecosystem Foundation
-
-- Launch **browser extension** for address analysis and transaction safety
-- Develop and deploy **Web Wallet App** with **Solana** and **Bitcoin** transaction support
-- Deploy **community-driven reporting system** with voting and contribution tracking
-- Launch **$FUM token** with full **ICRC-1** and **ICRC-2** standard support
+- Launch browser extension for **address analysis & transaction safety**
+- Develop & deploy **Web Wallet App** with **Solana** and **Bitcoin** transaction support
+- Deploy **community-driven reporting system** (voting + contribution tracking)
+- Launch **\$FRADIUM token** with full **ICRC-1** & **ICRC-2** standard support
 - Release browser extension on **Chrome Web Store** and **Firefox Add-ons**
-- Integrate **AI detection** for **Ethereum** and **Bitcoin** address analysis
+- Integrate **AI detection** for **Ethereum** & **Bitcoin** address analysis
 
-### 🌍 Phase 2 – Expanding Accessibility
+---
+
+### Phase 2 – Expanding Accessibility
 
 - Develop **cross-platform browser extension wallet**
-- Enable **Ethereum transaction support** and **ERC20 token** management
+- Enable **Ethereum transaction support** & **ERC20 token management**
 - Expand **AI detection** to support **Solana** address analysis
 
-### 🔗 Phase 3 – Full Multi-Chain Experience
+---
 
-- Launch **integrated browser extension wallet** for unified user experience
-- Enable full support for **ICP native tokens** including `ckBTC`, `ckETH`, `ckUSDC`, and other **chain-key assets**
-- Add **SPL token** support for Solana (e.g., **USDC**, **USDT**)
+### Phase 3 – Full Multi-Chain Experience & Market Fit
 
-### 🏛️ Phase 4 – Decentralized Governance & Advanced Integration
+- Launch **integrated browser extension wallet** for **unified UX**
+- Enable full support for **ICP native tokens** (ckBTC, ckETH, other chain-key assets)
+- Expand **AI Analyzer** to cover all **ICRC-standard** tokens on ICP (ICRC-1 & ICRC-2)
+- **Launch AI Agent Assistant**:
+  - Use natural language prompts to transfer, receive, analyze addresses, and access all wallet features
+  - Make Fradium accessible even for non-technical users through conversational interaction
+- **Focus on Market Fit**:
 
-- Integrate Fradium into the **SNS (Service Nervous System)** for decentralized protocol ownership and governance
-- Begin research and prototyping for **Fradium SDK/API** to allow third-party apps to access our **AI** and **security tools**
+  - Conduct **beta testing** with real users
+  - Collect **user testimonials** to validate trust & usability
+  - Run **structured feedback sessions** to identify improvement areas
+  - Continuously **optimize features** based on real-world usage
+
+### Phase 4 – Decentralized Governance & Advanced Integration
+
+- Integrate Fradium into the **SNS (Service Nervous System)** → decentralized ownership & governance
+- Research & prototype **Fradium SDK/API** → allow third-party apps to access AI & security tools
+- Integrate with ICPSwap for real-time token swap
+- Integrate fiat on-ramp providers using Moonpay
 
 ## 📃 License
 

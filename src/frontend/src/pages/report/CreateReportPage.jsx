@@ -15,6 +15,9 @@ import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle, FileText, Plu
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 
+// Framer Motion
+import { motion, AnimatePresence } from "framer-motion";
+
 // Auth
 import { useAuth } from "@/core/providers/AuthProvider";
 
@@ -63,24 +66,21 @@ export default function CreateReportPage() {
   // Toast helper styled with Fradium design system
   const showFileTooLargeToast = (tooLargeFiles) => {
     toast.error(
-      (
-        <div className="text-left">
-          <div className="font-medium mb-1">Ukuran file terlalu besar</div>
-          <div className="text-sm text-white/90">Batas maksimal 2MB per file. File berikut melebihi batas:</div>
-          <ul className="mt-2 list-disc list-inside text-sm">
-            {tooLargeFiles.map((f, i) => (
-              <li key={i}>
-                <span className="font-medium">{f.name}</span>
-                <span className="text-white/80"> — {formatFileSize(f.size)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ),
+      <div className="text-left">
+        <div className="font-medium mb-1">Ukuran file terlalu besar</div>
+        <div className="text-sm text-white/90">Batas maksimal 2MB per file. File berikut melebihi batas:</div>
+        <ul className="mt-2 list-disc list-inside text-sm">
+          {tooLargeFiles.map((f, i) => (
+            <li key={i}>
+              <span className="font-medium">{f.name}</span>
+              <span className="text-white/80"> — {formatFileSize(f.size)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>,
       {
         icon: <AlertTriangle className="text-red-400" />,
-        className:
-          "!bg-[#0B0F14] !text-white !border !border-red-400/25 !rounded-2xl !backdrop-blur-md shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
+        className: "!bg-[#0B0F14] !text-white !border !border-red-400/25 !rounded-2xl !backdrop-blur-md shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
         progressClassName: "!bg-red-400",
         closeOnClick: true,
         autoClose: 4800,
@@ -191,6 +191,22 @@ export default function CreateReportPage() {
     };
     fetchBalance();
   }, [identity]);
+
+  // Disable page scroll when modals are open
+  useEffect(() => {
+    if (showConfirmModal || showSuccessModal) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = "0px";
+    } else {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+      document.body.style.paddingRight = "0px";
+    };
+  }, [showConfirmModal, showSuccessModal]);
 
   // Form validation
   const validateStep = (step) => {
@@ -339,28 +355,28 @@ export default function CreateReportPage() {
         from_subaccount: [],
         spender: {
           owner: backendCanisterId,
-          subaccount: []
+          subaccount: [],
         },
         amount: Number(approvalAmount),
         fee: [],
         memo: [],
         created_at_time: [],
         expected_allowance: [],
-        expires_at: []
+        expires_at: [],
       });
 
       const approveResult = await fradium_ledger.icrc2_approve({
         from_subaccount: [],
         spender: {
           owner: Principal.fromText(backendCanisterId),
-          subaccount: []
+          subaccount: [],
         },
         amount: approvalAmount,
         fee: [],
         memo: [],
         created_at_time: [],
         expected_allowance: [],
-        expires_at: []
+        expires_at: [],
       });
 
       console.log("Approve result:", approveResult);
@@ -379,7 +395,7 @@ export default function CreateReportPage() {
         } else if (approveResult?.Err?.GenericError) {
           toast.error(`Generic error: ${approveResult.Err.GenericError.message}`);
         } else {
-          toast.error(`Failed to approve tokens: ${JSON.stringify(approveResult?.Err) || 'Unknown error'}`);
+          toast.error(`Failed to approve tokens: ${JSON.stringify(approveResult?.Err) || "Unknown error"}`);
         }
         return;
       }
@@ -508,11 +524,7 @@ export default function CreateReportPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-[#0B0F1480] backdrop-blur-md border border-white/10 rounded-xl text-white shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
                   {whatHappenedOptions.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="text-white/90 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/15 focus:bg-white/15 focus:text-white"
-                    >
+                    <SelectItem key={option.value} value={option.value} className="text-white/90 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/15 focus:bg-white/15 focus:text-white">
                       {option.label}
                     </SelectItem>
                   ))}
@@ -643,20 +655,45 @@ export default function CreateReportPage() {
     return (amount * 0.25).toFixed(2);
   };
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.3,
+        ease: "easeOut",
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.95,
+      transition: {
+        duration: 0.2,
+        ease: "easeIn",
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+        ease: "easeOut",
+      },
+    },
+  };
+
   return (
     <>
       <div className=" bg-[#000510] text-white relative overflow-hidden min-h-[900px] md:min-h-[1000px] lg:min-h-[1100px]">
         {/* Background layer */}
         <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
-          <img
-            src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp"
-            alt=""
-            aria-hidden="true"
-            decoding="async"
-            loading="lazy"
-            draggable={false}
-            className="absolute inset-0 w-full h-full object-cover object-top"
-          />
+          <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
         </div>
         {/* Soft fade at top edge */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -684,7 +721,9 @@ export default function CreateReportPage() {
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-[#99e39e] mb-2">Login Required</h3>
                     <p className="text-gray-300 mb-4">You need to login to create a new report. This ensures secure submission and allows you to stake FUM tokens for the community validation process.</p>
-                    <ButtonGreen size="sm" fontWeight="medium" onClick={handleLogin}>Login to Continue</ButtonGreen>
+                    <ButtonGreen size="sm" fontWeight="medium" onClick={handleLogin}>
+                      Login to Continue
+                    </ButtonGreen>
                   </div>
                 </div>
               </div>
@@ -739,19 +778,13 @@ export default function CreateReportPage() {
                   </div>
 
                   {/* Step Content with transition */}
-                  <div className={`transition-all duration-300 ${isTransitioning ? (transitionDirection === "forward" ? "opacity-0 translate-y-2" : "opacity-0 -translate-y-2") : "opacity-100 translate-y-0"}`}>
-                    {renderStepContent()}
-                  </div>
+                  <div className={`transition-all duration-300 ${isTransitioning ? (transitionDirection === "forward" ? "opacity-0 translate-y-2" : "opacity-0 -translate-y-2") : "opacity-100 translate-y-0"}`}>{renderStepContent()}</div>
 
                   {/* Navigation Buttons */}
                   <div className="flex flex-col sm:flex-row justify-between items-center mt-8 pt-6 border-t border-white/10 space-y-4 sm:space-y-0">
                     <div>
                       {currentStep > 1 && (
-                        <Button
-                          onClick={prevStep}
-                          disabled={!isAuthenticated}
-                          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm backdrop-blur-sm ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}
-                        >
+                        <Button onClick={prevStep} disabled={!isAuthenticated} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm backdrop-blur-sm ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}>
                           <ArrowLeft className="w-4 h-4" />
                           <span>Previous</span>
                         </Button>
@@ -771,13 +804,7 @@ export default function CreateReportPage() {
                           </span>
                         </ButtonGreen>
                       ) : (
-                        <ButtonGreen
-                          size="sm"
-                          fontWeight="medium"
-                          onClick={() => setShowConfirmModal(true)}
-                          disabled={isSubmitting || isUploading || !isAuthenticated || hasSubmitErrors()}
-                          className={`text-white disabled:opacity-50 ${!isAuthenticated ? "cursor-not-allowed" : ""}`}
-                        >
+                        <ButtonGreen size="sm" fontWeight="medium" onClick={() => setShowConfirmModal(true)} disabled={isSubmitting || isUploading || !isAuthenticated || hasSubmitErrors()} className={`text-white disabled:opacity-50 ${!isAuthenticated ? "cursor-not-allowed" : ""}`}>
                           {isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit Report"}
                         </ButtonGreen>
                       )}
@@ -787,140 +814,135 @@ export default function CreateReportPage() {
               </div>
             </div>
           </div>
-
-          {/* Success Modal */}
-          {showSuccessModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="fixed inset-0 bg-black" onClick={() => setShowSuccessModal(false)}></div>
-              <div className="relative bg-black border border-white/20 rounded-2xl p-8 w-full max-w-md mx-4 text-center">
-                <div className="mb-6">
-                  <div className="w-16 h-16 bg-green-400/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-green-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">Report Submitted!</h3>
-                  <p className="text-gray-300 mb-4">Your report has been submitted successfully and is now under community review.</p>
-                  <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                    <div className="text-sm text-gray-400 mb-1">Report ID</div>
-                    <div className="font-mono text-lg">
-                      RPT-2024-
-                      {Math.floor(Math.random() * 9999)
-                        .toString()
-                        .padStart(4, "0")}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                  <Button onClick={() => setShowSuccessModal(false)} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
-                    Create Another
-                  </Button>
-                  <Link to="/reports" className="flex-1">
-                    <Button className="w-full bg-white text-black hover:bg-gray-200">View Reports</Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
         </main>
       </div>
       {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black" onClick={() => setShowConfirmModal(false)}></div>
-          <div className="relative bg-black border border-white/20 rounded-xl sm:rounded-2xl p-6 sm:p-8 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl sm:text-2xl  text-white font-bold">Confirm Report Submission</h3>
-              <Button onClick={() => setShowConfirmModal(false)} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg">
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+      <AnimatePresence>
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+            <div className="flex min-h-full items-start justify-center pt-8 pl-4 pr-4 pb-4">
+              <motion.div className="relative w-full max-w-[500px] mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10" variants={containerVariants} initial="hidden" animate="visible" exit="exit">
+                <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={() => setShowConfirmModal(false)} aria-label="Close">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div className="flex flex-col items-center p-4 gap-4 h-auto">
+                  <div className="w-full text-center text-white text-lg font-medium">Confirm Report Submission</div>
 
-            <div className="space-y-6">
-              {/* User Stats */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm sm:text-base">Your current balance:</span>
-                  <span className="font-bold text-white">{convertE8sToToken(balance)} FUM</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm sm:text-base">Minimum stake required:</span>
-                  <span className="font-bold text-red-400">5 FUM</span>
-                </div>
-              </div>
+                  {/* User Stats */}
+                  <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/90 text-sm font-medium">Your current balance:</span>
+                        <span className="font-bold text-white">{convertE8sToToken(balance)} FUM</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/90 text-sm font-medium">Minimum stake required:</span>
+                        <span className="font-bold text-red-400">5 FUM</span>
+                      </div>
+                    </div>
+                  </motion.div>
 
-              {/* Stake Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Enter amount of FUM to stake <span className="text-red-400">*</span>
-                </label>
-                <Input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="5" min="5" max={balance ? convertE8sToToken(balance) : 1000} required className={`bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10 rounded-xl`} />
-                <p className="text-gray-400 text-xs mt-1">Minimum: 5 FUM tokens required to submit a report</p>
-              </div>
+                  {/* Stake Input */}
+                  <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-white/90">
+                        Enter amount of FUM to stake <span className="text-red-400">*</span>
+                      </label>
+                      <Input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="5" min="5" max={balance ? convertE8sToToken(balance) : 1000} required className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10 rounded-xl" />
+                      <p className="text-[#B0B6BE] text-xs">Minimum: 5 FUM tokens required to submit a report</p>
+                    </div>
+                  </motion.div>
 
-              {/* Vote Information */}
-              <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/10">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm sm:text-base">Vote ends:</span>
-                  <span className="font-bold text-yellow-400">{getVoteDeadline()}</span>
-                </div>
-                <div className="flex justify-between items-start">
-                  <span className="text-gray-300 text-sm sm:text-base">If report is validated, estimated reward:</span>
-                  <span className="font-bold text-green-400">+{calculateEstimatedReward()} FUM</span>
-                </div>
-                <div className="text-xs text-gray-400 mt-2">Your staked tokens will be returned when voting is completed within the deadline, plus rewards if the report is validated by the community.</div>
-              </div>
+                  {/* Vote Information */}
+                  <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/90 text-sm font-medium">Vote ends:</span>
+                        <span className="font-bold text-yellow-400">{getVoteDeadline()}</span>
+                      </div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-white/90 text-sm font-medium">If report is validated, estimated reward:</span>
+                        <span className="font-bold text-green-400">+{calculateEstimatedReward()} FUM</span>
+                      </div>
+                      <div className="text-xs text-[#B0B6BE] mt-2">Your staked tokens will be returned when voting is completed within the deadline, plus rewards if the report is validated by the community.</div>
+                    </div>
+                  </motion.div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                <Button onClick={() => setShowConfirmModal(false)} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || isUploading || !stakeAmount || Number(stakeAmount) < 5 || !isAuthenticated}
-                  className="flex-1 bg-red-400 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isUploading ? "Uploading Files..." : isSubmitting ? "Submitting..." : "Confirm & Submit"}
-                </Button>
-              </div>
+                  {/* Action Buttons */}
+                  <motion.div variants={itemVariants} className="w-full px-2 sm:px-3 pb-2">
+                    <div className="flex gap-3">
+                      <button className="flex-1 py-3 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => setShowConfirmModal(false)} disabled={isSubmitting || isUploading}>
+                        Cancel
+                      </button>
+                      <ButtonGreen fullWidth className="flex-1" onClick={handleSubmit} disabled={isSubmitting || isUploading || !stakeAmount || Number(stakeAmount) < 5 || !isAuthenticated} size="md" textSize="text-base" fontWeight="medium">
+                        {isUploading ? "Uploading Files..." : isSubmitting ? "Submitting..." : "Confirm & Submit"}
+                      </ButtonGreen>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black" onClick={() => setShowSuccessModal(false)}></div>
-          <div className="relative bg-black border border-white/20 rounded-2xl p-8 w-full max-w-md mx-4 text-center">
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-green-400/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-400" />
-              </div>
-              <h3 className="text-2xl font-bold mb-2">Report Submitted!</h3>
-              <p className="text-gray-300 mb-4">Your report has been submitted successfully and is now under community review.</p>
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                <div className="text-sm text-gray-400 mb-1">Report ID</div>
-                <div className="font-mono text-lg">
-                  RPT-2024-
-                  {Math.floor(Math.random() * 9999)
-                    .toString()
-                    .padStart(4, "0")}
-                </div>
-              </div>
-            </div>
+      <AnimatePresence>
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
+            <div className="flex min-h-full items-start justify-center pt-8 pl-4 pr-4 pb-4">
+              <motion.div className="relative w-full max-w-[500px] mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10" variants={containerVariants} initial="hidden" animate="visible" exit="exit">
+                <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={() => setShowSuccessModal(false)} aria-label="Close">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div className="flex flex-col items-center p-4 gap-4 h-auto">
+                  <div className="w-full text-center text-white text-lg font-medium">Report Submitted!</div>
 
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-              <Button onClick={() => setShowSuccessModal(false)} className="flex-1 bg-white/10 border border-white/20 hover:bg-white/20 text-white">
-                Create Another
-              </Button>
-              <Link to="/reports" className="flex-1">
-                <Button className="w-full bg-white text-black hover:bg-gray-200">View Reports</Button>
-              </Link>
+                  {/* Success Icon */}
+                  <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-16 h-16 bg-green-400/10 rounded-full flex items-center justify-center mb-4">
+                        <CheckCircle className="w-8 h-8 text-green-400" />
+                      </div>
+                      <h3 className="text-xl font-bold mb-2 text-white">Success!</h3>
+                      <p className="text-[#B0B6BE] mb-4">Your report has been submitted successfully and is now under community review.</p>
+                    </div>
+                  </motion.div>
+
+                  {/* Report ID */}
+                  <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
+                    <div className="text-center">
+                      <div className="text-sm text-[#B0B6BE] mb-1">Report ID</div>
+                      <div className="font-mono text-lg text-white">
+                        RPT-2024-
+                        {Math.floor(Math.random() * 9999)
+                          .toString()
+                          .padStart(4, "0")}
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Action Buttons */}
+                  <motion.div variants={itemVariants} className="w-full px-2 sm:px-3 pb-2">
+                    <div className="flex gap-3">
+                      <button className="flex-1 py-3 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={() => setShowSuccessModal(false)}>
+                        Create Another
+                      </button>
+                      <ButtonGreen fullWidth className="flex-1" onClick={() => navigate("/reports")} size="md" textSize="text-base" fontWeight="medium">
+                        View Reports
+                      </ButtonGreen>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
       <Footer />
     </>
   );

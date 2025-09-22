@@ -7,7 +7,7 @@ if [ -z "${1:-}" ]; then
 fi
 
 DESTINATION_ADDRESS="$1"
-AMOUNT="${2:-15001000000}"  # Default amount if not provided
+AMOUNT="${2:-1500100000}"  # Default amount if not provided
 
 
 echo "Transferring ${AMOUNT} tokens to ${DESTINATION_ADDRESS}..."
@@ -22,6 +22,6 @@ dfx canister call "${CANISTER_ID_FRADIUM_LEDGER}" icrc1_transfer "(
         memo = null;
         created_at_time = null;
     }
-)"
+)" --network ic
 
 echo "Transfer completed successfully!"

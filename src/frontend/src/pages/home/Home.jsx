@@ -380,9 +380,7 @@ const Home = React.memo(() => {
             <br className="hidden sm:block" />
             Stay ahead of fraud.
           </h1>
-          <p className="mx-auto mt-4 sm:mt-6 max-w-3xl text-gray-300 text-sm sm:text-base md:text-base text-reveal stagger-1">
-            Here is Your Digital Asset Guardian to Analyse, Protect, Transact with Confidence.
-          </p>
+          <p className="mx-auto mt-4 sm:mt-6 max-w-3xl text-gray-300 text-sm sm:text-base md:text-base text-reveal stagger-1">Here is Your Digital Asset Guardian to Analyse, Protect, Transact with Confidence.</p>
         </div>
         {/* Row pertama: dua card */}
         <div className="relative z-10 mx-auto w-full max-w-6xl pt-6 sm:pt-8 md:pt-12 lg:pt-14 px-4 sm:px-6">
@@ -396,9 +394,8 @@ const Home = React.memo(() => {
               whileHover={{
                 y: -10,
                 scale: 1.05,
-                transition: { duration: 0.4, ease: "easeOut" }
-              }}
-            >
+                transition: { duration: 0.4, ease: "easeOut" },
+              }}>
               {/* Glow effect overlay */}
               <div className="fraud-glow"></div>
 
@@ -439,12 +436,7 @@ const Home = React.memo(() => {
 
               {/* Background image */}
               <div className="absolute inset-0 z-0 fraud-bg-hover">
-                <img
-                  src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/frame-fraud-detection.webp"
-                  alt="Fraud Detection"
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/frame-fraud-detection.webp" alt="Fraud Detection" className="w-full h-full object-cover" draggable={false} />
               </div>
 
               {/* Content overlay */}
@@ -460,7 +452,7 @@ const Home = React.memo(() => {
                   <div
                     className="absolute w-[140px] h-[140px] sm:w-[170px] sm:h-[170px] md:w-[200px] md:h-[200px] bg-gradient-to-b from-[rgba(34,197,94,0.15)] to-[rgba(34,197,94,0.08)] rounded-full animate-pulse fraud-ring-hover"
                     style={{
-                      animation: 'fradium-ring-pulse 2s ease-in-out infinite'
+                      animation: "fradium-ring-pulse 2s ease-in-out infinite",
                     }}
                   />
 
@@ -468,7 +460,7 @@ const Home = React.memo(() => {
                   <div
                     className="absolute w-[105px] h-[105px] sm:w-[130px] sm:h-[130px] md:w-[150px] md:h-[150px] bg-gradient-to-b from-[rgba(34,197,94,0.2)] to-[rgba(34,197,94,0.1)] rounded-full fraud-ring-hover"
                     style={{
-                      animation: 'fradium-ring-pulse 2s ease-in-out infinite 0.3s'
+                      animation: "fradium-ring-pulse 2s ease-in-out infinite 0.3s",
                     }}
                   />
 
@@ -476,7 +468,7 @@ const Home = React.memo(() => {
                   <div
                     className="absolute w-[70px] h-[70px] sm:w-[85px] sm:h-[85px] md:w-[100px] md:h-[100px] bg-gradient-to-b from-[rgba(34,197,94,0.25)] to-[rgba(34,197,94,0.15)] rounded-full fraud-ring-hover"
                     style={{
-                      animation: 'fradium-ring-pulse 2s ease-in-out infinite 0.6s'
+                      animation: "fradium-ring-pulse 2s ease-in-out infinite 0.6s",
                     }}
                   />
 
@@ -484,14 +476,9 @@ const Home = React.memo(() => {
                   <div
                     className="relative w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] md:w-[80px] md:h-[80px]"
                     style={{
-                      animation: 'fradium-icon-float 1.5s ease-in-out infinite'
-                    }}
-                  >
-                    <img
-                      src="/assets/images/analisis.png"
-                      alt="Analyzing"
-                      className="w-full h-full drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]"
-                    />
+                      animation: "fradium-icon-float 1.5s ease-in-out infinite",
+                    }}>
+                    <img src="/assets/images/analisis.png" alt="Analyzing" className="w-full h-full drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" />
                   </div>
                 </div>
               </div>
@@ -525,9 +512,8 @@ const Home = React.memo(() => {
                 whileHover={{
                   y: -8,
                   scale: 1.02,
-                  transition: { duration: 0.3, ease: "easeOut" }
-                }}
-              >
+                  transition: { duration: 0.3, ease: "easeOut" },
+                }}>
                 {/* Header center: logo + title */}
                 <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
                   <img src={LOGO_IMG} alt="Fradium" className="h-5 w-5 sm:h-6 sm:w-6 md:h-10 md:w-10 select-none" />
@@ -537,8 +523,10 @@ const Home = React.memo(() => {
                 {/* Description text */}
                 <div className="text-center mt-2 sm:mt-3 md:mt-6 mb-3 sm:mb-4 md:mb-8">
                   <p className="text-white text-xs sm:text-sm md:text-2xl leading-relaxed">
-                    Create a wallet, enter<br />
-                    an address, and get<br />
+                    Create a wallet, enter
+                    <br />
+                    an address, and get
+                    <br />
                     instant results.
                   </p>
                 </div>
@@ -546,31 +534,15 @@ const Home = React.memo(() => {
                 {/* Animated action buttons - Marquee */}
                 <div className="mb-4 sm:mb-6 md:mb-8 overflow-hidden">
                   <div className="flex gap-1 sm:gap-2 animate-marquee">
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Address
-                    </div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Send Coin
-                    </div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Receive Coin
-                    </div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Analyze
-                    </div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Address</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Send Coin</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Receive Coin</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Analyze</div>
                     {/* Duplicate for seamless loop */}
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Address
-                    </div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Send Coin
-                    </div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Receive Coin
-                    </div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">
-                      Analyze
-                    </div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Address</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Send Coin</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Receive Coin</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Analyze</div>
                   </div>
                 </div>
 
@@ -671,12 +643,7 @@ const Home = React.memo(() => {
                 <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-2 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] card-hover">
                   {/* Background image - half card size with padding */}
                   <div className="relative z-0 mb-6">
-                    <img
-                      src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/extensions.webp"
-                      alt="Extension"
-                      className="w-full h-[120px] md:h-[140px] lg:h-[199px] object-cover rounded-lg"
-                      draggable={false}
-                    />
+                    <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/extensions.webp" alt="Extension" className="w-full h-[120px] md:h-[140px] lg:h-[199px] object-cover rounded-lg" draggable={false} />
                   </div>
 
                   {/* Content below the image */}
@@ -696,12 +663,7 @@ const Home = React.memo(() => {
                 <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] card-hover">
                   {/* Background image */}
                   <div className="absolute inset-0 z-0">
-                    <img
-                      src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-wallets.webp"
-                      alt="Fradium Wallet"
-                      className="w-full h-full object-cover"
-                      draggable={false}
-                    />
+                    <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-wallets.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
                   </div>
 
                   {/* Content overlay */}
@@ -719,12 +681,7 @@ const Home = React.memo(() => {
               <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] card-hover">
                 {/* Background image - positioned at top with controlled height */}
                 <div className="absolute p-2 inset-x-0 top-0 z-0 h-[180px] md:h-[200px] lg:h-[220px]">
-                  <img
-                    src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/community-card.webp"
-                    alt="Community"
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                  />
+                  <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/community-card.webp" alt="Community" className="w-full h-full object-cover" draggable={false} />
                 </div>
 
                 {/* Content below the image */}
@@ -737,13 +694,7 @@ const Home = React.memo(() => {
 
                     {/* Sign up button */}
                     <div className="ml-4 flex-shrink-0">
-                      <ButtonPurple
-                        size="sm"
-                        onClick={() => { }}
-                        fontWeight="medium"
-                        iconSize="w-5 h-5"
-                        icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg"
-                      >
+                      <ButtonPurple size="sm" onClick={() => {}} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
                         Sign up
                       </ButtonPurple>
                     </div>
@@ -769,12 +720,8 @@ const Home = React.memo(() => {
         <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8 md:pt-10 pb-16 sm:pb-20 md:pb-24 lg:pb-32">
           {/* Hero di atas background ketiga */}
           <div className="flex flex-col items-center justify-center text-center">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-medium leading-tight text-white">
-              Ready to use crypto with protection?
-            </h2>
-            <p className="mx-auto mt-3 sm:mt-4 max-w-3xl text-white/80 text-xs sm:text-sm md:text-base leading-relaxed">
-              With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about the risks.
-            </p>
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-medium leading-tight text-white">Ready to use crypto with protection?</h2>
+            <p className="mx-auto mt-3 sm:mt-4 max-w-3xl text-white/80 text-xs sm:text-sm md:text-base leading-relaxed">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about the risks.</p>
             <div className="mt-3 sm:mt-4 md:mt-6">
               <div className="btn-hover rounded-full gentle-pulse">
                 <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] md:w-[23px] md:h-[23px]" onClick={handleLaunchWallet}>
@@ -789,25 +736,25 @@ const Home = React.memo(() => {
             <div className="relative w-full max-w-3xl sm:max-w-4xl md:max-w-5xl mx-auto">
               {/* Laptop Frame */}
               <img
-                src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/macbook-frame.webp"
+                src="assets/laptop.webp"
                 alt="MacBook"
                 className="w-full h-auto object-contain"
                 style={{
-                  transform: 'translateY(0px)',
-                  marginBottom: '-10%'
+                  transform: "translateY(0px)",
+                  marginBottom: "-10%",
                 }}
                 draggable={false}
               />
 
               {/* Video Overlay - positioned over the full screen area */}
-              <div className="absolute 
+              <div
+                className="absolute 
                 top-[6%] left-[8%] w-[84%] h-[82%] 
                 md:top-[7%] md:left-[9%] md:w-[82%] md:h-[80%] 
                 lg:top-[8%] lg:left-[10%] lg:w-[80%] lg:h-[78%] 
                 rounded-lg overflow-hidden">
-
                 {/* Placeholder sementara - ganti dengan video nanti */}
-                <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                {/* <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                   <div className="text-center text-white">
                     <div className="w-16 h-16 mx-auto mb-4 bg-gray-600 rounded-lg flex items-center justify-center">
                       <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
@@ -817,7 +764,7 @@ const Home = React.memo(() => {
                     <p className="text-sm font-medium">Video Coming Soon</p>
                     <p className="text-xs text-gray-400 mt-1">Replace this placeholder with your video</p>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Uncomment dan ganti dengan video nanti:
                 <video
