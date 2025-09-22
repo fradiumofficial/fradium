@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { ChevronDown } from "lucide-react";
 import ButtonA from "@/core/components/SidebarButton";
 import ButtonGreen from "@/core/components/ButtonGreen";
 import { chatbot } from "declarations/chatbot";
@@ -88,6 +89,7 @@ const Assistant = () => {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState([]); // {type, message, time, isLink, isList}
   const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const chatEndRef = useRef(null);
 
   // Load history dari localStorage saat mount
@@ -189,12 +191,12 @@ const Assistant = () => {
     <section className="relative bg-[#000510] w-full overflow-hidden">
       {/* Background layer */}
       <div className="absolute inset-0 z-0 pointer-events-none select-none">
-        <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-contain" />
+        <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 object-contain w-full h-full translate-y-[-4%] md:translate-y-0" />
       </div>
 
       <div className="relative z-10">
         {/* MOBILE ONLY */}
-        <div className="block md:hidden h-screen pt-[70px] pb-[90px] px-3 sm:px-4 w-full">
+        <div className="block md:hidden min-h-screen pt-[70px] pb-[130px] px-3 sm:px-4 w-full">
           <div className="flex flex-col h-full w-full max-w-full">
             {/* Header */}
             <div className="flex items-center justify-between px-2 sm:px-3 pt-1.5 pb-1">
@@ -208,7 +210,7 @@ const Assistant = () => {
             </div>
             <div className="border-b border-[#23272f] mb-2 mx-2 sm:mx-3" />
             {/* Chat Bubbles */}
-            <div className="flex flex-col gap-2.5 overflow-y-auto flex-1 px-1.5 sm:px-2 pb-2 pt-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
+            <div className="flex flex-col gap-2.5 overflow-y-auto h-[62vh] flex-none px-1.5 sm:px-2 pb-2 pt-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-[#23272F] [&::-webkit-scrollbar-thumb]:bg-[#393E4B] [&::-webkit-scrollbar-thumb]:rounded-full">
               {history.map((item, idx) => (
                 <ChatBubble key={idx} {...item} />
               ))}
@@ -221,56 +223,68 @@ const Assistant = () => {
                 <img src="/assets/icons/submit.svg" alt="Send" className="w-4 h-4 sm:w-5 sm:h-5" />
               </ButtonGreen>
             </div>
-            {/* Suggested Question */}
-            <div className="w-full rounded-lg border border-white/10 bg-[#000000]/50 backdrop-blur-[2px] shadow-[0_8px_24px_rgba(0,0,0,0.30)] p-2 mt-2 mx-0">
-              <div className="text-[13px] font-semibold text-white mb-1">Suggested Question</div>
-              <div className="border-b border-[#23272f] mb-1" />
-              <ul className="flex flex-col gap-1 overflow-y-auto max-h-[110px] pr-1">
-                {suggestedQuestions.map((q, idx) => (
-                  <li
-                    key={idx}
-                    className="px-2 py-2 rounded-md text-[#B0B6BE] hover:bg-[#23272f] transition cursor-pointer select-none text-xs sm:text-sm"
-                    style={{ fontWeight: 500 }}
-                    onClick={async () => {
-                      if (loading) return;
-                      setInput("");
-                      const userMsg = {
-                        type: "user",
-                        message: q,
-                        time: getTimeNow(),
-                        isLink: q.startsWith("http"),
-                      };
-                      const loadingMsg = {
-                        type: "bot",
-                        message: "...",
-                        time: getTimeNow(),
-                        loading: true,
-                      };
-                      const currentHistory = [...history, userMsg, loadingMsg];
-                      updateHistory(currentHistory);
-                      setLoading(true);
-                      try {
-                        const res = await chatbot.ask(q);
-                        let botMsg = "";
-                        if (res && res.Ok) {
-                          botMsg = res.Ok;
-                        } else if (res && res.Err) {
-                          botMsg = "Maaf, terjadi kesalahan. Silakan coba lagi.";
-                        } else {
-                          botMsg = "Maaf, tidak ada respon.";
-                        }
-                        const newHistory = [...history, userMsg, { type: "bot", message: botMsg, time: getTimeNow() }];
-                        updateHistory(newHistory);
-                      } catch (e) {
-                        const errorHistory = [...history, userMsg, { type: "bot", message: "Maaf, terjadi error koneksi.", time: getTimeNow() }];
-                        updateHistory(errorHistory);
-                      }
-                      setLoading(false);
-                    }}>
-                    {q}
-                  </li>
-                ))}
-              </ul>
+            {/* Suggested Question (collapsible) */}
+            <div className="relative z-20 w-full rounded-xl border border-white/10 bg-[#000000]/80 backdrop-blur-[2px] shadow-[0_12px_32px_rgba(0,0,0,0.35)] p-2.5 mt-8 mb-28 pb-2 mx-0">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between text-left px-1 py-1.5"
+                onClick={() => setShowSuggestions((v) => !v)}
+              >
+                <span className="text-[15px] font-semibold text-white">Suggested Question</span>
+                <ChevronDown className={`w-4 h-4 text-white transition-transform ${showSuggestions ? "rotate-180" : "rotate-0"}`} />
+              </button>
+              {showSuggestions && (
+                <>
+                  <div className="border-b border-[#23272f] my-2" />
+                  <ul className="flex flex-col gap-1.5 overflow-y-auto max-h-[220px] pr-1 pb-2 relative z-20">
+                    {suggestedQuestions.map((q, idx) => (
+                      <li
+                        key={idx}
+                        className="px-2.5 py-2.5 rounded-md text-[#B0B6BE] hover:bg-[#23272f] transition cursor-pointer select-none text-sm"
+                        style={{ fontWeight: 500 }}
+                        onClick={async () => {
+                          if (loading) return;
+                          setInput("");
+                          setShowSuggestions(false);
+                          const userMsg = {
+                            type: "user",
+                            message: q,
+                            time: getTimeNow(),
+                            isLink: q.startsWith("http"),
+                          };
+                          const loadingMsg = {
+                            type: "bot",
+                            message: "...",
+                            time: getTimeNow(),
+                            loading: true,
+                          };
+                          const currentHistory = [...history, userMsg, loadingMsg];
+                          updateHistory(currentHistory);
+                          setLoading(true);
+                          try {
+                            const res = await chatbot.ask(q);
+                            let botMsg = "";
+                            if (res && res.Ok) {
+                              botMsg = res.Ok;
+                            } else if (res && res.Err) {
+                              botMsg = "Maaf, terjadi kesalahan. Silakan coba lagi.";
+                            } else {
+                              botMsg = "Maaf, tidak ada respon.";
+                            }
+                            const newHistory = [...history, userMsg, { type: "bot", message: botMsg, time: getTimeNow() }];
+                            updateHistory(newHistory);
+                          } catch (e) {
+                            const errorHistory = [...history, userMsg, { type: "bot", message: "Maaf, terjadi error koneksi.", time: getTimeNow() }];
+                            updateHistory(errorHistory);
+                          }
+                          setLoading(false);
+                        }}>
+                        {q}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -363,12 +377,12 @@ const Assistant = () => {
       </div>
 
       {/* footer */}
-      <div className="relative z-10 pt-8">
-        <p className="text-center text-xs text-[#B0B6BE]">Copyright ©{new Date().getFullYear()} Fradium. All rights reserved</p>
+      <div className="fixed md:relative left-0 right-0 bottom-0 z-30 pt-3 pb-4 bg-black from-[#000510] to-transparent">
+        <p className="text-center text-xs text-[#B0B6BE] px-3">Copyright ©{new Date().getFullYear()} Fradium. All rights reserved</p>
       </div>
 
-      {/* bottom fade */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[600px] bg-gradient-to-b from-transparent to-[#000510]" />
+      {/* bottom fade (desktop only) */}
+      <div className="pointer-events-none hidden md:block absolute inset-x-0 bottom-0 h-[600px] bg-gradient-to-b from-transparent to-[#000510]" />
     </section>
   );
 };
