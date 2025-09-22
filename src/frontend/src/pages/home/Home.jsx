@@ -15,6 +15,18 @@ const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-as
 const Home = React.memo(() => {
   const { isAuthenticated, handleLogin } = useAuth();
   const navigate = useNavigate();
+  const [isSignUpLoading, setIsSignUpLoading] = useState(false);
+
+  const handleSignUp = async () => {
+    setIsSignUpLoading(true);
+    try {
+      await handleLogin();
+    } catch (error) {
+      console.log("handleSignUp error", error);
+    } finally {
+      setIsSignUpLoading(false);
+    }
+  };
 
   // Refs for scroll animations
   const heroRef = useRef(null);
@@ -651,11 +663,17 @@ const Home = React.memo(() => {
                     <h3 className="text-xl md:text-2xl font-medium text-white mb-3">Extension</h3>
                     <div className="flex items-start justify-between">
                       <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Helps you check the safety of your transaction while browsing Web3.</p>
-                      <div className="w-12 h-12 bg-white/5 border border-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <a
+                        href="https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp"
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="Open Fradium Extension in Chrome Web Store"
+                        className="w-12 h-12 bg-white/5 border border-gray-600 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-white/10 transition-colors"
+                      >
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7V17" />
                         </svg>
-                      </div>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -694,7 +712,7 @@ const Home = React.memo(() => {
 
                     {/* Sign up button */}
                     <div className="ml-4 flex-shrink-0">
-                      <ButtonPurple size="sm" onClick={() => {}} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
+                      <ButtonPurple size="sm" onClick={handleSignUp} loading={isSignUpLoading} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
                         Sign up
                       </ButtonPurple>
                     </div>
