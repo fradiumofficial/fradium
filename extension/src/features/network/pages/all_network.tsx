@@ -6,6 +6,45 @@ import { useWallet } from "~lib/context/walletContext";
 import { CDN } from "~lib/constant/cdn";
 import { ROUTES } from "~lib/constant/routes";
 
+// Network configuration matching the frontend structure
+const NETWORK_CONFIG = [
+  {
+    id: "bitcoin",
+    name: "Bitcoin",
+    icon: CDN.tokens.bitcoinDark,
+  },
+  {
+    id: "ethereum", 
+    name: "Ethereum",
+    icon: CDN.tokens.ethereumDark,
+  },
+  {
+    id: "solana",
+    name: "Solana", 
+    icon: CDN.tokens.solanaDark,
+  },
+  {
+    id: "fradium",
+    name: "Fradium",
+    icon: CDN.tokens.fradiumDark,
+  },
+  {
+    id: "icp",
+    name: "Internet Computer",
+    icon: CDN.tokens.icp,
+  },
+  {
+    id: "ckbtc",
+    name: "ckBTC",
+    icon: CDN.tokens.bitcoinDark,
+  },
+  {
+    id: "cketh", 
+    name: "ckETH",
+    icon: CDN.tokens.ethereumDark,
+  },
+];
+
 const BASE_NETWORKS = [
   {
     key: "all" as const,
@@ -28,24 +67,9 @@ const BASE_NETWORKS = [
     icon: CDN.tokens.solanaDark,
   },
   {
-    key: "fra" as const,
-    name: "Fradium",
-    icon: CDN.tokens.fradiumDark,
-  },
-  {
     key: "icp" as const,
     name: "Internet Computer",
     icon: CDN.tokens.icp,
-  },
-  {
-    key: "ckbtc" as const,
-    name: "ckBTC",
-    icon: CDN.tokens.bitcoinDark, // Use Bitcoin icon for ckBTC
-  },
-  {
-    key: "cketh" as const,
-    name: "ckETH",
-    icon: CDN.tokens.ethereumDark, // Use Ethereum icon for ckETH
   },
 ] as const;
 
@@ -72,10 +96,7 @@ export default function AllNetwork({
       case "btc": return networkFilters?.Bitcoin ?? true;
       case "eth": return networkFilters?.Ethereum ?? true;
       case "sol": return networkFilters?.Solana ?? true;
-      case "fra": return networkFilters?.Fradium ?? true;
-      case "icp": return networkFilters?.ICP ?? true;
-      case "ckbtc": return networkFilters?.ckBTC ?? true;
-      case "cketh": return networkFilters?.ckETH ?? true;
+      case "icp": return networkFilters?.["Internet Computer"] ?? true;
       default: return true;
     }
   }).map(network => {
@@ -87,6 +108,15 @@ export default function AllNetwork({
     if (network.key === "all") {
       const ids = Object.values(keyToId) as string[];
       totalUsd = ids.reduce((sum, id) => {
+        const price = Number(usdPrices?.[id] ?? 0);
+        const qty = parseFloat(String(balances?.[id] ?? "0"));
+        if (!isFinite(price) || !isFinite(qty)) return sum;
+        return sum + price * qty;
+      }, 0);
+    } else if (network.key === "icp") {
+      // For ICP network, sum all ICP-based tokens (ICP, ckBTC, ckETH, Fradium)
+      const icpTokens = ["icp", "ckbtc", "cketh", "fradium"];
+      totalUsd = icpTokens.reduce((sum, id) => {
         const price = Number(usdPrices?.[id] ?? 0);
         const qty = parseFloat(String(balances?.[id] ?? "0"));
         if (!isFinite(price) || !isFinite(qty)) return sum;

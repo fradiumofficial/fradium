@@ -4,45 +4,64 @@ import { useNavigate } from "react-router-dom";
 import { CDN } from "~lib/constant/cdn";
 import { useWallet } from "~lib/context/walletContext";
 
+// Network configuration - only 4 main networks
+const NETWORK_CONFIG = [
+  {
+    id: "bitcoin",
+    name: "Bitcoin",
+    icon: CDN.tokens.bitcoinDark,
+  },
+  {
+    id: "ethereum", 
+    name: "Ethereum",
+    icon: CDN.tokens.ethereumDark,
+  },
+  {
+    id: "solana",
+    name: "Solana", 
+    icon: CDN.tokens.solanaDark,
+  },
+  {
+    id: "icp",
+    name: "Internet Computer",
+    icon: CDN.tokens.icp,
+  },
+];
+
 export default function ManageNetwork() {
   const navigate = useNavigate();
   const { networkFilters, updateNetworkFilters } = useWallet() as any;
 
   // Local state for UI updates (will sync with networkFilters on save)
-  const [btc, setBtc] = useState(networkFilters?.Bitcoin ?? true);
-  const [eth, setEth] = useState(networkFilters?.Ethereum ?? true);
-  const [sol, setSol] = useState(networkFilters?.Solana ?? true);
-  const [fra, setFra] = useState(networkFilters?.Fradium ?? true);
-  const [icp, setIcp] = useState(networkFilters?.ICP ?? true);
-  const [ckbtc, setCkbTc] = useState(networkFilters?.ckBTC ?? true);
-  const [cketh, setCkEth] = useState(networkFilters?.ckETH ?? true);
+  const [tempNetworkFilters, setTempNetworkFilters] = useState<{[key: string]: boolean}>({});
 
-  // Sync local state with networkFilters when they change
+  // Initialize temp state when component mounts
   useEffect(() => {
     if (networkFilters) {
-      setBtc(networkFilters.Bitcoin ?? true);
-      setEth(networkFilters.Ethereum ?? true);
-      setSol(networkFilters.Solana ?? true);
-      setFra(networkFilters.Fradium ?? true);
-      setIcp(networkFilters.ICP ?? true);
-      setCkbTc(networkFilters.ckBTC ?? true);
-      setCkEth(networkFilters.ckETH ?? true);
+      setTempNetworkFilters({ ...networkFilters });
     }
   }, [networkFilters]);
 
+  // Handle toggle network
+  const handleToggleNetwork = (networkName: string) => {
+    setTempNetworkFilters((prev) => ({
+      ...prev,
+      [networkName]: !prev[networkName],
+    }));
+  };
+
   // Save function to persist changes
   const handleSave = () => {
-    const updatedFilters = {
-      Bitcoin: btc,
-      Ethereum: eth,
-      Solana: sol,
-      Fradium: fra,
-      ICP: icp,
-      ckBTC: ckbtc,
-      ckETH: cketh,
-    };
-    updateNetworkFilters(updatedFilters);
+    // Update the actual network filters
+    updateNetworkFilters(tempNetworkFilters);
     // Navigate back after saving
+    navigate(-1);
+  };
+
+  // Cancel function to reset temp state
+  const handleCancel = () => {
+    // Reset temp state to original
+    setTempNetworkFilters({ ...networkFilters });
     navigate(-1);
   };
 
@@ -52,269 +71,41 @@ export default function ManageNetwork() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleCancel}
             className="p-1 rounded hover:bg-white/5 active:bg-white/10"
             aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </button>
-          <h2 className="text-white text-[20px] font-semibold">Manage Network</h2>
+          <h2 className="text-white text-[20px] font-semibold">Active Networks</h2>
         </div>
         <p className="text-white/60 text-[14px] font-normal mt-2">
-          All network you are using here
+          Manage which networks are active in your wallet
         </p>
       </div>
 
       <div className="px-6 mt-6">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-[10px] p-4">
-          {/* BTC */}
-          <div className="py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={CDN.tokens.bitcoinDark}
-                  className="w-6 h-6"
-                  alt="btc"
-                />
-                <span className="text-white text-[14px] font-normal">
-                  Bitcoin
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={btc}
-                  onChange={(e) => setBtc(e.target.checked)}
-                />
-                <span
-                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
-                    btc ? "bg-[#37C058]" : "bg-white/20"
-                  }`}
+          <div className="divide-y divide-white/10">
+            {NETWORK_CONFIG.map((network) => (
+              <div key={network.id} className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-4">
+                  <img src={network.icon} alt={network.name} className="w-7 h-7" />
+                  <span className="text-white text-lg font-medium">{network.name}</span>
+                </div>
+                {/* Custom Switch */}
+                <button 
+                  className={`w-11 h-6 rounded-full flex items-center transition-colors duration-200 ${
+                    tempNetworkFilters[network.name] ? "bg-[#9BE4A0]" : "bg-[#23272F]"
+                  }`} 
+                  onClick={() => handleToggleNetwork(network.name)}
                 >
-                  <span
-                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                      btc ? "translate-x-7" : ""
-                    }`}
-                  ></span>
-                </span>
-              </label>
-            </div>
-            <div className="mt-2 h-px w-full bg-white/10" />
-          </div>
-
-          {/* ETH */}
-          <div className="py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={CDN.tokens.ethereumDark}
-                  className="w-6 h-6"
-                  alt="eth"
-                />
-                <span className="text-white text-[14px] font-normal">
-                  Ethereum
-                </span>
+                  <span className={`inline-block w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                    tempNetworkFilters[network.name] ? "translate-x-5" : "translate-x-0"
+                  }`} />
+                </button>
               </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={eth}
-                  onChange={(e) => setEth(e.target.checked)}
-                />
-                <span
-                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
-                    eth ? "bg-[#37C058]" : "bg-white/20"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                      eth ? "translate-x-7" : ""
-                    }`}
-                  ></span>
-                </span>
-              </label>
-            </div>
-            <div className="mt-2 h-px w-full bg-white/10" />
-          </div>
-
-          {/* SOL */}
-          <div className="py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={CDN.tokens.solanaDark}
-                  className="w-6 h-6"
-                  alt="sol"
-                />
-                <span className="text-white text-[14px] font-normal">
-                  Solana
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={sol}
-                  onChange={(e) => setSol(e.target.checked)}
-                />
-                <span
-                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
-                    sol ? "bg-[#37C058]" : "bg-white/20"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                      sol ? "translate-x-7" : ""
-                    }`}
-                  ></span>
-                </span>
-              </label>
-            </div>
-            <div className="mt-2 h-px w-full bg-white/10" />
-          </div>
-
-          {/* FRA */}
-          <div className="py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={CDN.tokens.fradiumDark}
-                  className="w-6 h-6"
-                  alt="fra"
-                />
-                <span className="text-white text-[14px] font-normal">
-                  Fradium
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={fra}
-                  onChange={(e) => setFra(e.target.checked)}
-                />
-                <span
-                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
-                    fra ? "bg-[#37C058]" : "bg-white/20"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                      fra ? "translate-x-7" : ""
-                    }`}
-                  ></span>
-                </span>
-              </label>
-            </div>
-            <div className="mt-2 h-px w-full bg-white/10" />
-          </div>
-
-          {/* ICP */}
-          <div className="py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={CDN.tokens.icp}
-                  className="w-6 h-6"
-                  alt="icp"
-                />
-                <span className="text-white text-[14px] font-normal">
-                  Internet Computer
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={icp}
-                  onChange={(e) => setIcp(e.target.checked)}
-                />
-                <span
-                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
-                    icp ? "bg-[#37C058]" : "bg-white/20"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                      icp ? "translate-x-7" : ""
-                    }`}
-                  ></span>
-                </span>
-              </label>
-            </div>
-            <div className="mt-2 h-px w-full bg-white/10" />
-          </div>
-
-          {/* ckBTC */}
-          <div className="py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={CDN.tokens.bitcoinDark}
-                  className="w-6 h-6"
-                  alt="ckbtc"
-                />
-                <span className="text-white text-[14px] font-normal">
-                  ckBTC
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={ckbtc}
-                  onChange={(e) => setCkbTc(e.target.checked)}
-                />
-                <span
-                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
-                    ckbtc ? "bg-[#37C058]" : "bg-white/20"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                      ckbtc ? "translate-x-7" : ""
-                    }`}
-                  ></span>
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* ckETH */}
-          <div className="py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={CDN.tokens.ethereumDark}
-                  className="w-6 h-6"
-                  alt="cketh"
-                />
-                <span className="text-white text-[14px] font-normal">
-                  ckETH
-                </span>
-              </div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={cketh}
-                  onChange={(e) => setCkEth(e.target.checked)}
-                />
-                <span
-                  className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors ${
-                    cketh ? "bg-[#37C058]" : "bg-white/20"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                      cketh ? "translate-x-7" : ""
-                    }`}
-                  ></span>
-                </span>
-              </label>
-            </div>
+            ))}
           </div>
         </div>
 

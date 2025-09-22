@@ -111,3 +111,14 @@ export function createAgentForCanister(canisterId: string | undefined, identity?
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+// Utility function to get the correct price key for tokens
+// Maps ckBTC and ckETH to their underlying asset prices
+export function getTokenPriceKey(tokenId: string): string {
+  if (tokenId === "ckbtc") {
+    return "bitcoin";
+  } else if (tokenId === "cketh") {
+    return "ethereum";
+  }
+  return tokenId;
+}

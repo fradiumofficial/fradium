@@ -303,6 +303,8 @@ export class AIAnalyzeService {
           (process as any)?.env?.VITE_ETHERSCAN_API_KEY ||
           (process as any)?.env?.ETHERSCAN_API_KEY
         ));
+        
+        console.log('PLASMO PUBLIC API', process.env.PLASMO_PUBLIC_ETHERSCAN_API_KEY);
 
       if (!hasApiKey && features.total_txs === 0) {
         console.log('⚠️ Ethereum analysis limited due to missing API key - providing basic safe analysis');
@@ -320,7 +322,7 @@ export class AIAnalyzeService {
             stats: {
               transactions: 0,
               totalVolume: 'Unable to fetch',
-              riskScore: '30/100 (limited analysis)',
+              riskScore: '30/100',
               lastActivity: 'Address validated',
             },
             securityChecks: [

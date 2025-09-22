@@ -45,9 +45,29 @@ function History() {
         const icpPrincipal = principalText || addresses?.icp_principal;
         const icpAccount = addresses?.icp_account || null;
 
+        console.log("Bitcoin address:", btcAddr);
+        console.log("Ethereum address:", ethAddr);
+        console.log("All addresses:", addresses);
+        
+        // Validate addresses before fetching
+        if (!btcAddr || btcAddr.trim() === '') {
+          console.warn("Bitcoin address is empty or not available");
+        }
+        if (!ethAddr || ethAddr.trim() === '') {
+          console.warn("Ethereum address is empty or not available");
+        }
+
         const tasks: Array<Promise<UnifiedTx[]>> = [];
-        if (btcAddr) tasks.push(getBitcoinTransactionHistory(btcAddr, 'testnet', 30));
-        if (ethAddr) tasks.push(getETHTransactionHistory(ethAddr, 'sepolia', 30));
+        if (btcAddr && btcAddr.trim()) {
+          console.log("Fetching Bitcoin transaction history for:", btcAddr);
+          // Use mainnet for Bitcoin (production addresses)
+          tasks.push(getBitcoinTransactionHistory(btcAddr, 'mainnet', 30));
+        }
+        if (ethAddr && ethAddr.trim()) {
+          console.log("Fetching Ethereum transaction history for:", ethAddr);
+          // Use mainnet for Ethereum (production addresses) - change from sepolia
+          tasks.push(getETHTransactionHistory(ethAddr, 'mainnet', 30));
+        }
         if (solAddr) tasks.push(getSolanaTransactionHistory(solAddr, 'devnet', 30));
         if (icpPrincipal) tasks.push(getICRCTransactionHistory('icp', icpPrincipal, icpAccount, 30));
         if (icpPrincipal) tasks.push(getICRCTransactionHistory('fradium', icpPrincipal, null, 30));
@@ -56,6 +76,18 @@ function History() {
 
         const results = await Promise.allSettled(tasks);
         const onchain = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+
+        console.log("Transaction history results:", results);
+        console.log("Onchain transactions:", onchain);
+        
+        // Debug individual results
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            console.log(`Task ${index} succeeded:`, result.value.length, 'transactions');
+          } else {
+            console.error(`Task ${index} failed:`, result.reason);
+          }
+        });
 
         const mapped: TransactionHistoryItem[] = onchain.map((t) => ({
           id: t.hash,

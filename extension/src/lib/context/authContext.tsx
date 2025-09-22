@@ -148,7 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await new Promise<void>((resolve, reject) =>
         currentClient.login({
-          // derivationOrigin: "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
+          derivationOrigin: "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
           identityProvider: identityProvider,
           onSuccess: () => {
             console.log("🔐 AuthContext: Internet Identity login successful")
