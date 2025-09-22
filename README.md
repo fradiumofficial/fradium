@@ -16,7 +16,7 @@ The platform provides a complete set of tools including a decentralized wallet a
 
 Fradium addresses urgent challenges in Web3 security and adoption:
 
-- Despite ranking **#3 globally in crypto adoption** with **356% YoY growth**, Indonesia lost **$2.5B to scams**, saw **332K wallet drainer victims**, and over **$40.9B** was sent to illicit addresses.
+- Despite ranking **#3 globally in crypto adoption** with **356% YoY growth**, Crypto global scams reaching **$2.5B in 2023**, saw **332K wallet drainer victims**, and over **$40.9B** was sent to illicit addresses.
 - These risks are driven by **low blockchain literacy** and lack of awareness around smart contract and wallet vulnerabilities.
 - Traditional wallets and explorers provide **limited protection or context**, leaving users exposed to phishing, scams, and malicious addresses.
 
@@ -25,10 +25,59 @@ Our solution introduces **Fradium**, a fully on-chain security and analytics pla
 ## 📚 Complete Resources
 
 - Mainnet: https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io
-- Video Demo: https://youtu.be/ojrI1sVdQl0
+- Video Demo: https://youtu.be/-j6LzwI1Df8
 - Pitch Deck: https://drive.google.com/file/d/1WuzlsoFHoZEb9zIQQohGaBz3mQPe8f2B/view?usp=sharing
 - Docs: https://fradium.gitbook.io/docs
-- Extension Chrome store: https://chromewebstore.google.com/detail/fradium-crypto-security-e/jjjgmhagdcpbccnpgafnopdbfnfelffb
+- Extension Chrome store: [Chrome store](https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp)
+
+## 🎉 What’s New in the Regional Round
+
+### 🔹 Fradium Wallet – Browser Extension
+
+Fradium now comes as a **lightweight browser extension** that runs directly in your browser.
+No extra setup, no heavy installs — just seamless access to your wallet wherever you browse.
+
+**Key highlights:**
+
+- Real-time address scanning and safety checks
+- Multi-chain token support in one unified UI
+- On-chain evidence links for flagged entities
+
+### 🎨 Redesigned User Interface
+
+We’ve completely **redesigned the Fradium UI** to deliver a modern, cleaner, and more intuitive experience.
+[See the new interface →](#fradium-interface)
+
+### 🧪 Beta Testing with Real Users (SUS Framework)
+
+To ensure Fradium is not just powerful but also **usable**, we ran **beta tests with real users**, applying the **System Usability Scale (SUS)** framework.
+This gave us concrete feedback on clarity, efficiency, and user confidence.
+
+| ![Image 1](docs/images/testing/fieldwork.png) ![Image 2](docs/images/testing/experience.png) | ![Image 2](docs/images/testing/complex.png) ![Image 2](docs/images/testing/confident.png) |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+
+🎥 Below is a short video recap of the beta testing process and user feedback:
+
+<iframe width="560" height="315" src="
+https://youtu.be/9H5q75SkUJg?si=o-yowPGmk-g3V5P9" 
+title="YouTube video player" frameborder="0" 
+allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+allowfullscreen></iframe>
+
+### 🔍 ICP Analyzer
+
+Introducing **ICP Analyzer**, an AI-powered analysis tool designed specifically for the Internet Computer ecosystem.
+
+With it, users can:
+
+- Scan and analyze token addresses on ICP
+- Identify risks such as scam clusters or drainer proximity
+- Receive **explanations backed by on-chain data** for transparency
+- Make safer and more informed decisions before signing any transaction
+
+👉 Together, these updates mark a **big step forward** for Fradium — focusing on **security, usability, and intelligence** for every user.
+
+Would you like me to also add a **separate block for “Fradium Wallet Agent”** (AI assistant) here, styled in the same format, or should it stay outside this _regional round updates_ section?
 
 ## 🌟 Features of Fradium
 
@@ -122,6 +171,7 @@ The AI system processes thousands of behavioral features per address, including 
 
 - [ ] Install the [IC SDK](https://internetcomputer.org/docs/current/developer-docs/setup/install/index.mdx) v0.27.0. If the IC SDK is already installed with an old version, install 0.27.0 with [`dfxvm`](https://internetcomputer.org/docs/building-apps/developer-tools/dev-tools-overview#dfxvm).
 - [ ] Confirm the IC SDK has been installed with the correct version with `dfx --version`.
+- [ ] Install [candid-extractor](https://crates.io/crates/candid-extractor)
 - [ ] On **macOS**, an `llvm` version that supports the `wasm32-unknown-unknown` target is required. This is because the `zstd` crate (used, for example, to decode `base64+zstd`-encoded responses from Solana's [`getAccountInfo`](https://solana.com/de/docs/rpc/http/getaccountinfo)) depends on LLVM during compilation. The default LLVM bundled with Xcode does not support `wasm32-unknown-unknown`. To fix this, install the [Homebrew version](https://formulae.brew.sh/formula/llvm), using `brew install llvm`.
 
 Begin by opening a terminal window.
@@ -250,3 +300,11 @@ Illustrates the journey of a user interacting with Fradium — from scanning an 
 ## 📃 License
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
+
+## 🍀 Our Teams
+
+- Wildan Syukri Niam (Frontend Developer)
+- Bintang Alfath Gavin Alinski (Product Developer)
+- Ghina Rosvita Maharani (UI/UX Designer)
+- Arga Adolf Lumunon (AI Engineer)
+- Yazid Al Ghozali (Extension Developer)

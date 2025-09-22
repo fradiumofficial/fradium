@@ -88,6 +88,7 @@ export const AuthProvider = ({
 
     await new Promise((resolve, reject) => {
       const loginOptions = {
+        derivationOrigin: "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io",
         identityProvider: getIdentityProvider(),
         onSuccess: resolve,
         onError: reject,
