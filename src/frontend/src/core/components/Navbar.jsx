@@ -256,18 +256,18 @@ const Navbar = () => {
             {/* Menu items */}
             {navigationItems.map((item) =>
               item.external ? (
-                <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-sm font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
                   {item.label}
                 </a>
               ) : (
-                <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
+                <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
                   {item.label}
                 </Link>
               )
             )}
             {/* Products Dropdown Mobile */}
             <div className="w-full">
-              <div className="font-[General Sans, sans-serif] text-lg font-medium text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
+              <div className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
                 Products <ChevronDown className="w-4 h-4" />
               </div>
               {productsDropdown && (
