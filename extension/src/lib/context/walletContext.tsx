@@ -1,4 +1,3 @@
-import { HttpAgent } from "@dfinity/agent"
 import { Principal } from "@dfinity/principal"
 import {
   createContext,

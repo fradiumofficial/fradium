@@ -40,12 +40,9 @@ export type IcrcPage = {
 }
 
 // Environment configuration (use same keys as other extension services)
-const ETHERSCAN_API_KEY = (typeof process !== 'undefined' && (
-  (process as any)?.env?.PLASMO_PUBLIC_ETHERSCAN_API_KEY ||
-  (process as any)?.env?.VITE_ETHERSCAN_API_KEY ||
-  (process as any)?.env?.ETHERSCAN_API_KEY ||
-  ''
-)) || ''
+const ETHERSCAN_API_KEY = process.env.PLASMO_PUBLIC_ETHERSCAN_API_KEY || ''
+
+console.log('ETHERSCAN_API_KEY', ETHERSCAN_API_KEY)
 
 const API_URLS = {
   ethereum: {
@@ -172,33 +169,54 @@ export async function getETHTransactionHistory(address: string, network: 'sepoli
       return []
     }
 
+    // Construct Etherscan API URL with address and pagination (matching frontend implementation)
     const url = `${apiUrl}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${limit}&sort=desc`
-    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } })
-    if (!response.ok) throw new Error(`Etherscan API error: ${response.status} ${response.statusText}`)
-    const data = await response.json()
-    if (data.status !== '1') throw new Error(`Etherscan API error: ${data.message}`)
-    const list: any[] = Array.isArray(data.result) ? data.result : []
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    })
 
-    return list.map((tx) => {
-      const isSent = String(tx.from).toLowerCase() === String(address).toLowerCase()
-      const amount = Number(tx.value) / 1e18
+    if (!response.ok) {
+      throw new Error(`Etherscan API error: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+
+    if (data.status !== '1') {
+      throw new Error(`Etherscan API error: ${data.message}`)
+    }
+
+    if (!data.result || !Array.isArray(data.result)) {
+      return []
+    }
+
+    // Parse Etherscan transaction data (matching frontend implementation)
+    const transactions = data.result.map((tx) => {
+      const isSent = tx.from.toLowerCase() === address.toLowerCase()
+      const amount = parseFloat(tx.value) / Math.pow(10, 18) // Convert from wei to ETH
+
       return {
         hash: tx.hash,
         chain: 'Ethereum',
-        title: isSent ? `Transfer to ${String(tx.to).slice(0, 6)}...${String(tx.to).slice(-4)}` : `Received from ${String(tx.from).slice(0, 6)}...${String(tx.from).slice(-4)}`,
+        title: isSent ? `Transfer to ${tx.to.slice(0, 6)}...${tx.to.slice(-4)}` : `Received from ${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`,
         amount: isSent ? -amount : amount,
         status: tx.isError === '0' ? 'Completed' : 'Failed',
-        timestamp: Number.parseInt(tx.timeStamp, 10) * 1000,
+        timestamp: parseInt(tx.timeStamp) * 1000, // Convert to milliseconds
         from: tx.from,
         to: tx.to,
         gasUsed: tx.gasUsed,
         gasPrice: tx.gasPrice,
         blockNumber: tx.blockNumber,
-        confirmations: tx.confirmations
+        confirmations: tx.confirmations,
       } as UnifiedTx
     })
-  } catch (e) {
-    console.error('Error fetching ETH transaction history:', e)
+
+    return transactions
+  } catch (error) {
+    console.error('Error fetching ETH transaction history:', error)
     return []
   }
 }
@@ -279,59 +297,94 @@ export async function getSolanaTransactionHistory(address: string, network: 'dev
 // -----------------------------
 export async function getBitcoinTransactionHistory(address: string, network: 'testnet' | 'mainnet' = 'testnet', limit = 20): Promise<UnifiedTx[]> {
   try {
-    const api = (API_URLS as any).bitcoin?.[network]
-    if (!api) throw new Error(`Unsupported Bitcoin network: ${network}`)
+    const apiUrl = (API_URLS as any).bitcoin?.[network]
+    if (!apiUrl) {
+      throw new Error(`Unsupported Bitcoin network: ${network}`)
+    }
 
-    const res = await fetch(`${api}/addrs/${address}?limit=${limit}`)
-    if (!res.ok) throw new Error(`BlockCypher API error: ${res.status} ${res.statusText}`)
-    const data = await res.json()
-    const txs: any[] = Array.isArray(data.txs) ? data.txs : []
+    console.log(`Fetching Bitcoin transactions for ${address} on ${network} using API: ${apiUrl}`)
+    
+    // Get address info and transactions (matching frontend implementation)
+    const response = await fetch(`${apiUrl}/addrs/${address}?limit=${limit}`)
 
-    return txs.map((tx: any) => {
-      const isSent = tx.inputs?.some((i: any) => (i.addresses || []).includes(address))
-      const isReceived = tx.outputs?.some((o: any) => (o.addresses || []).includes(address))
-      let amountSat = 0
+    if (!response.ok) {
+      throw new Error(`BlockCypher API error: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log(`Bitcoin API response for ${address}:`, data)
+
+    if (!data.txs || !Array.isArray(data.txs)) {
+      return []
+    }
+
+    const transactions = data.txs.map((tx) => {
+      // Determine if this is a sent or received transaction (matching frontend implementation)
+      const isSent = tx.inputs.some((input) => input.addresses.includes(address))
+      const isReceived = tx.outputs.some((output) => output.addresses.includes(address))
+
+      // Calculate amount based on transaction direction
+      let amount = 0
       if (isSent && isReceived) {
-        const totalIn = tx.inputs.filter((i: any) => (i.addresses || []).includes(address)).reduce((s: number, i: any) => s + (i.output_value || 0), 0)
-        const totalOut = tx.outputs.filter((o: any) => (o.addresses || []).includes(address)).reduce((s: number, o: any) => s + (o.value || 0), 0)
-        amountSat = totalOut - totalIn
+        // This is a change transaction - calculate net amount
+        const totalInput = tx.inputs.filter((input) => input.addresses.includes(address)).reduce((sum, input) => sum + (input.output_value || 0), 0)
+        const totalOutput = tx.outputs.filter((output) => output.addresses.includes(address)).reduce((sum, output) => sum + (output.value || 0), 0)
+        amount = totalOutput - totalInput
       } else if (isReceived) {
-        amountSat = tx.outputs.filter((o: any) => (o.addresses || []).includes(address)).reduce((s: number, o: any) => s + (o.value || 0), 0)
+        // Received transaction
+        amount = tx.outputs.filter((output) => output.addresses.includes(address)).reduce((sum, output) => sum + (output.value || 0), 0)
       } else if (isSent) {
-        const totalIn = tx.inputs.filter((i: any) => (i.addresses || []).includes(address)).reduce((s: number, i: any) => s + (i.output_value || 0), 0)
-        const totalOut = tx.outputs.filter((o: any) => !(o.addresses || []).includes(address)).reduce((s: number, o: any) => s + (o.value || 0), 0)
-        amountSat = -(totalIn - totalOut - (tx.fees || 0))
+        // Sent transaction
+        const totalInput = tx.inputs.filter((input) => input.addresses.includes(address)).reduce((sum, input) => sum + (input.output_value || 0), 0)
+        const totalOutput = tx.outputs.filter((output) => !output.addresses.includes(address)).reduce((sum, output) => sum + (output.value || 0), 0)
+        amount = -(totalInput - totalOutput - (tx.fees || 0))
       }
-      const amount = amountSat / 1e8
+
+      // Convert satoshis to BTC
+      const amountInBTC = amount / 100000000
+
+      // Get other party address
       let otherParty = 'Unknown'
       if (isSent) {
-        const out = tx.outputs.find((o: any) => !(o.addresses || []).includes(address))
-        if (out?.addresses?.length) otherParty = out.addresses[0]
+        const output = tx.outputs.find((output) => !output.addresses.includes(address))
+        if (output && output.addresses && output.addresses.length > 0) {
+          otherParty = output.addresses[0]
+        }
       } else if (isReceived) {
-        const input = tx.inputs.find((i: any) => !(i.addresses || []).includes(address))
-        if (input?.addresses?.length) otherParty = input.addresses[0]
+        const input = tx.inputs.find((input) => !input.addresses.includes(address))
+        if (input && input.addresses && input.addresses.length > 0) {
+          otherParty = input.addresses[0]
+        }
       }
+
+      // Determine transaction status
       let status: UnifiedTx['status'] = 'Completed'
-      if ((tx.confirmations || 0) === 0) status = 'Pending'
-      else if ((tx.confirmations || 0) < 6) status = 'Confirming'
+      if (tx.confirmations === 0) {
+        status = 'Pending'
+      } else if (tx.confirmations < 6) {
+        status = 'Confirming'
+      }
+
       return {
         hash: tx.hash,
         chain: 'Bitcoin',
         title: isSent ? `Transfer to ${otherParty.slice(0, 6)}...${otherParty.slice(-4)}` : `Received from ${otherParty.slice(0, 6)}...${otherParty.slice(-4)}`,
-        amount,
-        status,
+        amount: amountInBTC,
+        status: status,
         timestamp: new Date(tx.received).getTime(),
         from: isSent ? address : otherParty,
         to: isSent ? otherParty : address,
         confirmations: tx.confirmations || 0,
-        fee: tx.fees ? tx.fees / 1e8 : 0,
+        fee: tx.fees ? tx.fees / 100000000 : 0, // Convert satoshis to BTC
         blockHeight: tx.block_height,
         size: tx.size,
-        weight: tx.weight
+        weight: tx.weight,
       } as UnifiedTx
     })
-  } catch (e) {
-    console.error('Error fetching Bitcoin transaction history:', e)
+
+    return transactions
+  } catch (error) {
+    console.error('Error fetching Bitcoin transaction history:', error)
     return []
   }
 }

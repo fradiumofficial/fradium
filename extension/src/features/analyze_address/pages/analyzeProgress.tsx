@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "~lib/constant/routes";
 import { CDN } from "~lib/constant/cdn";
-import type { AnalysisResult, CommunityAnalysisResult } from "~types/analyze_model.type";
+import type { AnalysisResult } from "~types/analyze_model.type";
 import { useAuth } from "~lib/context/authContext";
 import AIAnalyzeService from "../../../service/aiAnalyzeService";
 import type { CombinedAnalysisResult } from "../../../service/types";

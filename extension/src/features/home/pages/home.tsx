@@ -138,7 +138,7 @@ function Home() {
     }
   }, [filteredTokens, balances, usdPrices]);
 
-  // Helper function to format balance display per token (ETH uses up to 6 decimals, trim zeros)
+  // Helper function to format balance display per token (ETH uses up to 6 decimals, Bitcoin uses 8 decimals)
   const formatTokenBalance = useCallback((tokenId: string, balance: string) => {
     if (hideBalance) return "••••";
 
@@ -147,7 +147,9 @@ function Home() {
     if (numericBalance === 0) return "0.00";
 
     const smallThreshold = 0.000001; // 1e-6
-    const maxFrac = tokenId === "ethereum" ? 6 : 4;
+    let maxFrac = 4; // Default
+    if (tokenId === "ethereum") maxFrac = 6;
+    else if (tokenId === "bitcoin") maxFrac = 8;
 
     if (numericBalance < smallThreshold) {
       const th = smallThreshold.toLocaleString("en-US", { maximumFractionDigits: maxFrac });
@@ -157,7 +159,7 @@ function Home() {
     return new Intl.NumberFormat("en-US", { maximumFractionDigits: maxFrac }).format(numericBalance);
   }, [hideBalance]);
 
-  // Helper function to format USD value
+  // Helper function to format USD value - Updated to match AssetPage.jsx formatting logic
   const formatUSDValue = useCallback((tokenId: string, balance: string) => {
     if (hideBalance) return "••••";
 
@@ -177,11 +179,19 @@ function Home() {
 
     const usdValue = numericBalance * usdPrice;
 
-    // Format USD value
-    if (usdValue < 0.01) return "<$0.01";
-    if (usdValue < 1) return `$${usdValue.toFixed(4)}`;
-    if (usdValue < 1000) return `$${usdValue.toFixed(2)}`;
-    return `$${usdValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+    // Format USD value with appropriate decimal places based on value size
+    if (usdValue < 0.01) {
+      return "$0.0000";
+    } else if (usdValue < 1) {
+      return `$${usdValue.toFixed(4)}`;
+    } else if (usdValue < 1000) {
+      return `$${usdValue.toFixed(2)}`;
+    } else {
+      return `$${usdValue.toLocaleString("en-US", { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+      })}`;
+    }
   }, [usdPrices, usdPriceLoading, usdPriceErrors, hideBalance]);
 
   // Navigation handlers
@@ -355,15 +365,25 @@ function Home() {
     }));
   }, [filteredTokens, balances, usdPrices]);
 
-  // Format USD value for display
+  // Format USD value for display - Updated to match AssetPage.jsx formatting logic
   const formatUSDDisplay = useCallback((value: number) => {
     if (hideBalance) return "••••";
 
     if (value === 0) return "$0.00";
-    if (value < 0.01) return "<$0.01";
-    if (value < 1) return `$${value.toFixed(4)}`;
-    if (value < 1000) return `$${value.toFixed(2)}`;
-    return `$${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+    
+    // Format with appropriate decimal places based on value size
+    if (value < 0.01) {
+      return "$0.0000";
+    } else if (value < 1) {
+      return `$${value.toFixed(4)}`;
+    } else if (value < 1000) {
+      return `$${value.toFixed(2)}`;
+    } else {
+      return `$${value.toLocaleString("en-US", { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+      })}`;
+    }
   }, [hideBalance]);
 
   return (
