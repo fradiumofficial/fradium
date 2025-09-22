@@ -75,6 +75,20 @@ export default function AIAssistantWidget() {
 
   const handleToggle = () => setIsOpen((v) => !v);
 
+  // Sisipkan soft hyphen agar saat line wrapping muncul tanda "-" untuk semua teks
+  const hyphenateLongTokens = React.useCallback((text) => {
+    if (!text || typeof text !== "string") return text;
+    const CHUNK = 12; // interval penyisipan soft hyphen
+    return text
+      .split(/(\s+)/)
+      .map((part) => {
+        if (/^\s+$/.test(part)) return part;
+        if (part.length <= CHUNK) return part;
+        return part.replace(new RegExp(`.{1,${CHUNK}}`, "g"), (m) => (m.length === CHUNK ? m + "\u00AD" : m));
+      })
+      .join("");
+  }, []);
+
   const sendText = async (text) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -371,7 +385,9 @@ export default function AIAssistantWidget() {
                   {messages.map((m) => (
                     <motion.div key={m.id} initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.98 }} transition={{ duration: 0.2, ease: "easeOut" }} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                       <div className="flex max-w-[80%] flex-col gap-1">
-                        <div className={`${m.role === "user" ? "bg-[#7C72FE] text-white" : "bg-white/5 text-white/90"} px-3 py-2 rounded-2xl text-sm border ${m.role === "user" ? "border-[#7C72FE]/40" : "border-white/10"}`}>{m.text}</div>
+                        <div className={`${m.role === "user" ? "bg-[#7C72FE] text-white" : "bg-white/5 text-white/90"} px-3 py-2 rounded-2xl text-sm border ${m.role === "user" ? "border-[#7C72FE]/40" : "border-white/10"} break-words whitespace-pre-wrap`} style={{ hyphens: "manual" }}>
+                          {hyphenateLongTokens(m.text)}
+                        </div>
                         <div className={`text-[10px] ${m.role === "user" ? "text-white/70 text-right" : "text-white/40"}`}>{formatTimestamp(m.ts || Date.now())}</div>
                       </div>
                     </motion.div>
