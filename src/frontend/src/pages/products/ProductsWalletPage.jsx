@@ -28,6 +28,17 @@ const ProductsWallet = () => {
   const [showConfirmWalletModal, setShowConfirmWalletModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Samakan aksi dengan Home.jsx: login jika perlu lalu redirect ke /wallet
+  const handleTryItFree = React.useCallback(async () => {
+    if (!isAuthenticated) {
+      await handleLogin(() => {
+        navigate("/wallet");
+      });
+    } else {
+      navigate("/wallet");
+    }
+  }, [isAuthenticated, handleLogin, navigate]);
+
   // Fungsi untuk handle launch wallet
   const handleLaunchWallet = async () => {
     setIsLoading(true);
@@ -120,7 +131,7 @@ const ProductsWallet = () => {
                 iconSize="w-[14px] h-[14px] sm:w-[16px] sm:h-[16px]"
                 textSize="text-[13px]"
                 className="w-full whitespace-nowrap"
-                onClick={handleLaunchWallet}
+                onClick={handleTryItFree}
               >
                 Try it free
               </ButtonGreen>
@@ -245,7 +256,7 @@ const ProductsWallet = () => {
                 fontWeight="medium"
                 icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg"
                 iconSize="w-[18px] h-[18px] md:w-[23px] md:h-[23px]"
-                onClick={handleLaunchWallet}
+                onClick={handleTryItFree}
               >
                 Try it free
               </ButtonGreen>

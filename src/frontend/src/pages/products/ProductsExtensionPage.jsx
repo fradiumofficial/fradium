@@ -76,7 +76,15 @@ const ProductsExtension = () => {
               <h1 className="text-[24px] font-medium leading-tight mb-8 text-center">Security that follows you,<br />anywhere you Browse</h1>
             </Reveal>
             <Reveal delay={140}>
-              <ButtonGreen size="md" fontWeight="medium" className="w-full max-w-xs" textClassName="text-center leading-tight">
+              <ButtonGreen
+                size="md"
+                fontWeight="medium"
+                className="w-full max-w-xs"
+                textClassName="text-center leading-tight"
+                onClick={() => {
+                  window.open("https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp", "_blank");
+                }}
+              >
                 Download Extension
               </ButtonGreen>
             </Reveal>
@@ -168,7 +176,7 @@ const ProductsExtension = () => {
                 fontWeight="medium"
                 className=" h-[48px] text-[18px]"
                 onClick={() => {
-                  window.open("https://chromewebstore.google.com/detail/fradium-crypto-security-e/doglfmcjkdpohekndccabpplljgkgkcc", "_blank");
+                  window.open("https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp", "_blank");
                 }}
                 textClassName="text-center leading-tight"
               >
