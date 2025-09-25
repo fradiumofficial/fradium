@@ -1,4 +1,0 @@
-uagents==0.22.6
-ic-py==1.0.1
-python-dotenv==1.1.1
-cryptography==45.0.6
