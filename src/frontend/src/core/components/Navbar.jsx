@@ -162,7 +162,7 @@ const Navbar = () => {
             </button>
             {productsDropdown && (
               <div
-                className="absolute top-full left-0 mt-2 w-40 bg-black/70 backdrop-blur-lg border border-white/10 rounded-lg z-50 flex flex-col py-2 animate-fadeIn"
+                className="absolute top-full left-0 mt-2 w-56 bg-black backdrop-blur-lg border border-white/10 rounded-lg z-50 flex flex-col py-2 animate-fadeIn"
                 onMouseEnter={() => {
                   clearTimeout(productsDropdownTimeout.current);
                   setProductsDropdown(true);
@@ -170,11 +170,14 @@ const Navbar = () => {
                 onMouseLeave={() => {
                   productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
                 }}>
-                <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
-                  Fradium Extension
-                </Link>
                 <Link to="/products-wallet" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
-                  Fradium Wallet
+                  Fradium Wallet App
+                </Link>
+                <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Wallet Extension
+                </Link>
+                <Link to="/escrow" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Escrow
                 </Link>
               </div>
             )}
@@ -289,6 +292,15 @@ const Navbar = () => {
                       setMenuOpen(false);
                     }}>
                     Wallet
+                  </Link>
+                  <Link
+                    to="/escrow"
+                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
+                    onClick={() => {
+                      setProductsDropdown(false);
+                      setMenuOpen(false);
+                    }}>
+                    Escrow
                   </Link>
                 </div>
               )}

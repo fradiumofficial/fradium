@@ -1,4 +1,3 @@
 module {
-  // Common/Shared type used across all modules
   public type Result<T, E> = { #Ok : T; #Err : E };
 };

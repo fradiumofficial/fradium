@@ -33,6 +33,7 @@ import { AuthProvider } from "@/core/providers/AuthProvider.jsx";
 // Layouts
 import HomeLayout from "@/core/components/layouts/HomeLayout.jsx";
 import WalletLayout from "@/core/components/layouts/WalletLayout.jsx";
+import EscrowLayout from "@/core/components/layouts/EscrowLayout.jsx";
 
 // Auth
 import AuthGuard from "@/core/components/auth/AuthGuard.jsx";
@@ -54,7 +55,11 @@ import ScanHistoryPage from "@/pages/wallet/ScanHistoryPage.jsx";
 import SettingPage from "@/pages/wallet/SettingPage.jsx";
 import ProductsExtension from "@/pages/products/ProductsExtensionPage.jsx";
 import ProductsWallet from "@/pages/products/ProductsWalletPage.jsx";
+import ProductsEscrow from "@/pages/products/ProductsEscrowPage.jsx";
 import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
+import EscrowDashboard from "@/pages/escrow/EscrowDashboard.jsx";
+import EscrowHistory from "@/pages/escrow/EscrowHistory.jsx";
+import P2PTrade from "@/pages/escrow/P2PTrade.jsx";
 
 // NProgress
 NProgress.configure({
@@ -130,7 +135,7 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   // Determine layout key - only animate when switching between different layouts
-  const layoutKey = location.pathname.startsWith("/wallet") ? "wallet" : "home";
+  const layoutKey = location.pathname.startsWith("/wallet") ? "wallet" : location.pathname.startsWith("/escrow/dashboard") ? "escrow" : "home";
 
   return (
     <AnimatePresence mode="wait">
@@ -152,6 +157,7 @@ function AnimatedRoutes() {
           <Route path="/faucet" element={<FaucetPage />} />
           <Route path="/products" element={<ProductsExtension />} />
           <Route path="/products-wallet" element={<ProductsWallet />} />
+          <Route path="/escrow" element={<ProductsEscrow />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
@@ -168,6 +174,17 @@ function AnimatedRoutes() {
           <Route path="transaction-history" element={<TransactionHistoryPage />} />
           <Route path="scan-history" element={<ScanHistoryPage />} />
           <Route path="setting" element={<SettingPage />} />
+        </Route>
+        <Route
+          path="/escrow/dashboard"
+          element={
+            <AuthGuard isRedirectToLogin>
+              <EscrowLayout />
+            </AuthGuard>
+          }>
+          <Route index element={<EscrowDashboard />} />
+          <Route path="p2p-payment" element={<P2PTrade />} />
+          <Route path="history" element={<EscrowHistory />} />
         </Route>
       </Routes>
     </AnimatePresence>
