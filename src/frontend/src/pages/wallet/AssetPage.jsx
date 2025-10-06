@@ -16,6 +16,7 @@ import { useWallet } from "@/core/providers/WalletProvider";
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
 import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal";
 import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal";
+import TransakModal from "@/core/components/modals/TransakModal";
 
 // Token Item Card Component
 import TokenItemCard from "@/core/components/cards/TokenItemCard";
@@ -27,6 +28,7 @@ export default function AssetsPage() {
   // Modal States
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
+  const [showTransakModal, setShowTransakModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
 
   // Analyze Address States
@@ -337,6 +339,23 @@ export default function AssetsPage() {
                 <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
+            {/* Buy with Fiat */}
+            <div
+              onClick={() => setShowTransakModal(true)}
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(155,228,160,0.1)-4.91%,rgba(155,228,160,0.15)53.67%,rgba(155,228,160,0.2)95.27%)] hover:bg-[#9BE4A0]/20 transition-colors"
+              style={{
+                border: "1px solid rgba(155, 228, 160, 0.3)",
+                backdropFilter: "blur(20px)",
+                transition: "all 200ms ease-in-out",
+              }}>
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              <span className="text-white text-xs md:text-sm font-medium">Buy</span>
+              <svg className="ml-1 w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -504,6 +523,11 @@ export default function AssetsPage() {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <SendTokenModal isOpen={showSendModal} onClose={() => setShowSendModal(false)} token={selectedToken} />
+      <ReceiveAddressModal isOpen={showReceive} onClose={() => setShowReceive(false)} />
+      <TransakModal isOpen={showTransakModal} onClose={() => setShowTransakModal(false)} />
 
       {/* Modal Analyze Loading */}
       <AnalyzeLoadingModal isOpen={showAnalyzeLoading} onCancel={handleCancelAnalysis} />
