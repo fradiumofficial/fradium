@@ -129,96 +129,70 @@ function AnalyzeAdressResult() {
     )
   }
 
-  // Convert confidence level to percentage for display
+  // Confidence percentage (mirror frontend: use result.confidence when available)
   const getConfidencePercentage = () => {
-    if (
-      (result.source === "ai" || result.source === "ai_and_community") &&
-      result.aiData
-    ) {
-      // Use real confidence value from AI analysis (like frontend)
-      return result.aiData.ransomware_probability * 100
-    } else if (
-      (result.source === "community" || result.source === "ai_and_community") &&
-      result.communityData
-    ) {
-      // Use static confidence values based on safety (like frontend)
+    if (typeof result?.confidence === "number") {
+      return Math.round(result.confidence)
+    }
+    const ai = (result as any)?.aiAnalysis || (result as any)?.aiData
+    if (ai?.confidence != null) {
+      return Math.round(ai.confidence)
+    }
+    // Community fallback like frontend
+    if ((result as any)?.communityAnalysis || (result as any)?.communityData) {
       return result.isSafe ? 85 : 75
     }
-    return 50 // Default fallback
+    return 50
   }
 
-  const confidencePercentage = getConfidencePercentage()
-
-  // Helper functions for the new UI - using real data from analysis result
+  // Helper functions for the new UI - using real data from analysis result (match AnalyzeResultModal)
   const getTransactionCount = () => {
-    // Priority: stats.transactions -> aiData.transactions_analyzed -> community report voters -> 0
-    if (result.stats?.transactions !== undefined) {
-      return result.stats.transactions.toString()
-    } else if (
-      (result.source === "ai" || result.source === "ai_and_community") &&
-      result.aiData
-    ) {
-      return result.aiData.transactions_analyzed?.toString() || "0"
-    } else if (
-      (result.source === "community" || result.source === "ai_and_community") &&
-      result.communityData
-    ) {
-      return (
-        result.communityData.report?.[0]?.voted_by?.length?.toString() || "0"
-      )
-    }
-    return "0"
+    return String(result?.stats?.transactions ?? 0)
   }
 
   // Get risk level as readable text
   const getRiskLevel = () => {
-    if (result.riskLevel) {
-      return result.riskLevel
-    } else if (
-      (result.source === "ai" || result.source === "ai_and_community") &&
-      result.aiData
-    ) {
-      const probability = result.aiData.ransomware_probability || 0
-      if (probability >= 0.8) return "HIGH"
-      if (probability >= 0.5) return "MEDIUM"
-      return "LOW"
+    if (result?.riskLevel) return result.riskLevel
+    const ai = (result as any)?.aiAnalysis || (result as any)?.aiData
+    const probability = ai?.ransomware_probability
+    if (typeof probability === 'number') {
+      if (probability > 0.7) return 'HIGH'
+      if (probability > 0.3) return 'MEDIUM'
+      return 'LOW'
     }
-    return "Unknown"
+    return 'Unknown'
   }
 
   // Get risk score from stats
   const getRiskScore = () => {
-    if (result.stats?.riskScore) {
-      return result.stats.riskScore
-    } else if (
-      (result.source === "ai" || result.source === "ai_and_community") &&
-      result.aiData
-    ) {
-      return `${Math.round(result.aiData.ransomware_probability * 100)}/100`
-    } else if (
-      (result.source === "community" || result.source === "ai_and_community") &&
-      result.communityData
-    ) {
-      return isAddressSafe ? "15/100" : "85/100"
-    }
-    return "50/100"
+    // Use transformed riskScore provided in stats (like modal)
+    return result?.stats?.riskScore ?? '—'
   }
 
-  // Get data source information
-  const getDataSource = () => {
-    switch (result.source) {
-      case "ai":
-        return "AI Analysis"
-      case "community":
-        return "Community Vote"
-      case "ai_and_community":
-        return "AI + Community"
-      case "smartcontract":
-        return "Smart Contract"
-      default:
-        return "Unknown"
-    }
+  // Additional fields to mirror frontend AnalyzeResultModal
+  const getRiskProbability = () => {
+    if (result?.stats?.totalVolume) return result.stats.totalVolume
+    const ai = (result as any)?.aiAnalysis || (result as any)?.aiData
+    if (typeof ai?.ransomware_probability === 'number') return `${ai.ransomware_probability.toFixed(4)}`
+    return '-'
   }
+
+  const getLastActivity = () => {
+    if (result?.stats?.lastActivity) return result.stats.lastActivity
+    return 'Recently analyzed'
+  }
+
+  // Extract AI/Community details (mirror frontend modal cards)
+  const aiDetail = (result as any)?.aiAnalysis || (result as any)?.aiData
+  const communityDetail = (result as any)?.communityAnalysis || (result as any)?.communityData
+  const aiIsSafe = typeof aiDetail?.isSafe === 'boolean' ? aiDetail.isSafe : result.isSafe
+  const communityIsSafe = typeof communityDetail?.isSafe === 'boolean' ? communityDetail.isSafe : result.isSafe
+  const aiConfidence = typeof aiDetail?.confidence === 'number' ? Math.round(aiDetail.confidence) : (typeof aiDetail?.ransomware_probability === 'number' ? Math.round((1 - aiDetail.ransomware_probability) * 100) : undefined)
+  const aiRiskScore = (aiDetail?.stats?.riskScore) || result?.stats?.riskScore || (typeof aiDetail?.ransomware_probability === 'number' ? `${Math.round(aiDetail.ransomware_probability * 100)}/100` : '—')
+  const communityConfidence = typeof communityDetail?.confidence === 'number' ? Math.round(communityDetail.confidence) : (result.isSafe ? 85 : 75)
+  const communityRiskScore = (communityDetail?.stats?.riskScore) || (communityDetail ? (communityIsSafe ? '15/100' : '85/100') : '—')
+
+  const finalStatus = (location.state as any)?.finalStatus || (result as any)?.finalStatus
 
   return (
     <div className="w-[375px] flex flex-col items-start p-5 gap-7 text-white overflow-y-auto">
@@ -240,7 +214,7 @@ function AnalyzeAdressResult() {
       <div className="w-[335px] flex flex-col items-start gap-5 flex-none flex-grow-0">
         {/* Safety Result Card */}
         <SafetyCard
-          confidence={confidencePercentage}
+          confidence={result.confidence}
           title="Address"
           isSafe={isAddressSafe}
           description={result?.description}
@@ -252,7 +226,7 @@ function AnalyzeAdressResult() {
             Address Details
           </div>
 
-          {/* Statistics Cards Grid */}
+          {/* Statistics Cards Grid (match modal fields) */}
           <div className="w-[335px] h-auto flex flex-row flex-wrap items-start content-start gap-[10px] flex-none flex-grow-0">
             {/* Card 1 - Transactions */}
             <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
@@ -271,26 +245,19 @@ function AnalyzeAdressResult() {
               </div>
             </div>
 
-            {/* Card 2 - Confidence Level */}
-            <div className="w-[159px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
-              <div
-                className={`w-[72px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] flex-none flex-grow-0 ${
-                  getConfidencePercentage() >= 80
-                    ? "text-green-400"
-                    : getConfidencePercentage() >= 60
-                      ? "text-yellow-400"
-                      : "text-red-400"
-                }`}>
-                {getConfidencePercentage()}%
+            {/* Card 2 - Risk Probability */}
+            <div className="w-[160px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
+              <div className="h-[19px] font-sans font-medium text-[14px] leading-[120%] tracking-[-0.02em] text-white flex-none flex-grow-0">
+                {getRiskProbability()}
               </div>
-              <div className="w-[104px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
+              <div className="w-[140px] h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
                 <img
                   src={CDN.icons.total}
-                  alt="Confidence"
+                  alt="Risk Probability"
                   className="w-[16px] h-[16px] flex-none flex-grow-0"
                 />
-                <div className="w-[82px] h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
-                  Confidence
+                <div className="w-auto h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
+                  Risk Probability
                 </div>
               </div>
             </div>
@@ -319,11 +286,9 @@ function AnalyzeAdressResult() {
               </div>
             </div>
 
-            {/* Card 4 - Risk Score */}
+            {/* Card 4 - Risk Score (from stats) */}
             <div className="w-[158px] min-h-[67px] flex flex-col justify-center items-start p-[12px_16px] gap-[6px] bg-white/5 rounded-[12px] flex-none flex-grow-0">
-              <div className="w-[60px] h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-[#9BE4A0] flex-none flex-grow-0">
-                {getRiskScore()}
-              </div>
+              <div className="w-auto h-[19px] font-sans font-medium text-[16px] leading-[120%] tracking-[-0.02em] text-[#9BE4A0] flex-none flex-grow-0">{getRiskScore()}</div>
               <div className="h-[18px] flex flex-row items-center gap-[6px] flex-none flex-grow-0">
                 <Gauge className="w-[16px] h-[16px] flex-none flex-grow-0 text-white/60" />
                 <div className="h-[18px] font-sans font-normal text-[14px] leading-[130%] text-white/60 flex-none flex-grow-0">
@@ -428,6 +393,49 @@ function AnalyzeAdressResult() {
           </div>
         </div>
       </div>
+
+      {/* Detailed Analysis Cards (AI and Community) */}
+      {(finalStatus === 'safe_by_both' || finalStatus === 'unsafe_by_community') && (
+        <div className="w-[335px] flex flex-col items-start gap-4 flex-none flex-grow-0">
+          <div className="flex items-center gap-2 h-[19px] font-sans font-semibold text-[18px] leading-[120%] text-white flex-none">
+            {(finalStatus === 'safe_by_both') ? (
+              <>
+                <span className="text-green-400">✅</span>
+                <span>Dual Analysis Confirmed</span>
+              </>
+            ) : (
+              <>
+                <span className="text-yellow-400">⚠️</span>
+                <span>Analysis Conflict</span>
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 w-full">
+            {aiDetail && (
+              <div className="flex flex-col items-start p-4 gap-2 bg-white/[0.05] rounded-2xl w-full">
+                <div className="flex flex-row items-center gap-2">
+                  <span className="text-white text-sm font-medium">AI Analysis</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${aiIsSafe ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white'}`}>{aiIsSafe ? 'SAFE' : 'RISKY'}</span>
+                </div>
+                <p className="text-white text-xs">Confidence: {aiConfidence ?? getConfidencePercentage()}%</p>
+                <p className="text-white text-xs">Risk Score: {aiRiskScore}</p>
+              </div>
+            )}
+
+            {communityDetail && (
+              <div className="flex flex-col items-start p-4 gap-2 bg-white/[0.05] rounded-2xl w-full">
+                <div className="flex flex-row items-center gap-2">
+                  <span className="text-white text-sm font-medium">Community Analysis</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${communityIsSafe ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white'}`}>{communityIsSafe ? 'SAFE' : 'RISKY'}</span>
+                </div>
+                <p className="text-white text-xs">Confidence: {communityConfidence}%</p>
+                <p className="text-white text-xs">Risk Score: {communityRiskScore}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Action Button */}
       <div className="flex-none flex-grow-0 mt-4 space-y-2 w-full">
