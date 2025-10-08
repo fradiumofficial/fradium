@@ -83,7 +83,7 @@ function getTimeNow() {
 
 const LOCAL_KEY = "fradium-assistant-history";
 
-const suggestedQuestions = ["How do I scan a wallet address?", "How can I report a suspicious address?", "How does voting on reports work?", "How do I earn FUM tokens?", "How do I stake tokens for voting?", "Does Fradium support Bitcoin and Solana?", "What is Proof of Credible Contribution?"];
+const suggestedQuestions = ["How do I scan a wallet address?", "How can I report a suspicious address?", "How does voting on reports work?", "How do I earn FRADIUM tokens?", "How do I stake tokens for voting?", "Does Fradium support Bitcoin and Solana?", "What is Proof of Credible Contribution?"];
 
 const Assistant = () => {
   const [input, setInput] = useState("");
@@ -225,11 +225,7 @@ const Assistant = () => {
             </div>
             {/* Suggested Question (collapsible) */}
             <div className="relative z-20 w-full rounded-xl border border-white/10 bg-[#000000]/80 backdrop-blur-[2px] shadow-[0_12px_32px_rgba(0,0,0,0.35)] p-2.5 mt-8 mb-28 pb-2 mx-0">
-              <button
-                type="button"
-                className="w-full flex items-center justify-between text-left px-1 py-1.5"
-                onClick={() => setShowSuggestions((v) => !v)}
-              >
+              <button type="button" className="w-full flex items-center justify-between text-left px-1 py-1.5" onClick={() => setShowSuggestions((v) => !v)}>
                 <span className="text-[15px] font-semibold text-white">Suggested Question</span>
                 <ChevronDown className={`w-4 h-4 text-white transition-transform ${showSuggestions ? "rotate-180" : "rotate-0"}`} />
               </button>

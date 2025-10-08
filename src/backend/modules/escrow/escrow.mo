@@ -10,16 +10,48 @@ import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Hash "mo:base/Hash";
+import Order "mo:base/Order";
 
 import ParentTypes "../../types";
 import EscrowTypes "types";
 
 module {
-  // ===== TOKEN CANISTER INTERFACE =====
+  // ===== TOKEN CANISTER INTERFACE (ICRC-2 for wrapped tokens) =====
   public type TokenCanisterInterface = actor { 
     icrc1_decimals : shared query () -> async Nat8;
     icrc1_transfer : shared (TransferArg) -> async TransferResult;
     icrc2_transfer_from : shared (TransferFromArgs) -> async TransferFromResult;
+  };
+
+  // FRADIUM specific interface (for fee balance check)
+  public type FradiumLedgerInterface = actor {
+    icrc1_balance_of : shared query (Account) -> async Nat;
+    icrc1_transfer : shared (TransferArg) -> async TransferResult;
+    icrc2_transfer_from : shared (TransferFromArgs) -> async TransferFromResult;
+  };
+
+  type Account = {
+    owner : Principal;
+    subaccount : ?Blob;
+  };
+
+  // ===== WALLET CANISTER INTERFACE (for native coins) =====
+  // Minimal interface matching wallet.did (use inline record for SendRequest)
+  public type WalletCanisterInterface = actor {
+    // Bitcoin
+    bitcoin_address : shared () -> async Text;
+    bitcoin_send : shared ({ destination_address : Text; amount_in_satoshi : Nat64 }) -> async Text;
+    bitcoin_balance : shared () -> async Nat64;
+    bitcoin_send_delegated : shared (Principal, { destination_address : Text; amount_in_satoshi : Nat64 }) -> async Text;
+    // Ethereum
+    ethereum_address : shared () -> async Text;
+    ethereum_send : shared (Text, Nat) -> async Text;
+    ethereum_send_delegated : shared (Principal, Text, Nat) -> async Text;
+    ethereum_balance : shared () -> async Text;
+    // Solana
+    solana_address : shared () -> async Text;
+    solana_send : shared (Text, Nat) -> async Text;
+    solana_balance : shared () -> async Nat;
   };
 
   type TransferArg = {
@@ -70,21 +102,20 @@ module {
     #Ok : Nat;
   };
 
-  // ===== AI ANALYZER INTERFACE =====
-  public type AIAnalyzerInterface = actor {
-    analyze_address : shared (address : Text, chain : Text) -> async EscrowTypes.AIAnalyzeResponse;
-  };
-
   // ===== ESCROW MODULE =====
   public class EscrowModule(
     actorPrincipal : Principal,
-    tokenCanister : TokenCanisterInterface,
-    aiAnalyzer : ?AIAnalyzerInterface
+    fradiumLedger : TokenCanisterInterface,
+    fradiumFeeLedger : FradiumLedgerInterface,
+    icpLedger : TokenCanisterInterface,
+    ckbtcLedger : TokenCanisterInterface,
+    ckethLedger : TokenCanisterInterface,
+    walletCanister : ?WalletCanisterInterface  // Optional: for native coin support
   ) {
     // Constants
-    private let MIN_DURATION_SECONDS : Nat64 = 3600; // 1 hour
-    private let MAX_DURATION_SECONDS : Nat64 = 2592000; // 30 days
-    private let HIGH_RISK_SUSPEND_THRESHOLD : Nat = 80; // Risk score > 80 = suspend
+    private let FIXED_DURATION_SECONDS : Nat64 = 900; // 15 minutes default
+    private let MAX_DURATION_SECONDS : Nat64 = 7 * 24 * 60 * 60; // 7 days
+    private let ESCROW_FEE : Nat = 10_000; // 0.0001 FRADIUM (10,000 e8s)
     
     // Storage
     private var escrowStorage : [(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)] = [];
@@ -111,71 +142,23 @@ module {
       };
     };
 
-    // Helper: Convert TokenType to chain name
-    private func token_to_chain(token : EscrowTypes.TokenType) : Text {
+    // Helper: Determine if token should use native wallet or wrapped ledger
+    private func get_escrow_method(token : EscrowTypes.TokenType) : EscrowTypes.EscrowMethod {
       switch (token) {
-        case (#BTC or #ckBTC) { "Bitcoin" };
-        case (#ETH or #ckETH) { "Ethereum" };
-        case (#SOL) { "Solana" };
-        case (#ICP or #FRADIUM) { "ICP" };
+        case (#ckBTC or #ckETH or #ICP or #FRADIUM) { #Wrapped }; // Use ICRC-2 ledger
+        case (#BTC or #ETH or #SOL) { #Native }; // Use wallet canister
       };
     };
 
-    // Helper: Get minimum escrow amount based on token
-    private func get_min_escrow_amount(token : EscrowTypes.TokenType) : async Nat {
-      let decimals = await tokenCanister.icrc1_decimals();
-      let base = 10 ** Nat8.toNat(decimals);
-      
+    // Helper: Get ledger canister for wrapped token type
+    // Routes token types to their respective ICRC-2 ledger canisters
+    private func get_ledger_for_token(token : EscrowTypes.TokenType) : TokenCanisterInterface {
       switch (token) {
-        case (#FRADIUM) { 10 * base }; // 10 FUM
-        case (#ICP) { 1 * base }; // 1 ICP
-        case (#ckBTC or #BTC) { base / 1000 }; // 0.001 BTC
-        case (#ckETH or #ETH) { base / 100 }; // 0.01 ETH
-        case (#SOL) { 1 * base }; // 1 SOL
-      };
-    };
-
-    // Helper: Perform AI risk analysis
-    private func analyze_recipient_risk(
-      recipient : Principal, 
-      token : EscrowTypes.TokenType
-    ) : async ?EscrowTypes.AIRiskAnalysis {
-      switch (aiAnalyzer) {
-        case null {
-          // No AI analyzer available - default to low risk
-          return ?{
-            risk_level = #Low;
-            risk_score = 20;
-            analyzed_at = Time.now();
-            analysis_details = "{\"status\":\"no_analyzer\",\"default\":\"low_risk\"}";
-            is_suspicious = false;
-          };
-        };
-        case (?analyzer) {
-          try {
-            let recipientText = Principal.toText(recipient);
-            let chain = token_to_chain(token);
-            
-            let response = await analyzer.analyze_address(recipientText, chain);
-            
-            return ?{
-              risk_level = response.risk_level;
-              risk_score = response.risk_score;
-              analyzed_at = Time.now();
-              analysis_details = response.details;
-              is_suspicious = not response.is_safe;
-            };
-          } catch (_) {
-            // AI analysis failed - default to medium risk for safety
-            return ?{
-              risk_level = #Medium;
-              risk_score = 50;
-              analyzed_at = Time.now();
-              analysis_details = "{\"status\":\"analysis_failed\",\"error\":\"AI analyzer error\"}";
-              is_suspicious = false;
-            };
-          };
-        };
+        case (#FRADIUM) { fradiumLedger };
+        case (#ICP) { icpLedger };
+        case (#BTC or #ckBTC) { ckbtcLedger }; // Both map to ckBTC ledger
+        case (#ETH or #ckETH) { ckethLedger }; // Both map to ckETH ledger
+        case (#SOL) { fradiumLedger }; // Fallback: SOL wrapped version not available yet
       };
     };
 
@@ -189,98 +172,25 @@ module {
         return #Err("Anonymous users can't create escrow");
       };
 
-      // Validation: Check if sender and recipient are the same
-      if (caller == params.recipient) {
-        return #Err("Cannot create escrow to yourself");
-      };
-
-      // Validation: Check if recipient is anonymous
-      if (Principal.isAnonymous(params.recipient)) {
-        return #Err("Cannot create escrow to anonymous principal");
-      };
-
-      // Validation: Check duration
-      if (params.duration_seconds < MIN_DURATION_SECONDS) {
-        return #Err("Duration must be at least 1 hour (3600 seconds)");
-      };
-
-      if (params.duration_seconds > MAX_DURATION_SECONDS) {
-        return #Err("Duration cannot exceed 30 days (2592000 seconds)");
-      };
-
-      // Validation: Check minimum amount
-      let minAmount = await get_min_escrow_amount(params.token_type);
-      if (params.amount < minAmount) {
-        return #Err("Amount is below minimum escrow amount for this token");
-      };
-
-      // Step 1: Perform AI Risk Analysis on recipient
-      let riskAnalysis = await analyze_recipient_risk(params.recipient, params.token_type);
-      
-      // Step 2: Check if risk is too high
-      let initialState : EscrowTypes.EscrowState = switch (riskAnalysis) {
-        case (?analysis) {
-          if (analysis.risk_score >= HIGH_RISK_SUSPEND_THRESHOLD) {
-            #Suspended // High risk - suspend immediately
-          } else {
-            #Pending // Normal flow - pending transfer
-          };
+      // recipient is optional at create time; validate only if provided
+      switch (params.recipient) {
+        case (?rcp) {
+          if (caller == rcp) { return #Err("Cannot create escrow to yourself"); };
+          if (Principal.isAnonymous(rcp)) { return #Err("Cannot create escrow to anonymous principal"); };
         };
-        case null {
-          #Pending // No analysis - proceed with caution
-        };
+        case null {};
       };
 
-      // If suspended due to high risk, don't proceed with transfer
-      if (initialState == #Suspended) {
-        let new_escrow_id = next_escrow_id;
-        next_escrow_id += 1;
-
-        let suspended_record : EscrowTypes.EscrowRecord = {
-          escrow_id = new_escrow_id;
-          sender = caller;
-          recipient = params.recipient;
-          token_type = params.token_type;
-          amount = params.amount;
-          risk_analysis = riskAnalysis;
-          state = #Suspended;
-          created_at = Time.now();
-          expires_at = Time.now() + Int.abs(Nat64.toNat(params.duration_seconds)) * 1_000_000_000;
-          accepted_at = null;
-          released_at = null;
-          description = params.description;
-          metadata = params.metadata;
-        };
-
-        escrowStore.put(new_escrow_id, suspended_record);
-        
-        return #Err("Escrow suspended: Recipient wallet has high risk score. Escrow ID: " # Nat64.toText(new_escrow_id));
+      // Duration: allow optional override up to MAX_DURATION_SECONDS
+      let durationSeconds : Nat64 = switch (params.duration_seconds) {
+        case (?d) { if (d > MAX_DURATION_SECONDS) { MAX_DURATION_SECONDS } else { d } };
+        case null { FIXED_DURATION_SECONDS };
       };
 
-      // Step 3: Transfer funds from sender to escrow (this canister)
-      let transferArgs : TransferFromArgs = {
-        spender_subaccount = null;
-        from = {
-          owner = caller;
-          subaccount = null;
-        };
-        to = {
-          owner = actorPrincipal;
-          subaccount = null;
-        };
-        amount = params.amount;
-        fee = null;
-        memo = ?Text.encodeUtf8("Escrow Lock");
-        created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-      };
+      // NOTE: Do not collect fee here; will be handled on join/transfer phase
 
-      let transferResult = await tokenCanister.icrc2_transfer_from(transferArgs);
-      switch (transferResult) {
-        case (#Err(err)) {
-          return #Err("Failed to lock funds in escrow: " # debug_show(err));
-        };
-        case (#Ok(_)) { };
-      };
+      // Determine escrow method (Wrapped or Native)
+      let escrowMethod = get_escrow_method(params.token_from);
 
       // Step 4: Create escrow record
       let new_escrow_id = next_escrow_id;
@@ -290,12 +200,14 @@ module {
         escrow_id = new_escrow_id;
         sender = caller;
         recipient = params.recipient;
-        token_type = params.token_type;
-        amount = params.amount;
-        risk_analysis = riskAnalysis;
-        state = #AwaitingAccept; // Funds locked, waiting for recipient to accept
+        token_from = params.token_from;
+        amount_from = params.amount_from;
+        token_to = params.token_to;
+        amount_to = params.amount_to;
+        escrow_method = escrowMethod;
+        state = #AwaitingAccept;
         created_at = Time.now();
-        expires_at = Time.now() + Int.abs(Nat64.toNat(params.duration_seconds)) * 1_000_000_000;
+        expires_at = Time.now() + Int.abs(Nat64.toNat(durationSeconds)) * 1_000_000_000;
         accepted_at = null;
         released_at = null;
         description = params.description;
@@ -333,13 +245,12 @@ module {
             escrow_id = escrow.escrow_id;
             sender = escrow.sender;
             recipient = escrow.recipient;
-            token_type = escrow.token_type;
-            amount = escrow.amount;
+            token_from = escrow.token_from;
+            amount_from = escrow.amount_from;
+            token_to = escrow.token_to;
+            amount_to = escrow.amount_to;
+            escrow_method = escrow.escrow_method;
             state = escrow.state;
-            risk_level = switch (escrow.risk_analysis) {
-              case (?analysis) { ?analysis.risk_level };
-              case null { null };
-            };
             created_at = escrow.created_at;
             expires_at = escrow.expires_at;
             description = escrow.description;
@@ -360,23 +271,27 @@ module {
       var receivedEscrows : [EscrowTypes.GetMyEscrowsParams] = [];
       
       for ((escrow_id, escrow) in escrowStore.entries()) {
-        if (escrow.recipient == caller) {
+        switch (escrow.recipient) {
+          case (?rcp) {
+            if (rcp == caller) {
           let escrowParam : EscrowTypes.GetMyEscrowsParams = {
             escrow_id = escrow.escrow_id;
             sender = escrow.sender;
             recipient = escrow.recipient;
-            token_type = escrow.token_type;
-            amount = escrow.amount;
+            token_from = escrow.token_from;
+            amount_from = escrow.amount_from;
+            token_to = escrow.token_to;
+            amount_to = escrow.amount_to;
+            escrow_method = escrow.escrow_method;
             state = escrow.state;
-            risk_level = switch (escrow.risk_analysis) {
-              case (?analysis) { ?analysis.risk_level };
-              case null { null };
-            };
             created_at = escrow.created_at;
             expires_at = escrow.expires_at;
             description = escrow.description;
           };
           receivedEscrows := Array.append(receivedEscrows, [escrowParam]);
+            };
+          };
+          case null { };
         };
       };
 
@@ -393,7 +308,7 @@ module {
 
       for ((_, escrow) in escrowStore.entries()) {
         total += 1;
-        volume += escrow.amount;
+        volume += escrow.amount_from;
         
         switch (escrow.state) {
           case (#Pending or #AwaitingAccept or #Locked) { pending += 1 };
@@ -410,7 +325,6 @@ module {
         suspended_escrows = suspended;
         total_volume_locked = volume;
         by_state = [];
-        by_risk = [];
       }
     };
 
@@ -423,6 +337,53 @@ module {
       };
 
       return allEscrows;
+    };
+
+    // Get all escrows with pagination (sorted by created_at desc)
+    public func get_all_escrows_paginated(offset : Nat, limit : Nat) : { items : [EscrowTypes.EscrowRecord]; total : Nat } {
+      var items : [EscrowTypes.EscrowRecord] = [];
+      for ((_, escrow) in escrowStore.entries()) {
+        items := Array.append(items, [escrow]);
+      };
+
+      // Sort by created_at desc
+      items := Array.sort(items, func (a : EscrowTypes.EscrowRecord, b : EscrowTypes.EscrowRecord) : Order.Order {
+        if (a.created_at < b.created_at) { return #greater } else if (a.created_at > b.created_at) { return #less } else { return #equal };
+      });
+
+      let total : Nat = items.size();
+      let start : Nat = if (offset > total) { total } else { offset };
+      let endOffset : Nat = offset + limit;
+      let end : Nat = if (endOffset > total) { total } else { endOffset };
+      let count : Nat = if (end > start) { end - start } else { 0 };
+      let page : [EscrowTypes.EscrowRecord] = if (count == 0) { [] } else { Array.subArray(items, start, count) };
+
+      { items = page; total = total }
+    };
+
+    // Get open escrows (AwaitingAccept) with pagination (sorted by created_at desc)
+    public func get_open_escrows_paginated(offset : Nat, limit : Nat) : { items : [EscrowTypes.EscrowRecord]; total : Nat } {
+      var items : [EscrowTypes.EscrowRecord] = [];
+      for ((_, escrow) in escrowStore.entries()) {
+        switch (escrow.state) {
+          case (#AwaitingAccept) { items := Array.append(items, [escrow]); };
+          case _ {};
+        };
+      };
+
+      // Sort by created_at desc
+      items := Array.sort(items, func (a : EscrowTypes.EscrowRecord, b : EscrowTypes.EscrowRecord) : Order.Order {
+        if (a.created_at < b.created_at) { return #greater } else if (a.created_at > b.created_at) { return #less } else { return #equal };
+      });
+
+      let total : Nat = items.size();
+      let start : Nat = if (offset > total) { total } else { offset };
+      let endOffset : Nat = offset + limit;
+      let end : Nat = if (endOffset > total) { total } else { endOffset };
+      let count : Nat = if (end > start) { end - start } else { 0 };
+      let page : [EscrowTypes.EscrowRecord] = if (count == 0) { [] } else { Array.subArray(items, start, count) };
+
+      { items = page; total = total }
     };
 
     // Getter/setter for storage
@@ -440,6 +401,78 @@ module {
 
     public func get_next_escrow_id() : EscrowTypes.EscrowId {
       return next_escrow_id;
+    };
+
+    // ===== SENT ESCROWS PAGINATED =====
+    public func get_sent_escrows_paginated(caller : Principal, offset : Nat, limit : Nat) : { items : [EscrowTypes.EscrowRecord]; total : Nat; offset : Nat; limit : Nat } {
+      // Collect and filter only escrows sent by caller
+      let allEntries = Iter.toArray(escrowStore.entries());
+      let mine = Array.filter<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)>(allEntries, func(entry) { entry.1.sender == caller });
+
+      // Sort by created_at desc
+      let sorted = Array.sort<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)>(mine, func(a, b) {
+        if (a.1.created_at > b.1.created_at) { #less } else if (a.1.created_at < b.1.created_at) { #greater } else { #equal }
+      });
+
+      let total = Array.size(sorted);
+      let start = Nat.min(offset, total);
+      let end = Nat.min(start + limit, total);
+      let page = Array.tabulate<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)>(end - start, func(i) { sorted[start + i] });
+
+      return {
+        items = Array.map<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord), EscrowTypes.EscrowRecord>(page, func(t) { t.1 });
+        total = total;
+        offset = offset;
+        limit = limit;
+      };
+    };
+
+    // ===== JOIN ESCROW =====
+    public func join_escrow(caller : Principal, params : EscrowTypes.AcceptEscrowParams) : async ParentTypes.Result<EscrowTypes.EscrowId, Text> {
+      if (Principal.isAnonymous(caller)) {
+        return #Err("Anonymous users can't join escrow");
+      };
+
+      switch (escrowStore.get(params.escrow_id)) {
+        case null { return #Err("Escrow not found"); };
+        case (?escrow) {
+          if (escrow.state != #AwaitingAccept) {
+            return #Err("Escrow is not open for joining");
+          };
+          // Prevent join after expiration
+          if (Time.now() >= escrow.expires_at) {
+            return #Err("Escrow has expired");
+          };
+          if (escrow.sender == caller) {
+            return #Err("Creator cannot join their own escrow");
+          };
+          switch (escrow.recipient) {
+            case (?rcp) { if (rcp != caller) { return #Err("This escrow is invite-only"); } };
+            case null {};
+          };
+
+          // TODO: perform transfers and collect FRADIUM fee here, then set state to Locked
+          let updated : EscrowTypes.EscrowRecord = {
+            escrow_id = escrow.escrow_id;
+            sender = escrow.sender;
+            recipient = escrow.recipient;
+            token_from = escrow.token_from;
+            amount_from = escrow.amount_from;
+            token_to = escrow.token_to;
+            amount_to = escrow.amount_to;
+            escrow_method = escrow.escrow_method;
+            state = #Pending;
+            created_at = escrow.created_at;
+            expires_at = escrow.expires_at;
+            accepted_at = ?Time.now();
+            released_at = escrow.released_at;
+            description = escrow.description;
+            metadata = escrow.metadata;
+          };
+          escrowStore.put(params.escrow_id, updated);
+          return #Ok(params.escrow_id);
+        };
+      };
     };
   };
 };

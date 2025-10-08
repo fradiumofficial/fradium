@@ -360,7 +360,7 @@ module {
       let minimum_stake_amount = 5 * (10 ** Nat8.toNat(await tokenCanister.icrc1_decimals()));
 
       if (params.stake_amount < minimum_stake_amount) {
-        return #Err("Minimum stake is 5 FUM tokens");
+        return #Err("Minimum stake is 5 FRADIUM tokens");
       };
 
       let transferArgs : TransferFromArgs = {
@@ -466,7 +466,7 @@ module {
 
           let minimum_stake_amount = 1 * (10 ** Nat8.toNat(await tokenCanister.icrc1_decimals()));
           if (params.stake_amount < minimum_stake_amount) {
-            return #Err("Minimum stake is 1 FUM token");
+            return #Err("Minimum stake is 1 FRADIUM token");
           };
 
           let transferArgs : TransferFromArgs = {

@@ -296,7 +296,7 @@ class ComprehensiveTest(unittest.TestCase):
         result = self.pic.update_call(self.backend_canister_id, "create_report", encode([low_stake_params]))
         decoded = decode(result)
         self.assertIn("Err", decoded)
-        self.assertIn("Minimum stake is 5 FUM tokens", str(decoded))
+        self.assertIn("Minimum stake is 5 FRADIUM tokens", str(decoded))
         
         # 2. Test voting with insufficient stake
         report_id = self.create_test_report(self.voter1, 5 * TOKEN_UNIT)
@@ -312,7 +312,7 @@ class ComprehensiveTest(unittest.TestCase):
         }]))
         decoded_vote = decode(low_vote_result)
         self.assertIn("Err", decoded_vote)
-        self.assertIn("Minimum stake is 1 FUM token", str(decoded_vote))
+        self.assertIn("Minimum stake is 1 FRADIUM token", str(decoded_vote))
 
     def test_unstaking_before_deadline(self):
         """Test that unstaking before deadline fails"""

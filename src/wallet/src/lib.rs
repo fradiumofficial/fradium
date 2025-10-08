@@ -12,6 +12,9 @@ use crate::bitcoin::SendRequest;
 use candid::Nat;
 use candid::{CandidType, Deserialize, Principal};
 use sol_rpc_types::RpcEndpoint;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use ic_cdk::api::time as ic_time;
 
 #[derive(CandidType, Deserialize, Debug)]
 pub enum NetworkChoice {
@@ -151,3 +154,70 @@ pub async fn wallet_addresses() -> Addresses {
 
 // Export Candid so candid-extractor can generate the .did
 ic_cdk::export_candid!();
+
+// ===================== DELEGATION (CONSENT) =====================
+
+#[derive(CandidType, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct Delegation {
+    pub delegate: Principal,
+    pub scopes: Vec<String>,
+    pub expires_at_nanos: u64,
+}
+
+thread_local! {
+    static DELEGATIONS: RefCell<HashMap<Principal, Vec<Delegation>>> = RefCell::new(HashMap::new());
+}
+
+fn now_nanos() -> u64 { ic_time() as u64 }
+
+fn has_valid_delegation(user: &Principal, delegate: &Principal, scope: &str) -> bool {
+    DELEGATIONS.with(|store| {
+        let map = store.borrow();
+        if let Some(list) = map.get(user) {
+            let now = now_nanos();
+            for d in list.iter() {
+                if &d.delegate == delegate && d.expires_at_nanos > now && d.scopes.iter().any(|s| s == scope) {
+                    return true;
+                }
+            }
+        }
+        false
+    })
+}
+
+#[ic_cdk::update]
+pub fn grant_delegation(delegate: Principal, scopes: Vec<String>, expires_at_nanos: u64) {
+    let caller = ic_cdk::caller();
+    if caller == Principal::anonymous() { ic_cdk::trap("Anonymous not allowed"); }
+    if scopes.is_empty() { ic_cdk::trap("Scopes cannot be empty"); }
+    if expires_at_nanos <= now_nanos() { ic_cdk::trap("Expiration must be in the future"); }
+    DELEGATIONS.with(|store| {
+        let mut map = store.borrow_mut();
+        let entry = map.entry(caller).or_insert_with(|| Vec::new());
+        // Replace existing for same delegate
+        entry.retain(|d| d.delegate != delegate);
+        entry.push(Delegation { delegate, scopes, expires_at_nanos });
+    });
+}
+
+#[ic_cdk::update]
+pub fn revoke_delegation(delegate: Principal) -> bool {
+    let caller = ic_cdk::caller();
+    if caller == Principal::anonymous() { ic_cdk::trap("Anonymous not allowed"); }
+    DELEGATIONS.with(|store| {
+        let mut map = store.borrow_mut();
+        if let Some(list) = map.get_mut(&caller) {
+            let before = list.len();
+            list.retain(|d| d.delegate != delegate);
+            return list.len() != before;
+        }
+        false
+    })
+}
+
+#[ic_cdk::query]
+pub fn list_delegations(user: Option<Principal>) -> Vec<Delegation> {
+    let caller = ic_cdk::caller();
+    let target = user.unwrap_or(caller);
+    DELEGATIONS.with(|store| store.borrow().get(&target).cloned().unwrap_or_default())
+}

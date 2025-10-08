@@ -107,12 +107,12 @@ This gave us concrete feedback on clarity, efficiency, and user confidence.
 
 - Report suspicious addresses and review reports from others.
 - Submit supporting evidence to back your report.
-- Earn $FUM tokens through voting and contribution validation.
+- Earn $FRADIUM tokens through voting and contribution validation.
 - Voting & Governance (Proof of Credible Contribution - PoCC)
 - Stake your tokens and vote on submitted reports.
 - Contributions are publicly tracked and rewarded.
 
-### $FUM Token System
+### $FRADIUM Token System
 
 - Utility and governance token within the Fradium ecosystem.
 - Used for staking, voting, and rewarding credible reports.
@@ -259,7 +259,7 @@ Illustrates the journey of a user interacting with Fradium — from scanning an 
 - **Fradium Wallet Extension**: A browser-based companion tool that adds pre-send safety checks, risk explanations, and cross-chain token support, helping users stay safe while interacting with dApps, wallets, and explorers.
 - **LLM On-Chain Interaction**: Large Language Model successfully deployed inside an ICP canister, enabling intelligent on-chain AI interaction without relying on off-chain servers.
 - **DAO-Driven Community Reporting & Voting**: A fully on-chain governance system where users can report suspicious addresses, validate evidence, and participate in decentralized voting—forming a security-focused DAO that strengthens collective trust in Web3.
-- **Custom $FUM Token**: Native utility and governance token built with **ICRC-1 and ICRC-2 standards**, powering staking, voting, and rewarding credible community contributions.
+- **Custom $FRADIUM Token**: Native utility and governance token built with **ICRC-1 and ICRC-2 standards**, powering staking, voting, and rewarding credible community contributions.
 
 # **Fradium Roadmap**
 

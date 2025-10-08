@@ -100,7 +100,7 @@ export default function FaucetPage() {
         // Show success toast
         toast({
           title: "Tokens Claimed Successfully!",
-          description: `You have received ${CLAIM_AMOUNT} FUM tokens.`,
+          description: `You have received ${CLAIM_AMOUNT} FRADIUM tokens.`,
           variant: "default",
         });
 
@@ -238,7 +238,7 @@ export default function FaucetPage() {
                 <div className="relative bg-[#000000]/60 backdrop-blur-[2px] border border-white/10 rounded-[20px] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.40)]">
                   <Shield className="w-16 h-16 text-[#99E39E] mx-auto mb-6 animate-glow" />
                   <h2 className="text-2xl font-bold mb-4 text-white">Login Required</h2>
-                  <p className="text-gray-300 mb-6">Please log in to your account to claim free FUM tokens and participate in the Fradium ecosystem.</p>
+                  <p className="text-gray-300 mb-6">Please log in to your account to claim free FRADIUM tokens and participate in the Fradium ecosystem.</p>
                   <ButtonGreen onClick={handleLogin} size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] md:w-[23px] md:h-[23px]">
                     Login
                   </ButtonGreen>
@@ -251,7 +251,7 @@ export default function FaucetPage() {
               <div className="text-center">
                 <h2 className="text-3xl font-bold mb-4 text-white animate-fade-in-up">Claim Free Tokens</h2>
                 <p className="text-gray-300 mb-12 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                  Get free {CLAIM_AMOUNT} FUM tokens every {COOLDOWN_HOURS} hours to participate in community voting, staking, and reporting activities.
+                  Get free {CLAIM_AMOUNT} FRADIUM tokens every {COOLDOWN_HOURS} hours to participate in community voting, staking, and reporting activities.
                 </p>
 
                 {/* Current Balance Card */}

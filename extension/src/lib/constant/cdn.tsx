@@ -1,4 +1,5 @@
-const CDN_BASE = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/extensions"
+const CDN_BASE =
+  "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/extensions"
 
 export const CDN = {
   images: {
@@ -6,19 +7,19 @@ export const CDN = {
     topLeft: `${CDN_BASE}/images/top_left.svg`,
     welcomeCard: `${CDN_BASE}/images/welcome.svg`,
     background: `${CDN_BASE}/images/background.png`,
-    backgroundInit: `${CDN_BASE}/images/background_init.png`,
+    backgroundInit: `${CDN_BASE}/images/background_init.png`
   },
   tokens: {
     bitcoin: `${CDN_BASE}/tokens/bitcoin.svg`,
     solana: `${CDN_BASE}/tokens/solana.svg`,
     eth: `${CDN_BASE}/tokens/eth.svg`,
-    fum: `${CDN_BASE}/tokens/fum.svg`,
+    fradium: `${CDN_BASE}/tokens/fradium.svg`,
     unknown: `${CDN_BASE}/tokens/unknown.svg`,
     bitcoinDark: `${CDN_BASE}/tokens/bitcoin-dark.svg`,
     ethereumDark: `${CDN_BASE}/tokens/ethereum-dark.svg`,
     solanaDark: `${CDN_BASE}/tokens/solana-dark.svg`,
     fradiumDark: `${CDN_BASE}/tokens/fradium-dark.svg`,
-    icp: `${CDN_BASE}/tokens/icp.webp`,
+    icp: `${CDN_BASE}/tokens/icp.webp`
   },
   icons: {
     analyzeAddress: `${CDN_BASE}/icons/analyze-address.png`,
@@ -59,6 +60,6 @@ export const CDN = {
     transactions: `${CDN_BASE}/icons/transaction.svg`,
     clipboard: `${CDN_BASE}/icons/content_copy.svg`,
     help: `${CDN_BASE}/icons/help.svg`,
-    settingGreen: `${CDN_BASE}/icons/discover_tune.svg`,
+    settingGreen: `${CDN_BASE}/icons/discover_tune.svg`
   }
 }

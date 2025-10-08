@@ -35,10 +35,12 @@ export interface _SERVICE {
     BigUint64Array | bigint[]
   >,
   'bitcoin_send' : ActorMethod<[SendRequest], string>,
+  'bitcoin_send_delegated' : ActorMethod<[Principal, SendRequest], string>,
   'bitcoin_utxos' : ActorMethod<[string], GetUtxosResponse>,
   'ethereum_address' : ActorMethod<[], string>,
   'ethereum_balance' : ActorMethod<[], string>,
   'ethereum_send' : ActorMethod<[string, bigint], string>,
+  'ethereum_send_delegated' : ActorMethod<[Principal, string, bigint], string>,
   'solana_address' : ActorMethod<[], string>,
   'solana_balance' : ActorMethod<[], bigint>,
   'solana_send' : ActorMethod<[string, bigint], string>,

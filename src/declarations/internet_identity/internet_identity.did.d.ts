@@ -181,6 +181,12 @@ export interface DummyAuthConfig { 'prompt_for_index' : boolean }
 export type FrontendHostname = string;
 export type GetAccountsError = { 'InternalCanisterError' : string } |
   { 'Unauthorized' : Principal };
+export type GetDefaultAccountError = {
+    'NoSuchOrigin' : { 'anchor_number' : UserNumber }
+  } |
+  { 'NoSuchAnchor' : null } |
+  { 'InternalCanisterError' : string } |
+  { 'Unauthorized' : Principal };
 export type GetDelegationResponse = { 'no_such_delegation' : null } |
   { 'signed_delegation' : SignedDelegation };
 export type GetIdAliasError = { 'InternalCanisterError' : string } |
@@ -395,6 +401,18 @@ export type RegistrationFlowNextStep = {
 export type RegistrationId = string;
 export type Salt = Uint8Array | number[];
 export type SessionKey = PublicKey;
+export type SetDefaultAccountError = {
+    'NoSuchOrigin' : { 'anchor_number' : UserNumber }
+  } |
+  { 'NoSuchAnchor' : null } |
+  { 'InternalCanisterError' : string } |
+  { 'Unauthorized' : Principal } |
+  {
+    'NoSuchAccount' : {
+      'origin' : FrontendHostname,
+      'anchor_number' : UserNumber,
+    }
+  };
 export interface SignedDelegation {
   'signature' : Uint8Array | number[],
   'delegation' : Delegation,
@@ -523,6 +541,11 @@ export interface _SERVICE {
   >,
   'get_anchor_credentials' : ActorMethod<[UserNumber], AnchorCredentials>,
   'get_anchor_info' : ActorMethod<[UserNumber], IdentityAnchorInfo>,
+  'get_default_account' : ActorMethod<
+    [UserNumber, FrontendHostname],
+    { 'Ok' : AccountInfo } |
+      { 'Err' : GetDefaultAccountError }
+  >,
   'get_delegation' : ActorMethod<
     [UserNumber, FrontendHostname, SessionKey, Timestamp],
     GetDelegationResponse
@@ -625,6 +648,11 @@ export interface _SERVICE {
   >,
   'remove' : ActorMethod<[UserNumber, DeviceKey], undefined>,
   'replace' : ActorMethod<[UserNumber, DeviceKey, DeviceData], undefined>,
+  'set_default_account' : ActorMethod<
+    [UserNumber, FrontendHostname, [] | [AccountNumber]],
+    { 'Ok' : AccountInfo } |
+      { 'Err' : SetDefaultAccountError }
+  >,
   'stats' : ActorMethod<[], InternetIdentityStats>,
   'update' : ActorMethod<[UserNumber, DeviceKey, DeviceData], undefined>,
   'update_account' : ActorMethod<

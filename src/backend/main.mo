@@ -1,7 +1,11 @@
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 
-import TokenCanisterOriginal "canister:fradium_ledger";
+import FradiumLedgerOriginal "canister:fradium_ledger";
+import IcpLedgerOriginal "canister:icp_ledger";
+import CkbtcLedgerOriginal "canister:ckbtc_ledger";
+import CkethLedgerOriginal "canister:cketh_ledger";
+import WalletCanisterOriginal "canister:wallet";
 import Types "types";
 import CommunityTypes "./modules/community/types";
 import AnalyzeTypes "./modules/analyze/types";
@@ -13,21 +17,52 @@ import AdminModule "./modules/admin/admin";
 import EscrowModule "./modules/escrow/escrow";
 
 persistent actor Fradium {
-  // Cast TokenCanister to compatible interface
-  transient let TokenCanister : FaucetModule.TokenCanisterInterface = TokenCanisterOriginal;
-  transient let TokenCanisterForCommunity : CommunityModule.TokenCanisterInterface = TokenCanisterOriginal;
-  transient let TokenCanisterForEscrow : EscrowModule.TokenCanisterInterface = TokenCanisterOriginal;
+  // ===== LEDGER CANISTERS SETUP =====
+  // Cast ledger canisters to compatible interfaces for different modules
+  
+  // Faucet & Community modules (only use FRADIUM ledger)
+  transient let FradiumLedger : FaucetModule.TokenCanisterInterface = FradiumLedgerOriginal;
+  transient let FradiumLedgerForCommunity : CommunityModule.TokenCanisterInterface = FradiumLedgerOriginal;
+  
+  // Escrow module (supports multiple token types via ICRC-2 standard + native coins)
+  // 
+  // WRAPPED TOKENS (Proper escrow - funds locked in canister):
+  // - FRADIUM -> fradium_ledger
+  // - ICP -> icp_ledger
+  // - ckBTC -> ckbtc_ledger (wrapped Bitcoin)
+  // - ckETH -> cketh_ledger (wrapped Ethereum)
+  //
+  // NATIVE COINS (Trust-based escrow - funds in user wallet):
+  // - BTC -> wallet canister (native Bitcoin via threshold ECDSA)
+  // - ETH -> wallet canister (native Ethereum via threshold ECDSA)
+  // - SOL -> wallet canister (native Solana via Ed25519)
+  transient let FradiumLedgerForEscrow : EscrowModule.TokenCanisterInterface = FradiumLedgerOriginal;
+  transient let FradiumFeeLedgerForEscrow : EscrowModule.FradiumLedgerInterface = FradiumLedgerOriginal;
+  transient let IcpLedgerForEscrow : EscrowModule.TokenCanisterInterface = IcpLedgerOriginal;
+  transient let CkbtcLedgerForEscrow : EscrowModule.TokenCanisterInterface = CkbtcLedgerOriginal;
+  transient let CkethLedgerForEscrow : EscrowModule.TokenCanisterInterface = CkethLedgerOriginal;
+  // Note: Wallet canister is optional for native coin support
+  // If not provided, only wrapped tokens (ckBTC, ckETH) will work
+  // Cast wallet canister to compatible interface
+  transient let WalletCasted : EscrowModule.WalletCanisterInterface = WalletCanisterOriginal;
+  transient let WalletForEscrow : ?EscrowModule.WalletCanisterInterface = ?WalletCasted;
 
-  // AI Analyzer - Optional for now (can be set later)
-  // For production, replace null with actual AI canister reference
-  transient let aiAnalyzer : ?EscrowModule.AIAnalyzerInterface = null;
-
-  // Initialize modules
-  transient let faucetModule = FaucetModule.FaucetModule(TokenCanister);
-  transient let communityModule = CommunityModule.CommunityModule(Principal.fromActor(Fradium), TokenCanisterForCommunity);
+  // ===== MODULE INITIALIZATION =====
+  transient let faucetModule = FaucetModule.FaucetModule(FradiumLedger);
+  transient let communityModule = CommunityModule.CommunityModule(Principal.fromActor(Fradium), FradiumLedgerForCommunity);
   transient let analyzeModule = AnalyzeModule.AnalyzeModule();
   transient let adminModule = AdminModule.AdminModule();
-  transient let escrowModule = EscrowModule.EscrowModule(Principal.fromActor(Fradium), TokenCanisterForEscrow, aiAnalyzer);
+  
+  // Escrow module with both wrapped token ledgers and wallet canister
+  transient let escrowModule = EscrowModule.EscrowModule(
+    Principal.fromActor(Fradium), 
+    FradiumLedgerForEscrow,
+    FradiumFeeLedgerForEscrow,
+    IcpLedgerForEscrow,
+    CkbtcLedgerForEscrow,
+    CkethLedgerForEscrow,
+    WalletForEscrow  // Optional wallet for native coins (BTC, ETH, SOL)
+  );
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
@@ -105,7 +140,7 @@ persistent actor Fradium {
 
   // ===== ESCROW FUNCTIONS (ESCROW MODULE - TrustPay) =====
   
-  // Create new escrow payment with AI risk analysis
+  // Create new escrow payment
   public shared({ caller }) func create_escrow(params : EscrowTypes.CreateEscrowParams) : async Types.Result<EscrowTypes.EscrowId, Text> {
     return await escrowModule.create_escrow(caller, params);
   };
@@ -118,6 +153,11 @@ persistent actor Fradium {
   // Get escrows sent by user
   public shared({ caller }) func get_sent_escrows() : async Types.Result<[EscrowTypes.GetMyEscrowsParams], Text> {
     return escrowModule.get_sent_escrows(caller);
+  };
+
+  // Get escrows sent by user with pagination
+  public shared({ caller }) func get_sent_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat; offset : Nat; limit : Nat } {
+    return escrowModule.get_sent_escrows_paginated(caller, offset, limit);
   };
 
   // Get escrows received by user
@@ -133,6 +173,21 @@ persistent actor Fradium {
   // Get all escrows (admin)
   public query func get_all_escrows() : async [EscrowTypes.EscrowRecord] {
     return escrowModule.get_all_escrows();
+  };
+
+  // Get all escrows with pagination
+  public query func get_all_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat } {
+    return escrowModule.get_all_escrows_paginated(offset, limit);
+  };
+
+  // Get open escrows with pagination
+  public query func get_open_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat } {
+    return escrowModule.get_open_escrows_paginated(offset, limit);
+  };
+
+  // Join escrow (counterparty)
+  public shared({ caller }) func join_escrow(params : EscrowTypes.AcceptEscrowParams) : async Types.Result<EscrowTypes.EscrowId, Text> {
+    return await escrowModule.join_escrow(caller, params);
   };
 
   // ===== ADMIN FUNCTIONS (ADMIN MODULE) =====

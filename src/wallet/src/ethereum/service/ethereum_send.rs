@@ -12,6 +12,8 @@ use alloy::{
 use candid::Nat;
 use crate::shared::validate_caller_not_anonymous;
 use candid::Principal;
+use ic_cdk::api::time as ic_time;
+use crate::list_delegations;
 
 // To minimize the number of nonce requests, we store the latest nonce for each wallet
 // address in a thread-local HashMap.
@@ -49,6 +51,85 @@ pub async fn ethereum_send(to_address: String, amount: Nat) -> String {
     // Attempt to get nonce from thread-local storage
     let maybe_nonce = ADDRESS_NONCES.with_borrow(|nonces| {
         // If a nonce exists, the next nonce to use is latest nonce + 1
+        nonces.get(&from_address).map(|nonce| nonce + 1)
+    });
+
+    // If no nonce exists, get it from the provider
+    let nonce = if let Some(nonce) = maybe_nonce {
+        nonce
+    } else {
+        provider
+            .get_transaction_count(from_address)
+            .await
+            .unwrap_or(0)
+    };
+
+    // Create transaction
+    let transaction_request = TransactionRequest::default()
+        .with_to(to_address)
+        .with_value(U256::from_le_slice(amount.0.to_bytes_le().as_slice()))
+        .with_nonce(nonce)
+        .with_gas_limit(21_000)
+        .with_chain_id(11155111);
+
+    // Send transaction
+    let pending_tx_builder = provider
+        .send_transaction(transaction_request.clone())
+        .await
+        .expect("Failed to send Ethereum transaction");
+
+    let tx_hash = *pending_tx_builder.tx_hash();
+    let tx_response = provider
+        .get_transaction_by_hash(tx_hash)
+        .await
+        .expect("Failed to fetch transaction by hash");
+
+    if let Some(tx) = tx_response {
+        ADDRESS_NONCES.with_borrow_mut(|nonces| {
+            nonces.insert(from_address, tx.nonce);
+        });
+        format!("{:?}", tx)
+    } else {
+        panic!("Could not get transaction.");
+    }
+}
+
+/// Delegated send: backend can send on behalf of `user` if user granted delegation for scope "eth:send"
+#[ic_cdk::update]
+pub async fn ethereum_send_delegated(user: Principal, to_address: String, amount: Nat) -> String {
+    if ic_cdk::caller() == Principal::anonymous() { ic_cdk::trap("Anonymous not allowed"); }
+
+    // verify delegation
+    let delegations = list_delegations(Some(user));
+    let now = ic_time() as u64;
+    let has_scope = delegations.iter().any(|d| d.delegate == ic_cdk::caller() && d.expires_at_nanos > now && d.scopes.iter().any(|s| s == "eth:send"));
+    if !has_scope { ic_cdk::trap("Delegation not found or expired for scope eth:send"); }
+
+    // behave like ethereum_send but derive from `user`
+    let from_principal = user;
+
+    // Make sure we have a correct to address
+    let to_address = Address::parse_checksummed(to_address, None).expect("Invalid destination address");
+
+    // Setup signer
+    let ecdsa_key_name = get_ecdsa_key_name();
+    let derivation_path = create_derivation_path(&from_principal);
+    let signer = IcpSigner::new(derivation_path, &ecdsa_key_name, None)
+        .await
+        .expect("Failed to create ICP signer for Ethereum transaction");
+    let from_address = signer.address();
+
+    // Setup provider
+    let wallet = EthereumWallet::from(signer);
+    let rpc_service = get_rpc_service();
+    let config = IcpConfig::new(rpc_service);
+    let provider = ProviderBuilder::new()
+        .with_gas_estimation()
+        .wallet(wallet)
+        .on_icp(config);
+
+    // Attempt to get nonce from thread-local storage
+    let maybe_nonce = ADDRESS_NONCES.with_borrow(|nonces| {
         nonces.get(&from_address).map(|nonce| nonce + 1)
     });
 

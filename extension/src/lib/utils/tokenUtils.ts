@@ -1,13 +1,13 @@
-import { CDN } from "~lib/constant/cdn";
+import { CDN } from "~lib/constant/cdn"
 
 export const TokenType = Object.freeze({
   BITCOIN: "Bitcoin",
-  ETHEREUM: "Ethereum", 
+  ETHEREUM: "Ethereum",
   SOLANA: "Solana",
   ICP: "ICP",
-  FUM: "Fradium",
-  UNKNOWN: "Unknown",
-});
+  FRADIUM: "Fradium",
+  UNKNOWN: "Unknown"
+})
 
 export const TOKENS_CONFIG = {
   [TokenType.BITCOIN]: {
@@ -20,9 +20,9 @@ export const TOKENS_CONFIG = {
     decimals: 8,
     unitConversion: {
       base: "satoshi",
-      display: "BTC", 
-      factor: 100000000,
-    },
+      display: "BTC",
+      factor: 100000000
+    }
   },
   [TokenType.ETHEREUM]: {
     id: "ethereum",
@@ -35,8 +35,8 @@ export const TOKENS_CONFIG = {
     unitConversion: {
       base: "wei",
       display: "ETH",
-      factor: 1000000000000000000,
-    },
+      factor: 1000000000000000000
+    }
   },
   [TokenType.SOLANA]: {
     id: "solana",
@@ -49,8 +49,8 @@ export const TOKENS_CONFIG = {
     unitConversion: {
       base: "lamport",
       display: "SOL",
-      factor: 1000000000,
-    },
+      factor: 1000000000
+    }
   },
   [TokenType.ICP]: {
     id: "icp",
@@ -63,22 +63,22 @@ export const TOKENS_CONFIG = {
     unitConversion: {
       base: "e8s",
       display: "ICP",
-      factor: 100000000,
-    },
+      factor: 100000000
+    }
   },
-  [TokenType.FUM]: {
+  [TokenType.FRADIUM]: {
     id: "fradium",
-    name: "FUM",
+    name: "FRADIUM",
     symbol: "Fradium",
     displayName: "Fradium",
     description: "Fradium • Internet Computer",
-    icon: CDN.tokens.fum,
+    icon: CDN.tokens.fradium,
     decimals: 8,
     unitConversion: {
       base: "e8s",
-      display: "FUM",
-      factor: 100000000,
-    },
+      display: "FRADIUM",
+      factor: 100000000
+    }
   },
   [TokenType.UNKNOWN]: {
     id: "unknown",
@@ -91,117 +91,136 @@ export const TOKENS_CONFIG = {
     unitConversion: {
       base: "unknown",
       display: "Unknown",
-      factor: 1,
-    },
-  },
-};
+      factor: 1
+    }
+  }
+}
 
 export function detectTokenType(address: string): string {
-  const lower = address.toLowerCase();
+  const lower = address.toLowerCase()
 
   // Ethereum (0x + 40 hexdigits)
-  if (address.startsWith("0x") && address.length === 42 && /^[0-9a-fA-F]+$/.test(address.slice(2))) {
-    return TokenType.ETHEREUM;
+  if (
+    address.startsWith("0x") &&
+    address.length === 42 &&
+    /^[0-9a-fA-F]+$/.test(address.slice(2))
+  ) {
+    return TokenType.ETHEREUM
   }
 
   // Bitcoin Mainnet Legacy (starts with 1 or 3)
-  if ((address.startsWith("1") || address.startsWith("3")) && address.length >= 26 && address.length <= 35) {
-    return TokenType.BITCOIN;
+  if (
+    (address.startsWith("1") || address.startsWith("3")) &&
+    address.length >= 26 &&
+    address.length <= 35
+  ) {
+    return TokenType.BITCOIN
   }
 
   // Bitcoin Mainnet Bech32 (bc1q / bc1p)
   if (lower.startsWith("bc1q") || lower.startsWith("bc1p")) {
-    return TokenType.BITCOIN;
+    return TokenType.BITCOIN
   }
 
   // Bitcoin Testnet Legacy (m / n / 2)
-  if ((address.startsWith("m") || address.startsWith("n") || address.startsWith("2")) && address.length >= 26 && address.length <= 35) {
-    return TokenType.BITCOIN;
+  if (
+    (address.startsWith("m") ||
+      address.startsWith("n") ||
+      address.startsWith("2")) &&
+    address.length >= 26 &&
+    address.length <= 35
+  ) {
+    return TokenType.BITCOIN
   }
 
   // Bitcoin Testnet Bech32 (tb1q / tb1p)
   if (lower.startsWith("tb1q") || lower.startsWith("tb1p")) {
-    return TokenType.BITCOIN;
+    return TokenType.BITCOIN
   }
 
   // Solana (Base58, 32–44 chars, valid Base58 chars)
-  const base58Chars = /^[1-9A-HJ-NP-Za-km-z]+$/;
-  if (address.length >= 36 && address.length <= 44 && base58Chars.test(address)) {
-    return TokenType.SOLANA;
+  const base58Chars = /^[1-9A-HJ-NP-Za-km-z]+$/
+  if (
+    address.length >= 36 &&
+    address.length <= 44 &&
+    base58Chars.test(address)
+  ) {
+    return TokenType.SOLANA
   }
 
-  return TokenType.UNKNOWN;
+  return TokenType.UNKNOWN
 }
 
 export function amountToBaseUnit(cryptoName: string, amount: number) {
   // Get token config for the crypto name
-  const tokenConfig = TOKENS_CONFIG[cryptoName as keyof typeof TOKENS_CONFIG];
+  const tokenConfig = TOKENS_CONFIG[cryptoName as keyof typeof TOKENS_CONFIG]
   if (!tokenConfig) {
-    throw new Error(`Error: Mata uang kripto '${cryptoName}' tidak didukung.`);
+    throw new Error(`Error: Mata uang kripto '${cryptoName}' tidak didukung.`)
   }
 
   // Get decimals from token config
-  const decimals = tokenConfig.decimals;
+  const decimals = tokenConfig.decimals
 
   // Convert to base unit using BigInt for precision
-  const baseUnitValue = BigInt(Math.floor(amount * (10 ** decimals)));
+  const baseUnitValue = BigInt(Math.floor(amount * 10 ** decimals))
 
-  return baseUnitValue;
+  return baseUnitValue
 }
 // Convert chain name to token type variant for canister
 export const getTokenTypeVariant = (chainName: string) => {
   switch (chainName) {
     case TokenType.BITCOIN:
-      return { Bitcoin: null };
+      return { Bitcoin: null }
     case TokenType.ETHEREUM:
-      return { Ethereum: null };
+      return { Ethereum: null }
     case TokenType.SOLANA:
-      return { Solana: null };
-    case TokenType.FUM:
-      return { Fum: null };
+      return { Solana: null }
+    case TokenType.FRADIUM:
+      return { Fradium: null }
     default:
-      return { Unknown: null };
+      return { Unknown: null }
   }
-};
+}
 
 function capitalize(s: string) {
-  return String(s[0]).toUpperCase() + String(s).slice(1);
+  return String(s[0]).toUpperCase() + String(s).slice(1)
 }
 
 export function getTokenImageURL(chain: string) {
-  if (!chain) return CDN.tokens.unknown;
+  if (!chain) return CDN.tokens.unknown
 
-  const normalizedChain = chain.toLowerCase();
+  const normalizedChain = chain.toLowerCase()
 
   switch (normalizedChain) {
-    case 'ethereum':
-      return CDN.tokens.eth;
-    case 'bitcoin':
-      return CDN.tokens.bitcoin;
-    case 'solana':
-      return CDN.tokens.solana;
-    case 'internet computer':
-    case 'icp':
-      return CDN.tokens.icp;
-    case 'fradium':
-    case 'fum':
-      return CDN.tokens.fum;
+    case "ethereum":
+      return CDN.tokens.eth
+    case "bitcoin":
+      return CDN.tokens.bitcoin
+    case "solana":
+      return CDN.tokens.solana
+    case "internet computer":
+    case "icp":
+      return CDN.tokens.icp
+    case "fradium":
+      return CDN.tokens.fradium
     default:
-      console.warn(`Unknown token type for icon: "${chain}" (normalized: "${normalizedChain}"), falling back to unknown icon`);
-      return CDN.tokens.unknown;
+      console.warn(
+        `Unknown token type for icon: "${chain}" (normalized: "${normalizedChain}"), falling back to unknown icon`
+      )
+      return CDN.tokens.unknown
   }
 }
 
 export const validateAddress = (address: string, tokenType: string) => {
   if (!address || typeof address !== "string") {
-    return { isValid: false, error: "Address is required" };
+    return { isValid: false, error: "Address is required" }
   }
 
-  const detectedType = tokenType || detectTokenType(address);
+  const detectedType = tokenType || detectTokenType(address)
 
   if (detectedType === TokenType.UNKNOWN) {
-    return { isValid: false, error: "Unknown token type" };
+    return { isValid: false, error: "Unknown token type" }
   }
 
-  return { isValid: true, tokenType: detectedType };
-};
+  return { isValid: true, tokenType: detectedType }
+}

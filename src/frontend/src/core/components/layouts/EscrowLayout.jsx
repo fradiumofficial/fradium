@@ -242,7 +242,9 @@ function EscrowLayoutContent() {
   // Menu configuration for escrow
   const menu = [
     { label: "Escrow", icon: "escrow", path: "/escrow/dashboard" },
-    { label: "P2P Payment", icon: "p2p-payment", path: "/escrow/dashboard/p2p-payment" },
+    { label: "Create P2P Trade", icon: "p2p-payment", path: "/escrow/dashboard/p2p-payment" },
+    { label: "P2P Trade", icon: "p2p-trade", path: "/escrow/dashboard/p2p-trade" },
+    { label: "My Escrow", icon: "escrow-history", path: "/escrow/dashboard/my-escrow" },
     { label: "Escrow History", icon: "escrow-history", path: "/escrow/dashboard/history" },
   ];
 

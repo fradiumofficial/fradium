@@ -164,7 +164,7 @@ export default function CreateReportPage() {
       }
 
       if (!stakeAmount || Number(stakeAmount) < 5) {
-        submitErrors.stakeAmount = "Minimum 5 FUM tokens required";
+        submitErrors.stakeAmount = "Minimum 5 FRADIUM tokens required";
       }
 
       if (formData.url.trim()) {
@@ -341,15 +341,15 @@ export default function CreateReportPage() {
       // Check if user has sufficient balance
       const userBalance = balance ? convertE8sToToken(balance) : 0;
       const stakeAmountNumber = Number(stakeAmount);
-      const requiredBalance = stakeAmountNumber + 2; // Add 2 FUM for fees and safety
+      const requiredBalance = stakeAmountNumber + 2; // Add 2 FRADIUM for fees and safety
 
       if (requiredBalance > userBalance) {
-        toast.error(`Insufficient balance. You have ${userBalance} FUM but need ${requiredBalance} FUM (${stakeAmountNumber} for stake + 2 for fees).`);
+        toast.error(`Insufficient balance. You have ${userBalance} FRADIUM but need ${requiredBalance} FRADIUM (${stakeAmountNumber} for stake + 2 for fees).`);
         return;
       }
 
       // Approve tokens first - approve more than needed to cover fees and operations
-      const approvalAmount = BigInt(stakeAmountNumber * 10 ** 8 + 200000000); // Add 2 FUM extra for fees and safety
+      const approvalAmount = BigInt(stakeAmountNumber * 10 ** 8 + 200000000); // Add 2 FRADIUM extra for fees and safety
 
       console.log("Approving tokens with parameters:", {
         from_subaccount: [],
@@ -720,7 +720,7 @@ export default function CreateReportPage() {
                   <AlertTriangle className="w-6 h-6 text-[#99e39e] flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <h3 className="text-base sm:text-lg font-semibold text-[#99e39e] mb-2">Login Required</h3>
-                    <p className="text-gray-300 mb-3 sm:mb-4 text-sm sm:text-base">You need to login to create a new report. This ensures secure submission and allows you to stake FUM tokens for the community validation process.</p>
+                    <p className="text-gray-300 mb-3 sm:mb-4 text-sm sm:text-base">You need to login to create a new report. This ensures secure submission and allows you to stake FRADIUM tokens for the community validation process.</p>
                     <ButtonGreen size="sm" fontWeight="medium" onClick={handleLogin}>
                       Login to Continue
                     </ButtonGreen>
@@ -835,11 +835,11 @@ export default function CreateReportPage() {
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-white/90 text-sm font-medium">Your current balance:</span>
-                        <span className="font-bold text-white">{convertE8sToToken(balance)} FUM</span>
+                        <span className="font-bold text-white">{convertE8sToToken(balance)} FRADIUM</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-white/90 text-sm font-medium">Minimum stake required:</span>
-                        <span className="font-bold text-red-400">5 FUM</span>
+                        <span className="font-bold text-red-400">5 FRADIUM</span>
                       </div>
                     </div>
                   </motion.div>
@@ -848,10 +848,10 @@ export default function CreateReportPage() {
                   <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
                     <div className="space-y-3">
                       <label className="block text-sm font-medium text-white/90">
-                        Enter amount of FUM to stake <span className="text-red-400">*</span>
+                        Enter amount of FRADIUM to stake <span className="text-red-400">*</span>
                       </label>
                       <Input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="5" min="5" max={balance ? convertE8sToToken(balance) : 1000} required className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10 rounded-xl" />
-                      <p className="text-[#B0B6BE] text-xs">Minimum: 5 FUM tokens required to submit a report</p>
+                      <p className="text-[#B0B6BE] text-xs">Minimum: 5 FRADIUM tokens required to submit a report</p>
                     </div>
                   </motion.div>
 
@@ -864,7 +864,7 @@ export default function CreateReportPage() {
                       </div>
                       <div className="flex justify-between items-start">
                         <span className="text-white/90 text-sm font-medium">If report is validated, estimated reward:</span>
-                        <span className="font-bold text-green-400">+{calculateEstimatedReward()} FUM</span>
+                        <span className="font-bold text-green-400">+{calculateEstimatedReward()} FRADIUM</span>
                       </div>
                       <div className="text-xs text-[#B0B6BE] mt-2">Your staked tokens will be returned when voting is completed within the deadline, plus rewards if the report is validated by the community.</div>
                     </div>

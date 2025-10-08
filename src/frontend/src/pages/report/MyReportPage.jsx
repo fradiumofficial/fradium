@@ -558,10 +558,10 @@ export default function MyReportPage() {
                                       <span>ID: #{report.id.toString().padStart(4, "0")}</span>
                                       <span>Evidence: {report.evidence.length}</span>
                                       <span>
-                                        Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FUM</span>
+                                        Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FRADIUM</span>
                                       </span>
                                     </div>
-                                    {report.reward > 0 && <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FUM</span>}
+                                    {report.reward > 0 && <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FRADIUM</span>}
                                   </div>
                                 </div>
                               </div>
@@ -680,10 +680,10 @@ export default function MyReportPage() {
                                       <span>ID: #{report.id.toString().padStart(4, "0")}</span>
                                       <span>Evidence: {report.evidence.length}</span>
                                       <span>
-                                        Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FUM</span>
+                                        Staked: <span className="text-yellow-400 font-semibold">{report.stakeAmount} FRADIUM</span>
                                       </span>
                                     </div>
-                                    {report.reward > 0 && <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FUM</span>}
+                                    {report.reward > 0 && <span className="text-green-400 font-semibold">Reward: +{report.reward.toFixed(3)} FRADIUM</span>}
                                   </div>
                                 </div>
                               </div>
@@ -747,22 +747,22 @@ export default function MyReportPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300 text-sm sm:text-base">Your current balance:</span>
-                    <span className="font-bold text-white">{userBalance.toLocaleString()} FUM</span>
+                    <span className="font-bold text-white">{userBalance.toLocaleString()} FRADIUM</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300 text-sm sm:text-base">Staked amount:</span>
-                    <span className="font-bold text-white">{stakedAmount.toLocaleString()} FUM</span>
+                    <span className="font-bold text-white">{stakedAmount.toLocaleString()} FRADIUM</span>
                   </div>
                   {unstakeReport.type === "voted" && unstakeReport.reward > 0 && unstakeReport.status === "Validated" && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-300 text-sm sm:text-base">Voting reward (10%):</span>
-                      <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
+                      <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FRADIUM</span>
                     </div>
                   )}
                   {unstakeReport.type === "created" && unstakeReport.reward > 0 && unstakeReport.status === "Validated" && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-300 text-sm sm:text-base">Validation reward (25%):</span>
-                      <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FUM</span>
+                      <span className="font-bold text-green-400">+{unstakeReport.reward.toFixed(2)} FRADIUM</span>
                     </div>
                   )}
                   {unstakeReport.status !== "Validated" && (
@@ -777,7 +777,7 @@ export default function MyReportPage() {
                 <div className="p-4 bg-green-400/10 rounded-xl border border-green-400/20">
                   <div className="flex justify-between items-center">
                     <span className="text-green-400 font-medium">Total to receive:</span>
-                    <span className="font-bold text-green-400 text-lg">{(stakedAmount + (unstakeReport.reward || 0)).toFixed(2)} FUM</span>
+                    <span className="font-bold text-green-400 text-lg">{(stakedAmount + (unstakeReport.reward || 0)).toFixed(2)} FRADIUM</span>
                   </div>
                   <div className="text-xs text-green-400/70 mt-1">{unstakeReport.status === "Validated" ? `${unstakeReport.type === "created" ? "Stake + 25% validation reward" : "Stake + 10% voting reward"}` : "Stake only (no reward - report not validated)"}</div>
                 </div>

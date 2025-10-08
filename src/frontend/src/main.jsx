@@ -57,9 +57,12 @@ import ProductsExtension from "@/pages/products/ProductsExtensionPage.jsx";
 import ProductsWallet from "@/pages/products/ProductsWalletPage.jsx";
 import ProductsEscrow from "@/pages/products/ProductsEscrowPage.jsx";
 import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
-import EscrowDashboard from "@/pages/escrow/EscrowDashboard.jsx";
-import EscrowHistory from "@/pages/escrow/EscrowHistory.jsx";
-import P2PTrade from "@/pages/escrow/P2PTrade.jsx";
+import EscrowDashboardPage from "@/pages/escrow/EscrowDashboardPage.jsx";
+import EscrowHistoryPage from "@/pages/escrow/EscrowHistoryPage.jsx";
+import P2PPaymentPage from "@/pages/escrow/P2PPaymentPage.jsx";
+import P2PTradePage from "@/pages/escrow/P2PTradePage.jsx";
+import MyEscrowPage from "@/pages/escrow/MyEscrowPage.jsx";
+import EscrowDetailPage from "@/pages/escrow/EscrowDetailPage.jsx";
 
 // NProgress
 NProgress.configure({
@@ -182,9 +185,12 @@ function AnimatedRoutes() {
               <EscrowLayout />
             </AuthGuard>
           }>
-          <Route index element={<EscrowDashboard />} />
-          <Route path="p2p-payment" element={<P2PTrade />} />
-          <Route path="history" element={<EscrowHistory />} />
+          <Route index element={<EscrowDashboardPage />} />
+          <Route path="p2p-payment" element={<P2PPaymentPage />} />
+          <Route path="p2p-trade" element={<P2PTradePage />} />
+          <Route path="my-escrow" element={<MyEscrowPage />} />
+          <Route path="detail/:escrowId" element={<EscrowDetailPage />} />
+          <Route path="history" element={<EscrowHistoryPage />} />
         </Route>
       </Routes>
     </AnimatePresence>

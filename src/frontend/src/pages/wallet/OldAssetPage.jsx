@@ -34,7 +34,7 @@ function isAmountExceedBalance(tokenType, sendAmount, currentAmount) {
     case TokenType.SOLANA:
       return amountToBaseUnit(TokenType.SOLANA, amount) > amountToBaseUnit(TokenType.SOLANA, balance);
     case TokenType.ETHEREUM:
-    case TokenType.FUM:
+    case TokenType.FRADIUM:
       return amount * 1e18 > balance * 1e18;
     default:
       return amount > balance;
@@ -145,8 +145,8 @@ export default function AssetsPage() {
         }
         break;
 
-      case TokenType.FUM:
-        // Placeholder for Ethereum/FUM - not implemented yet
+      case TokenType.FRADIUM:
+        // Placeholder for Ethereum/FRADIUM - not implemented yet
         for (const address of addresses) {
           balances[address] = 0;
         }
@@ -195,9 +195,9 @@ export default function AssetsPage() {
         }
 
       case TokenType.ETHEREUM:
-      case TokenType.FUM:
+      case TokenType.FRADIUM:
         try {
-          // Placeholder for Ethereum/FUM send - not implemented
+          // Placeholder for Ethereum/FRADIUM send - not implemented
           throw new Error("Ethereum transactions not yet implemented");
         } catch (error) {
           throw new Error(`Ethereum send failed: ${error.message}`);
@@ -253,7 +253,7 @@ export default function AssetsPage() {
           console.warn("Solana AI analysis not implemented yet");
           return null;
 
-        case TokenType.FUM:
+        case TokenType.FRADIUM:
           // Fradium AI Analysis - NOT IMPLEMENT
           console.warn("Fradium AI analysis not implemented yet");
           return null;
@@ -289,8 +289,8 @@ export default function AssetsPage() {
         return { Ethereum: null };
       case TokenType.SOLANA:
         return { Solana: null };
-      case TokenType.FUM:
-        return { Fum: null };
+      case TokenType.FRADIUM:
+        return { Fradium: null };
       default:
         return { Unknown: null };
     }
@@ -707,8 +707,8 @@ export default function AssetsPage() {
               return { Ethereum: null };
             case TokenType.SOLANA:
               return { Solana: null };
-            case TokenType.FUM:
-              return { Fum: null };
+            case TokenType.FRADIUM:
+              return { Fradium: null };
             default:
               return { Unknown: null };
           }

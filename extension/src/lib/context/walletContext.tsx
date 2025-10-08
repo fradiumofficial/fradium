@@ -453,10 +453,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     {
       id: "fradium",
-      symbol: "FUM",
+      symbol: "FRADIUM",
       name: "Fradium",
       chain: "Fradium",
-      icon: TOKENS_CONFIG[TokenType.FUM].icon,
+      icon: TOKENS_CONFIG[TokenType.FRADIUM].icon,
       networkKey: "fra",
       type: "native"
     },
@@ -518,7 +518,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
             (networkFilters.Bitcoin ? updated.Bitcoin : 0) +
             (networkFilters.Ethereum ? updated.Ethereum : 0) +
             (networkFilters.Solana ? updated.Solana : 0) +
-            (networkFilters["Internet Computer"] ? updated["Internet Computer"] : 0)
+            (networkFilters["Internet Computer"]
+              ? updated["Internet Computer"]
+              : 0)
         }
         return updated
       })
@@ -745,12 +747,12 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
                 resolvedLedgerId as any,
                 undefined
               )
-              console.log("FUM Agent:", agent)
+              console.log("FRADIUM Agent:", agent)
               const agentIndex = createAgentForCanister(
                 resolvedIndexId as any,
                 undefined
               )
-              console.log("FUM Index Agent:", agentIndex)
+              console.log("FRADIUM Index Agent:", agentIndex)
               const fradiumIndexActor = createFradiumIndexActor(
                 resolvedIndexId as any,
                 { agent: agentIndex as any }
@@ -760,17 +762,18 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
                 { agent: agent as any }
               ) as any
               const owner = identity.getPrincipal()
-              const fumRaw = await fradiumIndexActor.icrc1_balance_of({
+              const fradiumRaw = await fradiumIndexActor.icrc1_balance_of({
                 owner,
                 subaccount: []
               })
-              console.log("FUM Raw:", fumRaw)
+              console.log("FRADIUM Raw:", fradiumRaw)
               let decimals = 8
               try {
                 decimals = (await fradiumActor.icrc1_decimals?.()) ?? 8
               } catch {}
-              const fumValue = Number(fumRaw) / Math.pow(10, Number(decimals))
-              balance = fumValue.toFixed(6)
+              const fradiumValue =
+                Number(fradiumRaw) / Math.pow(10, Number(decimals))
+              balance = fradiumValue.toFixed(6)
             } catch (e) {
               console.warn("Failed to fetch Fradium balance:", e)
               balance = "0.000000"
