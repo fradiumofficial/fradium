@@ -1,6 +1,8 @@
 import React from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
+import SwitchServices from "@/core/components/common/SwitchServices.jsx";
+import ProfileDropdown from "@/core/components/common/ProfileDropdown.jsx";
 import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { LoadingState } from "@/core/components/ui/LoadingState";
@@ -241,11 +243,11 @@ function EscrowLayoutContent() {
 
   // Menu configuration for escrow
   const menu = [
-    { label: "Escrow", icon: "escrow", path: "/escrow/dashboard" },
-    { label: "Create P2P Trade", icon: "p2p-payment", path: "/escrow/dashboard/p2p-payment" },
-    { label: "P2P Trade", icon: "p2p-trade", path: "/escrow/dashboard/p2p-trade" },
-    { label: "My Escrow", icon: "escrow-history", path: "/escrow/dashboard/my-escrow" },
-    { label: "Escrow History", icon: "escrow-history", path: "/escrow/dashboard/history" },
+    { label: "Escrow", icon: "escrow", path: "/escrow" },
+    { label: "Create Escrow", icon: "p2p-payment", path: "/escrow/create" },
+    { label: "Escrow List", icon: "p2p-trade", path: "/escrow/list" },
+    { label: "My Escrow", icon: "escrow-history", path: "/escrow/my-escrow" },
+    { label: "Escrow History", icon: "escrow-history", path: "/escrow/history" },
   ];
 
   // Load hide balance setting from localStorage on component mount and user change
@@ -335,9 +337,14 @@ function EscrowLayoutContent() {
 
         {/* ===== START: MAIN CONTENT ===== */}
         <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col">
-          {/* Topbar Network & User for md screens - placed above Outlet to avoid content shrink */}
-          <div className="hidden md:flex xl:hidden w-full items-center justify-end gap-3 mb-4">
-            <EscrowRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} icpPrincipal={addresses?.icp_principal} />
+          {/* Topbar actions for md screens - Escrow: without All Networks, but with Switch Services */}
+          <div className="hidden md:flex xl:hidden w-full items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <SwitchServices compact={false} />
+            </div>
+            <div className="flex items-center gap-3">
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} />
+            </div>
           </div>
           <div className="w-full flex justify-center">
             <div className="w-full max-w-[30rem] sm:max-w-[32rem] md:max-w-[34rem] lg:max-w-[36rem] xl:max-w-[44rem] 2xl:max-w-[48rem] md:-translate-x-[100px] lg:-translate-x-[120px] xl:translate-x-0 transition-transform">
@@ -350,8 +357,9 @@ function EscrowLayoutContent() {
         {/* ===== START: SIDEBAR KANAN (Desktop) ===== */}
         <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
-            <div className="flex gap-3 w-full justify-end">
-              <EscrowRightActions isDropdownOpen={isDropdownOpen} setIsDropdownOpen={setIsDropdownOpen} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} handleToggleHideBalance={handleToggleHideBalance} contextHideBalance={contextHideBalance} navigate={navigate} logout={logout} icpPrincipal={addresses?.icp_principal} />
+            <div className="flex gap-3 w-full justify-between items-center">
+              <SwitchServices compact={false} />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} />
             </div>
           </div>
         </aside>

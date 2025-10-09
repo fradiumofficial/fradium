@@ -59,8 +59,8 @@ import ProductsEscrow from "@/pages/products/ProductsEscrowPage.jsx";
 import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
 import EscrowDashboardPage from "@/pages/escrow/EscrowDashboardPage.jsx";
 import EscrowHistoryPage from "@/pages/escrow/EscrowHistoryPage.jsx";
-import P2PPaymentPage from "@/pages/escrow/P2PPaymentPage.jsx";
-import P2PTradePage from "@/pages/escrow/P2PTradePage.jsx";
+import CreateEscrowPage from "@/pages/escrow/CreateEscrowPage.jsx";
+import EscrowListPage from "@/pages/escrow/EscrowListPage.jsx";
 import MyEscrowPage from "@/pages/escrow/MyEscrowPage.jsx";
 import EscrowDetailPage from "@/pages/escrow/EscrowDetailPage.jsx";
 
@@ -138,7 +138,7 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   // Determine layout key - only animate when switching between different layouts
-  const layoutKey = location.pathname.startsWith("/wallet") ? "wallet" : location.pathname.startsWith("/escrow/dashboard") ? "escrow" : "home";
+  const layoutKey = location.pathname.startsWith("/wallet") ? "wallet" : location.pathname.startsWith("/escrow") ? "escrow" : "home";
 
   return (
     <AnimatePresence mode="wait">
@@ -179,15 +179,15 @@ function AnimatedRoutes() {
           <Route path="setting" element={<SettingPage />} />
         </Route>
         <Route
-          path="/escrow/dashboard"
+          path="/escrow"
           element={
             <AuthGuard isRedirectToLogin>
               <EscrowLayout />
             </AuthGuard>
           }>
           <Route index element={<EscrowDashboardPage />} />
-          <Route path="p2p-payment" element={<P2PPaymentPage />} />
-          <Route path="p2p-trade" element={<P2PTradePage />} />
+          <Route path="create" element={<CreateEscrowPage />} />
+          <Route path="list" element={<EscrowListPage />} />
           <Route path="my-escrow" element={<MyEscrowPage />} />
           <Route path="detail/:escrowId" element={<EscrowDetailPage />} />
           <Route path="history" element={<EscrowHistoryPage />} />

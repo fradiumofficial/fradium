@@ -28,7 +28,7 @@ const ProductsEscrow = () => {
       // Jika belum login, lakukan login dulu
       await handleLogin(({ user, isAuthenticated: authStatus }) => {
         // Callback setelah login berhasil - redirect ke escrow dashboard
-        navigate("/escrow/dashboard");
+        navigate("/escrow");
       });
     } else {
       // Jika sudah login, langsung redirect ke escrow dashboard
@@ -259,4 +259,3 @@ const ProductsEscrow = () => {
 };
 
 export default ProductsEscrow;
-

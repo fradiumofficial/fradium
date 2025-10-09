@@ -70,7 +70,7 @@ function parseAmountToBaseUnits(amountStr, decimals) {
   return neg ? -n : n;
 }
 
-export default function P2PTrade() {
+export default function CreateEscrowPage() {
   const { identity, isAuthenticated, handleLogin } = useAuth();
   const { balances, balanceLoading, refreshAllBalances, usdPrices, usdPriceLoading } = useWallet();
   const navigate = useNavigate();

@@ -83,7 +83,7 @@ function getEscrowStateInfo(state) {
   }
 }
 
-export default function P2PTradePage() {
+export default function EscrowListPage() {
   const { isAuthenticated, identity } = useAuth();
   const navigate = useNavigate();
 

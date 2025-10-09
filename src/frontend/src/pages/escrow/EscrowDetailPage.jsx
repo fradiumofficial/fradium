@@ -161,28 +161,23 @@ export default function EscrowDetailPage() {
       setLoading(true);
       setError(null);
 
-      // Get all escrows and find the one with matching ID
-      const res = await backend.get_all_escrows_paginated(0, 1000);
+      const idNum = Number(escrowId);
+      const res = await backend.get_escrow(idNum);
 
-      if (res && Array.isArray(res.items)) {
-        const targetEscrow = res.items.find((e) => e.escrow_id.toString() === escrowId);
-
-        if (targetEscrow) {
-          const normalized = {
-            ...targetEscrow,
-            _token_from: normalizeToken(targetEscrow.token_from),
-            _token_to: normalizeToken(targetEscrow.token_to),
-            _state: normalizeState(targetEscrow.state),
-            _recipient: unwrapOpt(targetEscrow.recipient),
-            _description: unwrapOpt(targetEscrow.description),
-            _metadata: unwrapOpt(targetEscrow.metadata),
-          };
-          setEscrow(normalized);
-        } else {
-          setError("Escrow not found");
-        }
+      if (res && res.Ok) {
+        const e = res.Ok;
+        const normalized = {
+          ...e,
+          _token_from: normalizeToken(e.token_from),
+          _token_to: normalizeToken(e.token_to),
+          _state: normalizeState(e.state),
+          _recipient: unwrapOpt(e.recipient),
+          _description: unwrapOpt(e.description),
+          _metadata: unwrapOpt(e.metadata),
+        };
+        setEscrow(normalized);
       } else {
-        setError("Failed to fetch escrow details");
+        setError(res?.Err || "Escrow not found");
       }
     } catch (err) {
       console.error("Error fetching escrow details:", err);
@@ -260,7 +255,7 @@ export default function EscrowDetailPage() {
             <XCircle className="w-8 h-8 text-red-400" />
           </div>
           <div className="text-red-400 text-lg font-medium">{error || "Escrow not found"}</div>
-          <button onClick={() => navigate("/escrow/p2p-trade")} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#9BE4A0] rounded-lg text-white text-sm transition-colors">
+          <button onClick={() => navigate("/escrow/list")} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#9BE4A0] rounded-lg text-white text-sm transition-colors">
             Back to P2P Trade
           </button>
         </div>
@@ -309,7 +304,7 @@ export default function EscrowDetailPage() {
       {/* Header Section */}
       <motion.div className="flex flex-col gap-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}>
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/escrow/p2p-trade")} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={() => navigate("/escrow/list")} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
             <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -479,7 +474,7 @@ export default function EscrowDetailPage() {
                 <div className="text-center py-3 text-white/60 text-sm">Trade is not available for joining</div>
               ) : null}
 
-              <button onClick={() => navigate("/escrow/p2p-trade")} className="w-full py-3 rounded-lg font-medium transition-colors bg-white/10 text-white hover:bg-white/20">
+              <button onClick={() => navigate("/escrow/list")} className="w-full py-3 rounded-lg font-medium transition-colors bg-white/10 text-white hover:bg-white/20">
                 Back to P2P Trade
               </button>
             </div>
