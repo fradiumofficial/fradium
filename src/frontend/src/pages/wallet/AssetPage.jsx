@@ -16,6 +16,7 @@ import { useWallet } from "@/core/providers/WalletProvider";
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
 import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal";
 import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal";
+import SwapTokenModal from "@/core/components/modals/SwapTokenModal.jsx";
 
 // Token Item Card Component
 import TokenItemCard from "@/core/components/cards/TokenItemCard";
@@ -37,6 +38,10 @@ export default function AssetsPage() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analyzeError, setAnalyzeError] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Swap Modal
+  const [showSwap, setShowSwap] = useState(false);
+  const [swapDefaultSymbol, setSwapDefaultSymbol] = useState("ICP");
 
   // Search States
   const [showSearch, setShowSearch] = useState(false);
@@ -72,6 +77,11 @@ export default function AssetsPage() {
 
   const handleTokenClick = (token) => {
     setSelectedToken(token);
+  };
+
+  const handleSwapClick = (token) => {
+    setSwapDefaultSymbol(token?.symbol || "ICP");
+    setShowSwap(true);
   };
 
   const handleSearchToggle = () => {
@@ -436,6 +446,9 @@ export default function AssetsPage() {
                         ease: "easeOut",
                       }}>
                       <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={!!balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={!!usdPriceErrors[token.id]} hideBalance={hideBalance} />
+                      <div className="flex justify-end px-2 pb-3">
+                        <button className="text-xs bg-white/10 hover:bg-white/20 text-white rounded-md px-2 py-1" onClick={() => handleSwapClick(token)}>Swap</button>
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -510,6 +523,9 @@ export default function AssetsPage() {
 
       {/* Modal Analyze Result */}
       <AnalyzeResultModal isOpen={showAnalyzeResult} onClose={handleCloseAnalyzeResult} analysisResult={analysisResult} />
+
+      {/* Swap Modal */}
+      {showSwap && <SwapTokenModal open={showSwap} onClose={() => setShowSwap(false)} defaultInSymbol={swapDefaultSymbol} />}
     </div>
   );
 }

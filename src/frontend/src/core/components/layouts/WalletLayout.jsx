@@ -54,6 +54,7 @@ function WalletLayoutContent() {
       "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-active.svg",
       "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-active.svg",
       Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-active.svg",
+      Swap: "/assets/icons/swap-active.svg",
       Settings: "/assets/icons/setting.svg",
     };
     const INACTIVE = {
@@ -61,6 +62,7 @@ function WalletLayoutContent() {
       "Scan History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/scan-history-inactive.svg",
       "Transaction History": "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-history-inactive.svg",
       Assets: "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/sidebar/transaction-inactive.svg",
+      Swap: "/assets/icons/swap.svg",
       Settings: "/assets/icons/setting.svg",
     };
 
@@ -157,6 +159,7 @@ function WalletLayoutContent() {
       icon: "analyze-address",
       path: "/wallet/analyze-address",
     },
+    { label: "Swap", icon: "swap", path: "/wallet/swap" },
     {
       label: "Transaction History",
       icon: "transaction-history",

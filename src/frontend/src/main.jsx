@@ -53,6 +53,7 @@ import AnalyzeContractPage from "@/pages/wallet/AnalyzeContractPage.jsx";
 import TransactionHistoryPage from "@/pages/wallet/TransactionHistoryPage.jsx";
 import ScanHistoryPage from "@/pages/wallet/ScanHistoryPage.jsx";
 import SettingPage from "@/pages/wallet/SettingPage.jsx";
+import SwapPage from "@/pages/wallet/SwapPage.jsx";
 import ProductsExtension from "@/pages/products/ProductsExtensionPage.jsx";
 import ProductsWallet from "@/pages/products/ProductsWalletPage.jsx";
 import ProductsEscrow from "@/pages/products/ProductsEscrowPage.jsx";
@@ -174,6 +175,7 @@ function AnimatedRoutes() {
           <Route index element={<AssetsPage />} />
           <Route path="analyze-address" element={<AnalyzeAddressPage />} />
           <Route path="analyze-contract" element={<AnalyzeContractPage />} />
+          <Route path="swap" element={<SwapPage />} />
           <Route path="transaction-history" element={<TransactionHistoryPage />} />
           <Route path="scan-history" element={<ScanHistoryPage />} />
           <Route path="setting" element={<SettingPage />} />
