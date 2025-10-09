@@ -1,7 +1,9 @@
 import { detectTokenType } from '~lib/utils/tokenUtils';
 import { extractBitcoinFeatures } from './bitcoinAnalyzeService';
-import { extractEthereumFeatures } from './ethereumAnalyzeService';
+import { extractFeatures, buildFeatureVector, getTxCountFromFeatures } from './ethereumAnalyzeService';
 import { extractSolanaFeatures } from './solanaAnalyzeService';
+// @ts-ignore - explicit extension to satisfy module resolver
+import { buildComprehensiveFeatures as extractICPFeatures, prepareFeaturesForCanister as prepareICPFeaturesForCanister } from './icpAnalyzeService.ts';
 import { createActor as createAiActor, canisterId as aiCanisterId } from '../declarations/ai';
 import { createActor as createBackendActor, canisterId as backendCanisterId } from '../declarations/backend';
 import { HttpAgent } from '@dfinity/agent';
@@ -65,6 +67,17 @@ export class AIAnalyzeService {
     return agent as any;
   }
 
+  // Normalize token type/network names to match frontend expectations
+  private static normalizeNetwork(network: string | null | undefined): SupportedNetwork | null {
+    if (!network) return null;
+    const n = String(network).toLowerCase().replace(/[_\s-]+/g, '');
+    if (n === 'bitcoin' || n === 'btc') return 'Bitcoin';
+    if (n === 'ethereum' || n === 'eth') return 'Ethereum';
+    if (n === 'solana' || n === 'sol') return 'Solana';
+    if (n === 'internetcomputer' || n === 'icp' || n === 'ic') return 'Internet Computer';
+    return null;
+  }
+
   private static getBackendActor(identity?: any) {
     if (this.backendActorSingleton) return this.backendActorSingleton;
     const canisterId = this.EFFECTIVE_BACKEND_CANISTER_ID;
@@ -116,9 +129,11 @@ export class AIAnalyzeService {
         throw new Error('Invalid address: Address cannot be empty');
       }
 
-      // Detect network type using extension's tokenUtils
-      const network = detectTokenType(trimmedAddress) as SupportedNetwork;
-      console.log(`Detected network: ${network} for address: ${trimmedAddress}`);
+      // Detect network type using extension's tokenUtils, normalize to frontend names
+      const detected = detectTokenType(trimmedAddress) as unknown as string;
+      const network = this.normalizeNetwork(detected);
+      const networkNameForHistory = network ?? (detected || 'Unknown');
+      console.log(`Detected network: ${detected} → normalized: ${network} for address: ${trimmedAddress}`);
 
       // Step 1: Try AI Analysis first (if supported)
       let aiResult: AIAnalysisResult | null = null;
@@ -147,20 +162,9 @@ export class AIAnalyzeService {
         aiSupported = false;
       }
 
-      // If AI is not supported or failed, skip directly to community analysis
+      // If AI is not supported or failed, stop here (do not use community)
       if (!aiSupported || !aiResult) {
-        const communityResult = await this.performCommunityAnalysis(trimmedAddress);
-
-        const result: CombinedAnalysisResult = {
-          ...communityResult,
-          analysisSource: 'community',
-          finalStatus: communityResult.result.isSafe ? 'safe_by_community' : 'unsafe_by_community',
-        };
-
-        // Create analyze history for community analysis only
-        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, 'community', network);
-
-        return result;
+        throw new Error('AI analysis not available for this network');
       }
 
       // Case 2: If AI analysis shows unsafe, stop here
@@ -172,57 +176,19 @@ export class AIAnalyzeService {
         };
 
         // Create analyze history for AI analysis
-        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
+        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', networkNameForHistory);
 
         return result;
       }
 
-      // Case 1 & 3: AI shows safe, proceed with community analysis
-      const communityResult = await this.performCommunityAnalysis(trimmedAddress);
-
-      // Case 1: Both AI and Community show safe
-      if (aiResult.result.isSafe && communityResult.result.isSafe) {
-        const result: CombinedAnalysisResult = {
-          ...aiResult,
-          analysisSource: 'ai_and_community',
-          finalStatus: 'safe_by_both',
-          communityAnalysis: communityResult.result,
-          aiAnalysis: aiResult.result,
-        };
-
-        // Create analyze history for both AI and Community analysis
-        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
-        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, 'community', network);
-
-        return result;
-      }
-
-      // Case 3: AI shows safe but Community shows unsafe
-      if (aiResult.result.isSafe && !communityResult.result.isSafe) {
-        const result: CombinedAnalysisResult = {
-          ...aiResult, // Keep AI result as base (network, address, etc.)
-          analysisSource: 'community',
-          finalStatus: 'unsafe_by_community',
-          result: communityResult.result, // Primary result from Community
-          aiAnalysis: aiResult.result,
-        };
-
-        // Create analyze history for both AI and Community analysis
-        await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
-        await this.createAnalyzeHistory(trimmedAddress, communityResult.result, 'community', network);
-
-        return result;
-      }
-
-      // Fallback case
+      // AI shows safe -> return AI-only result (no community analysis)
       const result: CombinedAnalysisResult = {
         ...aiResult,
         analysisSource: 'ai',
         finalStatus: 'safe_by_ai',
-        communityAnalysis: communityResult.result,
-      };
+      } as any;
 
-      await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', network);
+      await this.createAnalyzeHistory(trimmedAddress, aiResult.result, 'ai', networkNameForHistory);
       return result;
 
     } catch (error) {
@@ -293,58 +259,12 @@ export class AIAnalyzeService {
       console.log(`Analyzing Ethereum address: ${address}`);
 
       // Extract features using Ethereum service
-      const features = await extractEthereumFeatures(address, options);
+      const features = await extractFeatures(address, options);
       console.log(`Extracted features for Ethereum address:`, features);
 
-      // Check if we have basic analysis due to missing API key
-      const hasApiKey = options.etherscanApiKey ||
-        (typeof process !== 'undefined' && (
-          (process as any)?.env?.PLASMO_PUBLIC_ETHERSCAN_API_KEY ||
-          (process as any)?.env?.VITE_ETHERSCAN_API_KEY ||
-          (process as any)?.env?.ETHERSCAN_API_KEY
-        ));
-        
-        console.log('PLASMO PUBLIC API', process.env.PLASMO_PUBLIC_ETHERSCAN_API_KEY);
-
-      if (!hasApiKey && features.total_txs === 0) {
-        console.log('⚠️ Ethereum analysis limited due to missing API key - providing basic safe analysis');
-
-        // Return a basic safe analysis when API key is missing
-        return {
-          success: true,
-          network: 'Ethereum',
-          address: address,
-          result: {
-            isSafe: true,
-            confidence: 30, // Lower confidence due to limited data
-            riskLevel: 'LOW',
-            description: 'Basic Ethereum address validation completed. For comprehensive analysis including transaction patterns and risk assessment, please configure an Etherscan API key.',
-            stats: {
-              transactions: 0,
-              totalVolume: 'Unable to fetch',
-              riskScore: '30/100',
-              lastActivity: 'Address validated',
-            },
-            securityChecks: [
-              'Address format is valid',
-              'Basic pattern analysis completed',
-              'Transaction analysis unavailable - API key required',
-              'AI analysis not available without transaction data'
-            ],
-            rawResult: {
-              limited_analysis: true,
-              reason: 'missing_api_key'
-            },
-          },
-          features: features,
-          type: 'basic',
-          timestamp: new Date().toISOString(),
-        };
-      }
-
       // Convert features object to array format expected by Rust canister
-      const featuresPairs: [string, number][] = Object.entries(features).map(([k, v]) => [k, typeof v === 'number' ? v : 0]);
-      const txCount = this.getTxCountFromFeaturesETH(features);
+      const featuresPairs: [string, number][] = Object.entries(features).map(([k, v]) => [k, Number(v as any)]);
+      const txCount = getTxCountFromFeatures(features);
 
       // Call AI canister via safe actor
       const aiActor = this.getAiActor();
@@ -395,7 +315,7 @@ export class AIAnalyzeService {
       console.log(`Extracted features for Solana address:`, features);
 
       // Convert features object to array format expected by Rust canister
-      const featuresPairs: [string, number][] = Object.entries(features).map(([k, v]) => [k, typeof v === 'number' ? v : 0]);
+      const featuresPairs: [string, number][] = Object.entries(features).map(([k, v]) => [k, Number(v as any)]);
       const txCount = this.getTxCountFromFeaturesSOL(features);
 
       // Call AI canister via safe actor
@@ -443,7 +363,7 @@ export class AIAnalyzeService {
       console.log(`Analyzing ICP address: ${address}`);
 
       // Extract features using ICP service with real data from ICP canisters
-      const features = await this.extractICPFeatures(address);
+      const features = await extractICPFeatures(address);
 
       // Validate features object
       if (!features || typeof features !== 'object') {
@@ -453,7 +373,7 @@ export class AIAnalyzeService {
       // Convert features to array format expected by Rust canister
       // Format: Array<[string, number]> as per TypeScript declarations
       const featuresArray: [string, number][] = [];
-      for (const [key, value] of this.prepareFeaturesForCanister(features)) {
+      for (const [key, value] of prepareICPFeaturesForCanister(features)) {
         const numValue = Number(value);
         if (!isNaN(numValue) && isFinite(numValue)) {
           featuresArray.push([key, numValue]);
@@ -554,14 +474,6 @@ export class AIAnalyzeService {
     }
   }
 
-  /**
-   * Get transaction count from Ethereum features
-   * @param features - Ethereum features object
-   * @returns number Transaction count
-   */
-  static getTxCountFromFeaturesETH(features: EthereumFeatures): number {
-    return Math.round(features.total_txs || 0);
-  }
 
   /**
    * Get transaction count from Solana features
@@ -693,48 +605,7 @@ export class AIAnalyzeService {
   }
 
 
-  /**
-   * Extract ICP features for analysis
-   * @param address - ICP address
-   * @returns Promise<any> ICP features
-   */
-  private static async extractICPFeatures(address: string): Promise<any> {
-    // Placeholder implementation - would need actual ICP feature extraction
-    // This should be implemented based on the frontend's icpAnalyzeService.js
-    return {
-      total_transactions: 0,
-      icp_balance: 0,
-      ckbtc_balance: 0,
-      cketh_balance: 0,
-      ckusdc_balance: 0,
-      first_transaction: '',
-      last_transaction: '',
-      unique_interactions: 0,
-      avg_transaction_value: 0,
-      total_received: 0,
-      total_sent: 0,
-    };
-  }
-
-  /**
-   * Prepare ICP features for canister
-   * @param features - ICP features object
-   * @returns Array<[string, number]> Prepared features
-   */
-  private static prepareFeaturesForCanister(features: any): Array<[string, number]> {
-    const featurePairs: Array<[string, number]> = [];
-    
-    for (const [key, value] of Object.entries(features)) {
-      const numValue = Number(value);
-      if (!isNaN(numValue) && isFinite(numValue)) {
-        featurePairs.push([key, numValue]);
-      } else {
-        featurePairs.push([key, 0.0]);
-      }
-    }
-    
-    return featurePairs;
-  }
+  // ICP feature extraction and preparation now sourced from './icpAnalyzeService'
 
   /**
    * Create analyze history in backend
