@@ -103,7 +103,7 @@ export default function EscrowCard({
   index,
   isExpanded,
   onToggleExpanded,
-  variant = "default", // "default", "my-trades", "pending-trades"
+  variant = "default", // "default", "my-trades", "pending-trades", "history"
   identity,
   showExternalLink = false,
   showJoinButton = false,
@@ -156,6 +156,8 @@ export default function EscrowCard({
         return "Pending";
       case "my-trades":
         return escrow._type === "sent" ? "Created by you" : "Joined by you";
+      case "history":
+        return escrow._type === "sent" ? "Created by you" : "Joined by you";
       default:
         return "Open Trade";
     }
@@ -175,6 +177,12 @@ export default function EscrowCard({
         </div>
       );
     } else if (variant === "my-trades") {
+      return (
+        <ButtonPurple fullWidth onClick={() => navigate(`/escrow/detail/${escrow.escrow_id}`)} size="sm" textSize="text-xs" fontWeight="medium">
+          View Details
+        </ButtonPurple>
+      );
+    } else if (variant === "history") {
       return (
         <ButtonPurple fullWidth onClick={() => navigate(`/escrow/detail/${escrow.escrow_id}`)} size="sm" textSize="text-xs" fontWeight="medium">
           View Details
