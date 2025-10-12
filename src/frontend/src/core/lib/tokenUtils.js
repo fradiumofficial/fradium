@@ -394,6 +394,49 @@ export async function sendTokenToBackend(tokenId, to, amount, principal) {
   }
 }
 
+// Send ICRC token using raw smallest unit amount to a specific account (owner + optional subaccount)
+export async function sendIcrcToAccountRaw(tokenSymbol, ownerPrincipalText, subaccountBlob, amountNat) {
+  // Map symbol to ledger
+  const symbol = typeof tokenSymbol === "string" ? tokenSymbol : Object.keys(tokenSymbol || {})[0] || "";
+  const owner = Principal.fromText(ownerPrincipalText);
+  const toRecord = { owner, subaccount: subaccountBlob ? [subaccountBlob] : [] };
+  const amount = BigInt(amountNat);
+
+  // Choose ledger by symbol
+  let ledger = null;
+  switch (symbol) {
+    case "ICP":
+      ledger = icp_ledger;
+      break;
+    case "FRADIUM":
+      ledger = fradium_ledger;
+      break;
+    case "ckBTC":
+      ledger = ckbtc_ledger;
+      break;
+    case "ckETH":
+      ledger = cketh_ledger;
+      break;
+    default:
+      throw new Error(`Unsupported ICRC symbol for raw transfer: ${symbol}`);
+  }
+
+  const res = await ledger.icrc1_transfer({
+    from_subaccount: [],
+    to: toRecord,
+    amount,
+    fee: [],
+    memo: [],
+    created_at_time: [],
+  });
+
+  if (res && typeof res === "object" && "Err" in res) {
+    throw new Error(`ICRC transfer failed: ${safeStringify(res.Err)}`);
+  }
+
+  return res?.Ok ?? res;
+}
+
 export async function getBalance(tokenId, principal, useCache = true) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);

@@ -202,19 +202,30 @@ createRoot(document.getElementById("root")).render(
     <NProgressRouter />
     <AuthProvider canisters={{ token, backend, wallet, fradium_ledger, icp_ledger, fradium_index, icp_index, ckbtc_ledger, ckbtc_index, ckbtc_minter, ckbtc_kyt, cketh_ledger, cketh_index }}>
       <AnimatedRoutes />
-      <Toaster
-        position="bottom-center"
-        toastOptions={{
-          duration: 2000,
-          style: {
-            background: "#23272F",
-            color: "#B0B6BE",
-            border: "1px solid #393E4B",
-            borderRadius: "8px",
-          },
-        }}
-      />
     </AuthProvider>
+    <Toaster
+      position="bottom-center"
+      containerStyle={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 50,
+        pointerEvents: "none",
+        zIndex: 99999,
+      }}
+      toastOptions={{
+        duration: 2000,
+        style: {
+          background: "#23272F",
+          color: "#B0B6BE",
+          border: "1px solid #393E4B",
+          borderRadius: "8px",
+          zIndex: 99999,
+          pointerEvents: "auto",
+        },
+      }}
+    />
     <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
   </BrowserRouter>
 );

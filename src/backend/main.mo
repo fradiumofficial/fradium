@@ -36,11 +36,11 @@ persistent actor Fradium {
   // - BTC -> wallet canister (native Bitcoin via threshold ECDSA)
   // - ETH -> wallet canister (native Ethereum via threshold ECDSA)
   // - SOL -> wallet canister (native Solana via Ed25519)
-  transient let FradiumLedgerForEscrow : EscrowModule.TokenCanisterInterface = FradiumLedgerOriginal;
-  transient let FradiumFeeLedgerForEscrow : EscrowModule.FradiumLedgerInterface = FradiumLedgerOriginal;
-  transient let IcpLedgerForEscrow : EscrowModule.TokenCanisterInterface = IcpLedgerOriginal;
-  transient let CkbtcLedgerForEscrow : EscrowModule.TokenCanisterInterface = CkbtcLedgerOriginal;
-  transient let CkethLedgerForEscrow : EscrowModule.TokenCanisterInterface = CkethLedgerOriginal;
+  transient let FradiumLedgerForEscrow : EscrowModule.TokenCanisterInterface = actor (Principal.toText(Principal.fromActor(FradiumLedgerOriginal)));
+  transient let FradiumFeeLedgerForEscrow : EscrowModule.FradiumLedgerInterface = actor (Principal.toText(Principal.fromActor(FradiumLedgerOriginal)));
+  transient let IcpLedgerForEscrow : EscrowModule.TokenCanisterInterface = actor (Principal.toText(Principal.fromActor(IcpLedgerOriginal)));
+  transient let CkbtcLedgerForEscrow : EscrowModule.TokenCanisterInterface = actor (Principal.toText(Principal.fromActor(CkbtcLedgerOriginal)));
+  transient let CkethLedgerForEscrow : EscrowModule.TokenCanisterInterface = actor (Principal.toText(Principal.fromActor(CkethLedgerOriginal)));
   // Note: Wallet canister is optional for native coin support
   // If not provided, only wrapped tokens (ckBTC, ckETH) will work
   // Cast wallet canister to compatible interface
@@ -193,6 +193,21 @@ persistent actor Fradium {
   // Join escrow (counterparty)
   public shared({ caller }) func join_escrow(params : EscrowTypes.AcceptEscrowParams) : async Types.Result<EscrowTypes.EscrowId, Text> {
     return await escrowModule.join_escrow(caller, params);
+  };
+
+  // Mark deposit after sending funds to escrow subaccount
+  public shared({ caller }) func mark_deposit(escrow_id : EscrowTypes.EscrowId) : async Types.Result<Text, Text> {
+    return await escrowModule.mark_deposit(caller, escrow_id);
+  };
+
+  // Release escrow after both deposits are done
+  public shared({ caller }) func release_escrow(escrow_id : EscrowTypes.EscrowId) : async Types.Result<Text, Text> {
+    return await escrowModule.release_escrow(caller, escrow_id);
+  };
+
+  // Get deposit account (owner + subaccount) for either side ("from" or "to")
+  public query func get_deposit_account(escrow_id : EscrowTypes.EscrowId, side : Text) : async { owner : Principal; sub : ?Blob } {
+    return escrowModule.get_deposit_account(escrow_id, side);
   };
 
   // ===== ADMIN FUNCTIONS (ADMIN MODULE) =====

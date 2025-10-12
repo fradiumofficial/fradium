@@ -186,7 +186,9 @@ export default function MyEscrowPage() {
         const pendingNormalized = receivedRes.items
           .filter((e) => {
             const state = normalizeState(e.state);
-            return state === "AwaitingAccept"; // Only pending invitations
+            const expiresAt = new Date(Number(e.expires_at) / 1000000);
+            const isExpired = Date.now() >= expiresAt.getTime();
+            return state === "AwaitingAccept" && !isExpired; // Only pending invitations that haven't expired
           })
           .map((e) => ({
             ...e,

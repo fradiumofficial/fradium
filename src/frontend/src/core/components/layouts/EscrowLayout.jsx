@@ -286,7 +286,10 @@ function EscrowLayoutContent() {
         // Find escrows where current user is the recipient and state is AwaitingAccept
         const invitations = res.items.filter((escrow) => {
           const state = variantName(escrow.state);
-          return state === "AwaitingAccept"; // Only pending invitations
+          const expiresAt = new Date(Number(escrow.expires_at) / 1000000);
+          const isExpired = Date.now() >= expiresAt.getTime();
+          
+          return state === "AwaitingAccept" && !isExpired; // Only pending invitations that haven't expired
         });
 
         if (invitations.length > 0) {

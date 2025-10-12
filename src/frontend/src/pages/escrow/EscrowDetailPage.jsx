@@ -4,13 +4,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { backend } from "declarations/backend";
 import { Copy, Clock, User, ArrowRightLeft, ExternalLink, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { formatAmount } from "@/core/lib/tokenUtils";
+import { formatAmount, sendIcrcToAccountRaw } from "@/core/lib/tokenUtils";
 import { formatDate } from "@/core/lib/dateUtils";
 import { copyToClipboard } from "@/core/lib/clipboardUtils";
 import { useAuth } from "@/core/providers/AuthProvider";
 import JoinEscrowModal from "@/core/components/modals/JoinEscrowModal.jsx";
+import DepositConfirmationModal from "@/core/components/modals/DepositConfirmationModal.jsx";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import ButtonPurple from "@/core/components/ButtonPurple.jsx";
+import toast from "react-hot-toast";
 
 // Helper function to get token info
 function getTokenInfo(tokenType) {
@@ -28,7 +30,14 @@ function getTokenInfo(tokenType) {
 }
 
 // Helper function to get escrow state color and text
-function getEscrowStateInfo(state) {
+function getEscrowStateInfo(state, escrow = null) {
+  // Check if escrow is expired (no one accepted/joined)
+  const isEscrowExpired = state === "AwaitingAccept" && escrow && Date.now() >= new Date(Number(escrow.expires_at) / 1000000).getTime();
+
+  if (isEscrowExpired) {
+    return { color: "bg-orange-500/20 text-orange-400", text: "Expired", icon: AlertCircle };
+  }
+
   switch (state) {
     case "AwaitingAccept":
       return { color: "bg-blue-500/20 text-blue-400", text: "Open", icon: AlertCircle };
@@ -99,6 +108,8 @@ const MilestoneItem = ({ title, description, status, isLast = false }) => {
         return <div className="w-5 h-5 border-2 border-[#7C72FE] rounded-full animate-pulse" />;
       case "pending":
         return <div className="w-5 h-5 border-2 border-white/20 rounded-full" />;
+      case "expired":
+        return <XCircle className="w-5 h-5 text-red-400" />;
       default:
         return <div className="w-5 h-5 border-2 border-white/20 rounded-full" />;
     }
@@ -112,6 +123,8 @@ const MilestoneItem = ({ title, description, status, isLast = false }) => {
         return "text-[#7C72FE]";
       case "pending":
         return "text-white/60";
+      case "expired":
+        return "text-red-400";
       default:
         return "text-white/60";
     }
@@ -143,6 +156,9 @@ export default function EscrowDetailPage() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [showDepositConfirmation, setShowDepositConfirmation] = useState(false);
+  const [depositData, setDepositData] = useState(null);
 
   // Helpers: normalize Candid variants and optionals
   const variantName = (v) => (v && typeof v === "object" ? Object.keys(v)[0] : v);
@@ -234,6 +250,106 @@ export default function EscrowDetailPage() {
     }
   };
 
+  // Handle deposit confirmation
+  const handleConfirmDeposit = async () => {
+    if (!depositData) return;
+
+    try {
+      setIsDepositing(true);
+
+      // Step 1: Get deposit account
+      const res = await backend.get_deposit_account(escrow.escrow_id, depositData.side);
+      const ownerText = res.owner.toText ? res.owner.toText() : String(res.owner);
+      const sub = Array.isArray(res.sub) && res.sub.length > 0 ? res.sub[0] : undefined;
+
+      // Step 2: Send deposit amount to escrow
+      await sendIcrcToAccountRaw(depositData.tokenInfo.symbol, ownerText, sub, depositData.amount);
+
+      // Step 3: Approve FRADIUM fee allowance for escrow canister
+      const { fradium_ledger } = await import("declarations/fradium_ledger");
+      const { Principal } = await import("@dfinity/principal");
+
+      // Get escrow canister principal from the deposit account response
+      const escrowPrincipal = res.owner;
+
+      // Compute required allowance = escrow fee (10_000) + FRADIUM transfer fee
+      let fradiumTransferFee = 0n;
+      try {
+        if (typeof fradium_ledger.icrc1_fee === "function") {
+          const f = await fradium_ledger.icrc1_fee();
+          fradiumTransferFee = typeof f === "bigint" ? f : BigInt(f);
+        }
+      } catch (_e) {
+        fradiumTransferFee = 0n;
+      }
+
+      const escrowFee = 10000n; // 0.0001 FRADIUM in e8s
+      const approveAmount = escrowFee + fradiumTransferFee;
+
+      const approveResult = await fradium_ledger.icrc2_approve({
+        from_subaccount: [],
+        spender: { owner: escrowPrincipal, subaccount: [] },
+        amount: approveAmount,
+        expires_at: [],
+        expected_allowance: [],
+        fee: [],
+        memo: [],
+        created_at_time: [],
+      });
+
+      if (approveResult.Err) {
+        throw new Error(`Failed to approve FRADIUM fee: ${JSON.stringify(approveResult.Err)}`);
+      }
+
+      // Step 4: Mark deposit (this will collect the fee)
+      const md = await backend.mark_deposit(escrow.escrow_id);
+      if (md?.Err) {
+        console.error("mark_deposit error:", md.Err);
+        throw new Error(md.Err);
+      }
+
+      // Success feedback
+      toast.success("Deposit successful! Your tokens have been locked in escrow.");
+
+      await fetchEscrowDetails();
+      setShowDepositConfirmation(false);
+      setDepositData(null);
+    } catch (e) {
+      console.error("Deposit failed:", e);
+
+      // Parse error message and show appropriate toast
+      const errorMessage = e.message || e.toString();
+
+      if (errorMessage.includes("InsufficientFunds")) {
+        if (errorMessage.includes("balance")) {
+          toast.error(`Insufficient ${depositData.tokenInfo.symbol} balance. Please check your wallet.`);
+        } else {
+          toast.error("Insufficient funds for deposit. Please check your balance.");
+        }
+      } else if (errorMessage.includes("InsufficientAllowance")) {
+        toast.error("Insufficient FRADIUM allowance for fee. Please approve more FRADIUM.");
+      } else if (errorMessage.includes("Failed to approve FRADIUM fee")) {
+        toast.error("Failed to approve FRADIUM fee. Please ensure you have enough FRADIUM balance.");
+      } else if (errorMessage.includes("Deposit window expired")) {
+        toast.error("Deposit window has expired. Please create a new escrow.");
+      } else if (errorMessage.includes("Escrow is not in deposit phase")) {
+        toast.error("Escrow is not in deposit phase. Please check the escrow status.");
+      } else if (errorMessage.includes("Deposit not detected")) {
+        toast.error("Deposit not detected. Please ensure the transfer was successful.");
+      } else if (errorMessage.includes("Failed to collect escrow fee")) {
+        toast.error("Failed to collect escrow fee. Please ensure you have enough FRADIUM balance and allowance.");
+      } else if (errorMessage.includes("ICRC transfer failed")) {
+        toast.error("Token transfer failed. Please check your balance and try again.");
+      } else if (errorMessage.includes("Network error") || errorMessage.includes("fetch")) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(`Deposit failed: ${errorMessage}`);
+      }
+    } finally {
+      setIsDepositing(false);
+    }
+  };
+
   if (loading) {
     return (
       <motion.div className="flex flex-col gap-8 w-full max-w-4xl mx-auto px-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
@@ -278,10 +394,15 @@ export default function EscrowDetailPage() {
   const tokenToSymbol = (escrow.token_to && Object.keys(escrow.token_to)[0]) || escrow._token_to;
   const tokenFromInfo = getTokenInfo(tokenFromSymbol);
   const tokenToInfo = getTokenInfo(tokenToSymbol);
-  const stateInfo = getEscrowStateInfo((escrow.state && Object.keys(escrow.state)[0]) || escrow._state);
+  const stateInfo = getEscrowStateInfo((escrow.state && Object.keys(escrow.state)[0]) || escrow._state, escrow);
 
+  // Use deposit_expires_at for Pending state, otherwise use expires_at
+  const depositExpiresAt = escrow.deposit_expires_at ? new Date(Number(escrow.deposit_expires_at) / 1000000) : null;
   const expiresAt = new Date(Number(escrow.expires_at) / 1000000);
-  const timeLeft = expiresAt.getTime() - currentTime;
+
+  // For Pending state, use deposit expiration time, otherwise use escrow expiration
+  const targetTime = stateInfo.text === "Pending" && depositExpiresAt ? depositExpiresAt : expiresAt;
+  const timeLeft = targetTime.getTime() - currentTime;
   const hoursLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60)));
   const minutesLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)));
   const secondsLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60)) / 1000));
@@ -289,12 +410,19 @@ export default function EscrowDetailPage() {
   const myPrincipal = identity?.getPrincipal?.().toText?.();
   const senderText = escrow.sender?.toText?.() || escrow.sender?.toString?.();
   const isMine = !!(myPrincipal && senderText && myPrincipal === senderText);
-  const expired = currentTime >= expiresAt.getTime();
+  const expired = currentTime >= targetTime.getTime();
   const canJoin = stateInfo.text === "Open" && !isMine && !expired;
+  const inDepositPhase = stateInfo.text === "Pending";
 
   // Determine milestone status
   const getMilestoneStatus = () => {
     const state = (escrow.state && Object.keys(escrow.state)[0]) || escrow._state;
+    const isDepositExpired = stateInfo.text === "Pending" && expired;
+
+    if (isDepositExpired) {
+      return { created: "completed", accepted: "completed", locked: "pending", completed: "expired" };
+    }
+
     switch (state) {
       case "AwaitingAccept":
         return { created: "completed", accepted: "current", locked: "pending", completed: "pending" };
@@ -352,7 +480,7 @@ export default function EscrowDetailPage() {
             ) : isMine ? (
               <div className="text-center py-2 px-3 text-white/60 text-sm">Your Trade</div>
             ) : expired ? (
-              <div className="text-center py-2 px-3 text-red-400 text-sm">Expired</div>
+              <div className="text-center py-2 px-3 text-red-400 text-sm">{stateInfo.text === "Pending" ? "Deposit Expired" : "Expired"}</div>
             ) : stateInfo.text !== "Open" ? (
               <div className="text-center py-2 px-3 text-white/60 text-sm">Not Available</div>
             ) : null}
@@ -360,16 +488,19 @@ export default function EscrowDetailPage() {
         </div>
       </motion.div>
 
-      {/* Time Left Alert */}
-      {!expired && stateInfo.text === "Open" && (
+      {/* Time Left / Deposit Alert */}
+      {!expired && (stateInfo.text === "Open" || stateInfo.text === "Pending") && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }} className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
               <Clock className="w-3 h-3 text-yellow-400" />
             </div>
             <div className="flex-1">
-              <div className="text-yellow-400 text-sm font-medium">Trade must be completed within {formatTimeLeft()}</div>
-              <div className="text-yellow-300/80 text-xs mt-1">This trade will expire automatically if not completed in time</div>
+              <div className="text-yellow-400 text-sm font-medium">
+                {stateInfo.text === "Pending" ? "Both parties must deposit within " : "Trade must be completed within "}
+                {formatTimeLeft()}
+              </div>
+              <div className="text-yellow-300/80 text-xs mt-1">{stateInfo.text === "Pending" ? "Please deposit the required amount to escrow. After both deposits, escrow will auto-release." : "This trade will expire automatically if not completed in time"}</div>
             </div>
           </div>
         </motion.div>
@@ -529,7 +660,7 @@ export default function EscrowDetailPage() {
               <MilestoneItem title="Trade Created" description={formatDate(escrow.created_at)} status={milestoneStatus.created} />
               <MilestoneItem title="Trade Accepted" description={escrow.accepted_at ? formatDate(escrow.accepted_at) : "Waiting for acceptance"} status={milestoneStatus.accepted} />
               <MilestoneItem title="Tokens Locked" description="Both parties' tokens are locked in escrow" status={milestoneStatus.locked} />
-              <MilestoneItem title="Trade Completed" description={escrow.released_at ? formatDate(escrow.released_at) : "Waiting for completion"} status={milestoneStatus.completed} isLast={true} />
+              <MilestoneItem title={milestoneStatus.completed === "expired" ? "Escrow Failed" : "Trade Completed"} description={milestoneStatus.completed === "expired" ? "Escrow not fulfilled due to expired deposit window" : escrow.released_at ? formatDate(escrow.released_at) : "Waiting for completion"} status={milestoneStatus.completed} isLast={true} />
             </div>
           </motion.div>
 
@@ -544,7 +675,7 @@ export default function EscrowDetailPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/60 text-sm">Expires</span>
-                <span className="text-white text-sm">{formatDate(escrow.expires_at)}</span>
+                <span className="text-white text-sm">{formatDate(targetTime.getTime() * 1000000)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/60 text-sm">Time Left</span>
@@ -552,11 +683,88 @@ export default function EscrowDetailPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Actions */}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6">
+            <h2 className="text-white text-lg font-semibold mb-4">Actions</h2>
+
+            <div className="space-y-3">
+              {(() => {
+                const isDepositExpired = stateInfo.text === "Pending" && expired;
+
+                if (isDepositExpired) {
+                  return <div className="text-center py-3 text-red-400 text-sm">Deposit window has expired. Escrow not fulfilled.</div>;
+                }
+
+                if (canJoin) {
+                  return (
+                    <ButtonGreen fullWidth onClick={() => setShowJoinModal(true)} size="md" textSize="text-base" fontWeight="medium">
+                      Join Trade
+                    </ButtonGreen>
+                  );
+                } else if (inDepositPhase) {
+                  const side = isMine ? "from" : "to";
+                  const sym = isMine ? tokenFromInfo.symbol : tokenToInfo.symbol;
+                  const amt = isMine ? escrow.amount_from : escrow.amount_to;
+                  // Check if current user has already deposited
+                  const userAlreadyDeposited = isMine ? escrow.deposit_from_done : escrow.deposit_to_done;
+                  const counterpartyDeposited = isMine ? escrow.deposit_to_done : escrow.deposit_from_done;
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="text-white/70 text-sm">{userAlreadyDeposited ? "You have deposited. Waiting for counterparty to deposit." : `Please deposit ${formatEscrowAmount(sym, amt)} to the escrow canister.`}</div>
+                      {!userAlreadyDeposited && (
+                        <ButtonGreen
+                          fullWidth
+                          disabled={isDepositing}
+                          onClick={() => {
+                            const tokenInfo = isMine ? tokenFromInfo : tokenToInfo;
+                            setDepositData({
+                              tokenInfo,
+                              amount: amt,
+                              escrowId: escrow.escrow_id,
+                              side,
+                            });
+                            setShowDepositConfirmation(true);
+                          }}
+                          size="md"
+                          textSize="text-base"
+                          fontWeight="medium">
+                          {isDepositing ? "Processing..." : "Deposit Now"}
+                        </ButtonGreen>
+                      )}
+                    </div>
+                  );
+                } else if (isMine) {
+                  return <div className="text-center py-3 text-white/60 text-sm">This is your trade</div>;
+                } else if (expired) {
+                  return <div className="text-center py-3 text-red-400 text-sm">Trade has expired</div>;
+                } else if (stateInfo.text !== "Open") {
+                  return <div className="text-center py-3 text-white/60 text-sm">Trade is not available for joining</div>;
+                }
+                return null;
+              })()}
+            </div>
+          </motion.div>
         </div>
       </div>
 
       {/* Join Escrow Modal */}
       <JoinEscrowModal isOpen={showJoinModal} onClose={() => setShowJoinModal(false)} escrow={escrow} onConfirm={handleJoinEscrow} isJoining={isJoining} />
+
+      {/* Deposit Confirmation Modal */}
+      <DepositConfirmationModal
+        isOpen={showDepositConfirmation}
+        onClose={() => {
+          setShowDepositConfirmation(false);
+          setDepositData(null);
+        }}
+        onConfirm={handleConfirmDeposit}
+        tokenInfo={depositData?.tokenInfo}
+        amount={depositData?.amount}
+        escrowId={depositData?.escrowId}
+        isDepositing={isDepositing}
+      />
     </motion.div>
   );
 }
