@@ -16,6 +16,7 @@ import { useWallet } from "@/core/providers/WalletProvider";
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
 import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal";
 import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal";
+import SwapTokenModal from "@/core/components/modals/SwapTokenModal";
 
 // Token Item Card Component
 import TokenItemCard from "@/core/components/cards/TokenItemCard";
@@ -27,6 +28,7 @@ export default function AssetsPage() {
   // Modal States
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
+  const [showSwapModal, setShowSwapModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
 
   // Analyze Address States
@@ -62,12 +64,20 @@ export default function AssetsPage() {
     setShowReceive(true);
   };
 
+  const handleSwapClick = () => {
+    setShowSwapModal(true);
+  };
+
   const handleCloseSendModal = () => {
     setShowSendModal(false);
   };
 
   const handleCloseReceive = () => {
     setShowReceive(false);
+  };
+
+  const handleCloseSwapModal = () => {
+    setShowSwapModal(false);
   };
 
   const handleTokenClick = (token) => {
@@ -306,34 +316,51 @@ export default function AssetsPage() {
           </div>
 
           {/* Actions */}
-          <div className="relative z-10 mt-6 md:mt-7 flex items-center justify-center gap-3 md:gap-4">
+          <div className="relative z-10 mt-6 md:mt-7 flex items-center justify-center gap-2 md:gap-3">
             {/* Receive */}
             <div
               onClick={handleReceiveClick}
-              className="group relative flex-1 flex items-center justify-center gap-3 md:gap-3.5 py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-4 md:py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
               style={{
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 backdropFilter: "blur(20px)",
                 transition: "all 200ms ease-in-out",
               }}>
-              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/qr-icon.svg" alt="Receive" className="w-5 h-5 md:w-5 md:h-5" />
-              <span className="text-white text-sm font-medium">Receive</span>
-              <svg className="ml-1.5 w-5 h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/qr-icon.svg" alt="Receive" className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="text-white text-xs md:text-sm font-medium">Receive</span>
+              <svg className="ml-1 w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            {/* Swap */}
+            <div
+              onClick={handleSwapClick}
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-4 md:py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              style={{
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(20px)",
+                transition: "all 200ms ease-in-out",
+              }}>
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 17l4 4m0-4l-4 4M8 7l-4-4m0 4l4-4M12 3v18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="text-white text-xs md:text-sm font-medium">Swap</span>
+              <svg className="ml-1 w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             {/* Send */}
             <div
               onClick={handleSendClick}
-              className="group relative flex-1 flex items-center justify-center gap-3 md:gap-3.5 py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-4 md:py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
               style={{
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 backdropFilter: "blur(20px)",
                 transition: "all 200ms ease-in-out",
               }}>
-              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/send-icon.svg" alt="Send" className="w-5 h-5 md:w-5 md:h-5" />
-              <span className="text-white text-sm font-medium">Send</span>
-              <svg className="ml-1.5 w-5 h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/send-icon.svg" alt="Send" className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="text-white text-xs md:text-sm font-medium">Send</span>
+              <svg className="ml-1 w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
@@ -457,6 +484,9 @@ export default function AssetsPage() {
 
       {/* Modal Receive Address */}
       <ReceiveAddressModal isOpen={showReceive} onClose={handleCloseReceive} />
+
+      {/* Modal Swap Token */}
+      <SwapTokenModal isOpen={showSwapModal} onClose={handleCloseSwapModal} />
 
       {/* Modal Analyze Address Input */}
       {showAnalyzeModal && (
