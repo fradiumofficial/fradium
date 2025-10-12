@@ -10,6 +10,7 @@ import { copyToClipboard } from "@/core/lib/clipboardUtils";
 import { useAuth } from "@/core/providers/AuthProvider";
 import JoinEscrowModal from "@/core/components/modals/JoinEscrowModal.jsx";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import ButtonPurple from "@/core/components/ButtonPurple.jsx";
 
 // Helper function to get token info
 function getTokenInfo(tokenType) {
@@ -95,7 +96,7 @@ const MilestoneItem = ({ title, description, status, isLast = false }) => {
       case "completed":
         return <CheckCircle className="w-5 h-5 text-green-400" />;
       case "current":
-        return <div className="w-5 h-5 border-2 border-[#9BE4A0] rounded-full animate-pulse" />;
+        return <div className="w-5 h-5 border-2 border-[#7C72FE] rounded-full animate-pulse" />;
       case "pending":
         return <div className="w-5 h-5 border-2 border-white/20 rounded-full" />;
       default:
@@ -108,7 +109,7 @@ const MilestoneItem = ({ title, description, status, isLast = false }) => {
       case "completed":
         return "text-green-400";
       case "current":
-        return "text-[#9BE4A0]";
+        return "text-[#7C72FE]";
       case "pending":
         return "text-white/60";
       default:
@@ -141,6 +142,7 @@ export default function EscrowDetailPage() {
   const [copiedAddress, setCopiedAddress] = useState(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   // Helpers: normalize Candid variants and optionals
   const variantName = (v) => (v && typeof v === "object" ? Object.keys(v)[0] : v);
@@ -192,6 +194,15 @@ export default function EscrowDetailPage() {
       fetchEscrowDetails();
     }
   }, [escrowId, isAuthenticated]);
+
+  // Update time every second for real-time countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Handle copy address
   const handleCopyAddress = (address) => {
@@ -255,9 +266,9 @@ export default function EscrowDetailPage() {
             <XCircle className="w-8 h-8 text-red-400" />
           </div>
           <div className="text-red-400 text-lg font-medium">{error || "Escrow not found"}</div>
-          <button onClick={() => navigate("/escrow/list")} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#9BE4A0] rounded-lg text-white text-sm transition-colors">
+          <ButtonPurple onClick={() => navigate("/escrow/list")} size="sm" textSize="text-sm" fontWeight="medium">
             Back to P2P Trade
-          </button>
+          </ButtonPurple>
         </div>
       </motion.div>
     );
@@ -270,14 +281,15 @@ export default function EscrowDetailPage() {
   const stateInfo = getEscrowStateInfo((escrow.state && Object.keys(escrow.state)[0]) || escrow._state);
 
   const expiresAt = new Date(Number(escrow.expires_at) / 1000000);
-  const timeLeft = expiresAt.getTime() - Date.now();
+  const timeLeft = expiresAt.getTime() - currentTime;
   const hoursLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60)));
   const minutesLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)));
+  const secondsLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60)) / 1000));
 
   const myPrincipal = identity?.getPrincipal?.().toText?.();
   const senderText = escrow.sender?.toText?.() || escrow.sender?.toString?.();
   const isMine = !!(myPrincipal && senderText && myPrincipal === senderText);
-  const expired = Date.now() >= expiresAt.getTime();
+  const expired = currentTime >= expiresAt.getTime();
   const canJoin = stateInfo.text === "Open" && !isMine && !expired;
 
   // Determine milestone status
@@ -299,6 +311,18 @@ export default function EscrowDetailPage() {
 
   const milestoneStatus = getMilestoneStatus();
 
+  // Format time left for display
+  const formatTimeLeft = () => {
+    if (expired) return "Expired";
+    if (hoursLeft > 0) {
+      return `${hoursLeft}h ${minutesLeft}m ${secondsLeft}s`;
+    } else if (minutesLeft > 0) {
+      return `${minutesLeft}m ${secondsLeft}s`;
+    } else {
+      return `${secondsLeft}s`;
+    }
+  };
+
   return (
     <motion.div className="flex flex-col gap-8 w-full max-w-4xl mx-auto px-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
       {/* Header Section */}
@@ -313,17 +337,48 @@ export default function EscrowDetailPage() {
             <h1 className="text-white text-2xl font-semibold">Trade Details</h1>
             <p className="text-white/60 text-sm">Escrow ID: {escrow.escrow_id.toString()}</p>
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs flex items-center gap-2 ${stateInfo.color}`}>
-            <stateInfo.icon className="w-3 h-3" />
-            {stateInfo.text}
+          <div className="flex items-center gap-3">
+            {/* Status Badge */}
+            <div className={`px-3 py-1 rounded-full text-xs flex items-center gap-2 ${stateInfo.color}`}>
+              <stateInfo.icon className="w-3 h-3" />
+              {stateInfo.text}
+            </div>
+
+            {/* Actions Button */}
+            {canJoin ? (
+              <ButtonGreen onClick={() => setShowJoinModal(true)} size="sm" textSize="text-sm" fontWeight="medium">
+                Join Trade
+              </ButtonGreen>
+            ) : isMine ? (
+              <div className="text-center py-2 px-3 text-white/60 text-sm">Your Trade</div>
+            ) : expired ? (
+              <div className="text-center py-2 px-3 text-red-400 text-sm">Expired</div>
+            ) : stateInfo.text !== "Open" ? (
+              <div className="text-center py-2 px-3 text-white/60 text-sm">Not Available</div>
+            ) : null}
           </div>
         </div>
       </motion.div>
 
+      {/* Time Left Alert */}
+      {!expired && stateInfo.text === "Open" && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }} className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-3 h-3 text-yellow-400" />
+            </div>
+            <div className="flex-1">
+              <div className="text-yellow-400 text-sm font-medium">Trade must be completed within {formatTimeLeft()}</div>
+              <div className="text-yellow-300/80 text-xs mt-1">This trade will expire automatically if not completed in time</div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Left Column - Trade Info */}
-        <div className="space-y-6">
+        <div className="space-y-6 flex flex-col h-full">
           {/* Trade Overview */}
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6">
             <h2 className="text-white text-lg font-semibold mb-4">Trade Overview</h2>
@@ -331,23 +386,59 @@ export default function EscrowDetailPage() {
             <div className="space-y-4">
               {/* Trade Amounts */}
               <div className="flex items-center justify-center gap-4 py-4">
-                <div className="flex flex-col items-center gap-2">
-                  <img src={tokenFromInfo.imageUrl} alt={tokenFromInfo.symbol} className="w-12 h-12 rounded-full" />
-                  <div className="text-center">
-                    <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenFromInfo.symbol, escrow.amount_from)}</div>
-                    <div className="text-white/60 text-xs">{tokenFromInfo.name}</div>
-                  </div>
-                </div>
+                {(() => {
+                  if (isMine) {
+                    // Jika user adalah pembuat escrow, dia memberikan token_from dan menerima token_to
+                    return (
+                      <>
+                        <div className="flex flex-col items-center gap-2">
+                          <img src={tokenFromInfo.imageUrl} alt={tokenFromInfo.symbol} className="w-12 h-12 rounded-full" />
+                          <div className="text-center">
+                            <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenFromInfo.symbol, escrow.amount_from)}</div>
+                            <div className="text-white/60 text-xs">{tokenFromInfo.name}</div>
+                            <div className="text-[#7C72FE] text-xs font-medium">You Give</div>
+                          </div>
+                        </div>
 
-                <ArrowRightLeft className="w-6 h-6 text-white/50" />
+                        <ArrowRightLeft className="w-6 h-6 text-white/50" />
 
-                <div className="flex flex-col items-center gap-2">
-                  <img src={tokenToInfo.imageUrl} alt={tokenToInfo.symbol} className="w-12 h-12 rounded-full" />
-                  <div className="text-center">
-                    <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenToInfo.symbol, escrow.amount_to)}</div>
-                    <div className="text-white/60 text-xs">{tokenToInfo.name}</div>
-                  </div>
-                </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <img src={tokenToInfo.imageUrl} alt={tokenToInfo.symbol} className="w-12 h-12 rounded-full" />
+                          <div className="text-center">
+                            <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenToInfo.symbol, escrow.amount_to)}</div>
+                            <div className="text-white/60 text-xs">{tokenToInfo.name}</div>
+                            <div className="text-[#7C72FE] text-xs font-medium">You Receive</div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  } else {
+                    // Jika user bukan pembuat escrow, dia memberikan token_to dan menerima token_from
+                    return (
+                      <>
+                        <div className="flex flex-col items-center gap-2">
+                          <img src={tokenToInfo.imageUrl} alt={tokenToInfo.symbol} className="w-12 h-12 rounded-full" />
+                          <div className="text-center">
+                            <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenToInfo.symbol, escrow.amount_to)}</div>
+                            <div className="text-white/60 text-xs">{tokenToInfo.name}</div>
+                            <div className="text-[#7C72FE] text-xs font-medium">You Give</div>
+                          </div>
+                        </div>
+
+                        <ArrowRightLeft className="w-6 h-6 text-white/50" />
+
+                        <div className="flex flex-col items-center gap-2">
+                          <img src={tokenFromInfo.imageUrl} alt={tokenFromInfo.symbol} className="w-12 h-12 rounded-full" />
+                          <div className="text-center">
+                            <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenFromInfo.symbol, escrow.amount_from)}</div>
+                            <div className="text-white/60 text-xs">{tokenFromInfo.name}</div>
+                            <div className="text-[#7C72FE] text-xs font-medium">You Receive</div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  }
+                })()}
               </div>
 
               {/* Trade Type */}
@@ -367,7 +458,7 @@ export default function EscrowDetailPage() {
               <div className="space-y-2">
                 <div className="text-white/60 text-xs uppercase tracking-wide">Trader</div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 text-white text-sm font-mono bg-white/5 px-3 py-2 rounded-lg break-all">{escrow.sender.toString()}</div>
+                  <div className="flex-1 text-white text-sm font-mono break-all">{escrow.sender.toString()}</div>
                   <button onClick={() => handleCopyAddress(escrow.sender.toString())} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors group" title="Copy address">
                     {copiedAddress === escrow.sender.toString() ? (
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-green-400">
@@ -388,7 +479,7 @@ export default function EscrowDetailPage() {
                     <div className="space-y-2">
                       <div className="text-white/60 text-xs uppercase tracking-wide">Recipient</div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 text-white text-sm font-mono bg-white/5 px-3 py-2 rounded-lg break-all">{escrow.recipient.toString()}</div>
+                        <div className="flex-1 text-white text-sm font-mono break-all">{escrow.recipient.toString()}</div>
                         <button onClick={() => handleCopyAddress(escrow.recipient.toString())} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors group" title="Copy address">
                           {copiedAddress === escrow.recipient.toString() ? (
                             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-green-400">
@@ -407,7 +498,7 @@ export default function EscrowDetailPage() {
                     <div className="space-y-2">
                       <div className="text-white/60 text-xs uppercase tracking-wide">Recipient</div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 text-white text-sm font-mono bg-white/5 px-3 py-2 rounded-lg break-all">{escrow._recipient.toString?.() || String(escrow._recipient)}</div>
+                        <div className="flex-1 text-white text-sm font-mono break-all">{escrow._recipient.toString?.() || String(escrow._recipient)}</div>
                       </div>
                     </div>
                   )}
@@ -415,16 +506,21 @@ export default function EscrowDetailPage() {
           </motion.div>
 
           {/* Description */}
-          {escrow.description && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6">
+          {escrow.description ? (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6 flex-grow">
               <h2 className="text-white text-lg font-semibold mb-4">Description</h2>
-              <div className="text-white text-sm bg-white/5 px-3 py-2 rounded-lg">{escrow.description}</div>
+              <div className="text-white text-sm">{escrow.description}</div>
+            </motion.div>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6 flex-grow">
+              <h2 className="text-white text-lg font-semibold mb-4">Description</h2>
+              <div className="text-white/60 text-sm">No description provided</div>
             </motion.div>
           )}
         </div>
 
         {/* Right Column - Timeline & Actions */}
-        <div className="space-y-6">
+        <div className="space-y-6 flex flex-col h-full">
           {/* Timeline */}
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6">
             <h2 className="text-white text-lg font-semibold mb-4">Timeline</h2>
@@ -438,7 +534,7 @@ export default function EscrowDetailPage() {
           </motion.div>
 
           {/* Timing Info */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.15 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6">
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.15 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6 flex-grow">
             <h2 className="text-white text-lg font-semibold mb-4">Timing</h2>
 
             <div className="space-y-3">
@@ -452,31 +548,8 @@ export default function EscrowDetailPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/60 text-sm">Time Left</span>
-                <span className={`text-sm font-medium ${expired ? "text-red-400" : "text-white"}`}>{expired ? "Expired" : hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m` : `${minutesLeft}m`}</span>
+                <span className={`text-sm font-medium ${expired ? "text-red-400" : "text-white"}`}>{formatTimeLeft()}</span>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Actions */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }} className="rounded-xl bg-white/[0.02] border border-white/10 p-6">
-            <h2 className="text-white text-lg font-semibold mb-4">Actions</h2>
-
-            <div className="space-y-3">
-              {canJoin ? (
-                <ButtonGreen fullWidth onClick={() => setShowJoinModal(true)} size="md" textSize="text-base" fontWeight="medium">
-                  Join Trade
-                </ButtonGreen>
-              ) : isMine ? (
-                <div className="text-center py-3 text-white/60 text-sm">This is your trade</div>
-              ) : expired ? (
-                <div className="text-center py-3 text-red-400 text-sm">Trade has expired</div>
-              ) : stateInfo.text !== "Open" ? (
-                <div className="text-center py-3 text-white/60 text-sm">Trade is not available for joining</div>
-              ) : null}
-
-              <button onClick={() => navigate("/escrow/list")} className="w-full py-3 rounded-lg font-medium transition-colors bg-white/10 text-white hover:bg-white/20">
-                Back to P2P Trade
-              </button>
             </div>
           </motion.div>
         </div>

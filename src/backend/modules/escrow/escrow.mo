@@ -427,6 +427,35 @@ module {
       };
     };
 
+    // ===== RECEIVED ESCROWS PAGINATED =====
+    public func get_received_escrows_paginated(caller : Principal, offset : Nat, limit : Nat) : { items : [EscrowTypes.EscrowRecord]; total : Nat; offset : Nat; limit : Nat } {
+      // Collect and filter only escrows received by caller
+      let allEntries = Iter.toArray(escrowStore.entries());
+      let mine = Array.filter<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)>(allEntries, func(entry) {
+        switch (entry.1.recipient) {
+          case (?rcp) { rcp == caller };
+          case null { false };
+        }
+      });
+
+      // Sort by created_at desc
+      let sorted = Array.sort<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)>(mine, func(a, b) {
+        if (a.1.created_at > b.1.created_at) { #less } else if (a.1.created_at < b.1.created_at) { #greater } else { #equal }
+      });
+
+      let total = Array.size(sorted);
+      let start = Nat.min(offset, total);
+      let end = Nat.min(start + limit, total);
+      let page = Array.tabulate<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)>(end - start, func(i) { sorted[start + i] });
+
+      return {
+        items = Array.map<(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord), EscrowTypes.EscrowRecord>(page, func(t) { t.1 });
+        total = total;
+        offset = offset;
+        limit = limit;
+      };
+    };
+
     // ===== JOIN ESCROW =====
     public func join_escrow(caller : Principal, params : EscrowTypes.AcceptEscrowParams) : async ParentTypes.Result<EscrowTypes.EscrowId, Text> {
       if (Principal.isAnonymous(caller)) {

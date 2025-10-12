@@ -165,6 +165,11 @@ persistent actor Fradium {
     return escrowModule.get_received_escrows(caller);
   };
 
+  // Get escrows received by user with pagination
+  public shared({ caller }) func get_received_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat; offset : Nat; limit : Nat } {
+    return escrowModule.get_received_escrows_paginated(caller, offset, limit);
+  };
+
   // Get escrow statistics
   public query func get_escrow_stats() : async EscrowTypes.EscrowStats {
     return escrowModule.get_escrow_stats();

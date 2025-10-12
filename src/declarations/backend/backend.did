@@ -271,6 +271,13 @@ service : {
       total: nat;
     }) query;
   get_received_escrows: () -> (Result_2);
+  get_received_escrows_paginated: (offset: nat, limit: nat) ->
+   (record {
+      items: vec EscrowRecord;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
   get_report: (report_id: ReportId) -> (Result_4) query;
   get_reports: () -> (Result_3) query;
   get_sent_escrows: () -> (Result_2);

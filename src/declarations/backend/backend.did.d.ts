@@ -214,6 +214,15 @@ export interface _SERVICE {
     { 'total' : bigint, 'items' : Array<EscrowRecord> }
   >,
   'get_received_escrows' : ActorMethod<[], Result_2>,
+  'get_received_escrows_paginated' : ActorMethod<
+    [bigint, bigint],
+    {
+      'total' : bigint,
+      'offset' : bigint,
+      'limit' : bigint,
+      'items' : Array<EscrowRecord>,
+    }
+  >,
   'get_report' : ActorMethod<[ReportId], Result_4>,
   'get_reports' : ActorMethod<[], Result_3>,
   'get_sent_escrows' : ActorMethod<[], Result_2>,

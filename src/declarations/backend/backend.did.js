@@ -226,6 +226,18 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_received_escrows' : IDL.Func([], [Result_2], []),
+    'get_received_escrows_paginated' : IDL.Func(
+        [IDL.Nat, IDL.Nat],
+        [
+          IDL.Record({
+            'total' : IDL.Nat,
+            'offset' : IDL.Nat,
+            'limit' : IDL.Nat,
+            'items' : IDL.Vec(EscrowRecord),
+          }),
+        ],
+        [],
+      ),
     'get_report' : IDL.Func([ReportId], [Result_4], ['query']),
     'get_reports' : IDL.Func([], [Result_3], ['query']),
     'get_sent_escrows' : IDL.Func([], [Result_2], []),

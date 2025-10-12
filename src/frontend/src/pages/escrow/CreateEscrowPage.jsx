@@ -421,12 +421,8 @@ export default function CreateEscrowPage() {
 
       if (res?.Ok !== undefined) {
         toast.success(`Escrow created! ID: ${res.Ok}`);
-        // reset
-        setRecipient("");
-        setTokenId("FRADIUM");
-        setAmount("");
-        setDescription("");
-        setCurrentStep(1);
+        // Redirect to escrow detail page
+        navigate(`/escrow/detail/${res.Ok}`);
       } else {
         toast.error(res?.Err || "Failed to create escrow");
       }
@@ -445,7 +441,7 @@ export default function CreateEscrowPage() {
         return (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">You Give</label>
+              <label className="block text-white/90 text-sm font-medium mb-3">You Give</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <AnimatePresence initial={false}>
                   {tokenChoices.map((t, idx) => (
@@ -465,7 +461,7 @@ export default function CreateEscrowPage() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-300">Amount</label>
+                <label className="block text-white/90 text-sm font-medium">Amount</label>
               </div>
 
               <div className="rounded-full border border-white/10 pl-4 pr-2 py-2.5">
@@ -477,13 +473,13 @@ export default function CreateEscrowPage() {
                       setAmount(sanitizeAmountInput(e.target.value));
                       if (errors.amount) setErrors({ ...errors, amount: "" });
                     }}
-                    className="flex-1 bg-transparent text-white text-sm outline-none font-mono"
+                    className="flex-1 bg-transparent text-white text-sm outline-none font-mono placeholder:text-white/40"
                     placeholder="0.00"
                     step="any"
                     min="0"
                   />
                   {amount && (
-                    <button type="button" className="text-xs font-medium text-[#9BEB83] hover:text-white transition-colors" onClick={() => setAmount("")}>
+                    <button type="button" className="text-xs font-medium text-[#9BE4A0] hover:text-white transition-colors" onClick={() => setAmount("")}>
                       CLEAR
                     </button>
                   )}
@@ -504,7 +500,7 @@ export default function CreateEscrowPage() {
               {amount && Number(amount) > 0 && (
                 <motion.div key="you-receive-section" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-3">You Receive</label>
+                    <label className="block text-white/90 text-sm font-medium mb-3">You Receive</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <AnimatePresence initial={false}>
                         {tokenChoices
@@ -524,7 +520,7 @@ export default function CreateEscrowPage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-2 mt-5">
-                      <label className="block text-sm font-medium text-gray-300">Amount</label>
+                      <label className="block text-white/90 text-sm font-medium">Amount</label>
                       {/* Estimation and profitability */}
                       {estimatedReceive !== null && selectedTo && (
                         <div className="text-xs text-[#B0B6BE]">
@@ -541,13 +537,13 @@ export default function CreateEscrowPage() {
                             setAmountTo(sanitizeAmountInput(e.target.value));
                             if (errors.amountTo) setErrors({ ...errors, amountTo: "" });
                           }}
-                          className="flex-1 bg-transparent text-white text-sm outline-none font-mono"
+                          className="flex-1 bg-transparent text-white text-sm outline-none font-mono placeholder:text-white/40"
                           placeholder="0.00"
                           step="any"
                           min="0"
                         />
                         {amountTo && (
-                          <button type="button" className="text-xs font-medium text-[#9BEB83] hover:text-white transition-colors" onClick={() => setAmountTo("")}>
+                          <button type="button" className="text-xs font-medium text-[#9BE4A0] hover:text-white transition-colors" onClick={() => setAmountTo("")}>
                             CLEAR
                           </button>
                         )}
@@ -585,7 +581,7 @@ export default function CreateEscrowPage() {
         return (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-white/90 text-sm font-medium mb-2">
                 Recipient Principal <span className="text-gray-400">(Optional)</span>
               </label>
               <input
@@ -605,7 +601,7 @@ export default function CreateEscrowPage() {
 
             {/* Expire After (max 7 days) */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Expire After</label>
+              <label className="block text-white/90 text-sm font-medium mb-2">Expire After</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {EXPIRE_OPTIONS.map((opt) => (
                   <button key={opt.seconds} type="button" onClick={() => setExpireAfter(opt.seconds)} className={`px-3 py-2 rounded-lg border text-xs transition-colors ${expireAfter === opt.seconds ? "bg-white/10 border-[#9BE4A0] text-white" : "bg-white/5 border-white/10 text-[#B0B6BE] hover:bg-white/10 hover:text-white"}`}>
@@ -622,7 +618,7 @@ export default function CreateEscrowPage() {
         return (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-white/90 text-sm font-medium mb-2">
                 Description <span className="text-gray-400">(Optional)</span>
               </label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={500} className="w-full bg-white/5 border border-white/10 focus:bg-white/10 focus:border-[#9BE4A0] text-white rounded-xl px-4 py-3 outline-none placeholder:text-white/40 resize-none transition-colors" placeholder="Add a note about this payment (e.g., Invoice #123, Payment for services)" />

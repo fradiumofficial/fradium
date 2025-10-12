@@ -7,14 +7,129 @@ import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import { NETWORK_CONFIG } from "@/core/config/tokenConfig.js";
+import { backend } from "declarations/backend";
 // toast not used for copy feedbacks anymore
 import { motion, AnimatePresence } from "framer-motion";
+import { User, ArrowRightLeft, Wallet, History, PlusCircle, FileText, ChevronDown, Check, Eye, Copy, LogOut, Settings, X } from "lucide-react";
+import ButtonPurple from "@/core/components/ButtonPurple.jsx";
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
-import AIAssistantWidget from "@/core/components/assistant/AIAssistantWidget";
 import ManageNetworksModal from "../modals/ManageNetworksModal";
+import { SocialLinksSidebar, SocialLinksDropdown } from "@/core/components/common/SocialLinks.jsx";
 
 const MotionLink = motion(Link);
+
+// Trade Invitation Alert Component
+function TradeInvitationAlert({ invitation, onClose }) {
+  const navigate = useNavigate();
+
+  if (!invitation) return null;
+
+  const formatEscrowAmount = (tokenSymbol, nat) => {
+    const getDecimalsForToken = (symbol) => {
+      switch (symbol) {
+        case "ETH":
+        case "ckETH":
+          return 18;
+        case "SOL":
+          return 9;
+        case "ICP":
+        case "FRADIUM":
+        case "BTC":
+        case "ckBTC":
+        default:
+          return 8;
+      }
+    };
+
+    const formatNatToDecimal = (nat, decimals) => {
+      try {
+        const n = BigInt(nat ?? 0);
+        const d = Math.max(0, Number(decimals ?? 8));
+        const base = BigInt(10) ** BigInt(d);
+        const intPart = n / base;
+        const fracPart = n % base;
+        let fracStr = fracPart.toString().padStart(d, "0");
+        fracStr = fracStr.replace(/0+$/, "");
+        return fracStr.length ? `${intPart.toString()}.${fracStr}` : intPart.toString();
+      } catch (_e) {
+        return String(nat ?? 0);
+      }
+    };
+
+    const sym = tokenSymbol;
+    const dec = getDecimalsForToken(sym);
+    return `${formatNatToDecimal(nat, dec)} ${sym}`;
+  };
+
+  const getTokenInfo = (tokenType) => {
+    const tokenMap = {
+      FRADIUM: { symbol: "FRADIUM", name: "Fradium", imageUrl: "/assets/images/coins/fradium.webp" },
+      ICP: { symbol: "ICP", name: "Internet Computer", imageUrl: "/assets/images/coins/icp.webp" },
+      ckBTC: { symbol: "ckBTC", name: "Chain Key Bitcoin", imageUrl: "/assets/images/coins/ckbtc.webp" },
+      ckETH: { symbol: "ckETH", name: "Chain Key Ethereum", imageUrl: "/assets/images/coins/cketh.webp" },
+      BTC: { symbol: "BTC", name: "Bitcoin", imageUrl: "/assets/images/coins/bitcoin.webp" },
+      ETH: { symbol: "ETH", name: "Ethereum", imageUrl: "/assets/images/coins/ethereum.webp" },
+      SOL: { symbol: "SOL", name: "Solana", imageUrl: "/assets/images/coins/solana.webp" },
+    };
+    return tokenMap[tokenType] || { symbol: tokenType, name: tokenType, imageUrl: "/assets/images/coins/bitcoin.webp" };
+  };
+
+  const variantName = (v) => (v && typeof v === "object" ? Object.keys(v)[0] : v);
+  const tokenFromSymbol = variantName(invitation.token_from);
+  const tokenToSymbol = variantName(invitation.token_to);
+  const tokenFromInfo = getTokenInfo(tokenFromSymbol);
+  const tokenToInfo = getTokenInfo(tokenToSymbol);
+
+  const expiresAt = new Date(Number(invitation.expires_at) / 1000000);
+  const timeLeft = expiresAt.getTime() - Date.now();
+  const hoursLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60)));
+  const minutesLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="bg-[#171A1C] border border-white/10 rounded-xl p-4 mb-4"
+      style={{
+        background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+        backdropFilter: "blur(10px)",
+      }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+            <ArrowRightLeft className="w-4 h-4 text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-white font-medium text-sm">Trade Invitation</span>
+              <span className="text-white/60 text-xs">•</span>
+              <span className="text-white/60 text-xs">{hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m left` : `${minutesLeft}m left`}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-white/70">
+              <img src={tokenFromInfo.imageUrl} alt={tokenFromInfo.symbol} className="w-4 h-4 rounded-full" />
+              <span>{formatEscrowAmount(tokenFromInfo.symbol, invitation.amount_from)}</span>
+              <ArrowRightLeft className="w-3 h-3 text-white/50" />
+              <img src={tokenToInfo.imageUrl} alt={tokenToInfo.symbol} className="w-4 h-4 rounded-full" />
+              <span>{formatEscrowAmount(tokenToInfo.symbol, invitation.amount_to)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <ButtonPurple onClick={() => navigate(`/escrow/detail/${invitation.escrow_id}`)} size="sm" textSize="text-xs" fontWeight="medium">
+            View Details
+          </ButtonPurple>
+          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+            <X className="w-4 h-4 text-white/70" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdownOpen, setIsProfileDropdownOpen, network, getNetworkValue, getAvailableNetworks, handleNetworkChange, handleToggleHideBalance, contextHideBalance, navigate, logout, icpPrincipal }) {
   const [copiedPrincipal, setCopiedPrincipal] = React.useState(false);
@@ -24,9 +139,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
         <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="relative flex items-center gap-3 h-12 px-5 rounded-full text-white font-medium bg-white/5 text-base hover:opacity-95 transition-colors border border-white/10">
           <img src="/assets/icons/construction.svg" alt="All Networks" className="w-5 h-5" />
           <span className="text-white pr-2 capitalize">{network}</span>
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}>
-            <path d="M7 10l5 5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
         </button>
 
         <AnimatePresence>
@@ -36,13 +149,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                 <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-base">
                   <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === "All Networks" ? "bg-white/8" : "hover:bg-white/5"}`}>
                     <div className="flex items-center gap-3">
-                      {network === "All Networks" ? (
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                          <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : (
-                        <div className="w-4 h-4" />
-                      )}
+                      {network === "All Networks" ? <Check className="w-4 h-4 text-[#9BE4A0]" /> : <div className="w-4 h-4" />}
                       <span className="text-white">All Networks</span>
                     </div>
                     <span className="text-[#9CA3AF]">{getNetworkValue("All Networks")}</span>
@@ -56,13 +163,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                     <button onClick={() => handleNetworkChange(net.name)} className="w-full text-base">
                       <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === net.name ? "bg-white/8" : "hover:bg-white/5"}`}>
                         <div className="flex items-center gap-3">
-                          {network === net.name ? (
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                              <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          ) : (
-                            <div className="w-4 h-4" />
-                          )}
+                          {network === net.name ? <Check className="w-4 h-4 text-[#9BE4A0]" /> : <div className="w-4 h-4" />}
                           <span className="text-white text-left">{net.name}</span>
                         </div>
                         <span className="text-[#9CA3AF]">{net.value}</span>
@@ -75,12 +176,12 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                 <div className="h-px bg-white/10 mx-4 my-2" />
 
                 <button
-                  className="w-full flex items-center gap-3 px-6 py-3 text-[#9BEB83] hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center gap-3 px-6 py-3 text-[#9BE4A0] hover:bg-white/5 transition-colors"
                   onClick={() => {
                     // This will be handled by the parent component
                     window.dispatchEvent(new CustomEvent("openManageNetworks"));
                   }}>
-                  <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
+                  <Settings className="w-5 h-5" />
                   <span className="font-medium">Manage Networks</span>
                 </button>
               </div>
@@ -91,7 +192,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
 
       <div className="relative profile-dropdown">
         <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="group flex items-center justify-center bg-[#161B22] w-11 h-11 rounded-full border border-white/10 hover:bg-[#2A2F36] transition-all duration-200 ease-out cursor-pointer hover:border-white/20">
-          <img src="/assets/icons/person.svg" alt="User" className="w-6 h-6 transition-transform duration-200 group-hover:scale-110" />
+          <User className="w-6 h-6 text-white transition-transform duration-200 group-hover:scale-110" />
         </button>
 
         <AnimatePresence>
@@ -100,10 +201,14 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
               <div className="py-4">
                 <button className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
                   <div className="mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5">
-                    <img src="/assets/icons/eye.svg" alt="Hide Balance" className="w-5 h-5" />
+                    <Eye className="w-5 h-5 text-white" />
                     <span className="text-white">{contextHideBalance ? "Show Balance" : "Hide Balance"}</span>
                   </div>
                 </button>
+
+                <div className="h-px bg-white/10 mx-5 mb-3" />
+
+                <SocialLinksDropdown />
 
                 <div className="h-px bg-white/10 mx-5 mb-3" />
 
@@ -118,13 +223,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                         setTimeout(() => setCopiedPrincipal(false), 2000);
                       }}
                       className="p-1 hover:bg-white/10 rounded transition-colors">
-                      {copiedPrincipal ? (
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                          <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : (
-                        <img src="/assets/icons/copy.svg" alt="Copy" className="w-4 h-4" />
-                      )}
+                      {copiedPrincipal ? <Check className="w-4 h-4 text-[#9BE4A0]" /> : <Copy className="w-4 h-4 text-white/70" />}
                     </button>
                   </div>
                 </div>
@@ -137,7 +236,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                     navigate("/");
                     logout();
                   }}>
-                  <img src="/assets/icons/logout-dark.svg" alt="Logout" className="w-5 h-5" />
+                  <LogOut className="w-5 h-5" />
                   <span className="font-medium">Logout</span>
                 </button>
               </div>
@@ -153,11 +252,69 @@ function EscrowLayoutContent() {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
-  const { logout, user } = useAuth();
+  const { logout, user, identity } = useAuth();
   const navigate = useNavigate();
   const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters, addresses } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
+
+  // Trade invitation alert state
+  const [tradeInvitation, setTradeInvitation] = React.useState(null);
+  const [isCheckingInvitations, setIsCheckingInvitations] = React.useState(false);
+
+  // Helper functions for trade invitation detection
+  const variantName = (v) => (v && typeof v === "object" ? Object.keys(v)[0] : v);
+  const unwrapOpt = (opt) => (Array.isArray(opt) ? opt[0] ?? null : opt ?? null);
+
+  // Check for trade invitations where current user is the recipient
+  const checkForTradeInvitations = async () => {
+    // Try different ways to get user identity
+    const userIdentity = user?.identity || identity;
+    const userPrincipal = userIdentity?.getPrincipal?.();
+
+    if (!userPrincipal || isCheckingInvitations) {
+      return;
+    }
+
+    try {
+      setIsCheckingInvitations(true);
+
+      // Get escrows received by user (where they are the recipient)
+      const res = await backend.get_received_escrows_paginated(0, 50);
+
+      if (res && Array.isArray(res.items)) {
+        // Find escrows where current user is the recipient and state is AwaitingAccept
+        const invitations = res.items.filter((escrow) => {
+          const state = variantName(escrow.state);
+          return state === "AwaitingAccept"; // Only pending invitations
+        });
+
+        if (invitations.length > 0) {
+          // Show the first invitation
+          const invitation = invitations[0];
+          const normalized = {
+            ...invitation,
+            _token_from: variantName(invitation.token_from),
+            _token_to: variantName(invitation.token_to),
+            _state: variantName(invitation.state),
+            _recipient: unwrapOpt(invitation.recipient),
+            _description: unwrapOpt(invitation.description),
+            _metadata: unwrapOpt(invitation.metadata),
+          };
+          setTradeInvitation(normalized);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking for trade invitations:", error);
+    } finally {
+      setIsCheckingInvitations(false);
+    }
+  };
+
+  // Handle closing trade invitation alert
+  const handleCloseInvitation = () => {
+    setTradeInvitation(null);
+  };
 
   // Get networks from tokenUtils configuration
   const NETWORKS = NETWORK_CONFIG.map((network) => ({
@@ -166,14 +323,16 @@ function EscrowLayoutContent() {
     icon: network.icon,
   }));
 
-  // Helper: map sidebar label to icon URL (active/inactive)
-  const getSidebarIconUrl = (label, active) => {
+  // Helper: map sidebar label to Lucide React icon component
+  const getSidebarIcon = (label, active) => {
     const iconMap = {
-      Escrow: active ? "/assets/icons/wallet-active.svg" : "/assets/icons/wallet.svg",
-      "P2P Payment": active ? "/assets/icons/transaction-history-active.svg" : "/assets/icons/transaction-history.svg",
-      "Escrow History": active ? "/assets/icons/history-active.svg" : "/assets/icons/history.svg",
+      Dashboard: Wallet,
+      "P2P Trade": ArrowRightLeft,
+      "Create Escrow": PlusCircle,
+      "My Escrow": FileText,
+      "Escrow History": History,
     };
-    return iconMap[label] || "/assets/icons/wallet.svg";
+    return iconMap[label] || Wallet;
   };
 
   // Helper function to normalize path (same as WalletLayout)
@@ -243,9 +402,9 @@ function EscrowLayoutContent() {
 
   // Menu configuration for escrow
   const menu = [
-    { label: "Escrow", icon: "escrow", path: "/escrow" },
+    { label: "Dashboard", icon: "escrow", path: "/escrow" },
+    { label: "P2P Trade", icon: "p2p-trade", path: "/escrow/list" },
     { label: "Create Escrow", icon: "p2p-payment", path: "/escrow/create" },
-    { label: "Escrow List", icon: "p2p-trade", path: "/escrow/list" },
     { label: "My Escrow", icon: "escrow-history", path: "/escrow/my-escrow" },
     { label: "Escrow History", icon: "escrow-history", path: "/escrow/history" },
   ];
@@ -292,6 +451,34 @@ function EscrowLayoutContent() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Check for trade invitations when user is authenticated
+  React.useEffect(() => {
+    const userIdentity = user?.identity || identity;
+    const userPrincipal = userIdentity?.getPrincipal?.();
+
+    if (userPrincipal) {
+      // Check immediately
+      checkForTradeInvitations();
+
+      // Then check every 30 seconds
+      const interval = setInterval(() => {
+        checkForTradeInvitations();
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [user?.identity?.getPrincipal, identity?.getPrincipal]);
+
+  // Also check when location changes (user navigates)
+  React.useEffect(() => {
+    const userIdentity = user?.identity || identity;
+    const userPrincipal = userIdentity?.getPrincipal?.();
+
+    if (userPrincipal) {
+      checkForTradeInvitations();
+    }
+  }, [location.pathname]);
+
   return (
     <>
       <WelcomingWalletModal isOpen={isCreatingWallet} />
@@ -315,28 +502,36 @@ function EscrowLayoutContent() {
             <nav className="flex flex-col gap-2">
               {menu.map((item, idx) => {
                 const isActive = normalize(location.pathname) === normalize(item.path);
-                const iconSrc = getSidebarIconUrl(item.label, isActive);
+                const IconComponent = getSidebarIcon(item.label, isActive);
                 return isActive ? (
                   <Link key={item.label} to={item.path} className="relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all">
                     <span className="pointer-events-none absolute inset-0 bg-gradient-to-l from-white/20 via-white/10 to-transparent" />
                     <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-[#9BE4A0] shadow-[0_0_12px_rgba(155,228,160,0.5)]" />
-                    <img src={iconSrc} alt={item.label} className="w-5 h-5 relative z-10" />
+                    <IconComponent className="w-5 h-5 relative z-10 text-white" />
                     <span className="relative z-10 text-white font-medium">{item.label}</span>
                   </Link>
                 ) : (
                   <Link key={item.label} to={item.path} className="flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all hover:bg-white/5 rounded-lg">
-                    <img src={iconSrc} alt={item.label} className="w-5 h-5" />
+                    <IconComponent className="w-5 h-5 text-white/70" />
                     <span className="text-white/70 font-medium">{item.label}</span>
                   </Link>
                 );
               })}
             </nav>
           </div>
+          {/* Bottom icons - fixed at bottom */}
+          <SocialLinksSidebar />
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
 
         {/* ===== START: MAIN CONTENT ===== */}
         <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col">
+          {/* Trade Invitation Alert - Full Width (Hidden on detail page) */}
+          {!location.pathname.includes("/escrow/detail/") && (
+            <div className="w-full mb-4">
+              <AnimatePresence>{tradeInvitation && <TradeInvitationAlert invitation={tradeInvitation} onClose={handleCloseInvitation} />}</AnimatePresence>
+            </div>
+          )}
           {/* Topbar actions for md screens - Escrow: without All Networks, but with Switch Services */}
           <div className="hidden md:flex xl:hidden w-full items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
@@ -370,17 +565,10 @@ function EscrowLayoutContent() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181C22] border-t border-[#23272F] flex md:hidden justify-between px-1 py-3" style={{ height: "80px" }}>
         {menu.map((item, idx) => {
           const isActive = normalize(location.pathname) === normalize(item.path);
-          // Mapping nama menu ke icon mobile
-          const mobileIconMap = {
-            Escrow: "wallet",
-            "P2P Payment": "transaction-history",
-            "Escrow History": "history",
-          };
-          const mobileIconKey = mobileIconMap[item.label] || item.label.toLowerCase();
-          const iconSrc = `/assets/icons/mobile/${mobileIconKey}-${isActive ? "active" : "non"}.svg`;
+          const IconComponent = getSidebarIcon(item.label, isActive);
           return (
-            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-[#9BEB83] bg-[#9BE4A01A] rounded-sm shadow-[0_0_8px_0_#9BE4A01A]" : "text-[#FFFFFF99]"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "6px 0" }}>
-              <img src={iconSrc} alt={item.label} className="w-5 h-5 mb-0.5" />
+            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-[#9BE4A0] bg-[#9BE4A01A] rounded-sm shadow-[0_0_8px_0_#9BE4A01A]" : "text-[#FFFFFF99]"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "6px 0" }}>
+              <IconComponent className={`w-5 h-5 mb-0.5 ${isActive ? "text-[#9BE4A0]" : "text-[#FFFFFF99]"}`} />
               <span className="leading-tight text-center text-xs" style={{ fontWeight: 400 }}>
                 {item.label}
               </span>
@@ -388,9 +576,6 @@ function EscrowLayoutContent() {
           );
         })}
       </nav>
-
-      {/* AI Assistant Widget - floating bottom-right */}
-      <AIAssistantWidget />
     </>
   );
 }

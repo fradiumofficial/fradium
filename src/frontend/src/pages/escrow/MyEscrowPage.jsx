@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { backend } from "declarations/backend";
-import { Copy, ExternalLink, Clock, User, ArrowRightLeft } from "lucide-react";
-import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { formatAmount } from "@/core/lib/tokenUtils";
-import { formatDate } from "@/core/lib/dateUtils";
-import { formatAddress } from "@/core/lib/stringUtils";
-import { copyToClipboard } from "@/core/lib/clipboardUtils";
+import { ArrowRightLeft } from "lucide-react";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
-import { jsonStringify } from "@/core/lib/canisterUtils";
+import EscrowCard from "@/core/components/cards/EscrowCard";
 
 // Skeleton Loading Component
 function SkeletonItem() {
@@ -43,56 +38,30 @@ function SkeletonList({ count = 5 }) {
   );
 }
 
-// Helper function to get token info
-function getTokenInfo(tokenType) {
-  const tokenMap = {
-    FRADIUM: { symbol: "FRADIUM", name: "Fradium", imageUrl: "/assets/images/coins/fradium.webp" },
-    ICP: { symbol: "ICP", name: "Internet Computer", imageUrl: "/assets/images/coins/icp.webp" },
-    ckBTC: { symbol: "ckBTC", name: "Chain Key Bitcoin", imageUrl: "/assets/images/coins/ckbtc.webp" },
-    ckETH: { symbol: "ckETH", name: "Chain Key Ethereum", imageUrl: "/assets/images/coins/cketh.webp" },
-    BTC: { symbol: "BTC", name: "Bitcoin", imageUrl: "/assets/images/coins/bitcoin.webp" },
-    ETH: { symbol: "ETH", name: "Ethereum", imageUrl: "/assets/images/coins/ethereum.webp" },
-    SOL: { symbol: "SOL", name: "Solana", imageUrl: "/assets/images/coins/solana.webp" },
-  };
-
-  return tokenMap[tokenType] || { symbol: tokenType, name: tokenType, imageUrl: "/assets/images/coins/bitcoin.webp" };
-}
-
-// Helper function to get escrow state color and text
-function getEscrowStateInfo(state) {
-  switch (state) {
-    case "AwaitingAccept":
-      return { color: "bg-blue-500/20 text-blue-400", text: "Open" };
-    case "Pending":
-      return { color: "bg-yellow-500/20 text-yellow-400", text: "Pending" };
-    case "Locked":
-      return { color: "bg-purple-500/20 text-purple-400", text: "Locked" };
-    case "Released":
-      return { color: "bg-green-500/20 text-green-400", text: "Completed" };
-    case "Rejected":
-      return { color: "bg-red-500/20 text-red-400", text: "Rejected" };
-    case "Cancelled":
-      return { color: "bg-gray-500/20 text-gray-400", text: "Cancelled" };
-    case "Expired":
-      return { color: "bg-orange-500/20 text-orange-400", text: "Expired" };
-    case "Suspended":
-      return { color: "bg-red-500/20 text-red-400", text: "Suspended" };
-    default:
-      return { color: "bg-gray-500/20 text-gray-400", text: "Unknown" };
-  }
-}
-
 export default function MyEscrowPage() {
   const { isAuthenticated, identity } = useAuth();
   const navigate = useNavigate();
 
-  const [escrows, setEscrows] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState("my-trades"); // "my-trades" or "pending-trades"
+
+  // My Trades data
+  const [myTradesEscrows, setMyTradesEscrows] = useState([]);
+  const [myTradesLoading, setMyTradesLoading] = useState(false);
+  const [myTradesLoadingMore, setMyTradesLoadingMore] = useState(false);
+  const [myTradesHasMore, setMyTradesHasMore] = useState(true);
+  const [myTradesCurrentOffset, setMyTradesCurrentOffset] = useState(0);
+  const [myTradesTotalCount, setMyTradesTotalCount] = useState(0);
+
+  // Pending Trades data
+  const [pendingTradesEscrows, setPendingTradesEscrows] = useState([]);
+  const [pendingTradesLoading, setPendingTradesLoading] = useState(false);
+  const [pendingTradesLoadingMore, setPendingTradesLoadingMore] = useState(false);
+  const [pendingTradesHasMore, setPendingTradesHasMore] = useState(true);
+  const [pendingTradesCurrentOffset, setPendingTradesCurrentOffset] = useState(0);
+  const [pendingTradesTotalCount, setPendingTradesTotalCount] = useState(0);
+
+  // Common states
   const [error, setError] = useState(null);
-  const [currentOffset, setCurrentOffset] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [copiedAddress, setCopiedAddress] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,43 +81,6 @@ export default function MyEscrowPage() {
   const normalizeState = (st) => variantName(st);
   const unwrapOpt = (opt) => (Array.isArray(opt) ? opt[0] ?? null : opt ?? null);
 
-  // Amount formatting helpers (base units -> human friendly like AssetPage)
-  const getDecimalsForToken = (symbol) => {
-    switch (symbol) {
-      case "ETH":
-      case "ckETH":
-        return 18;
-      case "SOL":
-        return 9;
-      case "ICP":
-      case "FRADIUM":
-      case "BTC":
-      case "ckBTC":
-      default:
-        return 8;
-    }
-  };
-  const formatNatToDecimal = (nat, decimals) => {
-    try {
-      const n = BigInt(nat ?? 0);
-      const d = Math.max(0, Number(decimals ?? 8));
-      const base = BigInt(10) ** BigInt(d);
-      const intPart = n / base;
-      const fracPart = n % base;
-      let fracStr = fracPart.toString().padStart(d, "0");
-      // trim trailing zeros
-      fracStr = fracStr.replace(/0+$/, "");
-      return fracStr.length ? `${intPart.toString()}.${fracStr}` : intPart.toString();
-    } catch (_e) {
-      return String(nat ?? 0);
-    }
-  };
-  const formatEscrowAmount = (tokenSymbol, nat) => {
-    const sym = tokenSymbol;
-    const dec = getDecimalsForToken(sym);
-    return `${formatNatToDecimal(nat, dec)} ${sym}`;
-  };
-
   // Redirect to landing page if auth expired/not logged in
   useEffect(() => {
     if (typeof isAuthenticated === "boolean" && !isAuthenticated) {
@@ -156,22 +88,26 @@ export default function MyEscrowPage() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Fetch my escrows (server-side pagination)
-  const fetchMyEscrows = async (offset = 0, isLoadMore = false) => {
+  // Fetch My Trades (escrows that are accepted/completed)
+  const fetchMyTrades = async (offset = 0, isLoadMore = false) => {
     try {
       if (isLoadMore) {
-        setLoadingMore(true);
+        setMyTradesLoadingMore(true);
       } else {
-        setLoading(true);
+        setMyTradesLoading(true);
         setError(null);
       }
 
-      console.log(`Fetching my escrows - offset: ${offset}, limit: ${ITEMS_PER_PAGE}`);
+      console.log(`Fetching my trades - offset: ${offset}, limit: ${ITEMS_PER_PAGE}`);
 
-      const res = await backend.get_sent_escrows_paginated(offset, ITEMS_PER_PAGE);
+      // Fetch both sent and received escrows
+      const [sentRes, receivedRes] = await Promise.all([backend.get_sent_escrows_paginated(offset, ITEMS_PER_PAGE), backend.get_received_escrows_paginated(offset, ITEMS_PER_PAGE)]);
 
-      if (res && Array.isArray(res.items)) {
-        const normalized = res.items.map((e) => ({
+      let allEscrows = [];
+
+      // Process sent escrows (include all, including AwaitingAccept)
+      if (sentRes && Array.isArray(sentRes.items)) {
+        const sentNormalized = sentRes.items.map((e) => ({
           ...e,
           _token_from: normalizeToken(e.token_from),
           _token_to: normalizeToken(e.token_to),
@@ -179,39 +115,126 @@ export default function MyEscrowPage() {
           _recipient: unwrapOpt(e.recipient),
           _description: unwrapOpt(e.description),
           _metadata: unwrapOpt(e.metadata),
+          _type: "sent",
         }));
-
-        if (isLoadMore) {
-          setEscrows((prev) => [...prev, ...normalized]);
-        } else {
-          setEscrows(normalized);
-        }
-
-        const total = Number(res.total ?? 0);
-        const pageLen = res.items?.length || 0;
-        setTotalCount(total);
-        setCurrentOffset(offset + pageLen);
-        setHasMore(offset + pageLen < total);
-
-        console.log(`Fetched ${normalized.length} my escrows, total: ${total}, hasMore: ${offset + pageLen < total}`);
-      } else {
-        setEscrows([]);
-        setTotalCount(0);
-        setHasMore(false);
+        allEscrows = [...allEscrows, ...sentNormalized];
       }
+
+      // Process received escrows (exclude AwaitingAccept - only show accepted trades)
+      if (receivedRes && Array.isArray(receivedRes.items)) {
+        const receivedNormalized = receivedRes.items
+          .filter((e) => {
+            const state = normalizeState(e.state);
+            return state !== "AwaitingAccept"; // Exclude pending invitations
+          })
+          .map((e) => ({
+            ...e,
+            _token_from: normalizeToken(e.token_from),
+            _token_to: normalizeToken(e.token_to),
+            _state: normalizeState(e.state),
+            _recipient: unwrapOpt(e.recipient),
+            _description: unwrapOpt(e.description),
+            _metadata: unwrapOpt(e.metadata),
+            _type: "received",
+          }));
+        allEscrows = [...allEscrows, ...receivedNormalized];
+      }
+
+      // Remove duplicates and sort
+      const uniqueEscrows = allEscrows.filter((escrow, index, self) => index === self.findIndex((e) => e.escrow_id === escrow.escrow_id));
+      uniqueEscrows.sort((a, b) => Number(b.created_at) - Number(a.created_at));
+
+      if (isLoadMore) {
+        setMyTradesEscrows((prev) => [...prev, ...uniqueEscrows]);
+      } else {
+        setMyTradesEscrows(uniqueEscrows);
+      }
+
+      const total = uniqueEscrows.length;
+      setMyTradesTotalCount(total);
+      setMyTradesCurrentOffset(offset + uniqueEscrows.length);
+      setMyTradesHasMore(offset + uniqueEscrows.length < total);
+
+      console.log(`Fetched ${uniqueEscrows.length} my trades, total: ${total}`);
     } catch (err) {
-      console.error("Error fetching my escrows:", err);
+      console.error("Error fetching my trades:", err);
       setError(err.message);
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      setMyTradesLoading(false);
+      setMyTradesLoadingMore(false);
+    }
+  };
+
+  // Fetch Pending Trades (escrows that are AwaitingAccept and received from others)
+  const fetchPendingTrades = async (offset = 0, isLoadMore = false) => {
+    try {
+      if (isLoadMore) {
+        setPendingTradesLoadingMore(true);
+      } else {
+        setPendingTradesLoading(true);
+        setError(null);
+      }
+
+      console.log(`Fetching pending trades - offset: ${offset}, limit: ${ITEMS_PER_PAGE}`);
+
+      // Only fetch received escrows that are AwaitingAccept (invitations from others)
+      const receivedRes = await backend.get_received_escrows_paginated(offset, ITEMS_PER_PAGE);
+
+      let pendingEscrows = [];
+
+      if (receivedRes && Array.isArray(receivedRes.items)) {
+        const pendingNormalized = receivedRes.items
+          .filter((e) => {
+            const state = normalizeState(e.state);
+            return state === "AwaitingAccept"; // Only pending invitations
+          })
+          .map((e) => ({
+            ...e,
+            _token_from: normalizeToken(e.token_from),
+            _token_to: normalizeToken(e.token_to),
+            _state: normalizeState(e.state),
+            _recipient: unwrapOpt(e.recipient),
+            _description: unwrapOpt(e.description),
+            _metadata: unwrapOpt(e.metadata),
+            _type: "pending",
+          }));
+        pendingEscrows = [...pendingEscrows, ...pendingNormalized];
+      }
+
+      // Sort by created_at desc
+      pendingEscrows.sort((a, b) => Number(b.created_at) - Number(a.created_at));
+
+      if (isLoadMore) {
+        setPendingTradesEscrows((prev) => [...prev, ...pendingEscrows]);
+      } else {
+        setPendingTradesEscrows(pendingEscrows);
+      }
+
+      const total = pendingEscrows.length;
+      setPendingTradesTotalCount(total);
+      setPendingTradesCurrentOffset(offset + pendingEscrows.length);
+      setPendingTradesHasMore(offset + pendingEscrows.length < total);
+
+      console.log(`Fetched ${pendingEscrows.length} pending trades, total: ${total}`);
+    } catch (err) {
+      console.error("Error fetching pending trades:", err);
+      setError(err.message);
+    } finally {
+      setPendingTradesLoading(false);
+      setPendingTradesLoadingMore(false);
     }
   };
 
   // Load more items
   const handleLoadMore = () => {
-    if (!loadingMore && hasMore) {
-      fetchMyEscrows(currentOffset, true);
+    if (activeTab === "my-trades") {
+      if (!myTradesLoadingMore && myTradesHasMore) {
+        fetchMyTrades(myTradesCurrentOffset, true);
+      }
+    } else if (activeTab === "pending-trades") {
+      if (!pendingTradesLoadingMore && pendingTradesHasMore) {
+        fetchPendingTrades(pendingTradesCurrentOffset, true);
+      }
     }
   };
 
@@ -228,24 +251,17 @@ export default function MyEscrowPage() {
     });
   };
 
-  // Handle copy address
-  const handleCopyAddress = (address) => {
-    copyToClipboard(address);
-    setCopiedAddress(address);
-    setTimeout(() => setCopiedAddress(null), 2000);
-  };
-
   // Filter and search escrows
-  const getFilteredEscrows = () => {
-    return escrows.filter((escrow) => {
+  const getFilteredEscrows = (escrowsList) => {
+    return escrowsList.filter((escrow) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const tokenFromInfo = getTokenInfo(variantName(escrow.token_from ?? escrow._token_from));
-        const tokenToInfo = getTokenInfo(variantName(escrow.token_to ?? escrow._token_to));
+        const tokenFromSymbol = variantName(escrow.token_from ?? escrow._token_from);
+        const tokenToSymbol = variantName(escrow.token_to ?? escrow._token_to);
 
-        const tokenFromMatch = tokenFromInfo.symbol.toLowerCase().includes(query) || tokenFromInfo.name.toLowerCase().includes(query);
-        const tokenToMatch = tokenToInfo.symbol.toLowerCase().includes(query) || tokenToInfo.name.toLowerCase().includes(query);
+        const tokenFromMatch = tokenFromSymbol.toLowerCase().includes(query);
+        const tokenToMatch = tokenToSymbol.toLowerCase().includes(query);
         const amountMatch = escrow.amount_from.toString().includes(query) || escrow.amount_to.toString().includes(query);
 
         if (!tokenFromMatch && !tokenToMatch && !amountMatch) {
@@ -304,22 +320,44 @@ export default function MyEscrowPage() {
   // Initial load
   useEffect(() => {
     if (isAuthenticated) {
-      fetchMyEscrows(0, false);
+      if (activeTab === "my-trades") {
+        fetchMyTrades(0, false);
+      } else if (activeTab === "pending-trades") {
+        fetchPendingTrades(0, false);
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeTab]);
+
+  // Handle tab change
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setExpandedItems(new Set()); // Clear expanded items when switching tabs
+    setSearchQuery(""); // Clear search when switching tabs
+    setFilterOptions({ tokenFrom: "all", tokenTo: "all", state: "all" }); // Clear filters
+  };
 
   return (
     <motion.div className="flex flex-col gap-8 w-full max-w-xl mx-auto px-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
       {/* Header Section */}
       <motion.div className="flex flex-col gap-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}>
         <h1 className="text-white text-2xl font-semibold">My Escrows</h1>
-        <p className="text-white/60 text-sm">Escrows you created</p>
+        <p className="text-white/60 text-sm">Manage your trades and invitations</p>
+      </motion.div>
+
+      {/* Tab Navigation */}
+      <motion.div className="flex bg-[#23272F] border border-[#393E4B] rounded-xl p-1" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}>
+        <button onClick={() => handleTabChange("my-trades")} className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${activeTab === "my-trades" ? "bg-[#7C72FE] text-white shadow-sm" : "text-white/70 hover:text-white hover:bg-white/5"}`}>
+          My Trades
+        </button>
+        <button onClick={() => handleTabChange("pending-trades")} className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${activeTab === "pending-trades" ? "bg-[#7C72FE] text-white shadow-sm" : "text-white/70 hover:text-white hover:bg-white/5"}`}>
+          Pending Trade
+        </button>
       </motion.div>
 
       {/* Escrow List Section */}
       <div className="w-full">
         <motion.div className="mb-4 flex items-center justify-between" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}>
-          <h2 className="text-white text-base font-semibold">My Trades</h2>
+          <h2 className="text-white text-base font-semibold">{activeTab === "my-trades" ? "My Trades" : "Pending Trade"}</h2>
           <div className="flex gap-4">
             <button onClick={() => setShowSearch(!showSearch)} className="relative p-1 opacity-70 hover:opacity-100 transition-opacity">
               <img src="/assets/icons/search.svg" alt="Search" className="w-5 h-5" />
@@ -399,7 +437,7 @@ export default function MyEscrowPage() {
                 {/* Filter Actions */}
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/10">
                   <div className="text-[#B0B6BE] text-sm">{getActiveFilterCount() > 0 && `${getActiveFilterCount()} filter${getActiveFilterCount() > 1 ? "s" : ""} active`}</div>
-                  <button onClick={clearFilters} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#9BE4A0] rounded-lg text-white text-sm transition-colors">
+                  <button onClick={clearFilters} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#7C72FE] rounded-lg text-white text-sm transition-colors">
                     Clear All
                   </button>
                 </div>
@@ -409,227 +447,139 @@ export default function MyEscrowPage() {
         </AnimatePresence>
 
         {/* Loading State - Skeleton */}
-        {loading && !loadingMore && <SkeletonList count={5} />}
+        {((activeTab === "my-trades" && myTradesLoading && !myTradesLoadingMore) || (activeTab === "pending-trades" && pendingTradesLoading && !pendingTradesLoadingMore)) && <SkeletonList count={5} />}
 
         {/* Error State */}
         {error && (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
             <div className="text-red-400 text-sm text-center">{error}</div>
-            <button onClick={() => fetchMyEscrows(0, false)} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#9BE4A0] rounded-lg text-white text-sm transition-colors">
+            <button
+              onClick={() => {
+                if (activeTab === "my-trades") {
+                  fetchMyTrades(0, false);
+                } else if (activeTab === "pending-trades") {
+                  fetchPendingTrades(0, false);
+                }
+              }}
+              className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#7C72FE] rounded-lg text-white text-sm transition-colors">
               Try Again
             </button>
           </div>
         )}
 
         {/* Empty State */}
-        {!loading && !error && escrows.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center">
-              <ArrowRightLeft className="w-8 h-8 text-white/50" />
-            </div>
-            <div className="text-[#B0B6BE] text-sm text-center">No escrows found</div>
-            <div className="text-[#9BEB83] text-xs text-center">Create your first trade</div>
-          </div>
-        )}
+        {(() => {
+          const currentEscrows = activeTab === "my-trades" ? myTradesEscrows : pendingTradesEscrows;
+          const isLoading = activeTab === "my-trades" ? myTradesLoading : pendingTradesLoading;
+
+          if (!isLoading && !error && currentEscrows.length === 0) {
+            return (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center">
+                  <ArrowRightLeft className="w-8 h-8 text-white/50" />
+                </div>
+                <div className="text-[#B0B6BE] text-sm text-center">{activeTab === "my-trades" ? "No trades found" : "No pending invitations"}</div>
+                <div className="text-[#9BEB83] text-xs text-center">{activeTab === "my-trades" ? "Create your first trade" : "You have no pending trade invitations"}</div>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* No Results State */}
-        {!loading && !error && escrows.length > 0 && getFilteredEscrows().length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center">
-              <img src="/assets/icons/search.svg" alt="No results" className="w-8 h-8 opacity-50" />
-            </div>
-            <div className="text-[#B0B6BE] text-sm text-center">No results found</div>
-            <div className="text-[#9BEB83] text-xs text-center">Try adjusting your search or filter criteria</div>
-            <button onClick={clearFilters} className="mt-2 px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#9BE4A0] rounded-lg text-white text-sm transition-colors">
-              Clear Filters
-            </button>
-          </div>
-        )}
+        {(() => {
+          const currentEscrows = activeTab === "my-trades" ? myTradesEscrows : pendingTradesEscrows;
+          const isLoading = activeTab === "my-trades" ? myTradesLoading : pendingTradesLoading;
+          const filteredEscrows = getFilteredEscrows(currentEscrows);
+
+          if (!isLoading && !error && currentEscrows.length > 0 && filteredEscrows.length === 0) {
+            return (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center">
+                  <img src="/assets/icons/search.svg" alt="No results" className="w-8 h-8 opacity-50" />
+                </div>
+                <div className="text-[#B0B6BE] text-sm text-center">No results found</div>
+                <div className="text-[#9BEB83] text-xs text-center">Try adjusting your search or filter criteria</div>
+                <button onClick={clearFilters} className="mt-2 px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#7C72FE] rounded-lg text-white text-sm transition-colors">
+                  Clear Filters
+                </button>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* List */}
-        {!loading && !error && escrows.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {getFilteredEscrows().map((escrow, idx) => {
-              const isExpanded = expandedItems.has(escrow.escrow_id);
-              const tokenFromSymbol = (escrow.token_from && Object.keys(escrow.token_from)[0]) || escrow._token_from;
-              const tokenToSymbol = (escrow.token_to && Object.keys(escrow.token_to)[0]) || escrow._token_to;
-              const tokenFromInfo = getTokenInfo(tokenFromSymbol);
-              const tokenToInfo = getTokenInfo(tokenToSymbol);
-              const stateInfo = getEscrowStateInfo((escrow.state && Object.keys(escrow.state)[0]) || escrow._state);
-              const expiresAt = new Date(Number(escrow.expires_at) / 1000000);
-              const timeLeft = expiresAt.getTime() - Date.now();
-              const hoursLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60)));
-              const minutesLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)));
+        {(() => {
+          const currentEscrows = activeTab === "my-trades" ? myTradesEscrows : pendingTradesEscrows;
+          const isLoading = activeTab === "my-trades" ? myTradesLoading : pendingTradesLoading;
+          const filteredEscrows = getFilteredEscrows(currentEscrows);
 
-              return (
-                <motion.div key={escrow.escrow_id} className="group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.12 + idx * 0.06 }}>
-                  <div className="flex items-center justify-between px-6 py-5 rounded-xl transition-colors group-hover:bg-white/[0.04] cursor-pointer" onClick={() => toggleExpanded(escrow.escrow_id)}>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <img src={tokenFromInfo.imageUrl} alt={tokenFromInfo.symbol} className="w-8 h-8 rounded-full" />
-                        <ArrowRightLeft className="w-4 h-4 text-white/50" />
-                        <img src={tokenToInfo.imageUrl} alt={tokenToInfo.symbol} className="w-8 h-8 rounded-full" />
-                      </div>
-                      <div className="flex flex-col">
-                        <div className="text-white text-base font-medium leading-tight">
-                          {formatEscrowAmount(tokenFromInfo.symbol, escrow.amount_from)} → {formatEscrowAmount(tokenToInfo.symbol, escrow.amount_to)}
-                        </div>
-                        <div className="text-white/60 text-sm flex items-center gap-2">
-                          <User className="w-3 h-3" />
-                          {Array.isArray(escrow.recipient) ? (escrow.recipient[0] ? "Invited Trade" : "Open Trade") : escrow._recipient ? "Invited Trade" : "Open Trade"}
-                          <Clock className="w-3 h-3 ml-2" />
-                          {hoursLeft > 0 ? `${hoursLeft}h ${minutesLeft}m left` : `${minutesLeft}m left`}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className={`px-3 py-1 rounded-full text-xs ${stateInfo.color}`}>{stateInfo.text}</div>
-                      <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/50">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="6,9 12,15 18,9"></polyline>
-                        </svg>
-                      </motion.div>
-                    </div>
+          if (!isLoading && !error && currentEscrows.length > 0) {
+            return (
+              <div className="flex flex-col gap-2">
+                {filteredEscrows.map((escrow, idx) => (
+                  <div key={escrow.escrow_id}>
+                    <EscrowCard escrow={escrow} index={idx} isExpanded={expandedItems.has(escrow.escrow_id)} onToggleExpanded={toggleExpanded} variant={activeTab} identity={identity} showExternalLink={true} showJoinButton={false} />
+                    {idx !== filteredEscrows.length - 1 && <div className="h-px bg-white/10 mx-6 transition-colors group-hover:bg-white/15" />}
                   </div>
+                ))}
 
-                  {/* Expanded Content */}
-                  <motion.div initial={false} animate={{ height: isExpanded ? "auto" : 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden">
-                    <div className="px-6 pb-5 bg-white/[0.02] border-t border-white/10">
-                      <div className="pt-4 space-y-4">
-                        {/* Trade Details */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="text-white/60 text-xs uppercase tracking-wide">Escrow ID</div>
-                            <div className="text-white text-sm font-mono">{escrow.escrow_id.toString()}</div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="text-white/60 text-xs uppercase tracking-wide">Status</div>
-                            <div className={`text-sm font-medium ${stateInfo.color}`}>{stateInfo.text}</div>
-                          </div>
-                        </div>
+                {/* Load More Button */}
+                {(() => {
+                  const currentEscrows = activeTab === "my-trades" ? myTradesEscrows : pendingTradesEscrows;
+                  const isLoadingMore = activeTab === "my-trades" ? myTradesLoadingMore : pendingTradesLoadingMore;
+                  const hasMore = activeTab === "my-trades" ? myTradesHasMore : pendingTradesHasMore;
+                  const totalCount = activeTab === "my-trades" ? myTradesTotalCount : pendingTradesTotalCount;
 
-                        {/* Trade Amounts */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="text-white/60 text-xs uppercase tracking-wide">You Give</div>
-                            <div className="flex items-center gap-2">
-                              <img src={tokenFromInfo.imageUrl} alt={tokenFromInfo.symbol} className="w-5 h-5 rounded-full" />
-                              <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenFromInfo.symbol, escrow.amount_from)}</div>
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="text-white/60 text-xs uppercase tracking-wide">You Receive</div>
-                            <div className="flex items-center gap-2">
-                              <img src={tokenToInfo.imageUrl} alt={tokenToInfo.symbol} className="w-5 h-5 rounded-full" />
-                              <div className="text-white text-sm font-medium">{formatEscrowAmount(tokenToInfo.symbol, escrow.amount_to)}</div>
-                            </div>
-                          </div>
-                        </div>
+                  if (hasMore) {
+                    return (
+                      <motion.div className="flex justify-center py-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+                        <button onClick={handleLoadMore} disabled={isLoadingMore} className="px-6 py-3 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed rounded-lg text-white text-sm transition-colors flex items-center gap-2">
+                          {isLoadingMore ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              Loading...
+                            </>
+                          ) : (
+                            <>Load More ({Number(totalCount) - currentEscrows.length} remaining)</>
+                          )}
+                        </button>
+                      </motion.div>
+                    );
+                  }
+                  return null;
+                })()}
 
-                        {/* Recipient (if specified) */}
-                        {Array.isArray(escrow.recipient)
-                          ? escrow.recipient[0] && (
-                              <div className="space-y-2">
-                                <div className="text-white/60 text-xs uppercase tracking-wide">Recipient</div>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 text-white text-sm font-mono bg-white/5 px-3 py-2 rounded-lg break-all">{escrow.recipient.toString()}</div>
-                                  <div className="flex gap-1">
-                                    <button onClick={() => handleCopyAddress(escrow.recipient.toString())} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors group" title="Copy address">
-                                      {copiedAddress === escrow.recipient.toString() ? (
-                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-green-400">
-                                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="20,6 9,17 4,12"></polyline>
-                                          </svg>
-                                        </motion.div>
-                                      ) : (
-                                        <Copy size={16} className="text-white/70 group-hover:text-white transition-colors" />
-                                      )}
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          : escrow._recipient && (
-                              <div className="space-y-2">
-                                <div className="text-white/60 text-xs uppercase tracking-wide">Recipient</div>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 text-white text-sm font-mono bg-white/5 px-3 py-2 rounded-lg break-all">{escrow._recipient.toString?.() || String(escrow._recipient)}</div>
-                                </div>
-                              </div>
-                            )}
+                {/* End of list indicator */}
+                {(() => {
+                  const currentEscrows = activeTab === "my-trades" ? myTradesEscrows : pendingTradesEscrows;
+                  const hasMore = activeTab === "my-trades" ? myTradesHasMore : pendingTradesHasMore;
+                  const totalCount = activeTab === "my-trades" ? myTradesTotalCount : pendingTradesTotalCount;
+                  const filteredEscrows = getFilteredEscrows(currentEscrows);
 
-                        {/* Timing */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <div className="text-white/50 text-xs">Created</div>
-                            <div className="text-white text-sm">{formatDate(escrow.created_at)}</div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-white/50 text-xs">Expires</div>
-                            <div className="text-white text-sm">{formatDate(escrow.expires_at)}</div>
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        {escrow.description && (
-                          <div className="space-y-2">
-                            <div className="text-white/60 text-xs uppercase tracking-wide">Description</div>
-                            <div className="text-white text-sm bg-white/5 px-3 py-2 rounded-lg">{escrow.description}</div>
-                          </div>
+                  if (!hasMore && currentEscrows.length > 0) {
+                    return (
+                      <div className="text-center py-4 text-white/40 text-xs">
+                        {filteredEscrows.length === currentEscrows.length ? (
+                          <>
+                            Showing all {Number(totalCount)} trade{Number(totalCount) !== 1 ? "s" : ""}
+                          </>
+                        ) : (
+                          <>
+                            Showing {filteredEscrows.length} of {Number(totalCount)} trade{Number(totalCount) !== 1 ? "s" : ""}
+                          </>
                         )}
-
-                        {/* View Details Button */}
-                        <div className="pt-2">
-                          <button
-                            onClick={() => {
-                              // Navigate to escrow detail page
-                              navigate(`/escrow/detail/${escrow.escrow_id}`);
-                            }}
-                            className="w-full py-3 rounded-lg font-medium transition-colors bg-[#9BE4A0] text-black hover:bg-[#8BD490]">
-                            View Details
-                          </button>
-                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-
-                  {idx !== escrows.length - 1 && <div className="h-px bg-white/10 mx-6 transition-colors group-hover:bg-white/15" />}
-                </motion.div>
-              );
-            })}
-
-            {/* Load More Button */}
-            {hasMore && (
-              <motion.div className="flex justify-center py-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-                <button onClick={handleLoadMore} disabled={loadingMore} className="px-6 py-3 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed rounded-lg text-white text-sm transition-colors flex items-center gap-2">
-                  {loadingMore ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Loading...
-                    </>
-                  ) : (
-                    <>Load More ({Number(totalCount) - escrows.length} remaining)</>
-                  )}
-                </button>
-              </motion.div>
-            )}
-
-            {/* End of list indicator */}
-            {!hasMore && escrows.length > 0 && (
-              <div className="text-center py-4 text-white/40 text-xs">
-                {getFilteredEscrows().length === escrows.length ? (
-                  <>
-                    Showing all {Number(totalCount)} trade{Number(totalCount) !== 1 ? "s" : ""}
-                  </>
-                ) : (
-                  <>
-                    Showing {getFilteredEscrows().length} of {Number(totalCount)} trade{Number(totalCount) !== 1 ? "s" : ""}
-                  </>
-                )}
+                    );
+                  }
+                  return null;
+                })()}
               </div>
-            )}
-          </div>
-        )}
+            );
+          }
+          return null;
+        })()}
       </div>
     </motion.div>
   );

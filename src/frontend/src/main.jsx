@@ -60,7 +60,7 @@ import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
 import EscrowDashboardPage from "@/pages/escrow/EscrowDashboardPage.jsx";
 import EscrowHistoryPage from "@/pages/escrow/EscrowHistoryPage.jsx";
 import CreateEscrowPage from "@/pages/escrow/CreateEscrowPage.jsx";
-import EscrowListPage from "@/pages/escrow/EscrowListPage.jsx";
+import P2PTradePage from "@/pages/escrow/P2PTradePage.jsx";
 import MyEscrowPage from "@/pages/escrow/MyEscrowPage.jsx";
 import EscrowDetailPage from "@/pages/escrow/EscrowDetailPage.jsx";
 
@@ -187,7 +187,7 @@ function AnimatedRoutes() {
           }>
           <Route index element={<EscrowDashboardPage />} />
           <Route path="create" element={<CreateEscrowPage />} />
-          <Route path="list" element={<EscrowListPage />} />
+          <Route path="list" element={<P2PTradePage />} />
           <Route path="my-escrow" element={<MyEscrowPage />} />
           <Route path="detail/:escrowId" element={<EscrowDetailPage />} />
           <Route path="history" element={<EscrowHistoryPage />} />
