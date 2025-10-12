@@ -72,6 +72,11 @@ module {
     expires_at: Time.Time;
     accepted_at: ?Time.Time;
     released_at: ?Time.Time;
+    // Deposit phase timing (starts when accepted)
+    deposit_expires_at: ?Time.Time;
+    // Deposit status flags
+    deposit_from_done: Bool; // sender has deposited token_from
+    deposit_to_done: Bool;   // recipient has deposited token_to
     
     // Optional fields
     description: ?Text;

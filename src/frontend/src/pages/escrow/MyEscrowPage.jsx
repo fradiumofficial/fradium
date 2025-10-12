@@ -105,27 +105,32 @@ export default function MyEscrowPage() {
 
       let allEscrows = [];
 
-      // Process sent escrows (include all, including AwaitingAccept)
+      // Process sent escrows (only active ones - exclude completed/failed)
       if (sentRes && Array.isArray(sentRes.items)) {
-        const sentNormalized = sentRes.items.map((e) => ({
-          ...e,
-          _token_from: normalizeToken(e.token_from),
-          _token_to: normalizeToken(e.token_to),
-          _state: normalizeState(e.state),
-          _recipient: unwrapOpt(e.recipient),
-          _description: unwrapOpt(e.description),
-          _metadata: unwrapOpt(e.metadata),
-          _type: "sent",
-        }));
+        const sentNormalized = sentRes.items
+          .filter((e) => {
+            const state = normalizeState(e.state);
+            return ["AwaitingAccept", "Pending", "Locked"].includes(state);
+          })
+          .map((e) => ({
+            ...e,
+            _token_from: normalizeToken(e.token_from),
+            _token_to: normalizeToken(e.token_to),
+            _state: normalizeState(e.state),
+            _recipient: unwrapOpt(e.recipient),
+            _description: unwrapOpt(e.description),
+            _metadata: unwrapOpt(e.metadata),
+            _type: "sent",
+          }));
         allEscrows = [...allEscrows, ...sentNormalized];
       }
 
-      // Process received escrows (exclude AwaitingAccept - only show accepted trades)
+      // Process received escrows (only active ones - exclude completed/failed and pending invitations)
       if (receivedRes && Array.isArray(receivedRes.items)) {
         const receivedNormalized = receivedRes.items
           .filter((e) => {
             const state = normalizeState(e.state);
-            return state !== "AwaitingAccept"; // Exclude pending invitations
+            return ["Pending", "Locked"].includes(state); // Only show accepted active trades
           })
           .map((e) => ({
             ...e,
@@ -186,7 +191,9 @@ export default function MyEscrowPage() {
         const pendingNormalized = receivedRes.items
           .filter((e) => {
             const state = normalizeState(e.state);
-            return state === "AwaitingAccept"; // Only pending invitations
+            const expiresAt = new Date(Number(e.expires_at) / 1000000);
+            const isExpired = Date.now() >= expiresAt.getTime();
+            return state === "AwaitingAccept" && !isExpired; // Only pending invitations that haven't expired
           })
           .map((e) => ({
             ...e,
@@ -341,7 +348,7 @@ export default function MyEscrowPage() {
       {/* Header Section */}
       <motion.div className="flex flex-col gap-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}>
         <h1 className="text-white text-2xl font-semibold">My Escrows</h1>
-        <p className="text-white/60 text-sm">Manage your trades and invitations</p>
+        <p className="text-white/60 text-sm">Manage your active trades and invitations</p>
       </motion.div>
 
       {/* Tab Navigation */}
@@ -478,8 +485,8 @@ export default function MyEscrowPage() {
                 <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center">
                   <ArrowRightLeft className="w-8 h-8 text-white/50" />
                 </div>
-                <div className="text-[#B0B6BE] text-sm text-center">{activeTab === "my-trades" ? "No trades found" : "No pending invitations"}</div>
-                <div className="text-[#9BEB83] text-xs text-center">{activeTab === "my-trades" ? "Create your first trade" : "You have no pending trade invitations"}</div>
+                <div className="text-[#B0B6BE] text-sm text-center">{activeTab === "my-trades" ? "No active trades found" : "No pending invitations"}</div>
+                <div className="text-[#9BEB83] text-xs text-center">{activeTab === "my-trades" ? "Create your first trade or check history for completed trades" : "You have no pending trade invitations"}</div>
               </div>
             );
           }

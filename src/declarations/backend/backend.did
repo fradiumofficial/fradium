@@ -185,6 +185,9 @@ type EscrowRecord =
    escrow_id: EscrowId;
    escrow_method: EscrowMethod;
    expires_at: Time;
+  deposit_expires_at: opt Time;
+  deposit_from_done: bool;
+  deposit_to_done: bool;
    metadata: opt text;
    recipient: opt principal;
    released_at: opt Time;
@@ -289,6 +292,9 @@ service : {
       total: nat;
     });
   join_escrow: (params: AcceptEscrowParams) -> (Result_1);
+  mark_deposit: (escrow_id: EscrowId) -> (Result);
+  release_escrow: (escrow_id: EscrowId) -> (Result);
+  get_deposit_account: (escrow_id: EscrowId, side: text) -> (record { owner: principal; sub: opt blob }) query;
   unstake_created_report: (report_id: ReportId) -> (Result);
   unstake_voted_report: (report_id: ReportId) -> (Result);
   vote_report: (params: VoteReportParams) -> (Result);

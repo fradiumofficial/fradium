@@ -23,7 +23,21 @@ function getTokenInfo(tokenType) {
 }
 
 // Helper function to get escrow state color and text
-function getEscrowStateInfo(state) {
+function getEscrowStateInfo(state, escrow = null) {
+  // Check if escrow is expired (no one accepted/joined)
+  const isEscrowExpired = state === "AwaitingAccept" && escrow && Date.now() >= new Date(Number(escrow.expires_at) / 1000000).getTime();
+
+  // Check if deposit is expired for Pending state
+  const isDepositExpired = state === "Pending" && escrow && escrow.deposit_expires_at && Date.now() >= new Date(Number(escrow.deposit_expires_at) / 1000000).getTime();
+
+  if (isEscrowExpired) {
+    return { color: "bg-orange-500/20 text-orange-400", text: "Expired" };
+  }
+
+  if (isDepositExpired) {
+    return { color: "bg-red-500/20 text-red-400", text: "Deposit Expired" };
+  }
+
   switch (state) {
     case "AwaitingAccept":
       return { color: "bg-blue-500/20 text-blue-400", text: "Open" };
@@ -89,7 +103,7 @@ export default function EscrowCard({
   index,
   isExpanded,
   onToggleExpanded,
-  variant = "default", // "default", "my-trades", "pending-trades"
+  variant = "default", // "default", "my-trades", "pending-trades", "history"
   identity,
   showExternalLink = false,
   showJoinButton = false,
@@ -123,7 +137,7 @@ export default function EscrowCard({
   const tokenToSymbol = variantName(escrow.token_to ?? escrow._token_to);
   const tokenFromInfo = getTokenInfo(tokenFromSymbol);
   const tokenToInfo = getTokenInfo(tokenToSymbol);
-  const stateInfo = getEscrowStateInfo(variantName(escrow.state ?? escrow._state));
+  const stateInfo = getEscrowStateInfo(variantName(escrow.state ?? escrow._state), escrow);
 
   const expiresAt = new Date(Number(escrow.expires_at) / 1000000);
   const timeLeft = expiresAt.getTime() - Date.now();
@@ -141,6 +155,8 @@ export default function EscrowCard({
       case "pending-trades":
         return "Pending";
       case "my-trades":
+        return escrow._type === "sent" ? "Created by you" : "Joined by you";
+      case "history":
         return escrow._type === "sent" ? "Created by you" : "Joined by you";
       default:
         return "Open Trade";
@@ -161,6 +177,12 @@ export default function EscrowCard({
         </div>
       );
     } else if (variant === "my-trades") {
+      return (
+        <ButtonPurple fullWidth onClick={() => navigate(`/escrow/detail/${escrow.escrow_id}`)} size="sm" textSize="text-xs" fontWeight="medium">
+          View Details
+        </ButtonPurple>
+      );
+    } else if (variant === "history") {
       return (
         <ButtonPurple fullWidth onClick={() => navigate(`/escrow/detail/${escrow.escrow_id}`)} size="sm" textSize="text-xs" fontWeight="medium">
           View Details
@@ -236,7 +258,6 @@ export default function EscrowCard({
               <ExternalLink className="w-4 h-4" />
             </button>
           )}
-          <div className={`px-3 py-1 rounded-full text-xs font-medium ${stateInfo.color}`}>{stateInfo.text}</div>
           <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/50">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="6,9 12,15 18,9"></polyline>

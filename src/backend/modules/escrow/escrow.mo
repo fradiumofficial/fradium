@@ -11,6 +11,7 @@ import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Hash "mo:base/Hash";
 import Order "mo:base/Order";
+import Blob "mo:base/Blob";
 
 import ParentTypes "../../types";
 import EscrowTypes "types";
@@ -25,7 +26,6 @@ module {
 
   // FRADIUM specific interface (for fee balance check)
   public type FradiumLedgerInterface = actor {
-    icrc1_balance_of : shared query (Account) -> async Nat;
     icrc1_transfer : shared (TransferArg) -> async TransferResult;
     icrc2_transfer_from : shared (TransferFromArgs) -> async TransferFromResult;
   };
@@ -114,6 +114,7 @@ module {
   ) {
     // Constants
     private let FIXED_DURATION_SECONDS : Nat64 = 900; // 15 minutes default
+    private let DEPOSIT_WINDOW_SECONDS : Nat64 = 900; // 15 minutes to deposit after accept
     private let MAX_DURATION_SECONDS : Nat64 = 7 * 24 * 60 * 60; // 7 days
     private let ESCROW_FEE : Nat = 10_000; // 0.0001 FRADIUM (10,000 e8s)
     
@@ -129,6 +130,49 @@ module {
     private var escrowStore = Map.HashMap<EscrowTypes.EscrowId, EscrowTypes.EscrowRecord>(0, Nat64.equal, nat64Hash);
     
     private var next_escrow_id : EscrowTypes.EscrowId = 0;
+
+    // ===== Subaccount helpers =====
+    // Convert Nat64 to 8-byte little-endian array
+    private func nat64ToBytesLE(n : Nat64) : [Nat8] {
+      var x : Nat64 = n;
+      let arr : [var Nat8] = Array.init<Nat8>(8, 0);
+      var i : Nat = 0;
+      label l loop {
+        if (i >= 8) { break l; };
+        let byteVal : Nat64 = x % 256;
+        arr[i] := Nat8.fromNat(Nat64.toNat(byteVal));
+        x := x / 256;
+        i += 1;
+      };
+      Array.freeze<Nat8>(arr)
+    };
+
+    // Derive a 32-byte subaccount for a given escrow_id and side (0 = from, 1 = to)
+    private func derive_subaccount(escrow_id : EscrowTypes.EscrowId, side : Nat8) : Blob {
+      let arr : [var Nat8] = Array.init<Nat8>(32, 0);
+      // Prefix magic 'escrow' + side marker
+      arr[0] := 0x65; // 'e'
+      arr[1] := 0x73; // 's'
+      arr[2] := 0x63; // 'c'
+      arr[3] := 0x72; // 'r'
+      arr[4] := 0x6f; // 'o'
+      arr[5] := 0x77; // 'w'
+      arr[6] := side; // side marker
+      // put 8 bytes of escrow_id at the end (little-endian order)
+      let bytes = nat64ToBytesLE(escrow_id);
+      var j : Nat = 0;
+      label l2 loop {
+        if (j >= 8) { break l2; };
+        arr[24 + j] := bytes[j];
+        j += 1;
+      };
+      Blob.fromArray(Array.freeze<Nat8>(arr))
+    };
+
+    private func get_deposit_account_for_side(escrow : EscrowTypes.EscrowRecord, sideFrom : Bool) : Account {
+      let sub : Blob = if (sideFrom) { derive_subaccount(escrow.escrow_id, 0) } else { derive_subaccount(escrow.escrow_id, 1) };
+      { owner = actorPrincipal; subaccount = ?sub };
+    };
 
     // System hooks
     public func preupgrade() {
@@ -160,6 +204,59 @@ module {
         case (#ETH or #ckETH) { ckethLedger }; // Both map to ckETH ledger
         case (#SOL) { fradiumLedger }; // Fallback: SOL wrapped version not available yet
       };
+    };
+
+    // Helper: Get ledger principal for token (to allow dynamic typed calls)
+    private func get_ledger_principal_for_token(token : EscrowTypes.TokenType) : Principal {
+      switch (token) {
+        case (#FRADIUM) { Principal.fromActor(fradiumLedger) };
+        case (#ICP) { Principal.fromActor(icpLedger) };
+        case (#BTC or #ckBTC) { Principal.fromActor(ckbtcLedger) };
+        case (#ETH or #ckETH) { Principal.fromActor(ckethLedger) };
+        case (#SOL) { Principal.fromActor(fradiumLedger) };
+      }
+    };
+
+    // Helper: Try get balance via Nat then Nat64 variants
+    private func get_balance_generic(ledgerPrin : Principal, account : Account) : async Nat {
+      // Try Nat first
+      do {
+        let dyn : actor { icrc1_balance_of : shared query (Account) -> async Nat } = actor (Principal.toText(ledgerPrin));
+        try {
+          let b = await dyn.icrc1_balance_of(account);
+          return b;
+        } catch e { };
+      };
+      // Then try Nat64
+      do {
+        let dyn64 : actor { icrc1_balance_of : shared query (Account) -> async Nat64 } = actor (Principal.toText(ledgerPrin));
+        try {
+          let b64 = await dyn64.icrc1_balance_of(account);
+          return Nat64.toNat(b64);
+        } catch e2 { };
+      };
+      0
+    };
+
+    // Helper: Try get fee (icrc1_fee) via Nat then Nat64 variants
+    private func get_fee_generic(ledgerPrin : Principal) : async Nat {
+      // Try Nat first
+      do {
+        let dyn : actor { icrc1_fee : shared query () -> async Nat } = actor (Principal.toText(ledgerPrin));
+        try {
+          let f = await dyn.icrc1_fee();
+          return f;
+        } catch e { };
+      };
+      // Then try Nat64
+      do {
+        let dyn64 : actor { icrc1_fee : shared query () -> async Nat64 } = actor (Principal.toText(ledgerPrin));
+        try {
+          let f64 = await dyn64.icrc1_fee();
+          return Nat64.toNat(f64);
+        } catch e2 { };
+      };
+      0
     };
 
     // ===== CREATE ESCROW =====
@@ -210,6 +307,9 @@ module {
         expires_at = Time.now() + Int.abs(Nat64.toNat(durationSeconds)) * 1_000_000_000;
         accepted_at = null;
         released_at = null;
+        deposit_expires_at = null;
+        deposit_from_done = false;
+        deposit_to_done = false;
         description = params.description;
         metadata = params.metadata;
       };
@@ -475,12 +575,103 @@ module {
           if (escrow.sender == caller) {
             return #Err("Creator cannot join their own escrow");
           };
-          switch (escrow.recipient) {
-            case (?rcp) { if (rcp != caller) { return #Err("This escrow is invite-only"); } };
-            case null {};
+          let newRecipient : ?Principal = switch (escrow.recipient) {
+            case (?rcp) { if (rcp != caller) { return #Err("This escrow is invite-only"); }; ?rcp };
+            case null { ?caller };
           };
 
-          // TODO: perform transfers and collect FRADIUM fee here, then set state to Locked
+          // Mark accepted and start deposit window
+          let updated : EscrowTypes.EscrowRecord = {
+            escrow_id = escrow.escrow_id;
+            sender = escrow.sender;
+            recipient = newRecipient;
+            token_from = escrow.token_from;
+            amount_from = escrow.amount_from;
+            token_to = escrow.token_to;
+            amount_to = escrow.amount_to;
+            escrow_method = escrow.escrow_method;
+            state = #Pending; // Pending = awaiting both deposits
+            created_at = escrow.created_at;
+            expires_at = escrow.expires_at;
+            accepted_at = ?Time.now();
+            deposit_expires_at = ?(Time.now() + Int.abs(Nat64.toNat(DEPOSIT_WINDOW_SECONDS)) * 1_000_000_000);
+            deposit_from_done = false;
+            deposit_to_done = false;
+            released_at = escrow.released_at;
+            description = escrow.description;
+            metadata = escrow.metadata;
+          };
+          escrowStore.put(params.escrow_id, updated);
+          return #Ok(params.escrow_id);
+        };
+      };
+    };
+
+    // ===== MARK DEPOSIT (called by each party after sending funds) =====
+    public func mark_deposit(caller : Principal, escrow_id : EscrowTypes.EscrowId) : async ParentTypes.Result<Text, Text> {
+      switch (escrowStore.get(escrow_id)) {
+        case null { return #Err("Escrow not found"); };
+        case (?escrow) {
+          if (escrow.state != #Pending) { return #Err("Escrow is not in deposit phase"); };
+          switch (escrow.deposit_expires_at) {
+            case (?de) { if (Time.now() > de) { return #Err("Deposit window expired"); } };
+            case null { return #Err("Deposit window not set"); };
+          };
+
+          var fromDone = escrow.deposit_from_done;
+          var toDone = escrow.deposit_to_done;
+
+          // Verify deposit by checking ledger balance in escrow subaccount
+          if (caller == escrow.sender) {
+            let acct = get_deposit_account_for_side(escrow, true);
+            let prin = get_ledger_principal_for_token(escrow.token_from);
+            let bal = await get_balance_generic(prin, acct);
+            if (bal < escrow.amount_from) { return #Err("Deposit not detected for sender side"); };
+            fromDone := true;
+          } else {
+            switch (escrow.recipient) {
+              case (?rcp) {
+                if (caller != rcp) { return #Err("Only sender or recipient can mark deposit"); };
+                let acct = get_deposit_account_for_side(escrow, false);
+                let prin = get_ledger_principal_for_token(escrow.token_to);
+                let bal = await get_balance_generic(prin, acct);
+                if (bal < escrow.amount_to) { return #Err("Deposit not detected for recipient side"); };
+                toDone := true;
+              };
+              case null { return #Err("Escrow is open, no specific recipient to deposit"); };
+            };
+          };
+
+          // Collect FRADIUM fee from caller when marking deposit
+          let feeResult = await fradiumLedger.icrc2_transfer_from({
+            from = { owner = caller; subaccount = null };
+            to = { owner = actorPrincipal; subaccount = null };
+            amount = ESCROW_FEE;
+            fee = null;
+            memo = null;
+            created_at_time = null;
+            spender_subaccount = null;
+          });
+          
+          switch (feeResult) {
+            case (#Err(e)) { 
+              let errorMsg = switch (e) {
+                case (#InsufficientFunds(_)) { "Insufficient FRADIUM balance for fee" };
+                case (#InsufficientAllowance(_)) { "Insufficient allowance for fee collection" };
+                case (#GenericError({ message })) { message };
+                case _ { "Unknown fee collection error" };
+              };
+              return #Err("Failed to collect escrow fee: " # errorMsg);
+            };
+            case (#Ok(_)) { };
+          };
+
+          var newState : EscrowTypes.EscrowState = escrow.state;
+          if (fromDone and toDone) {
+            // Both deposited -> move to Locked
+            newState := #Locked;
+          };
+
           let updated : EscrowTypes.EscrowRecord = {
             escrow_id = escrow.escrow_id;
             sender = escrow.sender;
@@ -490,16 +681,136 @@ module {
             token_to = escrow.token_to;
             amount_to = escrow.amount_to;
             escrow_method = escrow.escrow_method;
-            state = #Pending;
+            state = newState;
             created_at = escrow.created_at;
             expires_at = escrow.expires_at;
-            accepted_at = ?Time.now();
+            accepted_at = escrow.accepted_at;
             released_at = escrow.released_at;
+            deposit_expires_at = escrow.deposit_expires_at;
+            deposit_from_done = fromDone;
+            deposit_to_done = toDone;
             description = escrow.description;
             metadata = escrow.metadata;
           };
-          escrowStore.put(params.escrow_id, updated);
-          return #Ok(params.escrow_id);
+          escrowStore.put(escrow_id, updated);
+          // Auto-release when both deposits are completed
+          if (fromDone and toDone) {
+            ignore await release_escrow(actorPrincipal, escrow_id);
+          };
+          return #Ok("Deposit marked and fee collected");
+        };
+      };
+    };
+
+    // ===== RELEASE ESCROW (after both deposits) =====
+    public func release_escrow(caller : Principal, escrow_id : EscrowTypes.EscrowId) : async ParentTypes.Result<Text, Text> {
+      switch (escrowStore.get(escrow_id)) {
+        case null { return #Err("Escrow not found"); };
+        case (?escrow) {
+          if (escrow.state != #Locked) { return #Err("Escrow not locked"); };
+
+          // Perform transfers from escrow subaccounts to parties, accounting for ledger fees
+          let fromSub = derive_subaccount(escrow.escrow_id, 0);
+          let toSub = derive_subaccount(escrow.escrow_id, 1);
+
+          // Principals for dynamic queries
+          let fromPrin = get_ledger_principal_for_token(escrow.token_from);
+          let toPrin = get_ledger_principal_for_token(escrow.token_to);
+
+          // Current balances of escrow subaccounts
+          let fromBal = await get_balance_generic(fromPrin, { owner = actorPrincipal; subaccount = ?fromSub });
+          let toBal = await get_balance_generic(toPrin, { owner = actorPrincipal; subaccount = ?toSub });
+
+          // Ledger fees
+          let fromFee = await get_fee_generic(fromPrin);
+          let toFee = await get_fee_generic(toPrin);
+
+          // Compute transferable amounts considering fees
+          let desiredFromAmt : Nat = escrow.amount_from;
+          let desiredToAmt : Nat = escrow.amount_to;
+
+          let sendFromAmt : Nat = if (fromBal >= desiredFromAmt + fromFee) {
+            desiredFromAmt
+          } else if (fromBal > fromFee) {
+            fromBal - fromFee
+          } else { 0 };
+
+          let sendToAmt : Nat = if (toBal >= desiredToAmt + toFee) {
+            desiredToAmt
+          } else if (toBal > toFee) {
+            toBal - toFee
+          } else { 0 };
+
+          if (sendFromAmt == 0 or sendToAmt == 0) {
+            return #Err("Insufficient escrow balances to cover transfer and fees");
+          };
+
+          // token_from -> recipient
+          let fromLedger = get_ledger_for_token(escrow.token_from);
+          let tx1 = await fromLedger.icrc1_transfer({
+            from_subaccount = ?fromSub;
+            to = { owner = switch (escrow.recipient) { case (?rcp) rcp; case null escrow.sender }; subaccount = null };
+            amount = sendFromAmt;
+            fee = ?fromFee;
+            memo = null;
+            created_at_time = null;
+          });
+
+          switch (tx1) {
+            case (#Err e1) { return #Err("Release failed on token_from transfer"); };
+            case (#Ok _) { };
+          };
+
+          // token_to -> sender
+          let toLedger = get_ledger_for_token(escrow.token_to);
+          let tx2 = await toLedger.icrc1_transfer({
+            from_subaccount = ?toSub;
+            to = { owner = escrow.sender; subaccount = null };
+            amount = sendToAmt;
+            fee = ?toFee;
+            memo = null;
+            created_at_time = null;
+          });
+
+          switch (tx2) {
+            case (#Err e2) { return #Err("Release failed on token_to transfer"); };
+            case (#Ok _) { };
+          };
+
+          let updated : EscrowTypes.EscrowRecord = {
+            escrow_id = escrow.escrow_id;
+            sender = escrow.sender;
+            recipient = escrow.recipient;
+            token_from = escrow.token_from;
+            amount_from = escrow.amount_from;
+            token_to = escrow.token_to;
+            amount_to = escrow.amount_to;
+            escrow_method = escrow.escrow_method;
+            state = #Released;
+            created_at = escrow.created_at;
+            expires_at = escrow.expires_at;
+            accepted_at = escrow.accepted_at;
+            released_at = ?Time.now();
+            deposit_expires_at = escrow.deposit_expires_at;
+            deposit_from_done = escrow.deposit_from_done;
+            deposit_to_done = escrow.deposit_to_done;
+            description = escrow.description;
+            metadata = escrow.metadata;
+          };
+          escrowStore.put(escrow_id, updated);
+          return #Ok("Escrow released");
+        };
+      };
+    };
+
+    // ===== GET DEPOSIT ACCOUNT (owner + subaccount) =====
+    public func get_deposit_account(escrow_id : EscrowTypes.EscrowId, side : Text) : { owner : Principal; sub : ?Blob } {
+      switch (escrowStore.get(escrow_id)) {
+        case null { return { owner = actorPrincipal; sub = null }; };
+        case (?escrow) {
+          let isFrom = if (Text.equal(side, "from")) { true } else { false };
+          let acct = get_deposit_account_for_side(escrow, isFrom);
+          { owner = acct.owner; sub = acct.subaccount };
         };
       };
     };
