@@ -1,6 +1,8 @@
 // Swap Types
 // Types untuk swap functionality dengan ICPSwap integration
 
+import Principal "mo:base/Principal";
+
 module {
   // ===== SWAP REQUEST TYPES =====
   

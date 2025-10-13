@@ -20,7 +20,74 @@ type TokenType =
    ckBTC;
    ckETH;
  };
+type TokenInfo = 
+ record {
+   canister_id: text;
+   decimals: nat8;
+   name: text;
+   symbol: text;
+ };
 type Time = int;
+type SwapStatus = 
+ variant {
+   Cancelled;
+   Completed;
+   Failed;
+   Pending;
+ };
+type SwapQuoteResponse = 
+ record {
+   estimated_output: nat;
+   fee: nat;
+   min_amount_out: nat;
+   price_impact: float64;
+   rate: float64;
+   valid_for: nat;
+ };
+type SwapQuoteRequest = 
+ record {
+   amount: nat;
+   from_token: text;
+   to_token: text;
+ };
+type SwapHistory = 
+ record {
+   completed_at: opt int;
+   created_at: int;
+   fee: nat;
+   from_amount: nat;
+   from_token: text;
+   id: nat;
+   status: SwapStatus;
+   to_amount: nat;
+   to_token: text;
+   transaction_id: opt nat;
+   user: principal;
+ };
+type SwapExecuteResponse = 
+ record {
+   error: opt text;
+   redirect_url: opt text;
+   success: bool;
+   transaction_id: opt nat;
+ };
+type SwapExecuteRequest = 
+ record {
+   amount: nat;
+   deadline: opt nat64;
+   from_token: text;
+   min_amount_out: nat;
+   recipient: opt principal;
+   to_token: text;
+ };
+type SupportedPair = 
+ record {
+   active: bool;
+   from_canister_id: text;
+   from_token: text;
+   to_canister_id: text;
+   to_token: text;
+ };
 type Result_9 = 
  variant {
    Err: text;
@@ -181,13 +248,13 @@ type EscrowRecord =
    amount_from: nat;
    amount_to: nat;
    created_at: Time;
+   deposit_expires_at: opt Time;
+   deposit_from_done: bool;
+   deposit_to_done: bool;
    description: opt text;
    escrow_id: EscrowId;
    escrow_method: EscrowMethod;
    expires_at: Time;
-  deposit_expires_at: opt Time;
-  deposit_from_done: bool;
-  deposit_to_done: bool;
    metadata: opt text;
    recipient: opt principal;
    released_at: opt Time;
@@ -256,6 +323,7 @@ service : {
   create_analyze_history: (params: CreateAnalyzeHistoryParams) -> (Result_9);
   create_escrow: (params: CreateEscrowParams) -> (Result_1);
   create_report: (params: CreateReportParams) -> (Result);
+  execute_swap: (request: SwapExecuteRequest) -> (SwapExecuteResponse);
   get_all_escrows: () -> (vec EscrowRecord) query;
   get_all_escrows_paginated: (offset: nat, limit: nat) ->
    (record {
@@ -264,6 +332,11 @@ service : {
     }) query;
   get_analyze_history: (offset: nat, limit: nat) -> (Result_9);
   get_analyze_history_count: () -> (Result_8);
+  get_deposit_account: (escrow_id: EscrowId, side: text) ->
+   (record {
+      owner: principal;
+      sub: opt blob;
+    }) query;
   get_escrow: (escrow_id: EscrowId) -> (Result_7) query;
   get_escrow_stats: () -> (EscrowStats) query;
   get_my_reports: () -> (Result_6);
@@ -291,10 +364,20 @@ service : {
       offset: nat;
       total: nat;
     });
+  get_supported_pairs: () -> (vec SupportedPair) query;
+  get_supported_tokens: () -> (vec TokenInfo) query;
+  get_swap_by_id: (swap_id: nat) -> (opt SwapHistory) query;
+  get_swap_history: (offset: nat, limit: nat) ->
+   (record {
+      items: vec SwapHistory;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
+  get_swap_quote: (request: SwapQuoteRequest) -> (SwapQuoteResponse) query;
   join_escrow: (params: AcceptEscrowParams) -> (Result_1);
   mark_deposit: (escrow_id: EscrowId) -> (Result);
   release_escrow: (escrow_id: EscrowId) -> (Result);
-  get_deposit_account: (escrow_id: EscrowId, side: text) -> (record { owner: principal; sub: opt blob }) query;
   unstake_created_report: (report_id: ReportId) -> (Result);
   unstake_voted_report: (report_id: ReportId) -> (Result);
   vote_report: (params: VoteReportParams) -> (Result);

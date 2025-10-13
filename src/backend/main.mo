@@ -68,11 +68,7 @@ persistent actor Fradium {
 
   // Swap module for ICPSwap integration
   transient let swapModule = SwapModule.SwapModule(
-    Principal.fromActor(Fradium),
-    FradiumLedgerOriginal,
-    IcpLedgerOriginal,
-    CkbtcLedgerOriginal,
-    CkethLedgerOriginal
+    Principal.fromActor(Fradium)
   );
 
   // ===== SYSTEM FUNCTIONS =====

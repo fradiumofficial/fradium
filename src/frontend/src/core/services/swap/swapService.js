@@ -91,8 +91,8 @@ export class SwapService {
         to_token: toToken,
         amount: amountInSmallestUnit,
         min_amount_out: minAmountOutInSmallestUnit,
-        recipient: recipient ? Principal.fromText(recipient) : null,
-        deadline: null
+        recipient: recipient ? [Principal.fromText(recipient)] : [],
+        deadline: []
       };
 
       const result = await backend.execute_swap(request);
