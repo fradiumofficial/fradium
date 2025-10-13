@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 
 export default function AuthGuard({ children, isRedirectToLogin = false }) {
-  const { isAuthenticated, handleLogin } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const hasShownToast = useRef(false);
@@ -15,8 +15,7 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
 
   // Check if current route requires redirect
   // Wallet routes and paylink dashboard (/paylink), but NOT the public payment links (/paylink/:id)
-  const requiresRedirect = location.pathname.startsWith("/wallet") || 
-                          (location.pathname.startsWith("/paylink") && !isPaymentLinkRoute);
+  const requiresRedirect = location.pathname.startsWith("/wallet") || (location.pathname.startsWith("/paylink") && !isPaymentLinkRoute);
 
   useEffect(() => {
     if (!isAuthenticated && requiresRedirect && !hasShownToast.current) {
@@ -27,7 +26,7 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
       toast.dismiss();
 
       // Show session expired toast
-      toast.error("Your login session has expired", {
+      toast.error("Your session has expired", {
         position: "bottom-center",
         duration: 3000,
         style: {

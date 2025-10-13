@@ -65,6 +65,11 @@ import P2PTradePage from "@/pages/escrow/P2PTradePage.jsx";
 import MyEscrowPage from "@/pages/escrow/MyEscrowPage.jsx";
 import EscrowDetailPage from "@/pages/escrow/EscrowDetailPage.jsx";
 import PricingPage from "@/pages/developers/PricingPage.jsx";
+import DeveloperPage from "@/pages/developers/DeveloperPage.jsx";
+import APILayout from "@/core/components/layouts/APILayout.jsx";
+import OverviewPage from "@/pages/developers/api/OverviewPage.jsx";
+import AnalyzeHistoryPage from "@/pages/developers/api/AnalyzeHistoryPage.jsx";
+import AccessTokenPage from "@/pages/developers/api/AccessTokenPage.jsx";
 import PaymentLinksPage from "@/pages/payment-links/PaymentLinksPage.jsx";
 import PaymentRequestPage from "@/pages/payment-links/PaymentRequestPage.jsx";
 
@@ -167,8 +172,8 @@ function AnimatedRoutes() {
           <Route path="/products-wallet" element={<ProductsWallet />} />
           <Route path="/products-escrow" element={<ProductsEscrow />} />
           <Route path="/assistant" element={<AssistantPage />} />
-          <Route path="/developers/pricing" element={<PricingPage />} />
-
+          <Route path="/developer-overview" element={<DeveloperPage />} />
+          <Route path="/developer-pricing" element={<PricingPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
@@ -191,6 +196,17 @@ function AnimatedRoutes() {
         </Route>
 
         {/* Wallet Routes */}
+        <Route
+          path="/developer"
+          element={
+            <AuthGuard isRedirectToLogin>
+              <APILayout />
+            </AuthGuard>
+          }>
+          <Route index element={<OverviewPage />} />
+          <Route path="analyze-history" element={<AnalyzeHistoryPage />} />
+          <Route path="access-token" element={<AccessTokenPage />} />
+        </Route>
         <Route
           path="/wallet"
           element={
