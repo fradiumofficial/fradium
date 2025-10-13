@@ -193,6 +193,55 @@ export const idlFactory = ({ IDL }) => {
   const Result_4 = IDL.Variant({ Ok: Report, Err: IDL.Text });
   const Result_3 = IDL.Variant({ Ok: IDL.Vec(Report), Err: IDL.Text });
   const AcceptEscrowParams = IDL.Record({ escrow_id: EscrowId });
+
+  // ====== START: ADDED PAYMENT LINK TYPES ======
+  const CreatePaymentLinkParams = IDL.Record({
+    token: TokenType,
+    amount: IDL.Nat,
+    duration_nanos: IDL.Nat,
+    custom_id: IDL.Opt(IDL.Text),
+  });
+  const PaymentStatus = IDL.Variant({
+    Active: IDL.Null,
+    Cancelled: IDL.Null,
+    Completed: IDL.Null,
+    Expired: IDL.Null,
+  });
+  const CreatorAddresses = IDL.Record({
+    solana: IDL.Text,
+    ethereum: IDL.Text,
+    bitcoin: IDL.Text,
+  });
+  const PaymentLink = IDL.Record({
+    id: IDL.Text,
+    status: PaymentStatus,
+    creator: IDL.Principal,
+    token: TokenType,
+    creator_addresses: IDL.Opt(CreatorAddresses),
+    created_at: Time,
+    payer: IDL.Opt(IDL.Principal),
+    amount: IDL.Nat,
+    expires_at: Time,
+  });
+  const PaymentLinkPublic = IDL.Record({
+    status: PaymentStatus,
+    creator: IDL.Principal,
+    token: TokenType,
+    creator_addresses: IDL.Opt(CreatorAddresses),
+    created_at: Time,
+    amount: IDL.Nat,
+    expires_at: Time,
+  });
+  const Result_11 = IDL.Variant({
+    Ok: IDL.Vec(PaymentLink),
+    Err: IDL.Text,
+  });
+  const Result_12 = IDL.Variant({
+    Ok: PaymentLinkPublic,
+    Err: IDL.Text,
+  });
+  // ====== END: ADDED PAYMENT LINK TYPES ======
+
   const VoteReportParams = IDL.Record({
     report_id: ReportId,
     vote_type: IDL.Bool,
@@ -202,20 +251,42 @@ export const idlFactory = ({ IDL }) => {
     admin_change_report_deadline: IDL.Func([ReportId, Time], [Result], []),
     admin_delete_report: IDL.Func([ReportId], [Result], []),
     analyze_address: IDL.Func([IDL.Text], [Result_10], []),
+    cancel_payment_link: IDL.Func([IDL.Text], [Result], []),
     check_faucet_claim: IDL.Func([], [Result], []),
     claim_faucet: IDL.Func([], [Result], []),
-    create_analyze_history: IDL.Func([CreateAnalyzeHistoryParams], [Result_9], []),
+    create_analyze_history: IDL.Func(
+      [CreateAnalyzeHistoryParams],
+      [Result_9],
+      [],
+    ),
     create_escrow: IDL.Func([CreateEscrowParams], [Result_1], []),
+    create_payment_link: IDL.Func([CreatePaymentLinkParams], [Result], []),
     create_report: IDL.Func([CreateReportParams], [Result], []),
-    get_all_escrows: IDL.Func([], [IDL.Vec(EscrowRecord)], ["query"]),
-    get_all_escrows_paginated: IDL.Func([IDL.Nat, IDL.Nat], [IDL.Record({ total: IDL.Nat, items: IDL.Vec(EscrowRecord) })], ["query"]),
+    execute_payment_icrc: IDL.Func([IDL.Text], [Result], []),
+    get_all_escrows: IDL.Func([], [IDL.Vec(EscrowRecord)], ['query']),
+    get_all_escrows_paginated: IDL.Func(
+      [IDL.Nat, IDL.Nat],
+      [IDL.Record({ total: IDL.Nat, items: IDL.Vec(EscrowRecord) })],
+      ['query'],
+    ),
     get_analyze_history: IDL.Func([IDL.Nat, IDL.Nat], [Result_9], []),
     get_analyze_history_count: IDL.Func([], [Result_8], []),
-    get_escrow: IDL.Func([EscrowId], [Result_7], ["query"]),
-    get_escrow_stats: IDL.Func([], [EscrowStats], ["query"]),
+    get_deposit_account: IDL.Func(
+      [EscrowId, IDL.Text],
+      [IDL.Record({ owner: IDL.Principal, sub: IDL.Opt(IDL.Vec(IDL.Nat8)) })],
+      ['query'],
+    ),
+    get_escrow: IDL.Func([EscrowId], [Result_7], ['query']),
+    get_escrow_stats: IDL.Func([], [EscrowStats], ['query']),
+    get_my_payment_links: IDL.Func([], [Result_11], []),
     get_my_reports: IDL.Func([], [Result_6], []),
     get_my_votes: IDL.Func([], [Result_5], []),
-    get_open_escrows_paginated: IDL.Func([IDL.Nat, IDL.Nat], [IDL.Record({ total: IDL.Nat, items: IDL.Vec(EscrowRecord) })], ["query"]),
+    get_open_escrows_paginated: IDL.Func(
+      [IDL.Nat, IDL.Nat],
+      [IDL.Record({ total: IDL.Nat, items: IDL.Vec(EscrowRecord) })],
+      ['query'],
+    ),
+    get_payment_link_details: IDL.Func([IDL.Text], [Result_12], ['query']),
     get_received_escrows: IDL.Func([], [Result_2], []),
     get_received_escrows_paginated: IDL.Func(
       [IDL.Nat, IDL.Nat],
@@ -227,10 +298,10 @@ export const idlFactory = ({ IDL }) => {
           items: IDL.Vec(EscrowRecord),
         }),
       ],
-      []
+      [],
     ),
-    get_report: IDL.Func([ReportId], [Result_4], ["query"]),
-    get_reports: IDL.Func([], [Result_3], ["query"]),
+    get_report: IDL.Func([ReportId], [Result_4], ['query']),
+    get_reports: IDL.Func([], [Result_3], ['query']),
     get_sent_escrows: IDL.Func([], [Result_2], []),
     get_sent_escrows_paginated: IDL.Func(
       [IDL.Nat, IDL.Nat],
@@ -242,12 +313,12 @@ export const idlFactory = ({ IDL }) => {
           items: IDL.Vec(EscrowRecord),
         }),
       ],
-      []
+      [],
     ),
     join_escrow: IDL.Func([AcceptEscrowParams], [Result_1], []),
     mark_deposit: IDL.Func([EscrowId], [Result], []),
+    record_native_payment: IDL.Func([IDL.Text, IDL.Text], [Result], []),
     release_escrow: IDL.Func([EscrowId], [Result], []),
-    get_deposit_account: IDL.Func([EscrowId, IDL.Text], [IDL.Record({ owner: IDL.Principal, sub: IDL.Opt(IDL.Vec(IDL.Nat8)) })], ["query"]),
     unstake_created_report: IDL.Func([ReportId], [Result], []),
     unstake_voted_report: IDL.Func([ReportId], [Result], []),
     vote_report: IDL.Func([VoteReportParams], [Result], []),

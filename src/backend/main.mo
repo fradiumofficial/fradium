@@ -6,28 +6,32 @@ import IcpLedgerOriginal "canister:icp_ledger";
 import CkbtcLedgerOriginal "canister:ckbtc_ledger";
 import CkethLedgerOriginal "canister:cketh_ledger";
 import WalletCanisterOriginal "canister:wallet";
+
 import Types "types";
 import CommunityTypes "./modules/community/types";
 import AnalyzeTypes "./modules/analyze/types";
 import EscrowTypes "./modules/escrow/types";
 import SwapTypes "./modules/swap/types";
+import PaylinkTypes "./modules/paylink/types";
+
 import AnalyzeModule "./modules/analyze/analyze";
 import FaucetModule "./modules/faucet/faucet";
 import CommunityModule "./modules/community/community";
 import AdminModule "./modules/admin/admin";
 import EscrowModule "./modules/escrow/escrow";
 import SwapModule "./modules/swap/swap";
+import PaylinkModule "./modules/paylink/paylink";
 
 persistent actor Fradium {
   // ===== LEDGER CANISTERS SETUP =====
   // Cast ledger canisters to compatible interfaces for different modules
-  
+
   // Faucet & Community modules (only use FRADIUM ledger)
   transient let FradiumLedger : FaucetModule.TokenCanisterInterface = FradiumLedgerOriginal;
   transient let FradiumLedgerForCommunity : CommunityModule.TokenCanisterInterface = FradiumLedgerOriginal;
-  
+
   // Escrow module (supports multiple token types via ICRC-2 standard + native coins)
-  // 
+  //
   // WRAPPED TOKENS (Proper escrow - funds locked in canister):
   // - FRADIUM -> fradium_ledger
   // - ICP -> icp_ledger
@@ -54,10 +58,10 @@ persistent actor Fradium {
   transient let communityModule = CommunityModule.CommunityModule(Principal.fromActor(Fradium), FradiumLedgerForCommunity);
   transient let analyzeModule = AnalyzeModule.AnalyzeModule();
   transient let adminModule = AdminModule.AdminModule();
-  
+
   // Escrow module with both wrapped token ledgers and wallet canister
   transient let escrowModule = EscrowModule.EscrowModule(
-    Principal.fromActor(Fradium), 
+    Principal.fromActor(Fradium),
     FradiumLedgerForEscrow,
     FradiumFeeLedgerForEscrow,
     IcpLedgerForEscrow,
@@ -75,6 +79,16 @@ persistent actor Fradium {
     CkethLedgerOriginal
   );
 
+  // Paylink module initialization
+  transient let paylinkModule = PaylinkModule.PaylinkModule(
+    Principal.fromActor(Fradium),
+    IcpLedgerOriginal,
+    FradiumLedgerOriginal,
+    CkbtcLedgerOriginal,
+    CkethLedgerOriginal,
+    WalletCanisterOriginal
+  );
+
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
     faucetModule.preupgrade();
@@ -82,6 +96,7 @@ persistent actor Fradium {
     analyzeModule.preupgrade();
     escrowModule.preupgrade();
     swapModule.preupgrade();
+    paylinkModule.preupgrade();
   };
 
   system func postupgrade() {
@@ -90,6 +105,7 @@ persistent actor Fradium {
     analyzeModule.postupgrade();
     escrowModule.postupgrade();
     swapModule.postupgrade();
+    paylinkModule.postupgrade();
   };
 
   // ===== REPORT FUNCTIONS (COMMUNITY MODULE) =====
@@ -152,107 +168,110 @@ persistent actor Fradium {
   };
 
   // ===== ESCROW FUNCTIONS (ESCROW MODULE - TrustPay) =====
-  
-  // Create new escrow payment
   public shared({ caller }) func create_escrow(params : EscrowTypes.CreateEscrowParams) : async Types.Result<EscrowTypes.EscrowId, Text> {
     return await escrowModule.create_escrow(caller, params);
   };
 
-  // Get escrow details
   public query func get_escrow(escrow_id : EscrowTypes.EscrowId) : async Types.Result<EscrowTypes.EscrowRecord, Text> {
     return escrowModule.get_escrow(escrow_id);
   };
 
-  // Get escrows sent by user
   public shared({ caller }) func get_sent_escrows() : async Types.Result<[EscrowTypes.GetMyEscrowsParams], Text> {
     return escrowModule.get_sent_escrows(caller);
   };
 
-  // Get escrows sent by user with pagination
   public shared({ caller }) func get_sent_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat; offset : Nat; limit : Nat } {
     return escrowModule.get_sent_escrows_paginated(caller, offset, limit);
   };
 
-  // Get escrows received by user
   public shared({ caller }) func get_received_escrows() : async Types.Result<[EscrowTypes.GetMyEscrowsParams], Text> {
     return escrowModule.get_received_escrows(caller);
   };
 
-  // Get escrows received by user with pagination
   public shared({ caller }) func get_received_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat; offset : Nat; limit : Nat } {
     return escrowModule.get_received_escrows_paginated(caller, offset, limit);
   };
 
-  // Get escrow statistics
   public query func get_escrow_stats() : async EscrowTypes.EscrowStats {
     return escrowModule.get_escrow_stats();
   };
 
-  // Get all escrows (admin)
   public query func get_all_escrows() : async [EscrowTypes.EscrowRecord] {
     return escrowModule.get_all_escrows();
   };
 
-  // Get all escrows with pagination
   public query func get_all_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat } {
     return escrowModule.get_all_escrows_paginated(offset, limit);
   };
 
-  // Get open escrows with pagination
   public query func get_open_escrows_paginated(offset : Nat, limit : Nat) : async { items : [EscrowTypes.EscrowRecord]; total : Nat } {
     return escrowModule.get_open_escrows_paginated(offset, limit);
   };
 
-  // Join escrow (counterparty)
   public shared({ caller }) func join_escrow(params : EscrowTypes.AcceptEscrowParams) : async Types.Result<EscrowTypes.EscrowId, Text> {
     return await escrowModule.join_escrow(caller, params);
   };
 
-  // ===== SWAP FUNCTIONS (SWAP MODULE - ICPSwap Integration) =====
-  
-  // Get swap quote
-  public query func get_swap_quote(request : SwapTypes.SwapQuoteRequest) : async SwapTypes.SwapQuoteResponse {
-    return swapModule.getSwapQuote(request);
-  };
-
-  // Execute swap (redirects to ICPSwap)
-  public shared({ caller }) func execute_swap(request : SwapTypes.SwapExecuteRequest) : async SwapTypes.SwapExecuteResponse {
-    return swapModule.executeSwap(caller, request);
-  };
-
-  // Get swap history
-  public shared({ caller }) func get_swap_history(offset : Nat, limit : Nat) : async { items : [SwapTypes.SwapHistory]; total : Nat; offset : Nat; limit : Nat } {
-    return swapModule.getSwapHistory(caller, offset, limit);
-  };
-
-  // Get swap by ID
-  public query func get_swap_by_id(swap_id : Nat) : async ?SwapTypes.SwapHistory {
-    return swapModule.getSwapById(swap_id);
-  };
-
-  // Get supported tokens
-  public query func get_supported_tokens() : async [SwapTypes.TokenInfo] {
-    return swapModule.getSupportedTokens();
-  };
-
-  // Get supported pairs
-  public query func get_supported_pairs() : async [SwapTypes.SupportedPair] {
-    return swapModule.getSupportedPairs();
-  };
-
-  // Mark deposit after sending funds to escrow subaccount
   public shared({ caller }) func mark_deposit(escrow_id : EscrowTypes.EscrowId) : async Types.Result<Text, Text> {
     return await escrowModule.mark_deposit(caller, escrow_id);
   };
 
-  // Release escrow after both deposits are done
   public shared({ caller }) func release_escrow(escrow_id : EscrowTypes.EscrowId) : async Types.Result<Text, Text> {
     return await escrowModule.release_escrow(caller, escrow_id);
   };
 
-  // Get deposit account (owner + subaccount) for either side ("from" or "to")
   public query func get_deposit_account(escrow_id : EscrowTypes.EscrowId, side : Text) : async { owner : Principal; sub : ?Blob } {
     return escrowModule.get_deposit_account(escrow_id, side);
+  };
+
+  // ===== SWAP FUNCTIONS (SWAP MODULE - ICPSwap Integration) =====
+  public query func get_swap_quote(request : SwapTypes.SwapQuoteRequest) : async SwapTypes.SwapQuoteResponse {
+    return swapModule.getSwapQuote(request);
+  };
+
+  public shared({ caller }) func execute_swap(request : SwapTypes.SwapExecuteRequest) : async SwapTypes.SwapExecuteResponse {
+    return swapModule.executeSwap(caller, request);
+  };
+
+  public shared({ caller }) func get_swap_history(offset : Nat, limit : Nat) : async { items : [SwapTypes.SwapHistory]; total : Nat; offset : Nat; limit : Nat } {
+    return swapModule.getSwapHistory(caller, offset, limit);
+  };
+
+  public query func get_swap_by_id(swap_id : Nat) : async ?SwapTypes.SwapHistory {
+    return swapModule.getSwapById(swap_id);
+  };
+
+  public query func get_supported_tokens() : async [SwapTypes.TokenInfo] {
+    return swapModule.getSupportedTokens();
+  };
+
+  public query func get_supported_pairs() : async [SwapTypes.SupportedPair] {
+    return swapModule.getSupportedPairs();
+  };
+
+  // ===== PAYMENT LINK FUNCTIONS (PAYLINK MODULE) =====
+  public shared({ caller }) func create_payment_link(params : PaylinkTypes.CreatePaymentLinkParams) : async Types.Result<Text, Text> {
+    return await paylinkModule.create_payment_link(caller, params);
+  };
+
+  public shared({ caller }) func get_my_payment_links() : async Types.Result<[PaylinkTypes.PaymentLink], Text> {
+    return paylinkModule.get_my_payment_links(caller);
+  };
+
+  public query func get_payment_link_details(id: Text) : async Types.Result<PaylinkTypes.PaymentLinkPublic, Text> {
+    return paylinkModule.get_payment_link_details(id);
+  };
+
+  public shared({ caller }) func cancel_payment_link(link_id: Text) : async Types.Result<Text, Text> {
+    return paylinkModule.cancel_payment_link(caller, link_id);
+  };
+
+  public shared({ caller }) func execute_payment_icrc(link_id: Text) : async Types.Result<Text, Text> {
+    return await paylinkModule.execute_payment_icrc(caller, link_id);
+  };
+
+  public shared({ caller }) func record_native_payment(link_id: Text, tx_hash: Text) : async Types.Result<Text, Text> {
+    return paylinkModule.record_native_payment(caller, link_id, tx_hash);
   };
 
   // ===== ADMIN FUNCTIONS (ADMIN MODULE) =====

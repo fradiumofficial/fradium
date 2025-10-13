@@ -13,6 +13,7 @@ import ButtonPurple from "@/core/components/ButtonPurple";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { cn } from "@/core/lib/utils";
 import toast from "react-hot-toast";
+
 function NavbarCopyPrincipal({ identity }) {
   const [copied, setCopied] = React.useState(false);
   return (
@@ -80,7 +81,7 @@ const Navbar = () => {
 
   const mobileItemClass = (active) => `font-[General Sans, sans-serif] text-lg ${active ? "text-white font-medium" : "text-white/70 font-medium"} no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95`;
 
-  const isProductsActive = pathname.startsWith("/products");
+  const isProductsActive = pathname.startsWith("/products") || pathname.startsWith("/paylink");
   const productsBtnClass = `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 flex items-center gap-1 ${isProductsActive ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"}`;
 
   const isDevelopersActive = pathname.startsWith("/developers");
@@ -216,6 +217,9 @@ const Navbar = () => {
                 <Link to="/products-escrow" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
                   Fradium Escrow
                 </Link>
+                <Link to="/paylink" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Paylink
+                </Link>
               </div>
             )}
           </div>
@@ -338,6 +342,15 @@ const Navbar = () => {
                       setMenuOpen(false);
                     }}>
                     Escrow
+                  </Link>
+                  <Link
+                    to="/paylink"
+                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
+                    onClick={() => {
+                      setProductsDropdown(false);
+                      setMenuOpen(false);
+                    }}>
+                    Paylink
                   </Link>
                 </div>
               )}

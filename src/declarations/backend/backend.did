@@ -1,301 +1,272 @@
-type Voter = 
- record {
-   vote: bool;
-   vote_weight: nat;
-   voter: principal;
- };
-type VoteReportParams = 
- record {
-   report_id: ReportId;
-   stake_amount: nat;
-   vote_type: bool;
- };
-type TokenType = 
- variant {
-   BTC;
-   ETH;
-   FRADIUM;
-   ICP;
-   SOL;
-   ckBTC;
-   ckETH;
- };
+type Voter = record {
+  vote : bool;
+  vote_weight : nat;
+  voter : principal;
+};
+type VoteReportParams = record {
+  report_id : ReportId;
+  stake_amount : nat;
+  vote_type : bool;
+};
+type TokenType = variant {
+  BTC;
+  ETH;
+  FRADIUM;
+  ICP;
+  SOL;
+  ckBTC;
+  ckETH;
+};
 type Time = int;
-type Result_9 = 
- variant {
-   Err: text;
-   Ok: vec AnalyzeHistory;
- };
-type Result_8 = 
- variant {
-   Err: text;
-   Ok: nat;
- };
-type Result_7 = 
- variant {
-   Err: text;
-   Ok: EscrowRecord;
- };
-type Result_6 = 
- variant {
-   Err: text;
-   Ok: vec GetMyReportsParams;
- };
-type Result_5 = 
- variant {
-   Err: text;
-   Ok: vec GetMyVotesParams;
- };
-type Result_4 = 
- variant {
-   Err: text;
-   Ok: Report;
- };
-type Result_3 = 
- variant {
-   Err: text;
-   Ok: vec Report;
- };
-type Result_2 = 
- variant {
-   Err: text;
-   Ok: vec GetMyEscrowsParams;
- };
-type Result_10 = 
- variant {
-   Err: text;
-   Ok: GetAnalyzeAddressResult;
- };
-type Result_1 = 
- variant {
-   Err: text;
-   Ok: EscrowId;
- };
-type Result = 
- variant {
-   Err: text;
-   Ok: text;
- };
 type ReportId = nat32;
-type Report = 
- record {
-   address: text;
-   category: text;
-   chain: text;
-   created_at: Time;
-   description: text;
-   evidence: vec text;
-   report_id: ReportId;
-   reporter: principal;
-   url: opt text;
-   vote_deadline: Time;
-   voted_by: vec Voter;
-   votes_no: nat;
-   votes_yes: nat;
- };
-type GetMyVotesParams = 
- record {
-   address: text;
-   category: text;
-   chain: text;
-   created_at: Time;
-   description: text;
-   evidence: vec text;
-   report_id: ReportId;
-   reporter: principal;
-   reward: nat;
-   stake_amount: nat;
-   unstaked_at: opt Time;
-   url: opt text;
-   vote_deadline: Time;
-   vote_type: bool;
-   voted_by: vec Voter;
-   votes_no: nat;
-   votes_yes: nat;
- };
-type GetMyReportsParams = 
- record {
-   address: text;
-   category: text;
-   chain: text;
-   created_at: Time;
-   description: text;
-   evidence: vec text;
-   report_id: ReportId;
-   reporter: principal;
-   reward: nat;
-   stake_amount: nat;
-   unstaked_at: opt Time;
-   url: opt text;
-   vote_deadline: Time;
-   voted_by: vec Voter;
-   votes_no: nat;
-   votes_yes: nat;
- };
-type GetMyEscrowsParams = 
- record {
-   amount_from: nat;
-   amount_to: nat;
-   created_at: Time;
-   description: opt text;
-   escrow_id: EscrowId;
-   escrow_method: EscrowMethod;
-   expires_at: Time;
-   recipient: opt principal;
-   sender: principal;
-   state: EscrowState;
-   token_from: TokenType;
-   token_to: TokenType;
- };
-type GetAnalyzeAddressResult = 
- record {
-   is_safe: bool;
-   report: opt Report;
- };
-type EscrowStats = 
- record {
-   by_state: vec record {
-                   EscrowState;
-                   nat;
-                 };
-   completed_escrows: nat;
-   pending_escrows: nat;
-   suspended_escrows: nat;
-   total_escrows: nat;
-   total_volume_locked: nat;
- };
-type EscrowState = 
- variant {
-   AwaitingAccept;
-   Cancelled;
-   Expired;
-   Locked;
-   Pending;
-   Rejected;
-   Released;
-   Suspended;
- };
-type EscrowRecord = 
- record {
-   accepted_at: opt Time;
-   amount_from: nat;
-   amount_to: nat;
-   created_at: Time;
-   description: opt text;
-   escrow_id: EscrowId;
-   escrow_method: EscrowMethod;
-   expires_at: Time;
+type Report = record {
+  address : text;
+  category : text;
+  chain : text;
+  created_at : Time;
+  description : text;
+  evidence : vec text;
+  report_id : ReportId;
+  reporter : principal;
+  url : opt text;
+  vote_deadline : Time;
+  voted_by : vec Voter;
+  votes_no : nat;
+  votes_yes : nat;
+};
+type GetAnalyzeAddressResult = record {
+  is_safe : bool;
+  report : opt Report;
+};
+type AnalyzeHistoryType = variant {
+  AIAnalysis;
+  CommunityVote;
+};
+type AnalyzeHistory = record {
+  address : text;
+  analyzed_type : AnalyzeHistoryType;
+  created_at : Time;
+  is_safe : bool;
+  metadata : text;
+  token_type : text;
+};
+type EscrowId = nat64;
+type EscrowMethod = variant {
+  Native;
+  Wrapped;
+};
+type EscrowState = variant {
+  AwaitingAccept;
+  Cancelled;
+  Expired;
+  Locked;
+  Pending;
+  Rejected;
+  Released;
+  Suspended;
+};
+type CreateEscrowParams = record {
+  amount_from : nat;
+  amount_to : nat;
+  description : opt text;
+  duration_seconds : opt nat64;
+  metadata : opt text;
+  recipient : opt principal;
+  token_from : TokenType;
+  token_to : TokenType;
+};
+type EscrowRecord = record {
+  accepted_at : opt Time;
+  amount_from : nat;
+  amount_to : nat;
+  created_at : Time;
+  description : opt text;
+  escrow_id : EscrowId;
+  escrow_method : EscrowMethod;
+  expires_at : Time;
   deposit_expires_at: opt Time;
   deposit_from_done: bool;
   deposit_to_done: bool;
-   metadata: opt text;
-   recipient: opt principal;
-   released_at: opt Time;
-   sender: principal;
-   state: EscrowState;
-   token_from: TokenType;
-   token_to: TokenType;
- };
-type EscrowMethod = 
- variant {
-   Native;
-   Wrapped;
- };
-type EscrowId = nat64;
-type CreateReportParams = 
- record {
-   address: text;
-   category: text;
-   chain: text;
-   description: text;
-   evidence: vec text;
-   stake_amount: nat;
-   url: opt text;
- };
-type CreateEscrowParams = 
- record {
-   amount_from: nat;
-   amount_to: nat;
-   description: opt text;
-   duration_seconds: opt nat64;
-   metadata: opt text;
-   recipient: opt principal;
-   token_from: TokenType;
-   token_to: TokenType;
- };
-type CreateAnalyzeHistoryParams = 
- record {
-   address: text;
-   analyzed_type: AnalyzeHistoryType;
-   is_safe: bool;
-   metadata: text;
-   token_type: text;
- };
-type AnalyzeHistoryType = 
- variant {
-   AIAnalysis;
-   CommunityVote;
- };
-type AnalyzeHistory = 
- record {
-   address: text;
-   analyzed_type: AnalyzeHistoryType;
-   created_at: Time;
-   is_safe: bool;
-   metadata: text;
-   token_type: text;
- };
-type AcceptEscrowParams = record {escrow_id: EscrowId;};
+  metadata : opt text;
+  recipient : opt principal;
+  released_at : opt Time;
+  sender : principal;
+  state : EscrowState;
+  token_from : TokenType;
+  token_to : TokenType;
+};
+type EscrowStats = record {
+  by_state : vec record {
+    EscrowState;
+    nat;
+  };
+  completed_escrows : nat;
+  pending_escrows : nat;
+  suspended_escrows : nat;
+  total_escrows : nat;
+  total_volume_locked : nat;
+};
+type GetMyReportsParams = record {
+  address : text;
+  category : text;
+  chain : text;
+  created_at : Time;
+  description : text;
+  evidence : vec text;
+  report_id : ReportId;
+  reporter : principal;
+  reward : nat;
+  stake_amount : nat;
+  unstaked_at : opt Time;
+  url : opt text;
+  vote_deadline : Time;
+  voted_by : vec Voter;
+  votes_no : nat;
+  votes_yes : nat;
+};
+type GetMyVotesParams = record {
+  address : text;
+  category : text;
+  chain : text;
+  created_at : Time;
+  description : text;
+  evidence : vec text;
+  report_id : ReportId;
+  reporter : principal;
+  reward : nat;
+  stake_amount : nat;
+  unstaked_at : opt Time;
+  url : opt text;
+  vote_deadline : Time;
+  vote_type : bool;
+  voted_by : vec Voter;
+  votes_no : nat;
+  votes_yes : nat;
+};
+type GetMyEscrowsParams = record {
+  amount_from : nat;
+  amount_to : nat;
+  created_at : Time;
+  description : opt text;
+  escrow_id : EscrowId;
+  escrow_method : EscrowMethod;
+  expires_at : Time;
+  recipient : opt principal;
+  sender : principal;
+  state : EscrowState;
+  token_from : TokenType;
+  token_to : TokenType;
+};
+type CreateReportParams = record {
+  address : text;
+  category : text;
+  chain : text;
+  description : text;
+  evidence : vec text;
+  stake_amount : nat;
+  url : opt text;
+};
+type CreateAnalyzeHistoryParams = record {
+  address : text;
+  analyzed_type : AnalyzeHistoryType;
+  is_safe : bool;
+  metadata : text;
+  token_type : text;
+};
+type AcceptEscrowParams = record {
+  escrow_id : EscrowId;
+};
+
+// --- Payment Link Types ---
+type CreatorAddresses = record {
+  bitcoin: text;
+  ethereum: text;
+  solana: text;
+};
+type CreatePaymentLinkParams = record {
+  amount: nat;
+  custom_id: opt text;
+  duration_nanos: nat;
+  token: TokenType;
+};
+type PaymentStatus = variant {
+  Active;
+  Cancelled;
+  Completed;
+  Expired;
+};
+type PaymentLink = record {
+  amount: nat;
+  created_at: Time;
+  creator: principal;
+  creator_addresses: opt CreatorAddresses;
+  expires_at: Time;
+  id: text;
+  payer: opt principal;
+  status: PaymentStatus;
+  token: TokenType;
+};
+type PaymentLinkPublic = record {
+  amount: nat;
+  created_at: Time;
+  creator: principal;
+  creator_addresses: opt CreatorAddresses;
+  expires_at: Time;
+  status: PaymentStatus;
+  token: TokenType;
+};
+
+// --- Result Types (Cleaned and Merged) ---
+type Result = variant { Err : text; Ok : text; };
+type Result_1 = variant { Err : text; Ok : EscrowId; };
+type Result_2 = variant { Err : text; Ok : vec GetMyEscrowsParams; };
+type Result_3 = variant { Err : text; Ok : vec Report; };
+type Result_4 = variant { Err : text; Ok : Report; };
+type Result_5 = variant { Err : text; Ok : vec GetMyVotesParams; };
+type Result_6 = variant { Err : text; Ok : vec GetMyReportsParams; };
+type Result_7 = variant { Err : text; Ok : EscrowRecord; };
+type Result_8 = variant { Err : text; Ok : nat; };
+type Result_9 = variant { Err : text; Ok : vec AnalyzeHistory; };
+type Result_10 = variant { Err : text; Ok : GetAnalyzeAddressResult; };
+type Result_11 = variant { Err : text; Ok : vec PaymentLink; };
+type Result_12 = variant { Err : text; Ok : PaymentLinkPublic; };
+
+
 service : {
-  admin_change_report_deadline: (report_id: ReportId, new_deadline: Time) ->
-   (Result);
-  admin_delete_report: (report_id: ReportId) -> (Result);
-  analyze_address: (address: text) -> (Result_10);
-  check_faucet_claim: () -> (Result);
-  claim_faucet: () -> (Result);
-  create_analyze_history: (params: CreateAnalyzeHistoryParams) -> (Result_9);
-  create_escrow: (params: CreateEscrowParams) -> (Result_1);
-  create_report: (params: CreateReportParams) -> (Result);
-  get_all_escrows: () -> (vec EscrowRecord) query;
-  get_all_escrows_paginated: (offset: nat, limit: nat) ->
-   (record {
-      items: vec EscrowRecord;
-      total: nat;
-    }) query;
-  get_analyze_history: (offset: nat, limit: nat) -> (Result_9);
-  get_analyze_history_count: () -> (Result_8);
-  get_escrow: (escrow_id: EscrowId) -> (Result_7) query;
-  get_escrow_stats: () -> (EscrowStats) query;
-  get_my_reports: () -> (Result_6);
-  get_my_votes: () -> (Result_5);
-  get_open_escrows_paginated: (offset: nat, limit: nat) ->
-   (record {
-      items: vec EscrowRecord;
-      total: nat;
-    }) query;
-  get_received_escrows: () -> (Result_2);
-  get_received_escrows_paginated: (offset: nat, limit: nat) ->
-   (record {
-      items: vec EscrowRecord;
-      limit: nat;
-      offset: nat;
-      total: nat;
-    });
-  get_report: (report_id: ReportId) -> (Result_4) query;
-  get_reports: () -> (Result_3) query;
-  get_sent_escrows: () -> (Result_2);
-  get_sent_escrows_paginated: (offset: nat, limit: nat) ->
-   (record {
-      items: vec EscrowRecord;
-      limit: nat;
-      offset: nat;
-      total: nat;
-    });
-  join_escrow: (params: AcceptEscrowParams) -> (Result_1);
-  mark_deposit: (escrow_id: EscrowId) -> (Result);
-  release_escrow: (escrow_id: EscrowId) -> (Result);
+  admin_change_report_deadline : (report_id : ReportId, new_deadline : Time) -> (Result);
+  admin_delete_report : (report_id : ReportId) -> (Result);
+  analyze_address : (address : text) -> (Result_10);
+  cancel_payment_link : (link_id : text) -> (Result);
+  check_faucet_claim : () -> (Result);
+  claim_faucet : () -> (Result);
+  create_analyze_history : (params : CreateAnalyzeHistoryParams) -> (Result_9);
+  create_escrow : (params : CreateEscrowParams) -> (Result_1);
+  create_payment_link : (params : CreatePaymentLinkParams) -> (Result);
+  create_report : (params : CreateReportParams) -> (Result);
+  execute_payment_icrc : (link_id : text) -> (Result);
+  get_all_escrows : () -> (vec EscrowRecord) query;
+  get_all_escrows_paginated : (offset : nat, limit : nat) -> (record { total : nat; items : vec EscrowRecord; }) query;
+  get_analyze_history : (offset : nat, limit : nat) -> (Result_9);
+  get_analyze_history_count : () -> (Result_8);
   get_deposit_account: (escrow_id: EscrowId, side: text) -> (record { owner: principal; sub: opt blob }) query;
-  unstake_created_report: (report_id: ReportId) -> (Result);
-  unstake_voted_report: (report_id: ReportId) -> (Result);
-  vote_report: (params: VoteReportParams) -> (Result);
+  get_escrow : (escrow_id : EscrowId) -> (Result_7) query;
+  get_escrow_stats : () -> (EscrowStats) query;
+  get_my_payment_links : () -> (Result_11);
+  get_my_reports : () -> (Result_6);
+  get_my_votes : () -> (Result_5);
+  get_open_escrows_paginated : (offset : nat, limit : nat) -> (record { total : nat; items : vec EscrowRecord; }) query;
+  get_payment_link_details: (id: text) -> (Result_12) query;
+  get_received_escrows : () -> (Result_2);
+  get_received_escrows_paginated : (offset : nat, limit : nat) -> (record { total : nat; offset : nat; limit : nat; items : vec EscrowRecord; });
+  get_report : (report_id : ReportId) -> (Result_4) query;
+  get_reports : () -> (Result_3) query;
+  get_sent_escrows : () -> (Result_2);
+  get_sent_escrows_paginated : (offset : nat, limit : nat) -> (record { total : nat; offset : nat; limit : nat; items : vec EscrowRecord; });
+  join_escrow : (params : AcceptEscrowParams) -> (Result_1);
+  mark_deposit: (escrow_id: EscrowId) -> (Result);
+  record_native_payment : (link_id : text, tx_hash : text) -> (Result);
+  release_escrow: (escrow_id: EscrowId) -> (Result);
+  unstake_created_report : (report_id : ReportId) -> (Result);
+  unstake_voted_report : (report_id : ReportId) -> (Result);
+  vote_report : (params : VoteReportParams) -> (Result);
 }
