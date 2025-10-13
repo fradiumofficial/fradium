@@ -57,6 +57,7 @@ import ScanHistoryPage from "@/pages/wallet/ScanHistoryPage.jsx";
 import SettingPage from "@/pages/wallet/SettingPage.jsx";
 import ProductsExtension from "@/pages/products/ProductsExtensionPage.jsx";
 import ProductsWallet from "@/pages/products/ProductsWalletPage.jsx";
+import ProductsPaylink from "@/pages/products/ProductsPaylinkPage.jsx";
 import ProductsEscrow from "@/pages/products/ProductsEscrowPage.jsx";
 import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
 import EscrowHistoryPage from "@/pages/escrow/EscrowHistoryPage.jsx";
@@ -171,6 +172,7 @@ function AnimatedRoutes() {
           <Route path="/products" element={<ProductsExtension />} />
           <Route path="/products-wallet" element={<ProductsWallet />} />
           <Route path="/products-escrow" element={<ProductsEscrow />} />
+          <Route path="/products-paylink" element={<ProductsPaylink />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/developer-overview" element={<DeveloperPage />} />
           <Route path="/developer-pricing" element={<PricingPage />} />
