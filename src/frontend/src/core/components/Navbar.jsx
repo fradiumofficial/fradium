@@ -175,10 +175,10 @@ const Navbar = () => {
                 onMouseLeave={() => {
                   developersDropdownTimeout.current = setTimeout(() => setDevelopersDropdown(false), 200);
                 }}>
-                <Link to="/developers/api" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setDevelopersDropdown(false)}>
-                  API & SDK
+                <Link to="/developer-overview" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setDevelopersDropdown(false)}>
+                  API Dashboard
                 </Link>
-                <Link to="/developers/pricing" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setDevelopersDropdown(false)}>
+                <Link to="/developer-pricing" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setDevelopersDropdown(false)}>
                   Usage & Pricing
                 </Link>
               </div>

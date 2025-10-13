@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import SwitchServices from "@/core/components/common/SwitchServices.jsx";
 import ProfileDropdown from "@/core/components/common/ProfileDropdown.jsx";
-import SidebarButton from "../SidebarButton";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import { NETWORK_CONFIG } from "@/core/config/tokenConfig.js";
@@ -539,7 +538,7 @@ function EscrowLayoutContent() {
               <SwitchServices compact={false} />
             </div>
             <div className="flex items-center gap-3">
-              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" />
             </div>
           </div>
           <div className="w-full flex justify-center">
@@ -555,7 +554,7 @@ function EscrowLayoutContent() {
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-between items-center">
               <SwitchServices compact={false} />
-              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" />
             </div>
           </div>
         </aside>

@@ -5,13 +5,13 @@ import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 
 export default function AuthGuard({ children, isRedirectToLogin = false }) {
-  const { isAuthenticated, handleLogin } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const hasShownToast = useRef(false);
 
   useEffect(() => {
-    if (!isAuthenticated && location.pathname.startsWith("/wallet") && !hasShownToast.current) {
+    if (!isAuthenticated && !hasShownToast.current) {
       // Mark that we've shown the toast
       hasShownToast.current = true;
 
@@ -19,7 +19,7 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
       toast.dismiss();
 
       // Show session expired toast
-      toast.error("Your login session has expired", {
+      toast.error("Your session has expired", {
         position: "bottom-center",
         duration: 3000,
         style: {
@@ -38,24 +38,14 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
     }
   }, [isAuthenticated, location.pathname, navigate]);
 
-  // Reset toast flag when user becomes authenticated or navigates away from wallet routes
+  // Reset toast flag when user becomes authenticated or path changes
   useEffect(() => {
-    if (isAuthenticated || !location.pathname.startsWith("/wallet")) {
-      hasShownToast.current = false;
-    }
+    if (isAuthenticated) hasShownToast.current = false;
   }, [isAuthenticated, location.pathname]);
 
   if (!isAuthenticated) {
-    // For wallet routes, we handle redirect in useEffect above
-    if (location.pathname.startsWith("/wallet")) {
-      return null; // Return null while redirecting
-    }
-
-    // Redirect to login page if not authenticated (for other routes)
-    if (isRedirectToLogin) {
-      handleLogin();
-    }
-    return <UnauthorizedPage />;
+    // Always redirect to home via effect; render nothing meanwhile
+    return null;
   }
 
   return children;
