@@ -27,12 +27,12 @@ const ProductsEscrow = () => {
     if (!isAuthenticated) {
       // Jika belum login, lakukan login dulu
       await handleLogin(({ user, isAuthenticated: authStatus }) => {
-        // Callback setelah login berhasil - redirect ke escrow dashboard
-        navigate("/escrow");
+        // Callback setelah login berhasil - redirect ke P2P Trade page
+        navigate("/escrow/list");
       });
     } else {
-      // Jika sudah login, langsung redirect ke escrow dashboard
-      navigate("/escrow/dashboard");
+      // Jika sudah login, langsung redirect ke P2P Trade page
+      navigate("/escrow/list");
     }
   };
 

@@ -277,7 +277,7 @@ export default function EscrowHistoryPage() {
           {showSearch && (
             <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: "auto", marginTop: 12 }} exit={{ opacity: 0, height: 0, marginTop: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden mb-4">
               <div className="relative">
-                <input type="text" placeholder="Search by token, amount..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-2 text-white text-sm placeholder-[#B0B6BE] outline-none focus:border-[#7C72FE] transition-colors" autoFocus />
+                <input type="text" placeholder="Search by token, amount..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-2 text-white text-sm placeholder-[#B0B6BE] outline-none focus:border-[#4942AA] transition-colors" autoFocus />
                 {searchQuery && (
                   <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#B0B6BE] hover:text-white transition-colors" onClick={() => setSearchQuery("")}>
                     ×
@@ -297,7 +297,7 @@ export default function EscrowHistoryPage() {
                   {/* Token From Filter */}
                   <div className="space-y-2">
                     <label className="text-white/90 text-[13px] font-medium">Token From</label>
-                    <select value={filterOptions.tokenFrom} onChange={(e) => setFilterOptions((prev) => ({ ...prev, tokenFrom: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#7C72FE]">
+                    <select value={filterOptions.tokenFrom} onChange={(e) => setFilterOptions((prev) => ({ ...prev, tokenFrom: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#4942AA]">
                       <option value="all">All Tokens</option>
                       <option value="FRADIUM">FRADIUM</option>
                       <option value="ICP">ICP</option>
@@ -312,7 +312,7 @@ export default function EscrowHistoryPage() {
                   {/* Token To Filter */}
                   <div className="space-y-2">
                     <label className="text-white/90 text-[13px] font-medium">Token To</label>
-                    <select value={filterOptions.tokenTo} onChange={(e) => setFilterOptions((prev) => ({ ...prev, tokenTo: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#7C72FE]">
+                    <select value={filterOptions.tokenTo} onChange={(e) => setFilterOptions((prev) => ({ ...prev, tokenTo: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#4942AA]">
                       <option value="all">All Tokens</option>
                       <option value="FRADIUM">FRADIUM</option>
                       <option value="ICP">ICP</option>
@@ -327,7 +327,7 @@ export default function EscrowHistoryPage() {
                   {/* State Filter */}
                   <div className="space-y-2">
                     <label className="text-white/90 text-[13px] font-medium">Status</label>
-                    <select value={filterOptions.state} onChange={(e) => setFilterOptions((prev) => ({ ...prev, state: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#7C72FE]">
+                    <select value={filterOptions.state} onChange={(e) => setFilterOptions((prev) => ({ ...prev, state: e.target.value }))} className="w-full px-3 py-2.5 bg-[#23272F] border border-[#393E4B] rounded-lg text-white text-sm focus:outline-none transition-colors hover:cursor-pointer hover:bg-[#2A2F37] hover:border-[#4942AA]">
                       <option value="all">All Status</option>
                       <option value="Released">Completed</option>
                       <option value="Rejected">Rejected</option>
@@ -340,7 +340,7 @@ export default function EscrowHistoryPage() {
                 {/* Filter Actions */}
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/10">
                   <div className="text-[#B0B6BE] text-sm">{getActiveFilterCount() > 0 && `${getActiveFilterCount()} filter${getActiveFilterCount() > 1 ? "s" : ""} active`}</div>
-                  <button onClick={clearFilters} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#7C72FE] rounded-lg text-white text-sm transition-colors">
+                  <button onClick={clearFilters} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#4942AA] rounded-lg text-white text-sm transition-colors">
                     Clear All
                   </button>
                 </div>
@@ -356,7 +356,7 @@ export default function EscrowHistoryPage() {
         {error && (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
             <div className="text-red-400 text-sm text-center">{error}</div>
-            <button onClick={() => fetchCompletedEscrows(0, false)} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#7C72FE] rounded-lg text-white text-sm transition-colors">
+            <button onClick={() => fetchCompletedEscrows(0, false)} className="px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#4942AA] rounded-lg text-white text-sm transition-colors">
               Try Again
             </button>
           </div>
@@ -381,7 +381,7 @@ export default function EscrowHistoryPage() {
             </div>
             <div className="text-[#B0B6BE] text-sm text-center">No results found</div>
             <div className="text-[#9BEB83] text-xs text-center">Try adjusting your search or filter criteria</div>
-            <button onClick={clearFilters} className="mt-2 px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#7C72FE] rounded-lg text-white text-sm transition-colors">
+            <button onClick={clearFilters} className="mt-2 px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#4942AA] rounded-lg text-white text-sm transition-colors">
               Clear Filters
             </button>
           </div>

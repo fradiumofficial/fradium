@@ -372,7 +372,6 @@ export default function P2PTradePage() {
               <ArrowRightLeft className="w-8 h-8 text-white/50" />
             </div>
             <div className="text-[#B0B6BE] text-sm text-center">No open trades found</div>
-            <div className="text-[#9BEB83] text-xs text-center">Be the first to create a trade</div>
           </div>
         )}
 

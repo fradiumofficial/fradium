@@ -73,8 +73,8 @@ export default function SwitchServices({ compact = false }) {
                   <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${location.pathname.startsWith("/wallet") ? "bg-white/8" : "hover:bg-white/5"}`}>
                     <div className="flex items-center gap-3">
                       {location.pathname.startsWith("/wallet") ? (
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                          <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#7C72FE]">
+                          <path d="M20 6L9 17l-5-5" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       ) : (
                         <div className="w-4 h-4" />
@@ -88,8 +88,8 @@ export default function SwitchServices({ compact = false }) {
                   <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${location.pathname.startsWith("/escrow") ? "bg-white/8" : "hover:bg-white/5"}`}>
                     <div className="flex items-center gap-3">
                       {location.pathname.startsWith("/escrow") ? (
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                          <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="text-[#7C72FE]">
+                          <path d="M20 6L9 17l-5-5" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       ) : (
                         <div className="w-4 h-4" />

@@ -149,7 +149,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                 <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-base">
                   <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === "All Networks" ? "bg-white/8" : "hover:bg-white/5"}`}>
                     <div className="flex items-center gap-3">
-                      {network === "All Networks" ? <Check className="w-4 h-4 text-[#9BE4A0]" /> : <div className="w-4 h-4" />}
+                      {network === "All Networks" ? <Check className="w-4 h-4 text-[#4942AA]" /> : <div className="w-4 h-4" />}
                       <span className="text-white">All Networks</span>
                     </div>
                     <span className="text-[#9CA3AF]">{getNetworkValue("All Networks")}</span>
@@ -163,7 +163,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                     <button onClick={() => handleNetworkChange(net.name)} className="w-full text-base">
                       <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === net.name ? "bg-white/8" : "hover:bg-white/5"}`}>
                         <div className="flex items-center gap-3">
-                          {network === net.name ? <Check className="w-4 h-4 text-[#9BE4A0]" /> : <div className="w-4 h-4" />}
+                          {network === net.name ? <Check className="w-4 h-4 text-[#4942AA]" /> : <div className="w-4 h-4" />}
                           <span className="text-white text-left">{net.name}</span>
                         </div>
                         <span className="text-[#9CA3AF]">{net.value}</span>
@@ -176,7 +176,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                 <div className="h-px bg-white/10 mx-4 my-2" />
 
                 <button
-                  className="w-full flex items-center gap-3 px-6 py-3 text-[#9BE4A0] hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center gap-3 px-6 py-3 text-[#4942AA] hover:bg-white/5 transition-colors"
                   onClick={() => {
                     // This will be handled by the parent component
                     window.dispatchEvent(new CustomEvent("openManageNetworks"));
@@ -223,7 +223,7 @@ function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdo
                         setTimeout(() => setCopiedPrincipal(false), 2000);
                       }}
                       className="p-1 hover:bg-white/10 rounded transition-colors">
-                      {copiedPrincipal ? <Check className="w-4 h-4 text-[#9BE4A0]" /> : <Copy className="w-4 h-4 text-white/70" />}
+                      {copiedPrincipal ? <Check className="w-4 h-4 text-[#4942AA]" /> : <Copy className="w-4 h-4 text-white/70" />}
                     </button>
                   </div>
                 </div>
@@ -288,7 +288,7 @@ function EscrowLayoutContent() {
           const state = variantName(escrow.state);
           const expiresAt = new Date(Number(escrow.expires_at) / 1000000);
           const isExpired = Date.now() >= expiresAt.getTime();
-          
+
           return state === "AwaitingAccept" && !isExpired; // Only pending invitations that haven't expired
         });
 
@@ -329,7 +329,6 @@ function EscrowLayoutContent() {
   // Helper: map sidebar label to Lucide React icon component
   const getSidebarIcon = (label, active) => {
     const iconMap = {
-      Dashboard: Wallet,
       "P2P Trade": ArrowRightLeft,
       "Create Escrow": PlusCircle,
       "My Escrow": FileText,
@@ -405,7 +404,6 @@ function EscrowLayoutContent() {
 
   // Menu configuration for escrow
   const menu = [
-    { label: "Dashboard", icon: "escrow", path: "/escrow" },
     { label: "P2P Trade", icon: "p2p-trade", path: "/escrow/list" },
     { label: "Create Escrow", icon: "p2p-payment", path: "/escrow/create" },
     { label: "My Escrow", icon: "escrow-history", path: "/escrow/my-escrow" },
@@ -488,7 +486,7 @@ function EscrowLayoutContent() {
 
       <div className="relative block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
         {/* Global background spanning all escrow sections */}
-        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png" alt="" aria-hidden="true" decoding="async" loading="eager" className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/escrow/background.webp" alt="" aria-hidden="true" decoding="async" loading="eager" className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
         <div className="absolute inset-0 z-0 bg-[#0F1219]/25 pointer-events-none" aria-hidden="true"></div>
         {/* Modal Manage Networks */}
         <ManageNetworksModal isOpen={showManageNetworks} onClose={() => setShowManageNetworks(false)} networkFilters={networkFilters} updateNetworkFilters={updateNetworkFilters} currentNetwork={network} setNetwork={setNetwork} />
@@ -509,7 +507,7 @@ function EscrowLayoutContent() {
                 return isActive ? (
                   <Link key={item.label} to={item.path} className="relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all">
                     <span className="pointer-events-none absolute inset-0 bg-gradient-to-l from-white/20 via-white/10 to-transparent" />
-                    <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-[#9BE4A0] shadow-[0_0_12px_rgba(155,228,160,0.5)]" />
+                    <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-[#7C72FE] shadow-[0_0_12px_rgba(124,114,254,0.5)]" />
                     <IconComponent className="w-5 h-5 relative z-10 text-white" />
                     <span className="relative z-10 text-white font-medium">{item.label}</span>
                   </Link>
@@ -570,8 +568,8 @@ function EscrowLayoutContent() {
           const isActive = normalize(location.pathname) === normalize(item.path);
           const IconComponent = getSidebarIcon(item.label, isActive);
           return (
-            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-[#9BE4A0] bg-[#9BE4A01A] rounded-sm shadow-[0_0_8px_0_#9BE4A01A]" : "text-[#FFFFFF99]"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "6px 0" }}>
-              <IconComponent className={`w-5 h-5 mb-0.5 ${isActive ? "text-[#9BE4A0]" : "text-[#FFFFFF99]"}`} />
+            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-[#7C72FE] bg-[#7C72FE1A] rounded-sm shadow-[0_0_8px_0_#7C72FE1A]" : "text-[#FFFFFF99]"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "6px 0" }}>
+              <IconComponent className={`w-5 h-5 mb-0.5 ${isActive ? "text-[#7C72FE]" : "text-[#FFFFFF99]"}`} />
               <span className="leading-tight text-center text-xs" style={{ fontWeight: 400 }}>
                 {item.label}
               </span>
