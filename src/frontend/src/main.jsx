@@ -34,6 +34,8 @@ import { AuthProvider } from "@/core/providers/AuthProvider.jsx";
 import HomeLayout from "@/core/components/layouts/HomeLayout.jsx";
 import WalletLayout from "@/core/components/layouts/WalletLayout.jsx";
 import EscrowLayout from "@/core/components/layouts/EscrowLayout.jsx";
+import PaylinkLayout from "@/core/components/layouts/PaylinkLayout.jsx";
+import SimplePaymentLayout from "@/core/components/layouts/SimplePaymentLayout.jsx";
 
 // Auth
 import AuthGuard from "@/core/components/auth/AuthGuard.jsx";
@@ -57,12 +59,14 @@ import ProductsExtension from "@/pages/products/ProductsExtensionPage.jsx";
 import ProductsWallet from "@/pages/products/ProductsWalletPage.jsx";
 import ProductsEscrow from "@/pages/products/ProductsEscrowPage.jsx";
 import AssistantPage from "@/pages/assistant/AssistantPage.jsx";
-import EscrowDashboardPage from "@/pages/escrow/EscrowDashboardPage.jsx";
 import EscrowHistoryPage from "@/pages/escrow/EscrowHistoryPage.jsx";
 import CreateEscrowPage from "@/pages/escrow/CreateEscrowPage.jsx";
 import P2PTradePage from "@/pages/escrow/P2PTradePage.jsx";
 import MyEscrowPage from "@/pages/escrow/MyEscrowPage.jsx";
 import EscrowDetailPage from "@/pages/escrow/EscrowDetailPage.jsx";
+import PricingPage from "@/pages/developers/PricingPage.jsx";
+import PaymentLinksPage from "@/pages/payment-links/PaymentLinksPage.jsx";
+import PaymentRequestPage from "@/pages/payment-links/PaymentRequestPage.jsx";
 
 // NProgress
 NProgress.configure({
@@ -143,6 +147,7 @@ function AnimatedRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location}>
+        {/* Home Routes */}
         <Route path="/" element={<HomeLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/balance" element={<BalancePage />} />
@@ -160,10 +165,32 @@ function AnimatedRoutes() {
           <Route path="/faucet" element={<FaucetPage />} />
           <Route path="/products" element={<ProductsExtension />} />
           <Route path="/products-wallet" element={<ProductsWallet />} />
-          <Route path="/escrow" element={<ProductsEscrow />} />
+          <Route path="/products-escrow" element={<ProductsEscrow />} />
           <Route path="/assistant" element={<AssistantPage />} />
+          <Route path="/developers/pricing" element={<PricingPage />} />
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
+
+        {/* ✅ PUBLIC Payment Request Route with Simple Layout */}
+        <Route element={<SimplePaymentLayout />}>
+          <Route path="/paylink/:linkId" element={<PaymentRequestPage />} />
+        </Route>
+
+        {/* ✅ PROTECTED Paylink Management Routes - Requires login */}
+        <Route
+          path="/paylink"
+          element={
+            <AuthGuard isRedirectToLogin>
+              <PaylinkLayout />
+            </AuthGuard>
+          }>
+          <Route index element={<PaymentLinksPage />} />
+          <Route path="create" element={<PaymentLinksPage />} />
+          <Route path="manage" element={<PaymentLinksPage />} />
+        </Route>
+
+        {/* Wallet Routes */}
         <Route
           path="/wallet"
           element={
@@ -178,6 +205,8 @@ function AnimatedRoutes() {
           <Route path="scan-history" element={<ScanHistoryPage />} />
           <Route path="setting" element={<SettingPage />} />
         </Route>
+
+        {/* Escrow Routes */}
         <Route
           path="/escrow"
           element={
@@ -185,7 +214,7 @@ function AnimatedRoutes() {
               <EscrowLayout />
             </AuthGuard>
           }>
-          <Route index element={<EscrowDashboardPage />} />
+          <Route index element={<P2PTradePage />} />
           <Route path="create" element={<CreateEscrowPage />} />
           <Route path="list" element={<P2PTradePage />} />
           <Route path="my-escrow" element={<MyEscrowPage />} />

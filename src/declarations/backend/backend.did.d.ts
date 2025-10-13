@@ -61,6 +61,9 @@ export interface EscrowRecord {
   'token_from' : TokenType,
   'expires_at' : Time,
   'released_at' : [] | [Time],
+  'deposit_expires_at' : [] | [Time],
+  'deposit_from_done' : boolean,
+  'deposit_to_done' : boolean,
 }
 export type EscrowState = { 'Released' : null } |
   { 'Suspended' : null } |
@@ -246,19 +249,81 @@ export interface Voter {
   'vote' : boolean,
   'vote_weight' : bigint,
 }
+export type Time = bigint;
+export type TokenType = { 'BTC' : null } |
+  { 'ETH' : null } |
+  { 'ICP' : null } |
+  { 'SOL' : null } |
+  { 'ckBTC' : null } |
+  { 'ckETH' : null } |
+  { 'FRADIUM' : null };
+
+// --- Payment Link Interfaces ---
+export interface CreatePaymentLinkParams {
+  'token' : TokenType,
+  'amount' : bigint,
+  'duration_nanos' : bigint,
+  'custom_id' : [] | [string],
+}
+export interface CreatorAddresses {
+  'solana' : string,
+  'ethereum' : string,
+  'bitcoin' : string,
+}
+export interface PaymentLink {
+  'id' : string,
+  'status' : PaymentStatus,
+  'creator' : Principal,
+  'token' : TokenType,
+  'creator_addresses' : [] | [CreatorAddresses],
+  'created_at' : Time,
+  'payer' : [] | [Principal],
+  'amount' : bigint,
+  'expires_at' : Time,
+}
+export interface PaymentLinkPublic {
+  'status' : PaymentStatus,
+  'creator' : Principal,
+  'token' : TokenType,
+  'creator_addresses' : [] | [CreatorAddresses],
+  'created_at' : Time,
+  'amount' : bigint,
+  'expires_at' : Time,
+}
+export type PaymentStatus = { 'Active' : null } |
+  { 'Cancelled' : null } |
+  { 'Completed' : null } |
+  { 'Expired' : null };
+
+// --- Result Types (Cleaned and Merged) ---
+export type Result = { 'Ok' : string } | { 'Err' : string };
+export type Result_1 = { 'Ok' : EscrowId } | { 'Err' : string };
+export type Result_2 = { 'Ok' : Array<GetMyEscrowsParams> } | { 'Err' : string };
+export type Result_3 = { 'Ok' : Array<Report> } | { 'Err' : string };
+export type Result_4 = { 'Ok' : Report } | { 'Err' : string };
+export type Result_5 = { 'Ok' : Array<GetMyVotesParams> } | { 'Err' : string };
+export type Result_6 = { 'Ok' : Array<GetMyReportsParams> } | { 'Err' : string };
+export type Result_7 = { 'Ok' : EscrowRecord } | { 'Err' : string };
+export type Result_8 = { 'Ok' : bigint } | { 'Err' : string };
+export type Result_9 = { 'Ok' : Array<AnalyzeHistory> } | { 'Err' : string };
+export type Result_10 = { 'Ok' : GetAnalyzeAddressResult } | { 'Err' : string };
+export type Result_11 = { 'Ok' : Array<PaymentLink> } | { 'Err' : string };
+export type Result_12 = { 'Ok' : PaymentLinkPublic } | { 'Err' : string };
+
+
 export interface _SERVICE {
   'admin_change_report_deadline' : ActorMethod<[ReportId, Time], Result>,
   'admin_delete_report' : ActorMethod<[ReportId], Result>,
   'analyze_address' : ActorMethod<[string], Result_10>,
+  'cancel_payment_link' : ActorMethod<[string], Result>,
   'check_faucet_claim' : ActorMethod<[], Result>,
   'claim_faucet' : ActorMethod<[], Result>,
-  'create_analyze_history' : ActorMethod<
-    [CreateAnalyzeHistoryParams],
-    Result_9
-  >,
+  'create_analyze_history' : ActorMethod<[CreateAnalyzeHistoryParams], Result_9>,
   'create_escrow' : ActorMethod<[CreateEscrowParams], Result_1>,
+  'create_payment_link' : ActorMethod<[CreatePaymentLinkParams], Result>,
   'create_report' : ActorMethod<[CreateReportParams], Result>,
   'execute_swap' : ActorMethod<[SwapExecuteRequest], SwapExecuteResponse>,
+  'execute_payment_icrc' : ActorMethod<[string], Result>,
   'get_all_escrows' : ActorMethod<[], Array<EscrowRecord>>,
   'get_all_escrows_paginated' : ActorMethod<
     [bigint, bigint],
@@ -272,12 +337,14 @@ export interface _SERVICE {
   >,
   'get_escrow' : ActorMethod<[EscrowId], Result_7>,
   'get_escrow_stats' : ActorMethod<[], EscrowStats>,
+  'get_my_payment_links' : ActorMethod<[], Result_11>,
   'get_my_reports' : ActorMethod<[], Result_6>,
   'get_my_votes' : ActorMethod<[], Result_5>,
   'get_open_escrows_paginated' : ActorMethod<
     [bigint, bigint],
     { 'total' : bigint, 'items' : Array<EscrowRecord> }
   >,
+  'get_payment_link_details' : ActorMethod<[string], Result_12>,
   'get_received_escrows' : ActorMethod<[], Result_2>,
   'get_received_escrows_paginated' : ActorMethod<
     [bigint, bigint],
@@ -316,6 +383,7 @@ export interface _SERVICE {
   'join_escrow' : ActorMethod<[AcceptEscrowParams], Result_1>,
   'mark_deposit' : ActorMethod<[EscrowId], Result>,
   'release_escrow' : ActorMethod<[EscrowId], Result>,
+  'record_native_payment' : ActorMethod<[string, string], Result>,
   'unstake_created_report' : ActorMethod<[ReportId], Result>,
   'unstake_voted_report' : ActorMethod<[ReportId], Result>,
   'vote_report' : ActorMethod<[VoteReportParams], Result>,

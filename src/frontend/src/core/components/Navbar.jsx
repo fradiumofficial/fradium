@@ -13,6 +13,7 @@ import ButtonPurple from "@/core/components/ButtonPurple";
 import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { cn } from "@/core/lib/utils";
 import toast from "react-hot-toast";
+
 function NavbarCopyPrincipal({ identity }) {
   const [copied, setCopied] = React.useState(false);
   return (
@@ -52,7 +53,7 @@ const navigationItems = [
   { label: "Home", href: "/" },
   { label: "Docs", href: "https://fradium.gitbook.io/docs", external: true },
   { label: "View Reports", href: "/reports" },
-  { label: "Assistant", href: "/assistant" },
+  { label: "FAQ", href: "/assistant" },
 ];
 
 const Navbar = () => {
@@ -64,6 +65,8 @@ const Navbar = () => {
   const [balance, setBalance] = useState(0);
   const [productsDropdown, setProductsDropdown] = useState(false);
   const productsDropdownTimeout = useRef();
+  const [developersDropdown, setDevelopersDropdown] = useState(false);
+  const developersDropdownTimeout = useRef();
   const [isLoading, setIsLoading] = useState(false);
 
   const pathname = location.pathname || "/";
@@ -78,8 +81,11 @@ const Navbar = () => {
 
   const mobileItemClass = (active) => `font-[General Sans, sans-serif] text-lg ${active ? "text-white font-medium" : "text-white/70 font-medium"} no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95`;
 
-  const isProductsActive = pathname.startsWith("/products");
+  const isProductsActive = pathname.startsWith("/products") || pathname.startsWith("/paylink");
   const productsBtnClass = `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 flex items-center gap-1 ${isProductsActive ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"}`;
+
+  const isDevelopersActive = pathname.startsWith("/developers");
+  const developersBtnClass = `font-[General Sans, sans-serif] text-base no-underline transition-colors duration-200 flex items-center gap-1 ${isDevelopersActive ? "text-white font-semibold" : "text-white/70 hover:text-[#9BEB83] font-normal"}`;
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -147,6 +153,38 @@ const Navbar = () => {
               </Link>
             );
           })}
+          {/* Developers Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => {
+              clearTimeout(developersDropdownTimeout.current);
+              setDevelopersDropdown(true);
+            }}
+            onMouseLeave={() => {
+              developersDropdownTimeout.current = setTimeout(() => setDevelopersDropdown(false), 200);
+            }}>
+            <button className={developersBtnClass} onClick={() => setDevelopersDropdown((v) => !v)} type="button">
+              Developers <ChevronDown className="w-4 h-4" />
+            </button>
+            {developersDropdown && (
+              <div
+                className="absolute top-full left-0 mt-0 w-56 bg-black backdrop-blur-lg border border-white/10 rounded-lg z-50 flex flex-col py-2 animate-fadeIn"
+                onMouseEnter={() => {
+                  clearTimeout(developersDropdownTimeout.current);
+                  setDevelopersDropdown(true);
+                }}
+                onMouseLeave={() => {
+                  developersDropdownTimeout.current = setTimeout(() => setDevelopersDropdown(false), 200);
+                }}>
+                <Link to="/developers/api" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setDevelopersDropdown(false)}>
+                  API & SDK
+                </Link>
+                <Link to="/developers/pricing" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setDevelopersDropdown(false)}>
+                  Usage & Pricing
+                </Link>
+              </div>
+            )}
+          </div>
           {/* Products Dropdown */}
           <div
             className="relative"
@@ -162,7 +200,7 @@ const Navbar = () => {
             </button>
             {productsDropdown && (
               <div
-                className="absolute top-full left-0 mt-2 w-56 bg-black backdrop-blur-lg border border-white/10 rounded-lg z-50 flex flex-col py-2 animate-fadeIn"
+                className="absolute top-full left-0 mt-0 w-56 bg-black backdrop-blur-lg border border-white/10 rounded-lg z-50 flex flex-col py-2 animate-fadeIn"
                 onMouseEnter={() => {
                   clearTimeout(productsDropdownTimeout.current);
                   setProductsDropdown(true);
@@ -176,8 +214,11 @@ const Navbar = () => {
                 <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
                   Fradium Wallet Extension
                 </Link>
-                <Link to="/escrow" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                <Link to="/products-escrow" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
                   Fradium Escrow
+                </Link>
+                <Link to="/paylink" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Paylink
                 </Link>
               </div>
             )}
@@ -301,6 +342,43 @@ const Navbar = () => {
                       setMenuOpen(false);
                     }}>
                     Escrow
+                  </Link>
+                  <Link
+                    to="/paylink"
+                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
+                    onClick={() => {
+                      setProductsDropdown(false);
+                      setMenuOpen(false);
+                    }}>
+                    Paylink
+                  </Link>
+                </div>
+              )}
+            </div>
+            {/* Developers Dropdown Mobile */}
+            <div className="w-full">
+              <div className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setDevelopersDropdown((v) => !v)}>
+                Developers <ChevronDown className="w-4 h-4" />
+              </div>
+              {developersDropdown && (
+                <div className="flex flex-col bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] mt-1">
+                  <Link
+                    to="/developers/pricing"
+                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
+                    onClick={() => {
+                      setDevelopersDropdown(false);
+                      setMenuOpen(false);
+                    }}>
+                    Usage & Pricing
+                  </Link>
+                  <Link
+                    to="/developers/api"
+                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
+                    onClick={() => {
+                      setDevelopersDropdown(false);
+                      setMenuOpen(false);
+                    }}>
+                    API & SDK
                   </Link>
                 </div>
               )}
