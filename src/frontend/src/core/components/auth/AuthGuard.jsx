@@ -10,8 +10,15 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
   const location = useLocation();
   const hasShownToast = useRef(false);
 
+  // Check if paylink ID route (format: /paylink/xxx where xxx is alphanumeric with dashes)
+  const isPaymentLinkRoute = /^\/paylink\/[a-z0-9_-]+$/i.test(location.pathname);
+
+  // Check if current route requires redirect
+  // Wallet routes and paylink dashboard (/paylink), but NOT the public payment links (/paylink/:id)
+  const requiresRedirect = location.pathname.startsWith("/wallet") || (location.pathname.startsWith("/paylink") && !isPaymentLinkRoute);
+
   useEffect(() => {
-    if (!isAuthenticated && !hasShownToast.current) {
+    if (!isAuthenticated && requiresRedirect && !hasShownToast.current) {
       // Mark that we've shown the toast
       hasShownToast.current = true;
 
@@ -36,16 +43,26 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
       // Redirect to home page
       navigate("/", { replace: true });
     }
-  }, [isAuthenticated, location.pathname, navigate]);
+  }, [isAuthenticated, requiresRedirect, navigate]);
 
-  // Reset toast flag when user becomes authenticated or path changes
+  // Reset toast flag when user becomes authenticated or navigates away from protected routes
   useEffect(() => {
-    if (isAuthenticated) hasShownToast.current = false;
-  }, [isAuthenticated, location.pathname]);
+    if (isAuthenticated || !requiresRedirect) {
+      hasShownToast.current = false;
+    }
+  }, [isAuthenticated, requiresRedirect]);
 
   if (!isAuthenticated) {
-    // Always redirect to home via effect; render nothing meanwhile
-    return null;
+    // For wallet and paylink dashboard routes, we handle redirect in useEffect above
+    if (requiresRedirect) {
+      return null; // Return null while redirecting
+    }
+
+    // Redirect to login page if not authenticated (for other routes)
+    if (isRedirectToLogin) {
+      handleLogin();
+    }
+    return <UnauthorizedPage />;
   }
 
   return children;
