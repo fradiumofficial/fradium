@@ -199,6 +199,8 @@ export const WalletProvider = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // (moved below after refreshAllBalances is defined)
+
   // Helper function to add new address to existing wallet
   const addAddressToWallet = useCallback(
     async (network, tokenType, address) => {
@@ -402,6 +404,17 @@ export const WalletProvider = ({ children }) => {
       setIsRefreshingBalances(false);
     }
   }, [fetchTokenBalance, isRefreshingBalances]);
+
+  // Listen for external balance updates (e.g., after transfers) and refresh balances
+  useEffect(() => {
+    const onBalanceUpdated = () => {
+      try {
+        refreshAllBalances();
+      } catch (_e) {}
+    };
+    window.addEventListener("balance-updated", onBalanceUpdated);
+    return () => window.removeEventListener("balance-updated", onBalanceUpdated);
+  }, [refreshAllBalances]);
 
   // Function to fetch USD price for a specific token
   const fetchTokenUSDPrice = useCallback(async (tokenId) => {

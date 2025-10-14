@@ -170,6 +170,11 @@ export const idlFactory = ({ IDL }) => {
     'released_at' : IDL.Opt(Time),
   });
   const Result_10 = IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text });
+  const ApiApprovalRecord = IDL.Record({
+    'at' : Time,
+    'metadata' : IDL.Text,
+    'amount_e8s' : IDL.Nat,
+  });
   const GetTokensResponse = IDL.Variant({
     'ok' : IDL.Vec(ApiToken),
     'err' : IDL.Text,
@@ -386,6 +391,23 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_analyze_history' : IDL.Func([IDL.Nat, IDL.Nat], [Result_11], []),
     'get_analyze_history_count' : IDL.Func([], [Result_10], []),
+    'get_api_approvals_history' : IDL.Func(
+        [IDL.Nat, IDL.Nat],
+        [
+          IDL.Record({
+            'total' : IDL.Nat,
+            'offset' : IDL.Nat,
+            'limit' : IDL.Nat,
+            'items' : IDL.Vec(ApiApprovalRecord),
+          }),
+        ],
+        [],
+      ),
+    'get_api_credits_stats' : IDL.Func(
+        [],
+        [IDL.Record({ 'used_e8s' : IDL.Nat, 'remaining_e8s' : IDL.Nat })],
+        [],
+      ),
     'get_api_token_info' : IDL.Func([IDL.Text], [IDL.Opt(ApiToken)], ['query']),
     'get_api_tokens' : IDL.Func([], [GetTokensResponse], []),
     'get_deposit_account' : IDL.Func(
@@ -461,6 +483,7 @@ export const idlFactory = ({ IDL }) => {
     'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
     'join_escrow' : IDL.Func([AcceptEscrowParams], [Result_1], []),
     'mark_deposit' : IDL.Func([EscrowId], [Result], []),
+    'record_api_approval' : IDL.Func([IDL.Nat, IDL.Text], [], []),
     'record_native_payment' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'regenerate_api_token' : IDL.Func(
         [RegenerateTokenRequest],

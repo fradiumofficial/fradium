@@ -14,8 +14,8 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
   const isPaymentLinkRoute = /^\/paylink\/[a-z0-9_-]+$/i.test(location.pathname);
 
   // Check if current route requires redirect
-  // Wallet routes and paylink dashboard (/paylink), but NOT the public payment links (/paylink/:id)
-  const requiresRedirect = location.pathname.startsWith("/wallet") || (location.pathname.startsWith("/paylink") && !isPaymentLinkRoute);
+  // Wallet routes, Developer dashboard (/developer) and paylink dashboard (/paylink), but NOT the public payment links (/paylink/:id)
+  const requiresRedirect = location.pathname.startsWith("/wallet") || location.pathname.startsWith("/developer") || (location.pathname.startsWith("/paylink") && !isPaymentLinkRoute);
 
   useEffect(() => {
     if (!isAuthenticated && requiresRedirect && !hasShownToast.current) {
@@ -53,14 +53,9 @@ export default function AuthGuard({ children, isRedirectToLogin = false }) {
   }, [isAuthenticated, requiresRedirect]);
 
   if (!isAuthenticated) {
-    // For wallet and paylink dashboard routes, we handle redirect in useEffect above
+    // For protected routes, we handle redirect in useEffect above
     if (requiresRedirect) {
       return null; // Return null while redirecting
-    }
-
-    // Redirect to login page if not authenticated (for other routes)
-    if (isRedirectToLogin) {
-      handleLogin();
     }
     return <UnauthorizedPage />;
   }

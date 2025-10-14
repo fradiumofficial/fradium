@@ -51,4 +51,28 @@ module {
     public type RevokeTokenRequest = {
         tokenId: Text;
     };
+
+  // ===== API USAGE TYPES =====
+  public type ApiUsageRecord = {
+    amount_e8s : Nat;
+    route : Text;
+    at : Time.Time;
+  };
+
+  public type ApiCreditsStats = {
+    remaining_e8s : Nat;
+    used_e8s : Nat;
+  };
+
+  public type ApiApprovalRecord = {
+    amount_e8s : Nat;
+    metadata : Text;
+    at : Time.Time;
+  };
+
+  public type ApiCreditsOverview = {
+    total_approved_e8s : Nat;
+    used_e8s : Nat;
+    remaining_e8s : Nat;
+  };
 };

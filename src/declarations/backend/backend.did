@@ -414,6 +414,12 @@ type ApiToken =
    status: TokenStatus;
    token: text;
  };
+type ApiApprovalRecord = 
+ record {
+   amount_e8s: nat;
+   at: Time;
+   metadata: text;
+ };
 type AnalyzeHistoryType = 
  variant {
    AIAnalysis;
@@ -453,6 +459,17 @@ service : {
     }) query;
   get_analyze_history: (offset: nat, limit: nat) -> (Result_11);
   get_analyze_history_count: () -> (Result_10);
+  get_api_approvals_history: (offset: nat, limit: nat) ->
+   (record {
+      items: vec ApiApprovalRecord;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
+  get_api_credits_stats: () -> (record {
+                                  remaining_e8s: nat;
+                                  used_e8s: nat;
+                                });
   get_api_token_info: (token_string: text) -> (opt ApiToken) query;
   get_api_tokens: () -> (GetTokensResponse);
   get_deposit_account: (escrow_id: EscrowId, side: text) ->
@@ -504,6 +521,7 @@ service : {
   http_request_update: (req: HttpRequest) -> (HttpResponse);
   join_escrow: (params: AcceptEscrowParams) -> (Result_1);
   mark_deposit: (escrow_id: EscrowId) -> (Result);
+  record_api_approval: (amount_e8s: nat, metadata: text) -> ();
   record_native_payment: (link_id: text, tx_hash: text) -> (Result);
   regenerate_api_token: (request: RegenerateTokenRequest) ->
    (TokenOperationResponse);

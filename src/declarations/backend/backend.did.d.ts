@@ -13,6 +13,11 @@ export interface AnalyzeHistory {
 }
 export type AnalyzeHistoryType = { 'AIAnalysis' : null } |
   { 'CommunityVote' : null };
+export interface ApiApprovalRecord {
+  'at' : Time,
+  'metadata' : string,
+  'amount_e8s' : bigint,
+}
 export interface ApiToken {
   'id' : string,
   'status' : TokenStatus,
@@ -355,6 +360,19 @@ export interface _SERVICE {
   >,
   'get_analyze_history' : ActorMethod<[bigint, bigint], Result_11>,
   'get_analyze_history_count' : ActorMethod<[], Result_10>,
+  'get_api_approvals_history' : ActorMethod<
+    [bigint, bigint],
+    {
+      'total' : bigint,
+      'offset' : bigint,
+      'limit' : bigint,
+      'items' : Array<ApiApprovalRecord>,
+    }
+  >,
+  'get_api_credits_stats' : ActorMethod<
+    [],
+    { 'used_e8s' : bigint, 'remaining_e8s' : bigint }
+  >,
   'get_api_token_info' : ActorMethod<[string], [] | [ApiToken]>,
   'get_api_tokens' : ActorMethod<[], GetTokensResponse>,
   'get_deposit_account' : ActorMethod<
@@ -410,6 +428,7 @@ export interface _SERVICE {
   'http_request_update' : ActorMethod<[HttpRequest], HttpResponse>,
   'join_escrow' : ActorMethod<[AcceptEscrowParams], Result_1>,
   'mark_deposit' : ActorMethod<[EscrowId], Result>,
+  'record_api_approval' : ActorMethod<[bigint, string], undefined>,
   'record_native_payment' : ActorMethod<[string, string], Result>,
   'regenerate_api_token' : ActorMethod<
     [RegenerateTokenRequest],

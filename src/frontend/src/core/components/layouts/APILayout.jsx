@@ -3,8 +3,10 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { LoadingState } from "@/core/components/ui/LoadingState";
-import { BarChart3, History, Key, Code } from "lucide-react";
+import { BarChart3, History, Key, Code, Coins } from "lucide-react";
 import Container from "@/core/components/ui/Container.jsx";
+import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
+import { formatAmount } from "@/core/lib/tokenUtils";
 import ProfileDropdown from "@/core/components/common/ProfileDropdown.jsx";
 
 import WelcomingWalletModal from "../modals/WelcomingWallet";
@@ -17,7 +19,7 @@ function APILayoutContent() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user, identity } = useAuth();
   const navigate = useNavigate();
-  const { isLoading, isCreatingWallet, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, addresses } = useWallet();
+  const { isLoading, isCreatingWallet, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, addresses, balances, usdPrices } = useWallet();
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
 
   // Helper function to normalize path (same as WalletLayout)
@@ -31,6 +33,7 @@ function APILayoutContent() {
       Overview: BarChart3,
       "Analyze History": History,
       "Access Token": Key,
+      "API Credits": Coins,
       "Try API": Code,
     };
     return iconMap[label] || BarChart3;
@@ -78,6 +81,7 @@ function APILayoutContent() {
     { label: "Overview", icon: "overview", path: "/developer" },
     { label: "Analyze History", icon: "analyze-history", path: "/developer/analyze-history" },
     { label: "Access Token", icon: "access-token", path: "/developer/access-token" },
+    { label: "API Credits", icon: "api-credits", path: "/developer/api-credits" },
     { label: "Try API", icon: "try-api", path: "/developer/try-api" },
   ];
 
@@ -198,7 +202,26 @@ function APILayoutContent() {
         <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col">
           {/* Topbar User for md screens - placed above Outlet to avoid content shrink */}
           <div className="hidden md:flex xl:hidden w-full items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">{/* Empty space for future components */}</div>
+            <div className="flex items-center gap-3">
+              {/* FRADIUM balance pill */}
+              {(() => {
+                const fradiumToken = TOKENS_CONFIG.find((t) => t.symbol === "FRADIUM");
+                const fradiumId = fradiumToken?.id;
+                if (!fradiumId) return null;
+                const bal = parseFloat(balances?.[fradiumId] || 0);
+                const price = parseFloat(usdPrices?.[fradiumId] || 0);
+                const balanceText = contextHideBalance ? "••••" : formatAmount(bal);
+                const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
+                return (
+                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <img src="/assets/images/coins/fradium.webp" alt="FUM" className="w-4 h-4" />
+                    <span className="text-sm text-slate-700">FRADIUM:</span>
+                    <span className="text-sm font-medium text-slate-900">{balanceText}</span>
+                    <span className="text-xs text-slate-500">{usdText}</span>
+                  </div>
+                );
+              })()}
+            </div>
             <div className="flex items-center gap-3">
               <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
             </div>
@@ -213,6 +236,27 @@ function APILayoutContent() {
         <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-between items-center">
+              {/* Left: FRADIUM balance pill for xl */}
+              <div className="flex items-center gap-3">
+                {(() => {
+                  const fradiumToken = TOKENS_CONFIG.find((t) => t.symbol === "FRADIUM");
+                  const fradiumId = fradiumToken?.id;
+                  if (!fradiumId) return null;
+                  const bal = parseFloat(balances?.[fradiumId] || 0);
+                  const price = parseFloat(usdPrices?.[fradiumId] || 0);
+                  const balanceText = contextHideBalance ? "••••" : formatAmount(bal);
+                  const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
+                  return (
+                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+                      <img src="/assets/images/coins/fradium.webp" alt="FUM" className="w-4 h-4" />
+                      <span className="text-sm text-slate-700">FRADIUM:</span>
+                      <span className="text-sm font-medium text-slate-900">{balanceText}</span>
+                      <span className="text-xs text-slate-500">{usdText}</span>
+                    </div>
+                  );
+                })()}
+              </div>
+              {/* Right: Profile dropdown */}
               <div className="flex items-center gap-3">
                 <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
               </div>

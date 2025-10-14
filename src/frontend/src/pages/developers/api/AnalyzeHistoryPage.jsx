@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Filter, Download, Eye, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import LightButton from "@/core/components/ui/LightButton.jsx";
+import { backend as backendCan } from "declarations/backend";
 
 const AnalyzeHistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,58 +18,53 @@ const AnalyzeHistoryPage = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
   };
 
-  const analyzeHistory = [
-    {
-      id: 1,
-      address: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-      timestamp: "2024-01-15 14:30:25",
-      status: "success",
-      riskScore: 85,
-      model: "AI Model",
-      responseTime: "245ms",
-      cost: "0.01 FUM",
-    },
-    {
-      id: 2,
-      address: "0x8ba1f109551bD432803012645Hac136c",
-      timestamp: "2024-01-15 14:25:18",
-      status: "success",
-      riskScore: 42,
-      model: "Community Model",
-      responseTime: "189ms",
-      cost: "0.003 FUM",
-    },
-    {
-      id: 3,
-      address: "0x1234567890abcdef1234567890abcdef12345678",
-      timestamp: "2024-01-15 14:20:12",
-      status: "error",
-      riskScore: null,
-      model: "AI Model",
-      responseTime: "5000ms",
-      cost: "0.01 FUM",
-    },
-    {
-      id: 4,
-      address: "0xabcdef1234567890abcdef1234567890abcdef12",
-      timestamp: "2024-01-15 14:15:05",
-      status: "success",
-      riskScore: 78,
-      model: "AI Model",
-      responseTime: "267ms",
-      cost: "0.01 FUM",
-    },
-    {
-      id: 5,
-      address: "0x9876543210fedcba9876543210fedcba98765432",
-      timestamp: "2024-01-15 14:10:58",
-      status: "success",
-      riskScore: 15,
-      model: "Community Model",
-      responseTime: "156ms",
-      cost: "0.003 FUM",
-    },
-  ];
+  // Backend-sourced API credits usage history
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [limit, setLimit] = useState(50);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const res = await backendCan.get_api_approvals_history(offset, limit);
+        console.log("approvals history res", res);
+        const arr = Array.isArray(res?.items) ? res.items : [];
+        // Map backend records -> table-friendly objects
+        const mapped = arr
+          .slice()
+          .sort((a, b) => {
+            const aAt = typeof a.at === "bigint" ? a.at : BigInt(a.at || 0);
+            const bAt = typeof b.at === "bigint" ? b.at : BigInt(b.at || 0);
+            return aAt === bAt ? 0 : aAt > bAt ? -1 : 1; // latest first
+          })
+          .map((r, idx) => {
+            const when = new Date(Number((typeof r.at === "bigint" ? r.at : BigInt(r.at || 0)) / 1_000_000n)).toLocaleString();
+            const fum = Number(r.amount_e8s) / 1e8;
+            return {
+              id: `${Number(r.at || 0)}-${idx}`,
+              address: String(r.route || "/analyze-address"), // reuse Address column to show route
+              timestamp: when,
+              status: "success",
+              riskScore: null,
+              model: "API",
+              responseTime: "-",
+              cost: `${fum} FUM`,
+            };
+          });
+        setItems(mapped);
+      } catch (e) {
+        setError(e?.message || "Failed to load history");
+        setItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [offset, limit]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -103,11 +99,15 @@ const AnalyzeHistoryPage = () => {
     return "text-green-400";
   };
 
-  const filteredHistory = analyzeHistory.filter((item) => {
-    const matchesSearch = item.address.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === "all" || item.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredHistory = useMemo(
+    () =>
+      items.filter((item) => {
+        const matchesSearch = item.address.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesFilter = filterStatus === "all" || item.status === filterStatus;
+        return matchesSearch && matchesFilter;
+      }),
+    [items, searchTerm, filterStatus]
+  );
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -162,10 +162,8 @@ const AnalyzeHistoryPage = () => {
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Risk Score</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Model</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Response Time</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Cost</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Timestamp</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -187,19 +185,10 @@ const AnalyzeHistoryPage = () => {
                         <span className="text-sm text-slate-600">{item.model}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">{item.responseTime}</span>
-                      </td>
-                      <td className="px-6 py-4">
                         <span className="text-sm text-slate-600">{item.cost}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-slate-600">{item.timestamp}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="flex items-center gap-1 text-[#6C8CDF] hover:text-[#6C8CDF]/80 transition-colors">
-                          <Eye className="w-4 h-4" />
-                          <span className="text-sm">View</span>
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -210,7 +199,7 @@ const AnalyzeHistoryPage = () => {
             {/* Pagination */}
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
               <div className="text-sm text-slate-600">
-                Showing 1-{filteredHistory.length} of {analyzeHistory.length} results
+                Showing {filteredHistory.length} of {items.length} results
               </div>
               <div className="flex items-center gap-2">
                 <button className="px-3 py-1 text-sm text-slate-600 hover:text-slate-900 transition-colors">Previous</button>

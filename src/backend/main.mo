@@ -6,6 +6,7 @@ import Nat16 "mo:base/Nat16";
 import Nat "mo:base/Nat";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
+// removed unused HashMap/Iter after moving API usage to api module
 
 import FradiumLedgerOriginal "canister:fradium_ledger";
 import IcpLedgerOriginal "canister:icp_ledger";
@@ -114,6 +115,10 @@ persistent actor Fradium {
 
   // API module initialization
   transient let apiModule = ApiModule.ApiManager();
+
+  // ===== API BILLING CONFIG =====
+  // Fee per analyze-address API call (in FRADIUM e8s)
+  let API_ANALYZE_FEE : Nat = 10_000; // 0.0001 FUM
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
@@ -455,7 +460,35 @@ persistent actor Fradium {
               case null {
                 return makeJsonResponse(401, "{\"success\": false, \"error\": \"Invalid or inactive API token\"}");
               };
-              case (?_) {}
+              case (?tokenOwner) {
+                // Attempt to collect API fee via ICRC-2 transfer_from using prior allowance
+                let feeResult = await FradiumFeeLedgerForEscrow.icrc2_transfer_from({
+                  from = { owner = tokenOwner; subaccount = null };
+                  to = { owner = Principal.fromActor(Fradium); subaccount = null };
+                  amount = API_ANALYZE_FEE;
+                  fee = null;
+                  memo = null;
+                  created_at_time = null;
+                  spender_subaccount = null;
+                });
+
+                switch (feeResult) {
+                  case (#Err e) {
+                    let errMsg = switch (e) {
+                      case (#InsufficientAllowance(_)) { "Insufficient allowance for API fee. Please approve more FUM." };
+                      case (#InsufficientFunds(_)) { "Insufficient FRADIUM balance for API fee." };
+                      case (#BadFee { expected_fee }) { "Bad fee. Expected: " # Nat.toText(expected_fee) };
+                      case (#GenericError { message; error_code }) { "Ledger error (" # Nat.toText(error_code) # "): " # message };
+                      case _ { "Unable to collect API fee." };
+                    };
+                    return makeJsonResponse(402, "{\"success\": false, \"error\": \"" # errMsg # "\"}");
+                  };
+                  case (#Ok _) {
+                    // Record API usage via API module store
+                    apiModule.recordApiUsage(tokenOwner, "/analyze-address", API_ANALYZE_FEE);
+                  };
+                };
+              };
             };
           }
         };
@@ -517,5 +550,25 @@ persistent actor Fradium {
   // HTTP update interface for POST routes requiring async calls
   public func http_request_update(req : HttpRequest) : async HttpResponse {
     return await handleHttpRouteUpdate(req.method, req.url, req.body, req.headers);
+  };
+
+  // ===== API CREDITS QUERIES =====
+  public shared({ caller }) func get_api_credits_stats() : async { remaining_e8s : Nat; used_e8s : Nat } {
+    let ledgerPrin = Principal.fromActor(FradiumLedgerOriginal);
+    let dyn : actor { icrc2_allowance : shared query ({ account : { owner : Principal; subaccount : ?Blob }; spender : { owner : Principal; subaccount : ?Blob } }) -> async { allowance : Nat; expires_at : ?Nat } } = actor (Principal.toText(ledgerPrin));
+    let allowanceRes = await dyn.icrc2_allowance({ account = { owner = caller; subaccount = null }; spender = { owner = Principal.fromActor(Fradium); subaccount = null } });
+    let remaining = allowanceRes.allowance;
+    // get used from counter
+    let stats = await apiModule.getApiCreditsStats(caller, Principal.fromActor(FradiumLedgerOriginal), Principal.fromActor(Fradium));
+    { remaining_e8s = remaining; used_e8s = stats.used_e8s };
+  };
+
+  public shared({ caller }) func get_api_approvals_history(offset : Nat, limit : Nat) : async { items : [ApiTypes.ApiApprovalRecord]; total : Nat; offset : Nat; limit : Nat } {
+    return apiModule.getApiApprovalsHistory(caller, offset, limit);
+  };
+
+  // Record an approval entry into API module store (invoked by frontend after successful approve)
+  public shared({ caller }) func record_api_approval(amount_e8s : Nat, metadata : Text) : async () {
+    apiModule.recordApiApproval(caller, amount_e8s, metadata);
   };
 };
