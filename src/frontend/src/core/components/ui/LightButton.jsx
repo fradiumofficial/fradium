@@ -5,7 +5,7 @@ import React from "react";
 const variantClassesOuter = {
   primary: "relative inline-flex items-center justify-center rounded-full p-[1px] my-2 cursor-pointer group [background:linear-gradient(135deg,#6C8CDF_0%,#2D54B8_40%,#6C8CDF_100%)] shadow-[0_22px_36px_-18px_rgba(19,68,175,0.40),0_5px_8px_-4px_rgba(135,145,225,0.70)] transition-all duration-200 ease-out hover:-translate-y-[1px] active:translate-y-0 hover:shadow-[0_26px_44px_-18px_rgba(19,68,175,0.45),0_8px_14px_-4px_rgba(135,145,225,0.75)]",
   secondary: "rounded-full",
-  ghost: "rounded-full",
+  ghost: "rounded-full my-2",
   inverted: "rounded-full",
 };
 

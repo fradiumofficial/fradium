@@ -235,6 +235,7 @@ export type IdRegStartError = { 'InvalidCaller' : null } |
   { 'RateLimitExceeded' : null };
 export interface IdentityAnchorInfo {
   'name' : [] | [string],
+  'created_at' : [] | [Timestamp],
   'devices' : Array<DeviceWithUsage>,
   'openid_credentials' : [] | [Array<OpenIdCredential>],
   'device_registration' : [] | [DeviceRegistrationInfo],
@@ -285,7 +286,6 @@ export interface InternetIdentityInit {
   'archive_config' : [] | [ArchiveConfig],
   'canister_creation_cycles_cost' : [] | [bigint],
   'analytics_config' : [] | [[] | [AnalyticsConfig]],
-  'feature_flag_enable_generic_open_id_fe' : [] | [boolean],
   'related_origins' : [] | [Array<string>],
   'feature_flag_continue_from_another_device' : [] | [boolean],
   'openid_configs' : [] | [Array<OpenIdConfig>],

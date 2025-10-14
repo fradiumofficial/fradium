@@ -538,7 +538,7 @@ function EscrowLayoutContent() {
               <SwitchServices compact={false} />
             </div>
             <div className="flex items-center gap-3">
-              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" showHideBalance={false} />
             </div>
           </div>
           <div className="w-full flex justify-center">
@@ -554,7 +554,7 @@ function EscrowLayoutContent() {
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-between items-center">
               <SwitchServices compact={false} />
-              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" showHideBalance={false} />
             </div>
           </div>
         </aside>

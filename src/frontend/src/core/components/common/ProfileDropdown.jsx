@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function ProfileDropdown({ isOpen, setIsOpen, contextHideBalance, handleToggleHideBalance, icpPrincipal, showSettings = true, settingsPath = "/wallet/setting", logout, color = "#22C55E", background = "dark" }) {
+export default function ProfileDropdown({ isOpen, setIsOpen, contextHideBalance, handleToggleHideBalance, icpPrincipal, showSettings = true, settingsPath = "/wallet/setting", logout, color = "#22C55E", background = "dark", showHideBalance = true }) {
   const navigate = useNavigate();
   const [copiedPrincipal, setCopiedPrincipal] = React.useState(false);
 
@@ -47,23 +47,25 @@ export default function ProfileDropdown({ isOpen, setIsOpen, contextHideBalance,
             transition={{ duration: 0.2, ease: "easeOut" }}>
             <div className="py-4">
               {/* Hide/Show Balance Toggle */}
-              <button className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
-                <div className={background === "light" ? "mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-50" : "mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5"}>
-                  {contextHideBalance ? (
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
-                      <path d="M1 1l22 22" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
-                    </svg>
-                  )}
-                  <span className={background === "light" ? "text-slate-900 font-normal" : "text-white font-normal"}>{contextHideBalance ? "Show balance" : "Hide balance"}</span>
-                </div>
-              </button>
+              {showHideBalance && (
+                <button className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
+                  <div className={background === "light" ? "mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-50" : "mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5"}>
+                    {contextHideBalance ? (
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+                        <path d="M1 1l22 22" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+                      </svg>
+                    )}
+                    <span className={background === "light" ? "text-slate-900 font-normal" : "text-white font-normal"}>{contextHideBalance ? "Show balance" : "Hide balance"}</span>
+                  </div>
+                </button>
+              )}
 
               {/* Copy Principal */}
               <button className="w-full text-sm transition-colors group" onClick={handleCopyPrincipal} aria-label={copiedPrincipal ? "Copied" : "Copy Principal"}>

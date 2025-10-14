@@ -566,7 +566,7 @@ service : (LedgerCanisterPayload) -> {
   icrc1_total_supply : () -> (Icrc1Tokens) query;
   icrc1_fee : () -> (Icrc1Tokens) query;
   icrc1_minting_account : () -> (opt Account) query;
-  icrc1_balance_of : (Account) -> (Icrc1Tokens) query;
+  icrc1_balance_of : (Account) -> (nat64) query;
   icrc1_transfer : (TransferArg) -> (Icrc1TransferResult);
   icrc1_supported_standards : () -> (vec record { name : text; url : text }) query;
   icrc2_approve : (ApproveArgs) -> (ApproveResult);

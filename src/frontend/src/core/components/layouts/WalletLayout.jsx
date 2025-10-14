@@ -500,7 +500,7 @@ function WalletLayoutContent() {
             </div>
             <div className="flex items-center gap-3">
               <NetworkDropdown isOpen={isDropdownOpen} setIsOpen={setIsDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} />
-              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={true} settingsPath="/wallet/setting" logout={logout} />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={true} settingsPath="/wallet/setting" logout={logout} showHideBalance={true} />
             </div>
           </div>
           <div className="w-full flex justify-center">
@@ -517,7 +517,7 @@ function WalletLayoutContent() {
               <SwitchServices compact={false} />
               <div className="flex items-center gap-3">
                 <NetworkDropdown isOpen={isDropdownOpen} setIsOpen={setIsDropdownOpen} network={network} getNetworkValue={getNetworkValue} getAvailableNetworks={getAvailableNetworks} handleNetworkChange={handleNetworkChange} />
-                <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={true} settingsPath="/wallet/setting" logout={logout} />
+                <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={true} settingsPath="/wallet/setting" logout={logout} showHideBalance={true} />
               </div>
             </div>
           </div>

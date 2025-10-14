@@ -151,19 +151,19 @@ function APILayoutContent() {
         <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
           {/* Logo Fradium kiri */}
           <Link to="/">
-            <img src="/assets/logo-fradium-light.svg" alt="Fradium Logo" className="w-10 h-10" />
+            <img src="/assets/logo-fradium.svg" alt="Fradium Logo" className="w-10 h-10" />
           </Link>
           {/* User dropdown kanan menggunakan ProfileDropdown */}
-          <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#22C55E" background="light" />
+          <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
         </div>
 
         {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}
-        <aside className="relative z-10 w-[200px] lg:w-[240px] xl:w-[320px] bg-white/80 backdrop-blur-md flex flex-col py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-slate-200 hidden md:flex min-h-screen">
+        <aside className="relative z-10 w-[200px] lg:w-[240px] xl:w-[320px] bg-white/20 backdrop-blur-md flex flex-col py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-slate-200 hidden md:flex min-h-screen">
           {/* Logo dan Brand */}
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
               <Link to="/">
-                <img src="/assets/logo-fradium-light.svg" alt="Fradium Logo" />
+                <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
               </Link>
             </div>
             {/* Menu */}
@@ -173,9 +173,9 @@ function APILayoutContent() {
                 const IconComponent = getSidebarIcon(item.label, isActive);
                 return isActive ? (
                   <Link key={item.label} to={item.path} className="relative flex w-full items-center gap-3 pl-5 pr-10 py-3 text-base transition-all">
-                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-l from-[#6C8CDF]/20 via-[#6C8CDF]/10 to-transparent" />
-                    <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-[#6C8CDF] shadow-[0_0_12px_rgba(108,140,223,0.5)]" />
-                    <IconComponent className="w-5 h-5 relative z-10 text-[#6C8CDF]" />
+                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-l from-black/10 via-black/5 to-transparent" />
+                    <span className="absolute right-0 top-0 bottom-0 w-[5px] bg-black shadow-[0_0_12px_rgba(0,0,0,0.35)]" />
+                    <IconComponent className="w-5 h-5 relative z-10 text-black" />
                     <span className="relative z-10 text-slate-900 font-medium">{item.label}</span>
                   </Link>
                 ) : (
@@ -198,7 +198,7 @@ function APILayoutContent() {
           <div className="hidden md:flex xl:hidden w-full items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">{/* Empty space for future components */}</div>
             <div className="flex items-center gap-3">
-              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#22C55E" background="light" />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
             </div>
           </div>
           <Container>
@@ -212,7 +212,7 @@ function APILayoutContent() {
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-between items-center">
               <div className="flex items-center gap-3">
-                <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#22C55E" background="light" />
+                <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
               </div>
             </div>
           </div>
@@ -226,8 +226,8 @@ function APILayoutContent() {
           const isActive = normalize(location.pathname) === normalize(item.path);
           const IconComponent = getSidebarIcon(item.label, isActive);
           return (
-            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-[#6C8CDF] bg-white/20 rounded-sm" : "text-slate-700"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "6px 0" }}>
-              <IconComponent className={`w-5 h-5 mb-0.5 ${isActive ? "text-[#6C8CDF]" : "text-slate-700"}`} />
+            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-black bg-white/20 rounded-sm" : "text-slate-700"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "6px 0" }}>
+              <IconComponent className={`w-5 h-5 mb-0.5 ${isActive ? "text-black" : "text-slate-700"}`} />
               <span className="leading-tight text-center text-xs" style={{ fontWeight: 400 }}>
                 {item.label}
               </span>

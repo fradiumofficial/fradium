@@ -13,6 +13,7 @@ import AnalyzeTypes "./modules/analyze/types";
 import EscrowTypes "./modules/escrow/types";
 import SwapTypes "./modules/swap/types";
 import PaylinkTypes "./modules/paylink/types";
+import ApiTypes "./modules/api/types";
 
 import AnalyzeModule "./modules/analyze/analyze";
 import FaucetModule "./modules/faucet/faucet";
@@ -21,6 +22,7 @@ import AdminModule "./modules/admin/admin";
 import EscrowModule "./modules/escrow/escrow";
 import SwapModule "./modules/swap/swap";
 import PaylinkModule "./modules/paylink/paylink";
+import ApiModule "./modules/api/api";
 
 persistent actor Fradium {
   // ===== LEDGER CANISTERS SETUP =====
@@ -84,6 +86,9 @@ persistent actor Fradium {
     CkethLedgerOriginal,
     WalletCanisterOriginal
   );
+
+  // API module initialization
+  transient let apiModule = ApiModule.ApiManager();
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
@@ -268,6 +273,35 @@ persistent actor Fradium {
 
   public shared({ caller }) func record_native_payment(link_id: Text, tx_hash: Text) : async Types.Result<Text, Text> {
     return paylinkModule.record_native_payment(caller, link_id, tx_hash);
+  };
+
+  // ===== API TOKEN FUNCTIONS (API MODULE) =====
+  public shared({ caller }) func create_api_token(request: ApiTypes.CreateTokenRequest) : async ApiTypes.CreateTokenResponse {
+    return await apiModule.createToken(caller, request);
+  };
+
+  public shared({ caller }) func get_api_tokens() : async ApiTypes.GetTokensResponse {
+    return await apiModule.getTokens(caller);
+  };
+
+  public shared({ caller }) func regenerate_api_token(request: ApiTypes.RegenerateTokenRequest) : async ApiTypes.TokenOperationResponse {
+    return await apiModule.regenerateToken(caller, request);
+  };
+
+  public shared({ caller }) func revoke_api_token(request: ApiTypes.RevokeTokenRequest) : async ApiTypes.TokenOperationResponse {
+    return await apiModule.revokeToken(caller, request);
+  };
+
+  public shared({ caller }) func delete_api_token(request: ApiTypes.RevokeTokenRequest) : async ApiTypes.TokenOperationResponse {
+    return await apiModule.deleteToken(caller, request);
+  };
+
+  public shared query func validate_api_token(token_string: Text) : async ?Principal {
+    return apiModule.validateToken(token_string);
+  };
+
+  public shared query func get_api_token_info(token_string: Text) : async ?ApiTypes.ApiToken {
+    return apiModule.getTokenInfo(token_string);
   };
 
   // ===== ADMIN FUNCTIONS (ADMIN MODULE) =====

@@ -307,7 +307,7 @@ export interface _SERVICE {
     [],
     Array<{ 'url' : string, 'name' : string }>
   >,
-  'icrc1_balance_of' : ActorMethod<[Account], Icrc1Tokens>,
+  'icrc1_balance_of' : ActorMethod<[Account], bigint>,
   'icrc1_decimals' : ActorMethod<[], number>,
   'icrc1_fee' : ActorMethod<[], Icrc1Tokens>,
   'icrc1_metadata' : ActorMethod<[], Array<[string, Value]>>,
