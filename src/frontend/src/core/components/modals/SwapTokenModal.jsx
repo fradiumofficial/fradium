@@ -7,6 +7,7 @@ import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 
 // Wallet Provider
 import { useWallet } from "@/core/providers/WalletProvider";
+import { useAuth } from "@/core/providers/AuthProvider";
 
 // Swap Service
 import { SwapService } from "@/core/services/swap/swapService.js";
@@ -14,6 +15,8 @@ import { SwapService } from "@/core/services/swap/swapService.js";
 export default function SwapTokenModal({ isOpen, onClose }) {
   // Wallet Provider
   const { balances, usdPrices } = useWallet();
+  // Auth Provider for principal
+  const { identity, isAuthenticated } = useAuth();
 
   // Swap States
   const [fromToken, setFromToken] = useState(null);
@@ -24,6 +27,8 @@ export default function SwapTokenModal({ isOpen, onClose }) {
   const [error, setError] = useState(null);
   const [swapQuote, setSwapQuote] = useState(null);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [tokenPrices, setTokenPrices] = useState({});
+  const [poolInfo, setPoolInfo] = useState(null);
 
   // Available tokens for swapping (ICRC tokens only)
   const availableTokens = useMemo(() => {
@@ -33,10 +38,21 @@ export default function SwapTokenModal({ isOpen, onClose }) {
     );
   }, []);
 
-  // Initialize with first available token
+  // Initialize with first available token and load prices
   useEffect(() => {
     if (availableTokens.length > 0 && !fromToken) {
       setFromToken(availableTokens[0]);
+    }
+    
+    // Load real-time token prices
+    const loadPrices = async () => {
+      const tokens = availableTokens.map(t => t.symbol);
+      const prices = await SwapService.getTokenPrices(tokens);
+      setTokenPrices(prices);
+    };
+    
+    if (availableTokens.length > 0) {
+      loadPrices();
     }
   }, [availableTokens, fromToken]);
 
@@ -65,11 +81,22 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
       setSwapQuote(quote);
       setToAmount(quote.estimatedOutput.toString());
+      
+      // Load pool information for additional context
+      if (quote.poolId) {
+        try {
+          const poolData = await SwapService.getPoolInfo(quote.poolId);
+          setPoolInfo(poolData);
+        } catch (poolErr) {
+          console.warn("Could not load pool info:", poolErr);
+        }
+      }
     } catch (err) {
       console.error("Swap quote error:", err);
       setError(err.message || "Failed to get swap quote");
       setSwapQuote(null);
       setToAmount("");
+      setPoolInfo(null);
     } finally {
       setIsLoading(false);
     }
@@ -89,8 +116,21 @@ export default function SwapTokenModal({ isOpen, onClose }) {
   const handleSwap = async () => {
     if (!fromToken || !toToken || !fromAmount || !swapQuote) return;
 
-    // Check if user has sufficient balance
-    const userBalance = parseFloat(balances[fromToken.id] || "0");
+    // Check if user is authenticated and get principal
+    if (!isAuthenticated || !identity) {
+      setError("Please connect your wallet to perform swaps");
+      return;
+    }
+
+    // Get principal from identity
+    const principal = identity.getPrincipal().toString();
+    if (!principal) {
+      setError("Unable to get wallet address. Please try reconnecting your wallet.");
+      return;
+    }
+
+    // Check if user has sufficient balance using native balance check
+    const userBalance = await SwapService.getTokenBalance(fromToken.symbol, principal);
     const swapAmount = parseFloat(fromAmount);
     
     if (userBalance < swapAmount) {
@@ -107,7 +147,8 @@ export default function SwapTokenModal({ isOpen, onClose }) {
         toToken: toToken.symbol,
         amount: swapAmount,
         minAmountOut: swapQuote.minAmountOut,
-        recipient: null // Use current user's address
+        recipient: null, // Use current user's address
+        userPrincipal: principal
       });
 
       if (result.success) {
@@ -115,6 +156,9 @@ export default function SwapTokenModal({ isOpen, onClose }) {
         onClose();
         // Trigger balance refresh
         window.dispatchEvent(new CustomEvent("refreshBalances"));
+        
+        // Show success message
+        alert(`Swap successful! You received ${result.amountOut.toFixed(6)} ${toToken.symbol}`);
       } else {
         throw new Error(result.error || "Swap failed");
       }
@@ -195,6 +239,11 @@ export default function SwapTokenModal({ isOpen, onClose }) {
             {fromToken && (
               <div className="text-xs text-white/60 mt-1">
                 Balance: {parseFloat(balances[fromToken.id] || "0").toFixed(6)} {fromToken.symbol}
+                {tokenPrices[fromToken.symbol] && (
+                  <span className="text-white/40 ml-2">
+                    (${(parseFloat(balances[fromToken.id] || "0") * tokenPrices[fromToken.symbol]).toFixed(2)})
+                  </span>
+                )}
                 {parseFloat(balances[fromToken.id] || "0") === 0 && (
                   <span className="text-red-400 ml-2">(No balance)</span>
                 )}
@@ -258,17 +307,43 @@ export default function SwapTokenModal({ isOpen, onClose }) {
           {/* Swap Quote Info */}
           {swapQuote && (
             <div className="bg-[#23272F] border border-[#393E4B] rounded-lg p-3 space-y-2">
+              <h4 className="text-white font-medium text-sm mb-3">Swap Details</h4>
+              {swapQuote.source === 'market' && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mb-3">
+                  <p className="text-yellow-400 text-xs">
+                    Using market-based pricing. Pool liquidity not available for this pair.
+                  </p>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-white/70">Rate</span>
-                <span className="text-white">1 {fromToken.symbol} = {swapQuote.rate} {toToken.symbol}</span>
+                <span className="text-white">1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-white/70">Price Impact</span>
-                <span className="text-white">{swapQuote.priceImpact}%</span>
+                <span className={`text-sm ${parseFloat(swapQuote.priceImpact) > 1 ? 'text-red-400' : 'text-white'}`}>
+                  {swapQuote.priceImpact}%
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-white/70">Fee</span>
-                <span className="text-white">{swapQuote.fee} {fromToken.symbol}</span>
+                <span className="text-white">{swapQuote.fee.toFixed(6)} {fromToken.symbol}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-white/70">Min Received</span>
+                <span className="text-white">{swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}</span>
+              </div>
+              {poolInfo && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/70">Pool Liquidity</span>
+                  <span className="text-white">${(poolInfo.liquidity / 1e8).toFixed(0)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-white/70">Quote Source</span>
+                <span className={`text-sm ${swapQuote.source === 'pool' ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {swapQuote.source === 'pool' ? 'Liquidity Pool' : 'Market Price'}
+                </span>
               </div>
             </div>
           )}
@@ -277,6 +352,15 @@ export default function SwapTokenModal({ isOpen, onClose }) {
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
               <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Authentication Check */}
+          {!isAuthenticated && (
+            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <p className="text-yellow-400 text-sm">
+                Please connect your wallet to perform swaps
+              </p>
             </div>
           )}
 
@@ -292,6 +376,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
               className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSwap}
               disabled={
+                !isAuthenticated ||
                 !fromToken || 
                 !toToken || 
                 !fromAmount || 

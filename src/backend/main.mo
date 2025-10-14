@@ -18,7 +18,6 @@ import Types "types";
 import CommunityTypes "./modules/community/types";
 import AnalyzeTypes "./modules/analyze/types";
 import EscrowTypes "./modules/escrow/types";
-import SwapTypes "./modules/swap/types";
 import PaylinkTypes "./modules/paylink/types";
 import ApiTypes "./modules/api/types";
 
@@ -27,7 +26,6 @@ import FaucetModule "./modules/faucet/faucet";
 import CommunityModule "./modules/community/community";
 import AdminModule "./modules/admin/admin";
 import EscrowModule "./modules/escrow/escrow";
-import SwapModule "./modules/swap/swap";
 import PaylinkModule "./modules/paylink/paylink";
 import ApiModule "./modules/api/api";
 
@@ -98,11 +96,6 @@ persistent actor Fradium {
     WalletForEscrow  // Optional wallet for native coins (BTC, ETH, SOL)
   );
 
-  // Swap module for ICPSwap integration
-  transient let swapModule = SwapModule.SwapModule(
-    Principal.fromActor(Fradium)
-  );
-
   // Paylink module initialization
   transient let paylinkModule = PaylinkModule.PaylinkModule(
     Principal.fromActor(Fradium),
@@ -126,7 +119,6 @@ persistent actor Fradium {
     communityModule.preupgrade();
     analyzeModule.preupgrade();
     escrowModule.preupgrade();
-    swapModule.preupgrade();
     paylinkModule.preupgrade();
   };
 
@@ -135,7 +127,6 @@ persistent actor Fradium {
     communityModule.postupgrade();
     analyzeModule.postupgrade();
     escrowModule.postupgrade();
-    swapModule.postupgrade();
     paylinkModule.postupgrade();
   };
 
@@ -253,31 +244,6 @@ persistent actor Fradium {
 
   public query func get_deposit_account(escrow_id : EscrowTypes.EscrowId, side : Text) : async { owner : Principal; sub : ?Blob } {
     return escrowModule.get_deposit_account(escrow_id, side);
-  };
-
-  // ===== SWAP FUNCTIONS (SWAP MODULE - ICPSwap Integration) =====
-  public query func get_swap_quote(request : SwapTypes.SwapQuoteRequest) : async SwapTypes.SwapQuoteResponse {
-    return swapModule.getSwapQuote(request);
-  };
-
-  public shared({ caller }) func execute_swap(request : SwapTypes.SwapExecuteRequest) : async SwapTypes.SwapExecuteResponse {
-    return swapModule.executeSwap(caller, request);
-  };
-
-  public shared({ caller }) func get_swap_history(offset : Nat, limit : Nat) : async { items : [SwapTypes.SwapHistory]; total : Nat; offset : Nat; limit : Nat } {
-    return swapModule.getSwapHistory(caller, offset, limit);
-  };
-
-  public query func get_swap_by_id(swap_id : Nat) : async ?SwapTypes.SwapHistory {
-    return swapModule.getSwapById(swap_id);
-  };
-
-  public query func get_supported_tokens() : async [SwapTypes.TokenInfo] {
-    return swapModule.getSupportedTokens();
-  };
-
-  public query func get_supported_pairs() : async [SwapTypes.SupportedPair] {
-    return swapModule.getSupportedPairs();
   };
 
   // ===== PAYMENT LINK FUNCTIONS (PAYLINK MODULE) =====
