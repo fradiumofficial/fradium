@@ -222,6 +222,27 @@ type PaymentLink =
    status: PaymentStatus;
    token: TokenType__1;
  };
+type HttpResponse = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+   streaming_strategy: opt null;
+   upgrade: opt bool;
+ };
+type HttpRequest = 
+ record {
+   body: blob;
+   certificate_version: opt nat16;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HeaderField = 
+ record {
+   text;
+   text;
+ };
 type GetTokensResponse = 
  variant {
    err: text;
@@ -479,6 +500,8 @@ service : {
       total: nat;
     });
   get_swap_quote: (request: SwapQuoteRequest) -> (SwapQuoteResponse) query;
+  http_request: (req: HttpRequest) -> (HttpResponse) query;
+  http_request_update: (req: HttpRequest) -> (HttpResponse);
   join_escrow: (params: AcceptEscrowParams) -> (Result_1);
   mark_deposit: (escrow_id: EscrowId) -> (Result);
   record_native_payment: (link_id: text, tx_hash: text) -> (Result);

@@ -1,5 +1,11 @@
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
+import Text "mo:base/Text";
+import Blob "mo:base/Blob";
+import Nat16 "mo:base/Nat16";
+import Nat "mo:base/Nat";
+import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
 
 import FradiumLedgerOriginal "canister:fradium_ledger";
 import IcpLedgerOriginal "canister:icp_ledger";
@@ -25,6 +31,25 @@ import PaylinkModule "./modules/paylink/paylink";
 import ApiModule "./modules/api/api";
 
 persistent actor Fradium {
+  // ===== HTTP REQUEST TYPES =====
+  type HeaderField = (Text, Text);
+
+  type HttpRequest = {
+    method : Text;
+    url : Text;
+    headers : [HeaderField];
+    body : Blob;
+    certificate_version : ?Nat16;
+  };
+
+  type HttpResponse = {
+    status_code : Nat16;
+    headers : [HeaderField];
+    body : Blob;
+    streaming_strategy : ?Null;
+    upgrade : ?Bool;
+  };
+
   // ===== LEDGER CANISTERS SETUP =====
   // Cast ledger canisters to compatible interfaces for different modules
 
@@ -311,5 +336,186 @@ persistent actor Fradium {
 
   public func admin_delete_report(report_id : CommunityTypes.ReportId) : async Types.Result<Text, Text> {
     return adminModule.admin_delete_report(report_id, communityModule.get_report_store(), communityModule.get_stake_records_store());
+  };
+
+  // ===== HTTP REQUEST FUNCTIONS =====
+  
+  // Helper function to extract address from HTTP request body
+  private func extractAddressFromBody(body : Blob) : Text {
+    // Simple extraction - in production, you'd want proper JSON parsing
+    let bodyText = Text.decodeUtf8(body);
+    switch (bodyText) {
+      case null { "" };
+      case (?text) { text };
+    };
+  };
+
+  // Helper function to construct JSON HTTP response
+  private func makeJsonResponse(statusCode : Nat16, jsonContent : Text) : HttpResponse {
+    {
+      status_code = statusCode;
+      headers = [("content-type", "application/json"), ("access-control-allow-origin", "*")];
+      body = Text.encodeUtf8(jsonContent);
+      streaming_strategy = null;
+      upgrade = ?true;
+    };
+  };
+
+  // Helper to fetch a header value (case-insensitive)
+  private func getHeader(headers : [HeaderField], name : Text) : ?Text {
+    var found : ?Text = null;
+    for ((k, v) in headers.vals()) {
+      if (Text.toLowercase(k) == Text.toLowercase(name)) {
+        found := ?v;
+      };
+    };
+    found;
+  };
+
+  // Extract API token from headers: supports X-API-Token: <token> or Authorization: Bearer <token>
+  private func extractApiToken(headers : [HeaderField]) : ?Text {
+    // Prefer explicit X-API-Token header
+    switch (getHeader(headers, "x-api-token")) {
+      case (?tok) { return ?tok; };
+      case null {}
+    };
+
+    // Fallback to Authorization header
+    switch (getHeader(headers, "authorization")) {
+      case (?auth) {
+        let parts = Buffer.Buffer<Text>(0);
+        for (p in Text.split(auth, #text " ")) {
+          parts.add(p);
+        };
+        if (parts.size() >= 2) {
+          let scheme = Text.toLowercase(parts.get(0));
+          if (scheme == "bearer") {
+            return ?parts.get(1);
+          };
+        };
+      };
+      case null {}
+    };
+    null
+  };
+
+  // Helper function to handle HTTP routes
+  private func handleHttpRoute(method : Text, url : Text, _body : Blob, _headers : [HeaderField]) : HttpResponse {
+    let normalizedUrl = Text.trimEnd(url, #text "/");
+
+    switch (method, normalizedUrl) {
+      case ("GET", "" or "/") {
+        makeJsonResponse(200, "{\"message\": \"Welcome to Fradium API\", \"version\": \"1.0.0\"}");
+      };
+      case ("OPTIONS", _) {
+        {
+          status_code = 200;
+          headers = [("access-control-allow-origin", "*"), ("access-control-allow-methods", "GET, POST, OPTIONS"), ("access-control-allow-headers", "Content-Type, Authorization, X-API-Token")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = null;
+        };
+      };
+      case ("POST", "/analyze-address") {
+        {
+          status_code = 200;
+          headers = [("content-type", "application/json")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {
+        {
+          status_code = 404;
+          headers = [("content-type", "application/json")];
+          body = Text.encodeUtf8("{\"error\": \"Not found: " # url # "\"}");
+          streaming_strategy = null;
+          upgrade = null;
+        };
+      };
+    };
+  };
+
+  // Helper function to handle POST routes requiring async calls
+  private func handleHttpRouteUpdate(method : Text, url : Text, body : Blob, headers : [HeaderField]) : async HttpResponse {
+    let normalizedUrl = Text.trimEnd(url, #text "/");
+
+    switch (method, normalizedUrl) {
+      case ("POST", "/analyze-address") {
+        // Require API token
+        let maybeToken = extractApiToken(headers);
+        switch (maybeToken) {
+          case null {
+            return makeJsonResponse(401, "{\"success\": false, \"error\": \"Missing API token\"}");
+          };
+          case (?tokenString) {
+            // Validate token via API module
+            switch (apiModule.validateToken(tokenString)) {
+              case null {
+                return makeJsonResponse(401, "{\"success\": false, \"error\": \"Invalid or inactive API token\"}");
+              };
+              case (?_) {}
+            };
+          }
+        };
+        let address = extractAddressFromBody(body);
+        if (address == "") {
+          return makeJsonResponse(400, "{\"error\": \"Address parameter is required\"}");
+        };
+        
+        // Call the analyze_address function
+        let result = await analyze_address(address);
+        
+        switch (result) {
+          case (#Ok(analysisResult)) {
+            // Convert the analysis result to JSON: expose only available fields
+            let baseParts = [
+              "{\"success\": true, \"data\": {",
+              "\"is_safe\": ", if (analysisResult.is_safe) { "true" } else { "false" }
+            ];
+            // Optionally include whether a report exists
+            let reportFlag = switch (analysisResult.report) {
+              case null { [""] };
+              case (?_) { [", ", "\"has_report\": true"] };
+            };
+            let endParts = ["}}"];
+            let jsonResponse = Text.join("", Array.flatten<Text>([baseParts, reportFlag, endParts]).vals());
+            makeJsonResponse(200, jsonResponse);
+          };
+          case (#Err(errorMsg)) {
+            let errorParts = [
+              "{\"success\": false, \"error\": \"",
+              errorMsg,
+              "\"}"
+            ];
+            let errorResponse = Text.join("", errorParts.vals());
+            makeJsonResponse(400, errorResponse);
+          };
+        };
+      };
+      case ("OPTIONS", _) {
+        {
+          status_code = 200;
+          headers = [("access-control-allow-origin", "*"), ("access-control-allow-methods", "GET, POST, OPTIONS"), ("access-control-allow-headers", "Content-Type, Authorization, X-API-Token")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = null;
+        };
+      };
+      case _ {
+        return handleHttpRoute(method, url, body, headers);
+      };
+    };
+  };
+
+  // HTTP query interface for GET/OPTIONS and static responses
+  public query func http_request(req : HttpRequest) : async HttpResponse {
+    return handleHttpRoute(req.method, req.url, req.body, req.headers);
+  };
+
+  // HTTP update interface for POST routes requiring async calls
+  public func http_request_update(req : HttpRequest) : async HttpResponse {
+    return await handleHttpRouteUpdate(req.method, req.url, req.body, req.headers);
   };
 };

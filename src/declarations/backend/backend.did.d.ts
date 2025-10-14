@@ -157,6 +157,21 @@ export interface GetMyVotesParams {
 }
 export type GetTokensResponse = { 'ok' : Array<ApiToken> } |
   { 'err' : string };
+export type HeaderField = [string, string];
+export interface HttpRequest {
+  'url' : string,
+  'method' : string,
+  'body' : Uint8Array | number[],
+  'headers' : Array<HeaderField>,
+  'certificate_version' : [] | [number],
+}
+export interface HttpResponse {
+  'body' : Uint8Array | number[],
+  'headers' : Array<HeaderField>,
+  'upgrade' : [] | [boolean],
+  'streaming_strategy' : [] | [null],
+  'status_code' : number,
+}
 export interface PaymentLink {
   'id' : string,
   'status' : PaymentStatus,
@@ -391,6 +406,8 @@ export interface _SERVICE {
     }
   >,
   'get_swap_quote' : ActorMethod<[SwapQuoteRequest], SwapQuoteResponse>,
+  'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
+  'http_request_update' : ActorMethod<[HttpRequest], HttpResponse>,
   'join_escrow' : ActorMethod<[AcceptEscrowParams], Result_1>,
   'mark_deposit' : ActorMethod<[EscrowId], Result>,
   'record_native_payment' : ActorMethod<[string, string], Result>,

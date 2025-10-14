@@ -329,6 +329,21 @@ export const idlFactory = ({ IDL }) => {
     'estimated_output' : IDL.Nat,
     'price_impact' : IDL.Float64,
   });
+  const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
+  const HttpRequest = IDL.Record({
+    'url' : IDL.Text,
+    'method' : IDL.Text,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(HeaderField),
+    'certificate_version' : IDL.Opt(IDL.Nat16),
+  });
+  const HttpResponse = IDL.Record({
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(HeaderField),
+    'upgrade' : IDL.Opt(IDL.Bool),
+    'streaming_strategy' : IDL.Opt(IDL.Null),
+    'status_code' : IDL.Nat16,
+  });
   const AcceptEscrowParams = IDL.Record({ 'escrow_id' : EscrowId });
   const RegenerateTokenRequest = IDL.Record({ 'tokenId' : IDL.Text });
   const VoteReportParams = IDL.Record({
@@ -442,6 +457,8 @@ export const idlFactory = ({ IDL }) => {
         [SwapQuoteResponse],
         ['query'],
       ),
+    'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),
     'join_escrow' : IDL.Func([AcceptEscrowParams], [Result_1], []),
     'mark_deposit' : IDL.Func([EscrowId], [Result], []),
     'record_native_payment' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
