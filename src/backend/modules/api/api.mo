@@ -23,6 +23,10 @@ module {
         private var usedAmountCounter : HashMap.HashMap<Principal, Nat> = HashMap.HashMap<Principal, Nat>(10, Principal.equal, Principal.hash);
         private var approvalsStorage : [(Principal, [Types.ApiApprovalRecord])] = [];
         private var approvalsStore = HashMap.HashMap<Principal, [Types.ApiApprovalRecord]>(0, Principal.equal, Principal.hash);
+        
+        // ===== UPGRADE STORAGE =====
+        private var tokensStorage : [(Text, Types.ApiToken)] = [];
+        private var usedAmountCounterStorage : [(Principal, Nat)] = [];
 
         // Generate a random token string
         private func generateTokenString(): Text {
@@ -214,15 +218,17 @@ module {
         };
 
         // ===== API USAGE PUBLIC METHODS =====
-        public func recordApiUsage(owner : Principal, route : Text, amount_e8s : Nat) {
+        public func recordApiUsage(owner : Principal, route : Text, cost : Nat, model : Text, status : Text, reason : ?Text) {
             let now = TimeBase.now();
             let prev = switch (usageStore.get(owner)) { case (?arr) arr; case null [] };
             let updated = Buffer.fromArray<Types.ApiUsageRecord>(prev);
-            updated.add({ amount_e8s = amount_e8s; route = route; at = now });
+            updated.add({ route = route; cost = cost; model = model; status = status; reason = reason; at = now });
             usageStore.put(owner, Buffer.toArray(updated));
-            // increment used counter
-            let prevUsed = switch (usedAmountCounter.get(owner)) { case (?n) n; case null 0 };
-            usedAmountCounter.put(owner, prevUsed + amount_e8s);
+            // increment used counter only for successful calls
+            if (status == "success") {
+                let prevUsed = switch (usedAmountCounter.get(owner)) { case (?n) n; case null 0 };
+                usedAmountCounter.put(owner, prevUsed + cost);
+            };
         };
 
         // Record approval with metadata = "API_CREDITS"
@@ -275,14 +281,38 @@ module {
             { items = page; total = total; offset = offset; limit = limit };
         };
 
+        // Get analyze history from API usage records
+        public func getAnalyzeHistory(caller : Principal, offset : Nat, limit : Nat) : { items : [Types.ApiUsageRecord]; total : Nat; offset : Nat; limit : Nat } {
+            let arrAll = switch (usageStore.get(caller)) { case (?a) a; case null [] };
+            // filter by analyze-address route
+            let filtered = Array.filter<Types.ApiUsageRecord>(arrAll, func (r) { r.route == "/analyze-address" });
+            let total = filtered.size();
+            let start = if (offset > total) { total } else { offset };
+            let end = if (start + limit > total) { total } else { start + limit };
+            let count = if (end > start) { end - start } else { 0 };
+            let page = if (count == 0) { [] } else { Array.subArray<Types.ApiUsageRecord>(filtered, start, count) };
+            { items = page; total = total; offset = offset; limit = limit };
+        };
+
         public func preupgrade() {
+            // Save all HashMap data to persistent storage
+            tokensStorage := Iter.toArray(tokens.entries());
             usageStorage := Iter.toArray(usageStore.entries());
+            usedAmountCounterStorage := Iter.toArray(usedAmountCounter.entries());
             approvalsStorage := Iter.toArray(approvalsStore.entries());
         };
 
         public func postupgrade() {
+            // Restore all HashMap data from persistent storage
+            tokens := HashMap.HashMap<Text, Types.ApiToken>(tokensStorage.size(), Text.equal, Text.hash);
+            for ((k, v) in tokensStorage.vals()) { tokens.put(k, v); };
+            
             usageStore := HashMap.HashMap<Principal, [Types.ApiUsageRecord]>(usageStorage.size(), Principal.equal, Principal.hash);
             for ((k, v) in usageStorage.vals()) { usageStore.put(k, v); };
+            
+            usedAmountCounter := HashMap.HashMap<Principal, Nat>(usedAmountCounterStorage.size(), Principal.equal, Principal.hash);
+            for ((k, v) in usedAmountCounterStorage.vals()) { usedAmountCounter.put(k, v); };
+            
             approvalsStore := HashMap.HashMap<Principal, [Types.ApiApprovalRecord]>(approvalsStorage.size(), Principal.equal, Principal.hash);
             for ((k2, v2) in approvalsStorage.vals()) { approvalsStore.put(k2, v2); };
         };

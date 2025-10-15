@@ -134,10 +134,7 @@ const Navbar = () => {
       <div className="w-full max-w-[1440px] flex items-center justify-between lg:px-12 md:px-8 sm:px-4 px-2 min-h-[72px]">
         {/* Logo */}
         <div className="flex items-center gap-2 sm:gap-3 select-none min-w-fit cursor-pointer" onClick={() => navigate("/")}>
-          <img src="/logo.svg" alt="Crypgo Logo" className="h-8 sm:h-8 w-auto" draggable="false" />
-          <span className="font-medium text-[22px] sm:text-[28px] text-white tracking-wider font-[General Sans, sans-serif]">
-            Fradi<span className="text-[#9BEB83]">um</span>
-          </span>
+          <img src="assets/logo/fradium.svg" alt="Crypgo Logo" className="h-9 sm:h-9 w-auto" draggable="false" />
         </div>
         {/* Menu Desktop */}
         <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-12 relative">

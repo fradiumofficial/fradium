@@ -18,7 +18,6 @@ import Types "types";
 import CommunityTypes "./modules/community/types";
 import AnalyzeTypes "./modules/analyze/types";
 import EscrowTypes "./modules/escrow/types";
-import SwapTypes "./modules/swap/types";
 import PaylinkTypes "./modules/paylink/types";
 import ApiTypes "./modules/api/types";
 
@@ -27,7 +26,6 @@ import FaucetModule "./modules/faucet/faucet";
 import CommunityModule "./modules/community/community";
 import AdminModule "./modules/admin/admin";
 import EscrowModule "./modules/escrow/escrow";
-import SwapModule "./modules/swap/swap";
 import PaylinkModule "./modules/paylink/paylink";
 import ApiModule "./modules/api/api";
 
@@ -98,11 +96,6 @@ persistent actor Fradium {
     WalletForEscrow  // Optional wallet for native coins (BTC, ETH, SOL)
   );
 
-  // Swap module for ICPSwap integration
-  transient let swapModule = SwapModule.SwapModule(
-    Principal.fromActor(Fradium)
-  );
-
   // Paylink module initialization
   transient let paylinkModule = PaylinkModule.PaylinkModule(
     Principal.fromActor(Fradium),
@@ -118,7 +111,7 @@ persistent actor Fradium {
 
   // ===== API BILLING CONFIG =====
   // Fee per analyze-address API call (in FRADIUM e8s)
-  let API_ANALYZE_FEE : Nat = 10_000; // 0.0001 FUM
+  let API_ANALYZE_FEE : Nat = 300_000; // 0.003 FRADIUM
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
@@ -126,8 +119,8 @@ persistent actor Fradium {
     communityModule.preupgrade();
     analyzeModule.preupgrade();
     escrowModule.preupgrade();
-    swapModule.preupgrade();
     paylinkModule.preupgrade();
+    apiModule.preupgrade();
   };
 
   system func postupgrade() {
@@ -135,8 +128,8 @@ persistent actor Fradium {
     communityModule.postupgrade();
     analyzeModule.postupgrade();
     escrowModule.postupgrade();
-    swapModule.postupgrade();
     paylinkModule.postupgrade();
+    apiModule.postupgrade();
   };
 
   // ===== REPORT FUNCTIONS (COMMUNITY MODULE) =====
@@ -253,31 +246,6 @@ persistent actor Fradium {
 
   public query func get_deposit_account(escrow_id : EscrowTypes.EscrowId, side : Text) : async { owner : Principal; sub : ?Blob } {
     return escrowModule.get_deposit_account(escrow_id, side);
-  };
-
-  // ===== SWAP FUNCTIONS (SWAP MODULE - ICPSwap Integration) =====
-  public query func get_swap_quote(request : SwapTypes.SwapQuoteRequest) : async SwapTypes.SwapQuoteResponse {
-    return swapModule.getSwapQuote(request);
-  };
-
-  public shared({ caller }) func execute_swap(request : SwapTypes.SwapExecuteRequest) : async SwapTypes.SwapExecuteResponse {
-    return swapModule.executeSwap(caller, request);
-  };
-
-  public shared({ caller }) func get_swap_history(offset : Nat, limit : Nat) : async { items : [SwapTypes.SwapHistory]; total : Nat; offset : Nat; limit : Nat } {
-    return swapModule.getSwapHistory(caller, offset, limit);
-  };
-
-  public query func get_swap_by_id(swap_id : Nat) : async ?SwapTypes.SwapHistory {
-    return swapModule.getSwapById(swap_id);
-  };
-
-  public query func get_supported_tokens() : async [SwapTypes.TokenInfo] {
-    return swapModule.getSupportedTokens();
-  };
-
-  public query func get_supported_pairs() : async [SwapTypes.SupportedPair] {
-    return swapModule.getSupportedPairs();
   };
 
   // ===== PAYMENT LINK FUNCTIONS (PAYLINK MODULE) =====
@@ -458,6 +426,7 @@ persistent actor Fradium {
             // Validate token via API module
             switch (apiModule.validateToken(tokenString)) {
               case null {
+                // Note: Cannot record API usage for invalid tokens since we don't have the token owner
                 return makeJsonResponse(401, "{\"success\": false, \"error\": \"Invalid or inactive API token\"}");
               };
               case (?tokenOwner) {
@@ -475,17 +444,19 @@ persistent actor Fradium {
                 switch (feeResult) {
                   case (#Err e) {
                     let errMsg = switch (e) {
-                      case (#InsufficientAllowance(_)) { "Insufficient allowance for API fee. Please approve more FUM." };
+                      case (#InsufficientAllowance(_)) { "Insufficient allowance for API fee. Please approve more FRADIUM." };
                       case (#InsufficientFunds(_)) { "Insufficient FRADIUM balance for API fee." };
                       case (#BadFee { expected_fee }) { "Bad fee. Expected: " # Nat.toText(expected_fee) };
                       case (#GenericError { message; error_code }) { "Ledger error (" # Nat.toText(error_code) # "): " # message };
                       case _ { "Unable to collect API fee." };
                     };
+                    // Record failed API usage
+                    apiModule.recordApiUsage(tokenOwner, "/analyze-address", API_ANALYZE_FEE, "community", "failed", ?errMsg);
                     return makeJsonResponse(402, "{\"success\": false, \"error\": \"" # errMsg # "\"}");
                   };
                   case (#Ok _) {
-                    // Record API usage via API module store
-                    apiModule.recordApiUsage(tokenOwner, "/analyze-address", API_ANALYZE_FEE);
+                    // Record successful API usage
+                    apiModule.recordApiUsage(tokenOwner, "/analyze-address", API_ANALYZE_FEE, "community", "success", null);
                   };
                 };
               };
@@ -494,6 +465,7 @@ persistent actor Fradium {
         };
         let address = extractAddressFromBody(body);
         if (address == "") {
+          // Note: Cannot record API usage here since we're outside token validation scope
           return makeJsonResponse(400, "{\"error\": \"Address parameter is required\"}");
         };
         
@@ -517,6 +489,7 @@ persistent actor Fradium {
             makeJsonResponse(200, jsonResponse);
           };
           case (#Err(errorMsg)) {
+            // Note: Cannot record API usage here since we're outside token validation scope
             let errorParts = [
               "{\"success\": false, \"error\": \"",
               errorMsg,
@@ -570,5 +543,10 @@ persistent actor Fradium {
   // Record an approval entry into API module store (invoked by frontend after successful approve)
   public shared({ caller }) func record_api_approval(amount_e8s : Nat, metadata : Text) : async () {
     apiModule.recordApiApproval(caller, amount_e8s, metadata);
+  };
+
+  // Get analyze history from API usage records
+  public shared({ caller }) func get_api_analyze_history(offset : Nat, limit : Nat) : async { items : [ApiTypes.ApiUsageRecord]; total : Nat; offset : Nat; limit : Nat } {
+    return apiModule.getAnalyzeHistory(caller, offset, limit);
   };
 };

@@ -54,8 +54,11 @@ module {
 
   // ===== API USAGE TYPES =====
   public type ApiUsageRecord = {
-    amount_e8s : Nat;
     route : Text;
+    cost : Nat;
+    model : Text;
+    status : Text; // "success" or "failed"
+    reason : ?Text; // null for success, error message for failure
     at : Time.Time;
   };
 

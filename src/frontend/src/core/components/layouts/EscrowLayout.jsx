@@ -130,123 +130,6 @@ function TradeInvitationAlert({ invitation, onClose }) {
   );
 }
 
-function EscrowRightActions({ isDropdownOpen, setIsDropdownOpen, isProfileDropdownOpen, setIsProfileDropdownOpen, network, getNetworkValue, getAvailableNetworks, handleNetworkChange, handleToggleHideBalance, contextHideBalance, navigate, logout, icpPrincipal }) {
-  const [copiedPrincipal, setCopiedPrincipal] = React.useState(false);
-  return (
-    <>
-      <div className="relative network-dropdown">
-        <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="relative flex items-center gap-3 h-12 px-5 rounded-full text-white font-medium bg-white/5 text-base hover:opacity-95 transition-colors border border-white/10">
-          <img src="/assets/icons/construction.svg" alt="All Networks" className="w-5 h-5" />
-          <span className="text-white pr-2 capitalize">{network}</span>
-          <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
-        </button>
-
-        <AnimatePresence>
-          {isDropdownOpen && (
-            <motion.div className="absolute top-full mt-3 w-[300px] rounded-2xl border border-white/10 z-[9999] overflow-hidden" style={{ right: "0px", background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))", boxShadow: "0 12px 40px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)" }} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-              <div className="py-2">
-                <button onClick={() => handleNetworkChange("All Networks")} className="w-full text-base">
-                  <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === "All Networks" ? "bg-white/8" : "hover:bg-white/5"}`}>
-                    <div className="flex items-center gap-3">
-                      {network === "All Networks" ? <Check className="w-4 h-4 text-[#4942AA]" /> : <div className="w-4 h-4" />}
-                      <span className="text-white">All Networks</span>
-                    </div>
-                    <span className="text-[#9CA3AF]">{getNetworkValue("All Networks")}</span>
-                  </div>
-                </button>
-
-                <div className="h-px bg-white/10 mx-4 my-1" />
-
-                {getAvailableNetworks().map((net, index) => (
-                  <div key={net.key}>
-                    <button onClick={() => handleNetworkChange(net.name)} className="w-full text-base">
-                      <div className={`mx-3 flex items-center justify-between px-4 py-3 rounded-xl ${network === net.name ? "bg-white/8" : "hover:bg-white/5"}`}>
-                        <div className="flex items-center gap-3">
-                          {network === net.name ? <Check className="w-4 h-4 text-[#4942AA]" /> : <div className="w-4 h-4" />}
-                          <span className="text-white text-left">{net.name}</span>
-                        </div>
-                        <span className="text-[#9CA3AF]">{net.value}</span>
-                      </div>
-                    </button>
-                    {index < getAvailableNetworks().length - 1 && <div className="h-px bg-white/10 mx-4" />}
-                  </div>
-                ))}
-
-                <div className="h-px bg-white/10 mx-4 my-2" />
-
-                <button
-                  className="w-full flex items-center gap-3 px-6 py-3 text-[#4942AA] hover:bg-white/5 transition-colors"
-                  onClick={() => {
-                    // This will be handled by the parent component
-                    window.dispatchEvent(new CustomEvent("openManageNetworks"));
-                  }}>
-                  <Settings className="w-5 h-5" />
-                  <span className="font-medium">Manage Networks</span>
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div className="relative profile-dropdown">
-        <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="group flex items-center justify-center bg-[#161B22] w-11 h-11 rounded-full border border-white/10 hover:bg-[#2A2F36] transition-all duration-200 ease-out cursor-pointer hover:border-white/20">
-          <User className="w-6 h-6 text-white transition-transform duration-200 group-hover:scale-110" />
-        </button>
-
-        <AnimatePresence>
-          {isProfileDropdownOpen && (
-            <motion.div className="absolute top-full right-0 mt-3 w-[270px] rounded-3xl font-normal border border-white/10 z-[9999] overflow-hidden" style={{ background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))", boxShadow: "0 12px 40px rgba(0,0,0,0.45)", backdropFilter: "blur(10px)" }} initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-              <div className="py-4">
-                <button className="w-full text-sm transition-colors group" onClick={handleToggleHideBalance}>
-                  <div className="mx-5 mb-3 flex items-center gap-3 py-3 px-4 rounded-2xl bg-white/5">
-                    <Eye className="w-5 h-5 text-white" />
-                    <span className="text-white">{contextHideBalance ? "Show Balance" : "Hide Balance"}</span>
-                  </div>
-                </button>
-
-                <div className="h-px bg-white/10 mx-5 mb-3" />
-
-                <SocialLinksDropdown />
-
-                <div className="h-px bg-white/10 mx-5 mb-3" />
-
-                <div className="mx-5 mb-3">
-                  <div className="text-xs text-[#9CA3AF] mb-2">Your Principal</div>
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5">
-                    <code className="text-xs text-white font-mono flex-1 truncate">{icpPrincipal}</code>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(icpPrincipal);
-                        setCopiedPrincipal(true);
-                        setTimeout(() => setCopiedPrincipal(false), 2000);
-                      }}
-                      className="p-1 hover:bg-white/10 rounded transition-colors">
-                      {copiedPrincipal ? <Check className="w-4 h-4 text-[#4942AA]" /> : <Copy className="w-4 h-4 text-white/70" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="h-px bg-white/10 mx-5 mb-3" />
-
-                <button
-                  className="w-full flex items-center gap-3 px-6 py-3 text-[#FF6B6B] hover:bg-white/5 transition-colors"
-                  onClick={() => {
-                    navigate("/");
-                    logout();
-                  }}>
-                  <LogOut className="w-5 h-5" />
-                  <span className="font-medium">Logout</span>
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </>
-  );
-}
-
 function EscrowLayoutContent() {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
@@ -403,7 +286,7 @@ function EscrowLayoutContent() {
 
   // Menu configuration for escrow
   const menu = [
-    { label: "P2P Trade", icon: "p2p-trade", path: "/escrow/list" },
+    { label: "P2P Trade", icon: "p2p-trade", path: "/escrow" },
     { label: "Create Escrow", icon: "p2p-payment", path: "/escrow/create" },
     { label: "My Escrow", icon: "escrow-history", path: "/escrow/my-escrow" },
     { label: "Escrow History", icon: "escrow-history", path: "/escrow/history" },
@@ -495,7 +378,7 @@ function EscrowLayoutContent() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
               <Link to="/">
-                <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
+                <img src="/assets/logo/fradium-escrow.svg" className="h-[50px] sm:h-[50px] w-auto" alt="Fradium Logo" />
               </Link>
             </div>
             {/* Menu */}
@@ -520,7 +403,7 @@ function EscrowLayoutContent() {
             </nav>
           </div>
           {/* Bottom icons - fixed at bottom */}
-          <SocialLinksSidebar />
+          <SocialLinksSidebar color="#7C72FE" />
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
 
@@ -535,7 +418,7 @@ function EscrowLayoutContent() {
           {/* Topbar actions for md screens - Escrow: without All Networks, but with Switch Services */}
           <div className="hidden md:flex xl:hidden w-full items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <SwitchServices compact={false} />
+              <SwitchServices compact={false} color="#7C72FE" />
             </div>
             <div className="flex items-center gap-3">
               <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" showHideBalance={false} />
@@ -553,7 +436,7 @@ function EscrowLayoutContent() {
         <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-between items-center">
-              <SwitchServices compact={false} />
+              <SwitchServices compact={false} color="#7C72FE" />
               <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#7C72FE" showHideBalance={false} />
             </div>
           </div>

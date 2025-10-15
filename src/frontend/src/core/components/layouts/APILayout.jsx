@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { LoadingState } from "@/core/components/ui/LoadingState";
-import { BarChart3, History, Key, Code, Coins } from "lucide-react";
+import { BarChart3, History, Key, BookOpen, Coins } from "lucide-react";
 import Container from "@/core/components/ui/Container.jsx";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 import { formatAmount } from "@/core/lib/tokenUtils";
@@ -34,7 +34,7 @@ function APILayoutContent() {
       "Analyze History": History,
       "Access Token": Key,
       "API Credits": Coins,
-      "Try API": Code,
+      Docs: BookOpen,
     };
     return iconMap[label] || BarChart3;
   };
@@ -82,7 +82,7 @@ function APILayoutContent() {
     { label: "Analyze History", icon: "analyze-history", path: "/developer/analyze-history" },
     { label: "Access Token", icon: "access-token", path: "/developer/access-token" },
     { label: "API Credits", icon: "api-credits", path: "/developer/api-credits" },
-    { label: "Try API", icon: "try-api", path: "/developer/try-api" },
+    { label: "Docs", icon: "api-documentation", path: "/developer/api-documentation" },
   ];
 
   // Load hide balance setting from localStorage on component mount and user change
@@ -157,7 +157,7 @@ function APILayoutContent() {
         <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
           {/* Logo Fradium kiri */}
           <Link to="/">
-            <img src="/assets/logo-fradium.svg" alt="Fradium Logo" className="w-10 h-10" />
+            <img src="/assets/logo/fradium-developer-light.svg" alt="Fradium Logo" className="w-10 h-10" />
           </Link>
           {/* User dropdown kanan menggunakan ProfileDropdown */}
           <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
@@ -169,7 +169,7 @@ function APILayoutContent() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
               <Link to="/">
-                <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
+                <img src="/assets/logo/fradium-developer-light.svg" alt="Fradium Logo" />
               </Link>
             </div>
             {/* Menu */}
@@ -214,7 +214,7 @@ function APILayoutContent() {
                 const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
                 return (
                   <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <img src="/assets/images/coins/fradium.webp" alt="FUM" className="w-4 h-4" />
+                    <img src="/assets/images/coins/fradium.webp" alt="FRADIUM" className="w-4 h-4" />
                     <span className="text-sm text-slate-700">FRADIUM:</span>
                     <span className="text-sm font-medium text-slate-900">{balanceText}</span>
                     <span className="text-xs text-slate-500">{usdText}</span>
@@ -248,7 +248,7 @@ function APILayoutContent() {
                   const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
                   return (
                     <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
-                      <img src="/assets/images/coins/fradium.webp" alt="FUM" className="w-4 h-4" />
+                      <img src="/assets/images/coins/fradium.webp" alt="FRADIUM" className="w-4 h-4" />
                       <span className="text-sm text-slate-700">FRADIUM:</span>
                       <span className="text-sm font-medium text-slate-900">{balanceText}</span>
                       <span className="text-xs text-slate-500">{usdText}</span>
