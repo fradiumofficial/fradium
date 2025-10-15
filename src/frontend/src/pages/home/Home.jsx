@@ -728,231 +728,79 @@ const Home = React.memo(() => {
 
       {/* Our Product Section */}
       <div className="relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-[#000510]">
-        {/* Background layer */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
         </div>
-
-        {/* Content */}
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
-          {/* Header */}
-          <div className="text-center mb-8 sm:mb-10 md:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-medium leading-tight text-white mb-4 sm:mb-5">
-              Our Product
-            </h2>
-            <p className="mx-auto max-w-3xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">
-              With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about hidden risks.
-            </p>
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
+          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6">Our Product</h2>
+            <p className="mx-auto max-w-4xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about hidden risks.</p>
           </div>
-
-          {/* Product Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
             {/* Card 1: Fradium Paylink */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 relative overflow-hidden group">
-              {/* New Product Badge */}
-              <div className="absolute top-4 right-4 z-10">
-                <div className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-medium">
-                  New Product!
-                </div>
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="absolute top-4 right-4 z-10"><div className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-medium">New Product!</div></div>
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-paylink.webp" alt="Fradium Paylink" className="w-full h-full object-cover" draggable={false} />
               </div>
-
-              {/* Visual Content */}
-              <div className="w-full h-[200px] rounded-[12px] bg-white/5 mb-4 overflow-hidden relative">
-                {/* QR Code Simulation */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center">
-                    <div className="w-28 h-28 bg-black rounded grid grid-cols-8 gap-0.5 p-1">
-                      {Array.from({ length: 64 }).map((_, i) => (
-                        <div key={i} className={`w-1 h-1 ${Math.random() > 0.5 ? 'bg-white' : 'bg-black'} rounded-sm`}></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Link Text */}
-                <div className="absolute top-4 left-4 text-white text-sm font-medium">Payment Link Created!</div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="bg-white/10 rounded-lg p-2 text-xs text-white">
-                    Payment link for 100 FUM to Adrian Smith
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-white text-[18px] font-medium">Fradium Paylink</div>
                   <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                 </div>
-                <button className="ml-4 bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors">
-                  Try Now
-                </button>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
               </div>
             </div>
-
             {/* Card 2: Fradium Escrow */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 relative overflow-hidden group">
-              {/* Visual Content */}
-              <div className="w-full h-[200px] rounded-[12px] bg-white/5 mb-4 overflow-hidden relative">
-                {/* Central F Logo */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="relative">
-                    {/* Glowing circle */}
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#99E39E]/30 to-[#99E39E]/10 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#99E39E] to-[#7BC47B] flex items-center justify-center">
-                        <span className="text-white font-bold text-xl">F</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Labels */}
-                <div className="absolute top-4 left-4 text-white text-xs font-medium">Easy to Use</div>
-                <div className="absolute top-4 right-4 text-white text-xs font-medium">Quick and Efficient</div>
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white text-xs text-center">
-                  <div className="font-medium">PROTECT TRANSACTIONS BY AUTOMATICALLY SCANNING ADDRESSES</div>
-                  <div className="mt-1 text-[#B0B6BE]">Check if this address Already Flagged...</div>
-                </div>
-
-                {/* Status Icons */}
-                <div className="absolute bottom-4 left-4">
-                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="absolute bottom-4 right-4">
-                  <div className="bg-red-500 text-white text-xs px-2 py-1 rounded font-medium">SCAM</div>
-                </div>
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="absolute top-4 right-4 z-10"><div className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-medium">New Product!</div></div>
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-escrow.webp" alt="Fradium Escrow" className="w-full h-full object-cover" draggable={false} />
               </div>
-
-              {/* Content */}
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-white text-[18px] font-medium">Fradium Escrow</div>
                   <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                 </div>
-                <button className="ml-4 bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors">
-                  Try Now
-                </button>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
               </div>
             </div>
-
             {/* Card 3: Fradium Wallet */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 relative overflow-hidden group">
-              {/* Visual Content */}
-              <div className="w-full h-[200px] rounded-[12px] bg-white/5 mb-4 overflow-hidden relative">
-                {/* Wallet Interface Mockup */}
-                <div className="p-4 h-full flex flex-col">
-                  {/* Portfolio Value */}
-                  <div className="text-center mb-4">
-                    <div className="text-white text-lg font-semibold">Total Portfolio Value</div>
-                    <div className="text-white text-2xl font-bold">$404.18</div>
-                    <div className="text-green-400 text-sm">+12.4%</div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mb-4">
-                    <button className="flex-1 bg-white/10 text-white py-2 px-3 rounded-lg text-xs font-medium">Buy</button>
-                    <button className="flex-1 bg-white/10 text-white py-2 px-3 rounded-lg text-xs font-medium">Send</button>
-                    <button className="flex-1 bg-white/10 text-white py-2 px-3 rounded-lg text-xs font-medium">Swap</button>
-                  </div>
-
-                  {/* Assets List */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white text-xs">BTC - Bitcoin</span>
-                      <span className="text-white text-xs">0.0012</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-white text-xs">ETH - Ethereum</span>
-                      <span className="text-white text-xs">0.0234</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-white text-xs">FUM - Fradium Coin</span>
-                      <span className="text-white text-xs">100.00</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-white text-xs">USDT - Tether</span>
-                      <span className="text-white text-xs">50.00</span>
-                    </div>
-                  </div>
-                </div>
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradiums-wallet.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
               </div>
-
-              {/* Content */}
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-white text-[18px] font-medium">Fradium Wallet</div>
                   <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                 </div>
-                <button className="ml-4 bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors">
-                  Try Now
-                </button>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
               </div>
             </div>
-
             {/* Card 4: Fradium Extension */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 relative overflow-hidden group">
-              {/* Visual Content */}
-              <div className="w-full h-[200px] rounded-[12px] bg-white/5 mb-4 overflow-hidden relative">
-                {/* Extension Interface Mockup */}
-                <div className="p-4 h-full flex flex-col">
-                  {/* Labels */}
-                  <div className="flex justify-between mb-4">
-                    <span className="text-white text-xs font-medium">Easy to Use</span>
-                    <span className="text-white text-xs font-medium">Quick and Efficient</span>
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex-1">
-                    <div className="text-white text-sm font-medium mb-2">Analyze Address</div>
-                    <p className="text-[#B0B6BE] text-xs mb-4">
-                      Check the risk level of a wallet address based on its transaction history and known fraud reports
-                    </p>
-
-                    {/* Input Field */}
-                    <div className="mb-4">
-                      <input
-                        type="text"
-                        placeholder="Input address here..."
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-xs placeholder-[#B0B6BE]"
-                        readOnly
-                      />
-                    </div>
-
-                    {/* Analyze Button */}
-                    <button className="w-full bg-[#99E39E] hover:bg-[#8BD490] text-black py-2 px-4 rounded-lg text-xs font-medium transition-colors">
-                      Analyse
-                    </button>
-                  </div>
-                </div>
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-extension.webp" alt="Fradium Extension" className="w-full h-full object-cover" draggable={false} />
               </div>
-
-              {/* Content */}
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-white text-[18px] font-medium">Fradium Extension</div>
                   <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                 </div>
-                <button className="ml-4 bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg text-xs font-medium transition-colors">
-                  Try Now
-                </button>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
               </div>
             </div>
           </div>
         </div>
       </div>
-
       {/* Background ketiga paling bawah, konten akan diletakkan di atasnya */}
       <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
         </div>
-        {/* Fade dari warna dasar ke background-3 */}
+        {/* Fade ke warna dasar ke background-3 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
-
         {/* Wrapper konten */}
         <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8 md:pt-10 pb-16 sm:pb-20 md:pb-24 lg:pb-32">
           {/* Hero di atas background ketiga */}
@@ -967,59 +815,6 @@ const Home = React.memo(() => {
               </div>
             </div>
           </div>
-
-          {/* Laptop Image - positioned within background 3 content */}
-          <div className="relative flex justify-center items-end mt-16 sm:mt-6 md:mt-8">
-            <div className="relative w-full max-w-3xl sm:max-w-4xl md:max-w-5xl mx-auto">
-              {/* Laptop Frame */}
-              <img
-                src="assets/laptop.webp"
-                alt="MacBook"
-                className="w-full h-auto object-contain"
-                style={{
-                  transform: "translateY(0px)",
-                  marginBottom: "-10%",
-                }}
-                draggable={false}
-              />
-
-              {/* Video Overlay - positioned over the full screen area */}
-              <div
-                className="absolute 
-                top-[2%] left-[9%] w-[82%] h-[105%]
-                md:top-[2%] md:left-[9%] md:w-[82%] md:h-[105%]
-                lg:top-[2%] lg:left-[9%] lg:w-[82%] lg:h-[105%]
-                rounded-lg overflow-hidden">
-                {/* Placeholder sementara - ganti dengan video nanti */}
-                {/* <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-medium">Video Coming Soon</p>
-                    <p className="text-xs text-gray-400 mt-1">Replace this placeholder with your video</p>
-                  </div>
-                </div> */}
-
-                {/* Uncomment dan ganti dengan video nanti:
-                <video
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="metadata"
-                >
-                  <source src="/path/to/your-video.mp4" type="video/mp4" />
-                  <source src="/path/to/your-video.webm" type="video/webm" />
-                  <img src="/path/to/placeholder.jpg" alt="Screen Content" className="w-full h-full object-cover" />
-                </video>
-                */}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1028,4 +823,4 @@ const Home = React.memo(() => {
   );
 });
 
-export default Home; 
+export default Home;  
