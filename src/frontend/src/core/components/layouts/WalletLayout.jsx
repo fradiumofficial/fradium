@@ -280,7 +280,7 @@ function WalletLayoutContent() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
               <Link to="/">
-                <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
+                <img src="/assets/logo/fradium-wallet.svg" className="h-[50px] sm:h-[50px] w-auto" alt="Fradium Logo" />
               </Link>
             </div>
             {/* Menu */}
