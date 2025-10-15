@@ -18,7 +18,8 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-dialog": "^1.1.14",
-    "@squoosh/cli": "^0.7.1"
+    "@squoosh/cli": "^0.7.1",
+    "gsap": "^3.13.0"
   },
   "devDependencies": {
     "sharp": "^0.34.3"
