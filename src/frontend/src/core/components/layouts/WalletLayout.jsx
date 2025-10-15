@@ -253,24 +253,16 @@ function WalletLayoutContent() {
     }));
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0F1219] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingState type="spinner" size="lg" color="primary" />
-          <div className="text-white text-lg">Loading your wallet...</div>
-        </div>
-      </div>
-    );
-  }
+  // Remove the blocking loading screen - let content show immediately
+  // Loading states will be handled at component level with skeleton loading
 
   return (
     <>
       <WelcomingWalletModal isOpen={isCreatingWallet} />
 
-      <div className="relative block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
+      <div className="relative block md:flex min-h-screen bg-[#000510] w-full max-w-full">
         {/* Global background spanning all wallet sections */}
-        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png" alt="" aria-hidden="true" decoding="async" loading="eager" className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet2-background.webp" alt="" aria-hidden="true" decoding="async" loading="eager" className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
         <div className="absolute inset-0 z-0 bg-[#0F1219]/25 pointer-events-none" aria-hidden="true"></div>
         {/* Modal Manage Networks */}
         <ManageNetworksModal isOpen={showManageNetworks} onClose={() => setShowManageNetworks(false)} networkFilters={networkFilters} updateNetworkFilters={updateNetworkFilters} currentNetwork={network} setNetwork={setNetwork} />
