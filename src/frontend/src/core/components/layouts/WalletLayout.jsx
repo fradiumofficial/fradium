@@ -280,7 +280,7 @@ function WalletLayoutContent() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
               <Link to="/">
-                <img src="/assets/logo-fradium.svg" alt="Fradium Logo" />
+                <img src="/assets/logo/fradium-wallet.svg" className="h-[50px] sm:h-[50px] w-auto" alt="Fradium Logo" />
               </Link>
             </div>
             {/* Menu */}
@@ -314,7 +314,7 @@ function WalletLayoutContent() {
             </nav>
           </div>
           {/* Bottom icons - fixed at bottom */}
-          <SocialLinksSidebar />
+          <SocialLinksSidebar color="#9BE4A0" />
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
         {/* Topbar khusus mobile */}
@@ -473,7 +473,7 @@ function WalletLayoutContent() {
                     </button>
 
                     <div className="h-px bg-white/5 mx-4"></div>
-                    <SocialLinksDropdown />
+                    <SocialLinksDropdown color="#9BE4A0" />
 
                     {/* Logout Button using SidebarButton */}
                     <div className="mx-4 mt-2">

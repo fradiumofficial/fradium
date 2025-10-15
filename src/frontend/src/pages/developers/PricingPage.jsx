@@ -83,7 +83,7 @@ const PricingPage = () => {
 
               <div className="mb-8">
                 <div className="text-3xl text-white font-medium mb-2">
-                  0.01 <span className="text-[#9BE4A0]">FUM</span>
+                  0.01 <span className="text-[#9BE4A0]">FRADIUM</span>
                   <span className="text-base text-gray-400"> per address</span>
                 </div>
               </div>
@@ -110,7 +110,7 @@ const PricingPage = () => {
               <div className="text-sm text-gray-400 mb-6">Ideal for developers, exchanges, and dApps requiring instant risk scoring.</div>
 
               <ButtonPurple fullWidth onClick={isAuthenticated ? () => navigate("/wallet") : handleSignUp} loading={isSignUpLoading} icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg" iconSize="w-5 h-5" fontWeight="medium">
-                {isAuthenticated ? "Go to Wallet" : "Get Started"}
+                {isAuthenticated ? "Get Started" : "Get Started"}
               </ButtonPurple>
             </motion.div>
 
@@ -135,7 +135,7 @@ const PricingPage = () => {
 
               <div className="mb-8">
                 <div className="text-3xl text-white font-medium mb-2">
-                  0.003 <span className="text-[#9BE4A0]">FUM</span>
+                  0.003 <span className="text-[#9BE4A0]">FRADIUM</span>
                   <span className="text-base text-gray-400"> per address</span>
                 </div>
               </div>
@@ -162,7 +162,7 @@ const PricingPage = () => {
               <div className="text-sm text-gray-400 mb-6">Ideal for wallets, marketplaces, or dApps that prefer human-verified, trust-based analysis.</div>
 
               <ButtonGreen fullWidth onClick={isAuthenticated ? () => navigate("/wallet") : handleSignUp} loading={isSignUpLoading} icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-5 h-5" fontWeight="medium">
-                {isAuthenticated ? "Go to Wallet" : "Get Started"}
+                {isAuthenticated ? "Get Started" : "Get Started"}
               </ButtonGreen>
             </motion.div>
           </div>

@@ -121,20 +121,6 @@ export const idlFactory = ({ IDL }) => {
     'ok' : IDL.Text,
     'err' : IDL.Text,
   });
-  const SwapExecuteRequest = IDL.Record({
-    'to_token' : IDL.Text,
-    'min_amount_out' : IDL.Nat,
-    'from_token' : IDL.Text,
-    'recipient' : IDL.Opt(IDL.Principal),
-    'deadline' : IDL.Opt(IDL.Nat64),
-    'amount' : IDL.Nat,
-  });
-  const SwapExecuteResponse = IDL.Record({
-    'transaction_id' : IDL.Opt(IDL.Nat),
-    'redirect_url' : IDL.Opt(IDL.Text),
-    'error' : IDL.Opt(IDL.Text),
-    'success' : IDL.Bool,
-  });
   const EscrowMethod = IDL.Variant({
     'Native' : IDL.Null,
     'Wrapped' : IDL.Null,
@@ -170,6 +156,14 @@ export const idlFactory = ({ IDL }) => {
     'released_at' : IDL.Opt(Time),
   });
   const Result_10 = IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text });
+  const ApiUsageRecord = IDL.Record({
+    'at' : Time,
+    'status' : IDL.Text,
+    'model' : IDL.Text,
+    'cost' : IDL.Nat,
+    'route' : IDL.Text,
+    'reason' : IDL.Opt(IDL.Text),
+  });
   const ApiApprovalRecord = IDL.Record({
     'at' : Time,
     'metadata' : IDL.Text,
@@ -289,51 +283,6 @@ export const idlFactory = ({ IDL }) => {
   });
   const Result_4 = IDL.Variant({ 'Ok' : Report, 'Err' : IDL.Text });
   const Result_3 = IDL.Variant({ 'Ok' : IDL.Vec(Report), 'Err' : IDL.Text });
-  const SupportedPair = IDL.Record({
-    'to_token' : IDL.Text,
-    'active' : IDL.Bool,
-    'from_token' : IDL.Text,
-    'to_canister_id' : IDL.Text,
-    'from_canister_id' : IDL.Text,
-  });
-  const TokenInfo = IDL.Record({
-    'decimals' : IDL.Nat8,
-    'name' : IDL.Text,
-    'canister_id' : IDL.Text,
-    'symbol' : IDL.Text,
-  });
-  const SwapStatus = IDL.Variant({
-    'Failed' : IDL.Null,
-    'Cancelled' : IDL.Null,
-    'Completed' : IDL.Null,
-    'Pending' : IDL.Null,
-  });
-  const SwapHistory = IDL.Record({
-    'id' : IDL.Nat,
-    'fee' : IDL.Nat,
-    'transaction_id' : IDL.Opt(IDL.Nat),
-    'to_token' : IDL.Text,
-    'status' : SwapStatus,
-    'from_amount' : IDL.Nat,
-    'from_token' : IDL.Text,
-    'user' : IDL.Principal,
-    'created_at' : IDL.Int,
-    'to_amount' : IDL.Nat,
-    'completed_at' : IDL.Opt(IDL.Int),
-  });
-  const SwapQuoteRequest = IDL.Record({
-    'to_token' : IDL.Text,
-    'from_token' : IDL.Text,
-    'amount' : IDL.Nat,
-  });
-  const SwapQuoteResponse = IDL.Record({
-    'fee' : IDL.Nat,
-    'min_amount_out' : IDL.Nat,
-    'valid_for' : IDL.Nat,
-    'rate' : IDL.Float64,
-    'estimated_output' : IDL.Nat,
-    'price_impact' : IDL.Float64,
-  });
   const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
@@ -382,7 +331,6 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'execute_payment_icrc' : IDL.Func([IDL.Text], [Result], []),
-    'execute_swap' : IDL.Func([SwapExecuteRequest], [SwapExecuteResponse], []),
     'get_all_escrows' : IDL.Func([], [IDL.Vec(EscrowRecord)], ['query']),
     'get_all_escrows_paginated' : IDL.Func(
         [IDL.Nat, IDL.Nat],
@@ -391,6 +339,18 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_analyze_history' : IDL.Func([IDL.Nat, IDL.Nat], [Result_11], []),
     'get_analyze_history_count' : IDL.Func([], [Result_10], []),
+    'get_api_analyze_history' : IDL.Func(
+        [IDL.Nat, IDL.Nat],
+        [
+          IDL.Record({
+            'total' : IDL.Nat,
+            'offset' : IDL.Nat,
+            'limit' : IDL.Nat,
+            'items' : IDL.Vec(ApiUsageRecord),
+          }),
+        ],
+        [],
+      ),
     'get_api_approvals_history' : IDL.Func(
         [IDL.Nat, IDL.Nat],
         [
@@ -458,26 +418,6 @@ export const idlFactory = ({ IDL }) => {
           }),
         ],
         [],
-      ),
-    'get_supported_pairs' : IDL.Func([], [IDL.Vec(SupportedPair)], ['query']),
-    'get_supported_tokens' : IDL.Func([], [IDL.Vec(TokenInfo)], ['query']),
-    'get_swap_by_id' : IDL.Func([IDL.Nat], [IDL.Opt(SwapHistory)], ['query']),
-    'get_swap_history' : IDL.Func(
-        [IDL.Nat, IDL.Nat],
-        [
-          IDL.Record({
-            'total' : IDL.Nat,
-            'offset' : IDL.Nat,
-            'limit' : IDL.Nat,
-            'items' : IDL.Vec(SwapHistory),
-          }),
-        ],
-        [],
-      ),
-    'get_swap_quote' : IDL.Func(
-        [SwapQuoteRequest],
-        [SwapQuoteResponse],
-        ['query'],
       ),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'http_request_update' : IDL.Func([HttpRequest], [HttpResponse], []),

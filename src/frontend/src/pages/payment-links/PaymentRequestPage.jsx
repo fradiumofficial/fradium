@@ -38,7 +38,7 @@ const PaymentRequestPage = () => {
 
   const tokenConfig = {
     ICP: { decimals: 8, ledger: icp_ledger, name: "ICP" },
-    Fradium: { decimals: 8, ledger: fradium_ledger, name: "FUM" },
+    Fradium: { decimals: 8, ledger: fradium_ledger, name: "FRADIUM" },
     ckBTC: { decimals: 8, ledger: ckbtc_ledger, name: "ckBTC" },
     ckETH: { decimals: 18, ledger: cketh_ledger, name: "ckETH" },
     BTC: { decimals: 8, ledger: null, name: "BTC" },
@@ -89,7 +89,7 @@ const PaymentRequestPage = () => {
       await handleLogin();
       setShowAuthModal(false);
       toast.success("Successfully signed in!");
-      if (authAction === 'pay') {
+      if (authAction === "pay") {
         const tokenType = getTokenType(linkDetails);
         const isNativeToken = ["BTC", "ETH", "SOL"].includes(tokenType);
         if (isNativeToken) {
@@ -97,7 +97,7 @@ const PaymentRequestPage = () => {
         } else {
           handlePayICRC();
         }
-      } else if (authAction === 'analyze') {
+      } else if (authAction === "analyze") {
         performRiskAnalysis();
       }
     } catch (error) {
@@ -151,7 +151,7 @@ const PaymentRequestPage = () => {
 
           if ("Completed" in details.status) {
             const config = getTokenConfig(details.token);
-            let paidByPrincipal = 'An anonymous user';
+            let paidByPrincipal = "An anonymous user";
 
             if (identity && !identity.getPrincipal().isAnonymous()) {
               const currentUser = identity.getPrincipal();
@@ -166,11 +166,9 @@ const PaymentRequestPage = () => {
               amount: formatAmount(details.amount, config.decimals),
               tokenName: config.name,
               address: details.creator.toText(),
-              expiresAt: details.expires_at
-                ? new Date(Number(details.expires_at) / 1000000).toLocaleString()
-                : null,
+              expiresAt: details.expires_at ? new Date(Number(details.expires_at) / 1000000).toLocaleString() : null,
               paidBy: paidByPrincipal,
-              paidOn: 'Previously'
+              paidOn: "Previously",
             });
 
             setPaymentSuccess(true);
@@ -219,7 +217,7 @@ const PaymentRequestPage = () => {
 
   const performRiskAnalysis = async () => {
     if (!checkAuthentication()) {
-      handleAuthModalOpen('analyze');
+      handleAuthModalOpen("analyze");
       return;
     }
     if (!linkDetails) return;
@@ -239,7 +237,7 @@ const PaymentRequestPage = () => {
             confidence: aiResult.result?.confidence || 85,
             description: aiResult.result?.description || (isSafe ? "This address shows normal transaction patterns." : "This address has been flagged for suspicious activity."),
             securityChecks: aiResult.result?.securityChecks || (isSafe ? ["No fraudulent patterns", "Normal transaction behavior"] : ["Suspicious patterns detected"]),
-            stats: aiResult.result?.stats || { transactions: "1,234", totalVolume: "Low", riskScore: isSafe ? "0.2/10" : "7.8/10", lastActivity: "2 days ago" }
+            stats: aiResult.result?.stats || { transactions: "1,234", totalVolume: "Low", riskScore: isSafe ? "0.2/10" : "7.8/10", lastActivity: "2 days ago" },
           },
           analysisSource: aiResult.analysisSource,
           finalStatus: aiResult.finalStatus,
@@ -265,7 +263,7 @@ const PaymentRequestPage = () => {
   };
 
   const handleCancelAnalysis = () => setIsAnalyzing(false);
-  const handleToggleAnalysisView = () => setIsAnalysisMinimized(prev => !prev);
+  const handleToggleAnalysisView = () => setIsAnalysisMinimized((prev) => !prev);
   const handleCopyAddress = (address) => {
     navigator.clipboard.writeText(address);
     toast.success("Address copied to clipboard!");
@@ -274,7 +272,7 @@ const PaymentRequestPage = () => {
   const handleShareSuccess = () => {
     const shareText = `Payment completed! ${paymentDetails.amount} ${paymentDetails.tokenName} sent successfully.`;
     if (navigator.share) {
-      navigator.share({ title: 'Payment Successful', text: shareText }).catch(() => {
+      navigator.share({ title: "Payment Successful", text: shareText }).catch(() => {
         navigator.clipboard.writeText(shareText);
         toast.success("Copied to clipboard!");
       });
@@ -286,7 +284,7 @@ const PaymentRequestPage = () => {
 
   const handlePayICRC = async () => {
     if (!checkAuthentication()) {
-      handleAuthModalOpen('pay');
+      handleAuthModalOpen("pay");
       return;
     }
     const config = getTokenConfig(linkDetails.token);
@@ -328,7 +326,7 @@ const PaymentRequestPage = () => {
 
   const handlePayNative = async () => {
     if (!checkAuthentication()) {
-      handleAuthModalOpen('pay');
+      handleAuthModalOpen("pay");
       return;
     }
     const tokenType = getTokenType(linkDetails);
@@ -344,19 +342,32 @@ const PaymentRequestPage = () => {
       let destinationAddress;
       const addresses = linkDetails.creator_addresses[0];
       switch (tokenType) {
-        case "BTC": destinationAddress = addresses.bitcoin; break;
-        case "ETH": destinationAddress = addresses.ethereum; break;
-        case "SOL": destinationAddress = addresses.solana; break;
-        default: throw new Error(`Unsupported native token: ${tokenType}`);
+        case "BTC":
+          destinationAddress = addresses.bitcoin;
+          break;
+        case "ETH":
+          destinationAddress = addresses.ethereum;
+          break;
+        case "SOL":
+          destinationAddress = addresses.solana;
+          break;
+        default:
+          throw new Error(`Unsupported native token: ${tokenType}`);
       }
       if (!destinationAddress) throw new Error("Destination address not found for this token type");
       toast.loading("Sending transaction...", { id: loadingToast });
       const amount = Number(linkDetails.amount);
       let txHash;
       switch (tokenType) {
-        case "BTC": txHash = await wallet.bitcoin_send({ destination_address: destinationAddress, amount_in_satoshi: amount }); break;
-        case "ETH": txHash = await wallet.ethereum_send(destinationAddress, amount); break;
-        case "SOL": txHash = await wallet.solana_send(destinationAddress, amount); break;
+        case "BTC":
+          txHash = await wallet.bitcoin_send({ destination_address: destinationAddress, amount_in_satoshi: amount });
+          break;
+        case "ETH":
+          txHash = await wallet.ethereum_send(destinationAddress, amount);
+          break;
+        case "SOL":
+          txHash = await wallet.solana_send(destinationAddress, amount);
+          break;
       }
       toast.loading("Recording payment...", { id: loadingToast });
       const recordResult = await backend.record_native_payment(linkId, txHash);
@@ -398,11 +409,7 @@ const PaymentRequestPage = () => {
   if (isLoading) {
     return (
       <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md mx-auto p-8 bg-[#F7F7F7] rounded-3xl shadow-lg"
-        >
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md mx-auto p-8 bg-[#F7F7F7] rounded-3xl shadow-lg">
           <div className="flex flex-col items-center space-y-6">
             <div className="relative w-32 h-32">
               <div className="absolute inset-0 rounded-full border-2 border-[#C9A962]/20" />
@@ -426,33 +433,16 @@ const PaymentRequestPage = () => {
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-white/95 backdrop-blur-sm">
         <div className="w-full max-w-[375px] bg-white rounded-3xl flex flex-col items-center p-9 gap-8">
           <div className="relative w-[212px] h-[212px] flex items-center justify-center">
-            <motion.div
-              className="absolute w-[212px] h-[212px] bg-gradient-to-b from-[#C9A962]/15 to-[#C9A962]/8 rounded-full"
-              animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.25, 0.15] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="absolute w-[172px] h-[172px] bg-gradient-to-b from-[#C9A962]/20 to-[#C9A962]/10 rounded-full"
-              animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-            />
-            <motion.div
-              className="absolute w-[134px] h-[134px] bg-gradient-to-b from-[#C9A962]/25 to-[#C9A962]/15 rounded-full"
-              animate={{ scale: [1, 1.1, 1], opacity: [0.25, 0.35, 0.25] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-            />
-            <motion.div
-              className="absolute w-[100px] h-[100px]"
-              animate={{ scale: [1, 1.05, 1], rotate: [0, 5, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+            <motion.div className="absolute w-[212px] h-[212px] bg-gradient-to-b from-[#C9A962]/15 to-[#C9A962]/8 rounded-full" animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.25, 0.15] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+            <motion.div className="absolute w-[172px] h-[172px] bg-gradient-to-b from-[#C9A962]/20 to-[#C9A962]/10 rounded-full" animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }} />
+            <motion.div className="absolute w-[134px] h-[134px] bg-gradient-to-b from-[#C9A962]/25 to-[#C9A962]/15 rounded-full" animate={{ scale: [1, 1.1, 1], opacity: [0.25, 0.35, 0.25] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }} />
+            <motion.div className="absolute w-[100px] h-[100px]" animate={{ scale: [1, 1.05, 1], rotate: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
               <img src="/assets/images/analisis.png" alt="Analyzing" className="w-[100px] h-[100px] drop-shadow-[-5px_5px_20px_rgba(0,0,0,0.1)]" />
             </motion.div>
           </div>
           <div className="flex flex-col items-center gap-3 w-full">
             <p className="text-gray-500 text-xs font-normal leading-[140%] text-center tracking-[0.08em]">TYPICALLY TAKES 30-120 SECS, HANG ON</p>
-            <h2 className="text-[#C9A962] text-base font-semibold leading-[140%] text-center uppercase">
-              ADDRESS ANALYSIS IS IN PROGRESS...
-            </h2>
+            <h2 className="text-[#C9A962] text-base font-semibold leading-[140%] text-center uppercase">ADDRESS ANALYSIS IS IN PROGRESS...</h2>
             <div className="flex flex-col items-start gap-1 w-full mt-2">
               <motion.p className="w-full text-gray-600 text-sm font-normal leading-[140%] text-center" animate={{ opacity: [0.8, 1, 0.8] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}>
                 Check if this address Already Flagged...
@@ -467,10 +457,7 @@ const PaymentRequestPage = () => {
                 Checking Transaction History...
               </motion.p>
             </div>
-            <button
-              onClick={handleCancelAnalysis}
-              className="mt-6 w-full h-10 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-700 active:bg-red-800 transition-colors duration-200 ease-out"
-            >
+            <button onClick={handleCancelAnalysis} className="mt-6 w-full h-10 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-700 active:bg-red-800 transition-colors duration-200 ease-out">
               Cancel Analysis
             </button>
           </div>
@@ -482,136 +469,60 @@ const PaymentRequestPage = () => {
   if (paymentSuccess && paymentDetails) {
     return (
       <div className="relative flex flex-col max-w-3xl mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl shadow-lg overflow-hidden"
-        >
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl shadow-lg overflow-hidden">
           <div className="relative bg-gradient-to-br from-gray-50 to-white pt-12 pb-8 px-8">
             <div className="flex justify-center mb-6">
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-              >
-                <img
-                  src="/assets/paylink-success.svg"
-                  alt="Success"
-                  className="w-16 h-16"
-                />
+              <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.1, type: "spring", stiffness: 200 }}>
+                <img src="/assets/paylink-success.svg" alt="Success" className="w-16 h-16" />
               </motion.div>
             </div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-center"
-            >
-              <h2 className="text-2xl font-bold text-[#C9A962] mb-2 uppercase tracking-wide">
-                Payment Has Been Completed!
-              </h2>
-              <p className="text-gray-600">
-                Transaction completed without any issues
-              </p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-center">
+              <h2 className="text-2xl font-bold text-[#C9A962] mb-2 uppercase tracking-wide">Payment Has Been Completed!</h2>
+              <p className="text-gray-600">Transaction completed without any issues</p>
             </motion.div>
           </div>
           <div className="px-8 pb-8">
             <div className="grid grid-cols-2 gap-6">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-                className="space-y-1"
-              >
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="space-y-1">
                 <p className="text-sm text-gray-500">Amount</p>
                 <p className="text-2xl font-bold text-[#C9A962]">
                   {paymentDetails.amount} {paymentDetails.tokenName}
                 </p>
               </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55 }}
-                className="space-y-1"
-              >
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.55 }} className="space-y-1">
                 <p className="text-sm text-gray-500">Address</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-mono text-gray-900 truncate">
-                    {paymentDetails.address.slice(0, 12)}...
-                  </p>
-                  <button
-                    onClick={() => handleCopyAddress(paymentDetails.address)}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
+                  <p className="text-sm font-mono text-gray-900 truncate">{paymentDetails.address.slice(0, 12)}...</p>
+                  <button onClick={() => handleCopyAddress(paymentDetails.address)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                     <Copy className="w-4 h-4 text-gray-400" />
                   </button>
                 </div>
               </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
-                className="space-y-1"
-              >
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }} className="space-y-1">
                 <p className="text-sm text-gray-500">Token type</p>
-                <p className="text-lg font-bold text-[#C9A962]">
-                  {paymentDetails.tokenName}
-                </p>
+                <p className="text-lg font-bold text-[#C9A962]">{paymentDetails.tokenName}</p>
               </motion.div>
               {paymentDetails.expiresAt && (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.65 }}
-                  className="space-y-1"
-                >
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.65 }} className="space-y-1">
                   <p className="text-sm text-gray-500">Expires</p>
-                  <p className="text-sm text-gray-900">
-                    {paymentDetails.expiresAt}
-                  </p>
+                  <p className="text-sm text-gray-900">{paymentDetails.expiresAt}</p>
                 </motion.div>
               )}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 }}
-                className="space-y-1"
-              >
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }} className="space-y-1">
                 <p className="text-sm text-gray-500">Paid by</p>
-                <p className="text-sm font-mono text-gray-900 truncate">
-                  {paymentDetails.paidBy.slice(0, 15)}...
-                </p>
+                <p className="text-sm font-mono text-gray-900 truncate">{paymentDetails.paidBy.slice(0, 15)}...</p>
               </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.75 }}
-                className="space-y-1"
-              >
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.75 }} className="space-y-1">
                 <p className="text-sm text-gray-500">Paid on</p>
-                <p className="text-sm text-gray-900">
-                  {paymentDetails.paidOn}
-                </p>
+                <p className="text-sm text-gray-900">{paymentDetails.paidOn}</p>
               </motion.div>
             </div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="flex flex-col sm:flex-row gap-3 mt-8"
-            >
-              <button
-                onClick={() => navigate("/wallet")}
-                className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-transparent hover:bg-yellow-50/50 border-2 border-[#AA8D42] rounded-full transition-colors duration-200 ease-out text-base font-semibold text-[#AA8D42]"
-              >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col sm:flex-row gap-3 mt-8">
+              <button onClick={() => navigate("/wallet")} className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-transparent hover:bg-yellow-50/50 border-2 border-[#AA8D42] rounded-full transition-colors duration-200 ease-out text-base font-semibold text-[#AA8D42]">
                 Explore Fradium
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <ButtonYellow
-                onClick={handleShareSuccess}
-                className="flex-1"
-                size="lg"
-              >
+              <ButtonYellow onClick={handleShareSuccess} className="flex-1" size="lg">
                 Share
               </ButtonYellow>
             </motion.div>
@@ -624,17 +535,11 @@ const PaymentRequestPage = () => {
   if (!linkDetails) {
     return (
       <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center bg-[#F7F7F7] rounded-3xl p-12 shadow-lg"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center bg-[#F7F7F7] rounded-3xl p-12 shadow-lg">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Link Not Found</h2>
           <p className="text-gray-600 mb-6">This payment link is invalid or has been removed.</p>
-          <ButtonYellow onClick={() => navigate("/wallet")}>
-            Go to Wallet
-          </ButtonYellow>
+          <ButtonYellow onClick={() => navigate("/wallet")}>Go to Wallet</ButtonYellow>
         </motion.div>
       </div>
     );
@@ -652,26 +557,10 @@ const PaymentRequestPage = () => {
     <>
       <AnimatePresence>
         {showAuthModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            onClick={handleAuthModalClose}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: "spring", duration: 0.5 }}
-              className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={handleAuthModalClose}>
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} transition={{ type: "spring", duration: 0.5 }} className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <div className="relative bg-gradient-to-br from-[#C9A962] to-[#B8944D] px-8 py-8 text-white">
-                <button
-                  onClick={handleAuthModalClose}
-                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/20 transition-colors"
-                >
+                <button onClick={handleAuthModalClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/20 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
                 <div className="flex flex-col items-center text-center">
@@ -679,11 +568,7 @@ const PaymentRequestPage = () => {
                     <LogIn className="w-10 h-10" />
                   </div>
                   <h2 className="text-2xl font-bold mb-2">Sign In Required</h2>
-                  <p className="text-white/90 text-sm">
-                    {authAction === 'pay'
-                      ? 'Please sign in to complete your payment securely'
-                      : 'Please sign in to analyze this address'}
-                  </p>
+                  <p className="text-white/90 text-sm">{authAction === "pay" ? "Please sign in to complete your payment securely" : "Please sign in to analyze this address"}</p>
                 </div>
               </div>
               <div className="px-8 py-8">
@@ -694,9 +579,7 @@ const PaymentRequestPage = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Secure Authentication</h3>
-                      <p className="text-sm text-gray-600">
-                        Your identity is protected with Internet Identity
-                      </p>
+                      <p className="text-sm text-gray-600">Your identity is protected with Internet Identity</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
@@ -705,9 +588,7 @@ const PaymentRequestPage = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Fast & Easy</h3>
-                      <p className="text-sm text-gray-600">
-                        Sign in with just a few clicks
-                      </p>
+                      <p className="text-sm text-gray-600">Sign in with just a few clicks</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
@@ -716,19 +597,12 @@ const PaymentRequestPage = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Full Access</h3>
-                      <p className="text-sm text-gray-600">
-                        Access all features including payments and analysis
-                      </p>
+                      <p className="text-sm text-gray-600">Access all features including payments and analysis</p>
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-3">
-                  <ButtonYellow
-                    onClick={handleSignIn}
-                    disabled={isAuthenticating}
-                    className="w-full"
-                    size="lg"
-                  >
+                  <ButtonYellow onClick={handleSignIn} disabled={isAuthenticating} className="w-full" size="lg">
                     {isAuthenticating ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -741,17 +615,11 @@ const PaymentRequestPage = () => {
                       </>
                     )}
                   </ButtonYellow>
-                  <button
-                    onClick={handleAuthModalClose}
-                    disabled={isAuthenticating}
-                    className="w-full px-6 py-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  <button onClick={handleAuthModalClose} disabled={isAuthenticating} className="w-full px-6 py-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Maybe Later
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 text-center mt-6">
-                  By signing in, you agree to our Terms of Service and Privacy Policy
-                </p>
+                <p className="text-xs text-gray-500 text-center mt-6">By signing in, you agree to our Terms of Service and Privacy Policy</p>
               </div>
             </motion.div>
           </motion.div>
@@ -760,11 +628,7 @@ const PaymentRequestPage = () => {
 
       {/* --- CSS LAYERING FIX: Added z-20 to lift this page's content above the layout sidebars --- */}
       <div className="relative z-20 flex flex-col max-w-3xl mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#F7F7F7] rounded-3xl shadow-lg overflow-hidden"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[#F7F7F7] rounded-3xl shadow-lg overflow-hidden">
           <div className="text-center pt-8 pb-6 px-6">
             <h1 className="text-2xl font-bold text-gray-900">Payment Request</h1>
           </div>
@@ -774,15 +638,10 @@ const PaymentRequestPage = () => {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} layout>
                   <h3 className="text-sm font-semibold text-gray-800 mb-2">Payment Request Analysis</h3>
                   {isAnalysisMinimized ? (
-                    <div
-                      onClick={handleToggleAnalysisView}
-                      className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors ${analysisResult.result.isSafe ? "bg-green-100 hover:bg-green-200/60 border-green-200" : "bg-red-100 hover:bg-red-200/60 border-red-200"} border`}
-                    >
+                    <div onClick={handleToggleAnalysisView} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors ${analysisResult.result.isSafe ? "bg-green-100 hover:bg-green-200/60 border-green-200" : "bg-red-100 hover:bg-red-200/60 border-red-200"} border`}>
                       <div className="flex items-center gap-2">
                         {analysisResult.result.isSafe ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <AlertTriangle className="w-5 h-5 text-red-600" />}
-                        <p className={`font-semibold text-sm ${analysisResult.result.isSafe ? "text-green-800" : "text-red-800"}`}>
-                          Address is {analysisResult.result.isSafe ? "Safe" : "Risky"}
-                        </p>
+                        <p className={`font-semibold text-sm ${analysisResult.result.isSafe ? "text-green-800" : "text-red-800"}`}>Address is {analysisResult.result.isSafe ? "Safe" : "Risky"}</p>
                       </div>
                       <div className="flex items-center gap-1 text-sm font-semibold text-gray-700">
                         Show Details <ChevronDown className="w-4 h-4" />
@@ -850,26 +709,53 @@ const PaymentRequestPage = () => {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[#F7F7F7] rounded-xl p-4"> <p className="text-sm text-gray-500 mb-1">Amount</p> <p className="text-lg font-bold text-[#C9A962]"> {formatAmount(linkDetails.amount, config.decimals)} {config.name} </p> </div>
-              <div className="bg-[#F7F7F7] rounded-xl p-4"> <p className="text-sm text-gray-500 mb-1">Address</p> <div className="flex items-center gap-2"> <p className="text-sm font-mono text-gray-900 truncate"> {linkDetails.creator.toText().slice(0, 10)}... </p> <button onClick={() => handleCopyAddress(linkDetails.creator.toText())} className="text-gray-400 hover:text-gray-600 transition-colors"> <Copy className="w-4 h-4" /> </button> </div> </div>
-              <div className="bg-[#F7F7F7] rounded-xl p-4"> <p className="text-sm text-gray-500 mb-1">Token Type</p> <p className="text-lg font-bold text-[#C9A962]">{config.name}</p> </div>
-              <div className="bg-[#F7F7F7] rounded-xl p-4"> <p className="text-sm text-gray-500 mb-1">Status</p> <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full"> <span className="text-sm font-medium text-gray-600"> {isCompleted ? "Paid" : isExpired ? "Expired" : isCancelled ? "Cancelled" : "Not yet paid"} </span> </div> </div>
+              <div className="bg-[#F7F7F7] rounded-xl p-4">
+                {" "}
+                <p className="text-sm text-gray-500 mb-1">Amount</p>{" "}
+                <p className="text-lg font-bold text-[#C9A962]">
+                  {" "}
+                  {formatAmount(linkDetails.amount, config.decimals)} {config.name}{" "}
+                </p>{" "}
+              </div>
+              <div className="bg-[#F7F7F7] rounded-xl p-4">
+                {" "}
+                <p className="text-sm text-gray-500 mb-1">Address</p>{" "}
+                <div className="flex items-center gap-2">
+                  {" "}
+                  <p className="text-sm font-mono text-gray-900 truncate"> {linkDetails.creator.toText().slice(0, 10)}... </p>{" "}
+                  <button onClick={() => handleCopyAddress(linkDetails.creator.toText())} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    {" "}
+                    <Copy className="w-4 h-4" />{" "}
+                  </button>{" "}
+                </div>{" "}
+              </div>
+              <div className="bg-[#F7F7F7] rounded-xl p-4">
+                {" "}
+                <p className="text-sm text-gray-500 mb-1">Token Type</p> <p className="text-lg font-bold text-[#C9A962]">{config.name}</p>{" "}
+              </div>
+              <div className="bg-[#F7F7F7] rounded-xl p-4">
+                {" "}
+                <p className="text-sm text-gray-500 mb-1">Status</p>{" "}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full">
+                  {" "}
+                  <span className="text-sm font-medium text-gray-600"> {isCompleted ? "Paid" : isExpired ? "Expired" : isCancelled ? "Cancelled" : "Not yet paid"} </span>{" "}
+                </div>{" "}
+              </div>
 
               {linkDetails.expires_at && (
                 <div className="bg-[#F7F7F7] rounded-xl p-4 col-span-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1 flex items-center gap-1.5"><Clock className="w-4 h-4" />Expires</p>
-                      <p className="text-sm font-medium text-gray-900 mt-2">
-                        {new Date(Number(linkDetails.expires_at) / 1000000).toLocaleString()}
+                      <p className="text-sm text-gray-500 mb-1 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4" />
+                        Expires
                       </p>
+                      <p className="text-sm font-medium text-gray-900 mt-2">{new Date(Number(linkDetails.expires_at) / 1000000).toLocaleString()}</p>
                     </div>
                     {timeLeft && !isCompleted && (
                       <div className="text-right">
                         <p className="text-sm text-gray-500 mb-1">Time left</p>
-                        <p className={`text-lg font-bold ${timeLeft === "Expired" ? "text-red-600" : "text-[#C9A962]"}`}>
-                          {timeLeft}
-                        </p>
+                        <p className={`text-lg font-bold ${timeLeft === "Expired" ? "text-red-600" : "text-[#C9A962]"}`}>{timeLeft}</p>
                       </div>
                     )}
                   </div>
@@ -877,14 +763,22 @@ const PaymentRequestPage = () => {
               )}
             </div>
 
-            {isCreator && (<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl bg-blue-50 border border-blue-200"> <div className="flex items-start gap-3"> <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" /> <div className="flex-1"> <h3 className="font-semibold text-blue-900">You Created This Link</h3> <p className="text-sm text-blue-700 mt-1"> This is your payment request. Share it with others to receive payment. </p> </div> </div> </motion.div>)}
+            {isCreator && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl bg-blue-50 border border-blue-200">
+                {" "}
+                <div className="flex items-start gap-3">
+                  {" "}
+                  <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />{" "}
+                  <div className="flex-1">
+                    {" "}
+                    <h3 className="font-semibold text-blue-900">You Created This Link</h3> <p className="text-sm text-blue-700 mt-1"> This is your payment request. Share it with others to receive payment. </p>{" "}
+                  </div>{" "}
+                </div>{" "}
+              </motion.div>
+            )}
             <div className="flex gap-3">
               {!isCreator && !showAnalysisResult && (
-                <button
-                  onClick={performRiskAnalysis}
-                  disabled={isAnalyzing}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl transition-colors text-base font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button onClick={performRiskAnalysis} disabled={isAnalyzing} className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl transition-colors text-base font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Search className="w-5 h-5" />
                   Analyze Address
                 </button>
@@ -892,16 +786,23 @@ const PaymentRequestPage = () => {
 
               {!isCreator && (
                 <>
-                  {isCompleted ? (<div className="flex-1 bg-green-100 border-2 border-green-300 rounded-xl p-4 text-center"> <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-1" /> <p className="text-green-700 font-semibold text-sm">Payment Completed</p> </div>
-                  ) : isExpired ? (<div className="flex-1 bg-red-100 border-2 border-red-300 rounded-xl p-4 text-center"> <Clock className="w-6 h-6 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-sm">Link Expired</p> </div>
-                  ) : isCancelled ? (<div className="flex-1 bg-red-100 border-2 border-red-300 rounded-xl p-4 text-center"> <Ban className="w-6 h-6 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-sm">Link Cancelled</p> </div>
+                  {isCompleted ? (
+                    <div className="flex-1 bg-green-100 border-2 border-green-300 rounded-xl p-4 text-center">
+                      {" "}
+                      <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-1" /> <p className="text-green-700 font-semibold text-sm">Payment Completed</p>{" "}
+                    </div>
+                  ) : isExpired ? (
+                    <div className="flex-1 bg-red-100 border-2 border-red-300 rounded-xl p-4 text-center">
+                      {" "}
+                      <Clock className="w-6 h-6 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-sm">Link Expired</p>{" "}
+                    </div>
+                  ) : isCancelled ? (
+                    <div className="flex-1 bg-red-100 border-2 border-red-300 rounded-xl p-4 text-center">
+                      {" "}
+                      <Ban className="w-6 h-6 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-sm">Link Cancelled</p>{" "}
+                    </div>
                   ) : (
-                    <ButtonYellow
-                      onClick={isNativeToken ? handlePayNative : handlePayICRC}
-                      disabled={isPaying || (analysisResult && !analysisResult.result?.isSafe)}
-                      className="flex-1"
-                      size="lg"
-                    >
+                    <ButtonYellow onClick={isNativeToken ? handlePayNative : handlePayICRC} disabled={isPaying || (analysisResult && !analysisResult.result?.isSafe)} className="flex-1" size="lg">
                       <div className="flex items-center gap-2">
                         {isPaying ? (
                           <>
@@ -920,8 +821,13 @@ const PaymentRequestPage = () => {
                 </>
               )}
             </div>
-            {analysisResult && !analysisResult.result?.isSafe && !isCreator && (<p className="text-sm text-red-600 text-center font-medium"> Payment disabled due to security concerns. This address has been flagged as suspicious. </p>)}
-            {isCreator && (<div className="text-center p-4 bg-gray-100 rounded-xl"> <p className="text-sm text-gray-600">You cannot pay your own payment link</p> </div>)}
+            {analysisResult && !analysisResult.result?.isSafe && !isCreator && <p className="text-sm text-red-600 text-center font-medium"> Payment disabled due to security concerns. This address has been flagged as suspicious. </p>}
+            {isCreator && (
+              <div className="text-center p-4 bg-gray-100 rounded-xl">
+                {" "}
+                <p className="text-sm text-gray-600">You cannot pay your own payment link</p>{" "}
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function ProfileDropdown({ isOpen, setIsOpen, contextHideBalance, handleToggleHideBalance, icpPrincipal, showSettings = true, settingsPath = "/wallet/setting", logout, color = "#22C55E", background = "dark", showHideBalance = true }) {
+export default function ProfileDropdown({ isOpen, setIsOpen, contextHideBalance, handleToggleHideBalance, icpPrincipal, showSettings = true, settingsPath = "/wallet/setting", logout, color = "#9BE4A0", background = "dark", showHideBalance = true }) {
   const navigate = useNavigate();
   const [copiedPrincipal, setCopiedPrincipal] = React.useState(false);
 
@@ -25,7 +25,10 @@ export default function ProfileDropdown({ isOpen, setIsOpen, contextHideBalance,
   return (
     <div className="relative profile-dropdown">
       <button onClick={() => setIsOpen(!isOpen)} className={background === "light" ? "group flex items-center justify-center bg-slate-100 w-10 h-10 rounded-full border border-slate-200 hover:bg-slate-200 transition-all duration-200 ease-out cursor-pointer hover:border-slate-300" : "group flex items-center justify-center bg-[#161B22] w-11 h-11 rounded-full border border-white/10 hover:bg-[#2A2F36] transition-all duration-200 ease-out cursor-pointer hover:border-white/20"}>
-        <img src="/assets/icons/person.svg" alt="User" className={background === "light" ? "w-5 h-5 transition-transform duration-200 group-hover:scale-110" : "w-6 h-6 transition-transform duration-200 group-hover:scale-110"} />
+        <svg width={background === "light" ? "20" : "24"} height={background === "light" ? "20" : "24"} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="transition-transform duration-200 group-hover:scale-110">
+          <circle cx="12" cy="8" r="4" stroke={color} strokeWidth="2" />
+          <path d="M6 21c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        </svg>
       </button>
 
       <AnimatePresence>

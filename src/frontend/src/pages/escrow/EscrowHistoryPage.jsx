@@ -369,7 +369,6 @@ export default function EscrowHistoryPage() {
               <ArrowRightLeft className="w-8 h-8 text-white/50" />
             </div>
             <div className="text-[#B0B6BE] text-sm text-center">No completed trades found</div>
-            <div className="text-[#9BEB83] text-xs text-center">Your completed escrow trades will appear here</div>
           </div>
         )}
 
@@ -380,7 +379,6 @@ export default function EscrowHistoryPage() {
               <img src="/assets/icons/search.svg" alt="No results" className="w-8 h-8 opacity-50" />
             </div>
             <div className="text-[#B0B6BE] text-sm text-center">No results found</div>
-            <div className="text-[#9BEB83] text-xs text-center">Try adjusting your search or filter criteria</div>
             <button onClick={clearFilters} className="mt-2 px-4 py-2 bg-[#23272F] border border-[#393E4B] hover:bg-[#2A2F37] hover:border-[#4942AA] rounded-lg text-white text-sm transition-colors">
               Clear Filters
             </button>

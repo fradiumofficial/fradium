@@ -269,7 +269,7 @@ export default function AIAssistantWidget() {
   };
 
   return (
-    <div className="fixed right-4 md:right-6 bottom-24 md:bottom-6 z-[60]">
+    <div className="fixed right-4 md:right-6 bottom-24 md:bottom-6 z-[30]">
       {/* Minimal scrollbar utilities */}
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -350,11 +350,11 @@ export default function AIAssistantWidget() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
-              className="fixed inset-0 z-[55] bg-black/35 backdrop-blur-md"
+              className="fixed inset-0 z-[25] bg-black/35 backdrop-blur-md"
             />
 
             {/* Chat panel */}
-            <motion.div initial={{ opacity: 0, y: 28, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 14, scale: 0.98 }} transition={{ type: "spring", stiffness: 340, damping: 26, mass: 0.7 }} className="absolute bottom-20 right-0 z-[60] w-[94vw] sm:w-[460px] md:w-[540px] rounded-2xl overflow-hidden border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)]" style={{ background: "linear-gradient(180deg, rgba(17,22,28,0.96), rgba(11,17,22,0.92))", backdropFilter: "blur(12px)" }}>
+            <motion.div initial={{ opacity: 0, y: 28, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 14, scale: 0.98 }} transition={{ type: "spring", stiffness: 340, damping: 26, mass: 0.7 }} className="absolute bottom-20 right-0 z-[30] w-[94vw] sm:w-[460px] md:w-[540px] rounded-2xl overflow-hidden border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)]" style={{ background: "linear-gradient(180deg, rgba(17,22,28,0.96), rgba(11,17,22,0.92))", backdropFilter: "blur(12px)" }}>
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 bg-white/5">
                 <div className="flex items-center gap-2">
