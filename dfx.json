@@ -114,6 +114,32 @@
         }
       }
     },
+    "icp_swap_pool": {
+      "type": "custom",
+      "build": "scripts/build.icp_swap_pool.sh",
+      "candid": "target/ic/icp_swap_pool.did",
+      "wasm": "target/ic/icp_swap_pool.wasm.gz",
+      "init_arg_file": "target/ic/icp_swap_pool.args.did",
+      "specified_id": "xmiu5-jqaaa-aaaag-qbz7q-cai",
+      "remote": {
+        "id": {
+          "ic": "xmiu5-jqaaa-aaaag-qbz7q-cai"
+        }
+      }
+    },
+    "icp_swap_factory": {
+      "type": "custom",
+      "build": "scripts/build.icp_swap_factory.sh",
+      "candid": "target/ic/icp_swap_factory.did",
+      "wasm": "target/ic/icp_swap_factory.wasm.gz",
+      "init_arg_file": "target/ic/icp_swap_factory.args.did",
+      "specified_id": "4mmnk-kiaaa-aaaag-qbllq-cai",
+      "remote": {
+        "id": {
+          "ic": "4mmnk-kiaaa-aaaag-qbllq-cai"
+        }
+      }
+    },
     "ckbtc_ledger": {
       "type": "custom",
       "build": "scripts/build.ckbtc_ledger.sh",

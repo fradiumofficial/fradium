@@ -35,8 +35,20 @@ download() {
   # shellcheck disable=SC2016 # The $ in the comment is not meant to be expanded.
   local asset asset_url asset_file
   asset="$1"
-  asset_url="${asset^^}_URL"
-  asset_file="${asset^^}_FILE"
+  case "$asset" in
+    candid)
+      asset_url="CANDID_URL"
+      asset_file="CANDID_FILE"
+      ;;
+    wasm)
+      asset_url="WASM_URL"
+      asset_file="WASM_FILE"
+      ;;
+    *)
+      echo "Unknown asset: $asset"
+      exit 1
+      ;;
+  esac
   scripts/download-immutable.sh "${!asset_url}" "${!asset_file}"
 }
 

@@ -33,8 +33,20 @@ ARG_FILE="$(jq -r .canisters.icp_swap_factory.init_arg_file dfx.json)"
 download() {
   local asset asset_url asset_file
   asset="$1"
-  asset_url="${asset^^}_URL"
-  asset_file="${asset^^}_FILE"
+  case "$asset" in
+    candid)
+      asset_url="CANDID_URL"
+      asset_file="CANDID_FILE"
+      ;;
+    wasm)
+      asset_url="WASM_URL"
+      asset_file="WASM_FILE"
+      ;;
+    *)
+      echo "Unknown asset: $asset"
+      exit 1
+      ;;
+  esac
   scripts/download-immutable.sh "${!asset_url}" "${!asset_file}"
 }
 
@@ -46,30 +58,28 @@ download wasm
 echo "Compressing Wasm: $WASM_FILE_GZ"
 gzip -c "$WASM_FILE" >"$WASM_FILE_GZ"
 
-# Generate init args
+# Generate init args for factory
 echo "Generating init args..."
 rm -f "$ARG_FILE"
 mkdir -p "$(dirname "$ARG_FILE")"
 
-# Set default principals (can be overridden via env if needed)
-INFO_CID="aaaaa-aa"
-TRUSTED_CANISTER_MANAGER_CID="aaaaa-aa"
-GOVERNANCE_CID="aaaaa-aa"
-PASSCODE_MANAGER_CID="aaaaa-aa"
-BACKUP_CID="aaaaa-aa"
-FEE_RECEIVER_CID="aaaaa-aa"
+# Factory expects 7 principals: backupCid, feeReceiverCid, infoCid, passcodeManagerCid, positionIndexCid, governanceCid (opt), trustedCanisterManagerCid
+OWNER_PRINCIPAL="$(dfx identity get-principal)"
 
+# For local development, we'll use the same principal for all required roles
+# In production, these would be different canister IDs
 cat <<EOF >"$ARG_FILE"
 (
-  principal "$INFO_CID",
-  principal "$TRUSTED_CANISTER_MANAGER_CID",
-  principal "$GOVERNANCE_CID",
-  principal "$PASSCODE_MANAGER_CID",
-  principal "$BACKUP_CID",
-  opt principal "$FEE_RECEIVER_CID",
-  principal "$INFO_CID",
+  principal "$OWNER_PRINCIPAL",
+  principal "$OWNER_PRINCIPAL", 
+  principal "$OWNER_PRINCIPAL",
+  principal "$OWNER_PRINCIPAL",
+  principal "$OWNER_PRINCIPAL",
+  null,
+  principal "$OWNER_PRINCIPAL"
 )
 EOF
+
 
 cat <<EOF
 SUCCESS: The icp_swap_factory installation files have been created:
