@@ -197,9 +197,53 @@ const AccessTokenPage = () => {
           <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(600px_300px_at_50%_-60px,rgba(108,140,223,0.18),rgba(45,84,184,0.14)_55%,transparent_80%)]" />
           <div className="relative z-10">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-[#6C8CDF]" />
-                <span className="ml-3 text-slate-600">Loading tokens...</span>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Name</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Token</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Created</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Status</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {/* Skeleton Loading Rows */}
+                    {[...Array(3)].map((_, idx) => (
+                      <tr key={`skeleton-${idx}`} className="animate-pulse">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-slate-200 rounded-lg"></div>
+                            <div className="h-4 bg-slate-200 rounded w-24"></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 bg-slate-200 rounded-lg flex-1 max-w-xs"></div>
+                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
+                            <div className="w-8 h-8 bg-slate-200 rounded"></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-slate-200 rounded w-20"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-slate-200 rounded-full"></div>
+                            <div className="h-6 bg-slate-200 rounded-full w-16"></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="h-8 bg-slate-200 rounded w-20"></div>
+                            <div className="h-8 bg-slate-200 rounded w-16"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : tokens.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">

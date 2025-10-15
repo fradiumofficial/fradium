@@ -26,6 +26,14 @@ export interface ApiToken {
   'token' : string,
   'name' : string,
 }
+export interface ApiUsageRecord {
+  'at' : Time,
+  'status' : string,
+  'model' : string,
+  'cost' : bigint,
+  'route' : string,
+  'reason' : [] | [string],
+}
 export interface CreateAnalyzeHistoryParams {
   'is_safe' : boolean,
   'metadata' : string,
@@ -245,64 +253,7 @@ export type Result_8 = { 'Ok' : Array<PaymentLink> } |
 export type Result_9 = { 'Ok' : EscrowRecord } |
   { 'Err' : string };
 export interface RevokeTokenRequest { 'tokenId' : string }
-export interface SupportedPair {
-  'to_token' : string,
-  'active' : boolean,
-  'from_token' : string,
-  'to_canister_id' : string,
-  'from_canister_id' : string,
-}
-export interface SwapExecuteRequest {
-  'to_token' : string,
-  'min_amount_out' : bigint,
-  'from_token' : string,
-  'recipient' : [] | [Principal],
-  'deadline' : [] | [bigint],
-  'amount' : bigint,
-}
-export interface SwapExecuteResponse {
-  'transaction_id' : [] | [bigint],
-  'redirect_url' : [] | [string],
-  'error' : [] | [string],
-  'success' : boolean,
-}
-export interface SwapHistory {
-  'id' : bigint,
-  'fee' : bigint,
-  'transaction_id' : [] | [bigint],
-  'to_token' : string,
-  'status' : SwapStatus,
-  'from_amount' : bigint,
-  'from_token' : string,
-  'user' : Principal,
-  'created_at' : bigint,
-  'to_amount' : bigint,
-  'completed_at' : [] | [bigint],
-}
-export interface SwapQuoteRequest {
-  'to_token' : string,
-  'from_token' : string,
-  'amount' : bigint,
-}
-export interface SwapQuoteResponse {
-  'fee' : bigint,
-  'min_amount_out' : bigint,
-  'valid_for' : bigint,
-  'rate' : number,
-  'estimated_output' : bigint,
-  'price_impact' : number,
-}
-export type SwapStatus = { 'Failed' : null } |
-  { 'Cancelled' : null } |
-  { 'Completed' : null } |
-  { 'Pending' : null };
 export type Time = bigint;
-export interface TokenInfo {
-  'decimals' : number,
-  'name' : string,
-  'canister_id' : string,
-  'symbol' : string,
-}
 export type TokenOperationResponse = { 'ok' : string } |
   { 'err' : string };
 export type TokenStatus = { 'active' : null } |
@@ -352,7 +303,6 @@ export interface _SERVICE {
     TokenOperationResponse
   >,
   'execute_payment_icrc' : ActorMethod<[string], Result>,
-  'execute_swap' : ActorMethod<[SwapExecuteRequest], SwapExecuteResponse>,
   'get_all_escrows' : ActorMethod<[], Array<EscrowRecord>>,
   'get_all_escrows_paginated' : ActorMethod<
     [bigint, bigint],
@@ -360,6 +310,15 @@ export interface _SERVICE {
   >,
   'get_analyze_history' : ActorMethod<[bigint, bigint], Result_11>,
   'get_analyze_history_count' : ActorMethod<[], Result_10>,
+  'get_api_analyze_history' : ActorMethod<
+    [bigint, bigint],
+    {
+      'total' : bigint,
+      'offset' : bigint,
+      'limit' : bigint,
+      'items' : Array<ApiUsageRecord>,
+    }
+  >,
   'get_api_approvals_history' : ActorMethod<
     [bigint, bigint],
     {
@@ -411,19 +370,6 @@ export interface _SERVICE {
       'items' : Array<EscrowRecord>,
     }
   >,
-  'get_supported_pairs' : ActorMethod<[], Array<SupportedPair>>,
-  'get_supported_tokens' : ActorMethod<[], Array<TokenInfo>>,
-  'get_swap_by_id' : ActorMethod<[bigint], [] | [SwapHistory]>,
-  'get_swap_history' : ActorMethod<
-    [bigint, bigint],
-    {
-      'total' : bigint,
-      'offset' : bigint,
-      'limit' : bigint,
-      'items' : Array<SwapHistory>,
-    }
-  >,
-  'get_swap_quote' : ActorMethod<[SwapQuoteRequest], SwapQuoteResponse>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'http_request_update' : ActorMethod<[HttpRequest], HttpResponse>,
   'join_escrow' : ActorMethod<[AcceptEscrowParams], Result_1>,

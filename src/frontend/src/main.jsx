@@ -72,7 +72,7 @@ import OverviewPage from "@/pages/developers/api/OverviewPage.jsx";
 import AnalyzeHistoryPage from "@/pages/developers/api/AnalyzeHistoryPage.jsx";
 import AccessTokenPage from "@/pages/developers/api/AccessTokenPage.jsx";
 import APICreditsPage from "@/pages/developers/api/APICreditsPage.jsx";
-import TryAPIPage from "@/pages/developers/api/TryAPIPage.jsx";
+import APIDocumentationPage from "@/pages/developers/api/APIDocumentationPage.jsx";
 import PaymentLinksPage from "@/pages/payment-links/PaymentLinksPage.jsx";
 import PaymentRequestPage from "@/pages/payment-links/PaymentRequestPage.jsx";
 
@@ -211,7 +211,7 @@ function AnimatedRoutes() {
           <Route path="analyze-history" element={<AnalyzeHistoryPage />} />
           <Route path="access-token" element={<AccessTokenPage />} />
           <Route path="api-credits" element={<APICreditsPage />} />
-          <Route path="try-api" element={<TryAPIPage />} />
+          <Route path="api-documentation" element={<APIDocumentationPage />} />
         </Route>
         <Route
           path="/wallet"

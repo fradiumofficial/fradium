@@ -118,6 +118,40 @@ const APICreditsPage = () => {
     }
   };
 
+  const fetchAnalyzeHistory = async (page = 1) => {
+    try {
+      console.log("fetching analyze history");
+      setHistoryLoading(true);
+      const offset = (page - 1) * itemsPerPage;
+      console.log("d");
+      const res = await backendCan.get_api_analyze_history(offset, itemsPerPage);
+
+      console.log("analyze history res", res);
+
+      const items = Array.isArray(res.items) ? res.items : [];
+      // sort by time descending (latest first); handle BigInt safely
+      const sorted = items.slice().sort((a, b) => {
+        const aAt = typeof a.at === "bigint" ? a.at : BigInt(a.at || 0);
+        const bAt = typeof b.at === "bigint" ? b.at : BigInt(b.at || 0);
+        return aAt === bAt ? 0 : aAt > bAt ? -1 : 1;
+      });
+      setHistoryItems(sorted);
+
+      // Calculate total pages based on total items from backend response
+      const totalItemsCount = Number(res.total) || 0;
+      const calculatedTotalPages = Math.max(1, Math.ceil(totalItemsCount / itemsPerPage));
+      setTotalPages(calculatedTotalPages);
+      setTotalItems(totalItemsCount);
+    } catch (_e) {
+      console.log("error fetching analyze history", _e);
+      setHistoryItems([]);
+      setTotalPages(1);
+      setTotalItems(0);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchHistory(1);
@@ -127,7 +161,7 @@ const APICreditsPage = () => {
   }, []);
 
   const used = useMemo(() => Number(stats.used_e8s) / 1e8, [stats]);
-  const totalApproved = useMemo(() => (Number(stats.used_e8s) + Number(stats.remaining_e8s)) / 1e8, [stats]);
+  const totalApproved = useMemo(() => Number(stats.remaining_e8s) / 1e8, [stats]);
 
   // Semicircle gauge for Total Approval card (shows progress towards 10 FRADIUM)
   const gaugeTotal = useMemo(() => {
@@ -217,8 +251,8 @@ const APICreditsPage = () => {
             <div className="relative z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm">Total of Approval</p>
-                  <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(totalApproved)} FRADIUM`}</div>
+                  <p className="text-slate-600 text-sm">Remaining Approval</p>
+                  <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? <div className="h-8 bg-slate-200 rounded w-32 animate-pulse"></div> : `${formatAmount(totalApproved)} FRADIUM`}</div>
                 </div>
                 <ShieldCheck className="w-6 h-6 text-[#2D54B8]" />
               </div>
@@ -243,7 +277,7 @@ const APICreditsPage = () => {
                 </svg>
                 <div className="flex flex-col">
                   <div className="text-sm text-slate-600">Used</div>
-                  <div className="text-lg font-semibold text-slate-900 transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(used)} FRADIUM`}</div>
+                  <div className="text-lg font-semibold text-slate-900 transition-all duration-500 ease-out">{isLoadingStats ? <div className="h-6 bg-slate-200 rounded w-24 animate-pulse"></div> : `${formatAmount(used)} FRADIUM`}</div>
                   <div className="text-xs text-slate-500 mt-1 transition-all duration-500 ease-out">{Math.round(gaugeTotal.progressTowardsTarget * 100)}% towards 10 FRADIUM</div>
                   <div className="mt-2 inline-flex items-center gap-2">
                     <span className="inline-block w-2.5 h-2.5 rounded-full transition-colors duration-300 ease-in-out" style={{ backgroundColor: statusColorTotal }} />
@@ -259,7 +293,7 @@ const APICreditsPage = () => {
             <div className="relative z-10 flex items-start justify-between">
               <div>
                 <p className="text-slate-600 text-sm">Used Amount</p>
-                <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(used)} FRADIUM`}</div>
+                <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? <div className="h-8 bg-slate-200 rounded w-32 animate-pulse"></div> : `${formatAmount(used)} FRADIUM`}</div>
               </div>
               <Clock className="w-6 h-6 text-red-500" />
             </div>
@@ -303,7 +337,18 @@ const APICreditsPage = () => {
             </div>
             <div className="px-6 pb-6 overflow-x-auto">
               {historyLoading ? (
-                <div className="py-10 text-center text-slate-600">Loading history…</div>
+                <div className="space-y-4">
+                  {/* Skeleton Loading */}
+                  {[...Array(5)].map((_, idx) => (
+                    <div key={idx} className="animate-pulse">
+                      <div className="flex items-center space-x-4 p-4">
+                        <div className="h-4 bg-slate-200 rounded w-20"></div>
+                        <div className="h-4 bg-slate-200 rounded w-24"></div>
+                        <div className="h-4 bg-slate-200 rounded w-32"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : historyItems.length === 0 ? (
                 <div className="py-10 text-center text-slate-600">No approval history yet.</div>
               ) : (
@@ -311,6 +356,7 @@ const APICreditsPage = () => {
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">Amount (FRADIUM)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">Metadata</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">Time</th>
                     </tr>
                   </thead>
@@ -318,6 +364,7 @@ const APICreditsPage = () => {
                     {historyItems.map((h, idx) => (
                       <tr key={`${h.at}-${idx}`} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-4 py-3 text-slate-900 text-sm">{formatAmount(Number(h.amount_e8s) / 1e8)}</td>
+                        <td className="px-4 py-3 text-slate-900 text-sm">{h.metadata}</td>
                         <td className="px-4 py-3 text-slate-900 text-sm">{new Date(Number((typeof h.at === "bigint" ? h.at : BigInt(h.at)) / 1_000_000n)).toLocaleString()}</td>
                       </tr>
                     ))}

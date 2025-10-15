@@ -41,74 +41,7 @@ type TokenOperationResponse =
    err: text;
    ok: text;
  };
-type TokenInfo = 
- record {
-   canister_id: text;
-   decimals: nat8;
-   name: text;
-   symbol: text;
- };
 type Time = int;
-type SwapStatus = 
- variant {
-   Cancelled;
-   Completed;
-   Failed;
-   Pending;
- };
-type SwapQuoteResponse = 
- record {
-   estimated_output: nat;
-   fee: nat;
-   min_amount_out: nat;
-   price_impact: float64;
-   rate: float64;
-   valid_for: nat;
- };
-type SwapQuoteRequest = 
- record {
-   amount: nat;
-   from_token: text;
-   to_token: text;
- };
-type SwapHistory = 
- record {
-   completed_at: opt int;
-   created_at: int;
-   fee: nat;
-   from_amount: nat;
-   from_token: text;
-   id: nat;
-   status: SwapStatus;
-   to_amount: nat;
-   to_token: text;
-   transaction_id: opt nat;
-   user: principal;
- };
-type SwapExecuteResponse = 
- record {
-   error: opt text;
-   redirect_url: opt text;
-   success: bool;
-   transaction_id: opt nat;
- };
-type SwapExecuteRequest = 
- record {
-   amount: nat;
-   deadline: opt nat64;
-   from_token: text;
-   min_amount_out: nat;
-   recipient: opt principal;
-   to_token: text;
- };
-type SupportedPair = 
- record {
-   active: bool;
-   from_canister_id: text;
-   from_token: text;
-   to_canister_id: text;
-   to_token: text;
- };
 type RevokeTokenRequest = record {tokenId: text;};
 type Result_9 = 
  variant {
@@ -405,6 +338,15 @@ type CreateAnalyzeHistoryParams =
    metadata: text;
    token_type: text;
  };
+type ApiUsageRecord = 
+ record {
+   at: Time;
+   cost: nat;
+   model: text;
+   reason: opt text;
+   route: text;
+   status: text;
+ };
 type ApiToken = 
  record {
    created: Time;
@@ -450,7 +392,6 @@ service : {
   create_report: (params: CreateReportParams) -> (Result);
   delete_api_token: (request: RevokeTokenRequest) -> (TokenOperationResponse);
   execute_payment_icrc: (link_id: text) -> (Result);
-  execute_swap: (request: SwapExecuteRequest) -> (SwapExecuteResponse);
   get_all_escrows: () -> (vec EscrowRecord) query;
   get_all_escrows_paginated: (offset: nat, limit: nat) ->
    (record {
@@ -459,6 +400,13 @@ service : {
     }) query;
   get_analyze_history: (offset: nat, limit: nat) -> (Result_11);
   get_analyze_history_count: () -> (Result_10);
+  get_api_analyze_history: (offset: nat, limit: nat) ->
+   (record {
+      items: vec ApiUsageRecord;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
   get_api_approvals_history: (offset: nat, limit: nat) ->
    (record {
       items: vec ApiApprovalRecord;
@@ -506,17 +454,6 @@ service : {
       offset: nat;
       total: nat;
     });
-  get_supported_pairs: () -> (vec SupportedPair) query;
-  get_supported_tokens: () -> (vec TokenInfo) query;
-  get_swap_by_id: (swap_id: nat) -> (opt SwapHistory) query;
-  get_swap_history: (offset: nat, limit: nat) ->
-   (record {
-      items: vec SwapHistory;
-      limit: nat;
-      offset: nat;
-      total: nat;
-    });
-  get_swap_quote: (request: SwapQuoteRequest) -> (SwapQuoteResponse) query;
   http_request: (req: HttpRequest) -> (HttpResponse) query;
   http_request_update: (req: HttpRequest) -> (HttpResponse);
   join_escrow: (params: AcceptEscrowParams) -> (Result_1);

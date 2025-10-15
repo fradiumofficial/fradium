@@ -111,7 +111,7 @@ persistent actor Fradium {
 
   // ===== API BILLING CONFIG =====
   // Fee per analyze-address API call (in FRADIUM e8s)
-  let API_ANALYZE_FEE : Nat = 10_000; // 0.0001 FUM
+  let API_ANALYZE_FEE : Nat = 300_000; // 0.003 FRADIUM
 
   // ===== SYSTEM FUNCTIONS =====
   system func preupgrade() {
@@ -120,6 +120,7 @@ persistent actor Fradium {
     analyzeModule.preupgrade();
     escrowModule.preupgrade();
     paylinkModule.preupgrade();
+    apiModule.preupgrade();
   };
 
   system func postupgrade() {
@@ -128,6 +129,7 @@ persistent actor Fradium {
     analyzeModule.postupgrade();
     escrowModule.postupgrade();
     paylinkModule.postupgrade();
+    apiModule.postupgrade();
   };
 
   // ===== REPORT FUNCTIONS (COMMUNITY MODULE) =====
@@ -424,6 +426,7 @@ persistent actor Fradium {
             // Validate token via API module
             switch (apiModule.validateToken(tokenString)) {
               case null {
+                // Note: Cannot record API usage for invalid tokens since we don't have the token owner
                 return makeJsonResponse(401, "{\"success\": false, \"error\": \"Invalid or inactive API token\"}");
               };
               case (?tokenOwner) {
@@ -441,17 +444,19 @@ persistent actor Fradium {
                 switch (feeResult) {
                   case (#Err e) {
                     let errMsg = switch (e) {
-                      case (#InsufficientAllowance(_)) { "Insufficient allowance for API fee. Please approve more FUM." };
+                      case (#InsufficientAllowance(_)) { "Insufficient allowance for API fee. Please approve more FRADIUM." };
                       case (#InsufficientFunds(_)) { "Insufficient FRADIUM balance for API fee." };
                       case (#BadFee { expected_fee }) { "Bad fee. Expected: " # Nat.toText(expected_fee) };
                       case (#GenericError { message; error_code }) { "Ledger error (" # Nat.toText(error_code) # "): " # message };
                       case _ { "Unable to collect API fee." };
                     };
+                    // Record failed API usage
+                    apiModule.recordApiUsage(tokenOwner, "/analyze-address", API_ANALYZE_FEE, "community", "failed", ?errMsg);
                     return makeJsonResponse(402, "{\"success\": false, \"error\": \"" # errMsg # "\"}");
                   };
                   case (#Ok _) {
-                    // Record API usage via API module store
-                    apiModule.recordApiUsage(tokenOwner, "/analyze-address", API_ANALYZE_FEE);
+                    // Record successful API usage
+                    apiModule.recordApiUsage(tokenOwner, "/analyze-address", API_ANALYZE_FEE, "community", "success", null);
                   };
                 };
               };
@@ -460,6 +465,7 @@ persistent actor Fradium {
         };
         let address = extractAddressFromBody(body);
         if (address == "") {
+          // Note: Cannot record API usage here since we're outside token validation scope
           return makeJsonResponse(400, "{\"error\": \"Address parameter is required\"}");
         };
         
@@ -483,6 +489,7 @@ persistent actor Fradium {
             makeJsonResponse(200, jsonResponse);
           };
           case (#Err(errorMsg)) {
+            // Note: Cannot record API usage here since we're outside token validation scope
             let errorParts = [
               "{\"success\": false, \"error\": \"",
               errorMsg,
@@ -536,5 +543,10 @@ persistent actor Fradium {
   // Record an approval entry into API module store (invoked by frontend after successful approve)
   public shared({ caller }) func record_api_approval(amount_e8s : Nat, metadata : Text) : async () {
     apiModule.recordApiApproval(caller, amount_e8s, metadata);
+  };
+
+  // Get analyze history from API usage records
+  public shared({ caller }) func get_api_analyze_history(offset : Nat, limit : Nat) : async { items : [ApiTypes.ApiUsageRecord]; total : Nat; offset : Nat; limit : Nat } {
+    return apiModule.getAnalyzeHistory(caller, offset, limit);
   };
 };

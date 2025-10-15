@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Search, Filter, Download, Eye, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import LightButton from "@/core/components/ui/LightButton.jsx";
 import { backend as backendCan } from "declarations/backend";
+import { jsonStringify } from "@/core/lib/canisterUtils";
 
 const AnalyzeHistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,8 +31,9 @@ const AnalyzeHistoryPage = () => {
       try {
         setIsLoading(true);
         setError("");
-        const res = await backendCan.get_api_approvals_history(offset, limit);
-        console.log("approvals history res", res);
+        const res = await backendCan.get_api_analyze_history(offset, limit);
+        console.log("analyze history res", jsonStringify(res, null, 2));
+
         const arr = Array.isArray(res?.items) ? res.items : [];
         // Map backend records -> table-friendly objects
         const mapped = arr
@@ -43,20 +45,22 @@ const AnalyzeHistoryPage = () => {
           })
           .map((r, idx) => {
             const when = new Date(Number((typeof r.at === "bigint" ? r.at : BigInt(r.at || 0)) / 1_000_000n)).toLocaleString();
-            const fum = Number(r.amount_e8s) / 1e8;
+            const costAmount = Number(r.cost) / 1e8;
             return {
               id: `${Number(r.at || 0)}-${idx}`,
               address: String(r.route || "/analyze-address"), // reuse Address column to show route
               timestamp: when,
-              status: "success",
+              status: String(r.status || "success"),
               riskScore: null,
-              model: "API",
+              model: String(r.model || "community"),
               responseTime: "-",
-              cost: `${fum} FRADIUM`,
+              cost: `${costAmount} FRADIUM`,
+              reason: r.reason || null,
             };
           });
         setItems(mapped);
       } catch (e) {
+        console.log("error fetching analyze history", e);
         setError(e?.message || "Failed to load history");
         setItems([]);
       } finally {
@@ -114,7 +118,7 @@ const AnalyzeHistoryPage = () => {
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-2xl font-semibold text-white mb-2">Analyze History</h1>
+          <h1 className="text-2xl font-semibold text-black mb-2">Analyze History</h1>
           <p className="text-gray-400">View and manage your address analysis history</p>
         </motion.div>
 
@@ -167,31 +171,73 @@ const AnalyzeHistoryPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {filteredHistory.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-slate-900 font-mono">{item.address.slice(0, 20)}...</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(item.status)}
-                          <span className={`text-sm font-medium ${getStatusColor(item.status)}`}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-sm font-medium ${getRiskScoreColor(item.riskScore)}`}>{item.riskScore !== null ? `${item.riskScore}/100` : "N/A"}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">{item.model}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">{item.cost}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">{item.timestamp}</span>
+                  {isLoading ? (
+                    // Skeleton Loading Rows
+                    [...Array(5)].map((_, idx) => (
+                      <tr key={`skeleton-${idx}`} className="animate-pulse">
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-slate-200 rounded w-32"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-slate-200 rounded-full"></div>
+                            <div className="h-4 bg-slate-200 rounded w-16"></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-slate-200 rounded w-12"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-slate-200 rounded w-20"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-slate-200 rounded w-16"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-slate-200 rounded w-24"></div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : filteredHistory.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-10 text-center text-slate-600">
+                        No analyze history yet.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredHistory.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-slate-900 font-mono">{item.address.slice(0, 20)}...</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(item.status)}
+                            <div className="flex flex-col">
+                              <span className={`text-sm font-medium ${getStatusColor(item.status)}`}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</span>
+                              {item.reason && (
+                                <span className="text-xs text-gray-500 mt-1 max-w-xs truncate" title={item.reason}>
+                                  {item.reason}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-sm font-medium ${getRiskScoreColor(item.riskScore)}`}>{item.riskScore !== null ? `${item.riskScore}/100` : "N/A"}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{item.model}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{item.cost}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{item.timestamp}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

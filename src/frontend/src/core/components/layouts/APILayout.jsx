@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { LoadingState } from "@/core/components/ui/LoadingState";
-import { BarChart3, History, Key, Code, Coins } from "lucide-react";
+import { BarChart3, History, Key, BookOpen, Coins } from "lucide-react";
 import Container from "@/core/components/ui/Container.jsx";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 import { formatAmount } from "@/core/lib/tokenUtils";
@@ -34,7 +34,7 @@ function APILayoutContent() {
       "Analyze History": History,
       "Access Token": Key,
       "API Credits": Coins,
-      Documentations: Code,
+      Docs: BookOpen,
     };
     return iconMap[label] || BarChart3;
   };
@@ -82,7 +82,7 @@ function APILayoutContent() {
     { label: "Analyze History", icon: "analyze-history", path: "/developer/analyze-history" },
     { label: "Access Token", icon: "access-token", path: "/developer/access-token" },
     { label: "API Credits", icon: "api-credits", path: "/developer/api-credits" },
-    { label: "Docs", icon: "try-api", path: "/developer/try-api" },
+    { label: "Docs", icon: "api-documentation", path: "/developer/api-documentation" },
   ];
 
   // Load hide balance setting from localStorage on component mount and user change
