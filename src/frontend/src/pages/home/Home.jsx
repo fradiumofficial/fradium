@@ -5,6 +5,7 @@ import ButtonPurple from "@/core/components/ButtonPurple.jsx";
 import Footer from "../../core/components/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/providers/AuthProvider.jsx";
+import MagicBento from "./MagicBento.jsx";
 
 const BACKGROUND_URL_2 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-2.webp";
 const HOW_IT_WORKS_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/how-it-works-frames2.webp";
@@ -732,64 +733,118 @@ const Home = React.memo(() => {
           <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
         </div>
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
-          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <div className="text-center mb-12 sm:mb-16 md:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6">Our Product</h2>
             <p className="mx-auto max-w-4xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about hidden risks.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-6">
             {/* Card 1: Fradium Paylink */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-paylink.webp" alt="Fradium Paylink" className="w-full h-full object-cover" draggable={false} />
-              </div>
-              <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
-                <div>
-                  <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Paylink</div>
-                  <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
+                  <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-paylink.webp" alt="Fradium Paylink" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
+                  <div>
+                    <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Paylink</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+                  </div>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                </div>
               </div>
-            </div>
-            {/* Card 2: Fradium Escrow */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+            </MagicBento>
 
-              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-escrow.webp" alt="Fradium Escrow" className="w-full h-full object-cover" draggable={false} />
-              </div>
-              <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
-                <div>
-                  <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Escrow</div>
-                  <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+            {/* Card 2: Fradium Escrow */}
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
+                  <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-escrow.webp" alt="Fradium Escrow" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
+                  <div>
+                    <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Escrow</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+                  </div>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                </div>
               </div>
-            </div>
+            </MagicBento>
+
             {/* Card 3: Fradium Wallet */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradiums-wallet.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
-              </div>
-              <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
-                <div>
-                  <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Wallet</div>
-                  <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
+                  <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradiums-wallet.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
+                  <div>
+                    <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Wallet</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+                  </div>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                </div>
               </div>
-            </div>
+            </MagicBento>
+
             {/* Card 4: Fradium Extension */}
-            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-              <div className="w-full h-[220px] md:h-[260px] rounded-[14px]  mb-5 overflow-hidden relative">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-extension.webp" alt="Fradium Extension" className="w-full h-full object-cover" draggable={false} />
-              </div>
-              <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
-                <div>
-                  <div className="text-white text-lg sm:text-xl md:text-3xl font-light">Fradium Extension</div>
-                  <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px]  mb-5 overflow-hidden relative">
+                  <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-extension.webp" alt="Fradium Extension" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
+                  <div>
+                    <div className="text-white text-lg sm:text-xl md:text-3xl font-light">Fradium Extension</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
+                  </div>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
+                </div>
               </div>
-            </div>
+            </MagicBento>
           </div>
         </div>
       </div>
