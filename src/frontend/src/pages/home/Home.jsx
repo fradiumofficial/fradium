@@ -585,14 +585,12 @@ const Home = React.memo(() => {
                     <div className="space-y-1 sm:space-y-1.5 md:space-y-4">
                       {/* Step 1 */}
                       <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                          </svg>
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10 overflow-hidden">
+                          <img src="/assets/escrow.png" alt="Start Escrow" className="w-full h-full object-contain" />
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Launch Wallet</h5>
-                          <p className="text-white/75 text-[9px] sm:text-xs">Create your new wallet instantly</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Start Escrow</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs">Initiate escrow for your transaction in seconds</p>
                         </div>
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
                           <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
@@ -605,14 +603,12 @@ const Home = React.memo(() => {
 
                       {/* Step 2 */}
                       <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10 overflow-hidden">
+                          <img src="/assets/terms.png" alt="Verify Terms" className="w-full h-full object-contain" />
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Copy Addres</h5>
-                          <p className="text-white/75 text-[9px] sm:text-xs">Paste it into the input field</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Verify Terms</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs">Review and confirm agreement details</p>
                         </div>
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
                           <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
@@ -625,14 +621,12 @@ const Home = React.memo(() => {
 
                       {/* Step 3 */}
                       <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10 overflow-hidden">
+                          <img src="/assets/complete.png" alt="Complete Transaction" className="w-full h-full object-contain" />
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Get Result</h5>
-                          <p className="text-white/75 text-[9px] sm:text-xs">You're Done! wait a moment for the result!</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Complete Transaction</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs">Once both sides approve, funds are released securely!</p>
                         </div>
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
                           <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
@@ -663,7 +657,7 @@ const Home = React.memo(() => {
                   <div className="relative p-2 z-10">
                     <h3 className="text-xl md:text-2xl font-medium text-white mb-3">Fradium Wallet</h3>
                     <div className="flex items-start justify-between">
-                      <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Safeguards your assets by scanningevery transaction in real time.</p>
+                      <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Fradium Wallet safeguards your assets by scanning every transaction in real time.</p>
                       <a
                         href="https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp"
                         target="_blank"
@@ -847,6 +841,8 @@ const Home = React.memo(() => {
             </MagicBento>
           </div>
         </div>
+        {/* Fade halus ke Background 3 di bagian bawah section product */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-transparent to-[#000510]" />
       </div>
       {/* Background ketiga paling bawah, konten akan diletakkan di atasnya */}
       <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
@@ -854,7 +850,7 @@ const Home = React.memo(() => {
           <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
         </div>
         {/* Fade ke warna dasar ke background-3 */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-[#000510] to-transparent" />
         {/* Wrapper konten */}
         <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8 md:pt-10 pb-16 sm:pb-20 md:pb-24 lg:pb-32">
           {/* Hero di atas background ketiga */}
