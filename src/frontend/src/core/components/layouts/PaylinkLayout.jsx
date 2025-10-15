@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/core/providers/AuthProvider";
 import SwitchServices from "@/core/components/common/SwitchServices.jsx";
 import ProfileDropdown from "@/core/components/common/ProfileDropdown.jsx";
+import { SocialLinksSidebar } from "@/core/components/common/SocialLinks.jsx";
 
 const MotionLink = motion(Link);
 
@@ -62,7 +63,7 @@ function PaylinkLayoutContent() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
             <Link to="/">
-              <img src="/assets/logo-fradium-paylink.svg" alt="Fradium Logo Paylink" />
+              <img src="/assets/logo/fradium-paylink.svg" className="h-[50px] sm:h-[50px] w-auto" alt="Fradium Logo Paylink" />
             </Link>
           </div>
           <nav className="flex flex-col gap-2">
@@ -87,15 +88,8 @@ function PaylinkLayoutContent() {
             })}
           </nav>
         </div>
-        {/* Bottom Social Icons - matching WalletLayout style */}
-        <div className="fixed bottom-6 left-8 z-10 flex items-center gap-5 mt-auto">
-          <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 transition-colors" title="Github" onClick={() => window.open("https://github.com/fradiumofficial", "_blank")}>
-            <img src="/assets/GithubLogoGold.svg" alt="Github" className="w-5 h-5" />
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 transition-colors" title="X" onClick={() => window.open("https://x.com/fradiumofficial", "_blank")}>
-            <img src="/assets/XLogoGold.svg" alt="X" className="w-5 h-5" />
-          </button>
-        </div>
+        {/* Bottom Social Icons - using reusable component */}
+        <SocialLinksSidebar color="#C6A960" />
       </aside>
 
       {/* MOBILE TOPBAR */}

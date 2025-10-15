@@ -286,7 +286,7 @@ function EscrowLayoutContent() {
 
   // Menu configuration for escrow
   const menu = [
-    { label: "P2P Trade", icon: "p2p-trade", path: "/escrow/list" },
+    { label: "P2P Trade", icon: "p2p-trade", path: "/escrow" },
     { label: "Create Escrow", icon: "p2p-payment", path: "/escrow/create" },
     { label: "My Escrow", icon: "escrow-history", path: "/escrow/my-escrow" },
     { label: "Escrow History", icon: "escrow-history", path: "/escrow/history" },
@@ -403,7 +403,7 @@ function EscrowLayoutContent() {
             </nav>
           </div>
           {/* Bottom icons - fixed at bottom */}
-          <SocialLinksSidebar />
+          <SocialLinksSidebar color="#7C72FE" />
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
 

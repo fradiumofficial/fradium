@@ -314,7 +314,7 @@ function WalletLayoutContent() {
             </nav>
           </div>
           {/* Bottom icons - fixed at bottom */}
-          <SocialLinksSidebar />
+          <SocialLinksSidebar color="#9BE4A0" />
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
         {/* Topbar khusus mobile */}
@@ -473,7 +473,7 @@ function WalletLayoutContent() {
                     </button>
 
                     <div className="h-px bg-white/5 mx-4"></div>
-                    <SocialLinksDropdown />
+                    <SocialLinksDropdown color="#9BE4A0" />
 
                     {/* Logout Button using SidebarButton */}
                     <div className="mx-4 mt-2">

@@ -238,7 +238,6 @@ function AnimatedRoutes() {
           }>
           <Route index element={<P2PTradePage />} />
           <Route path="create" element={<CreateEscrowPage />} />
-          <Route path="list" element={<P2PTradePage />} />
           <Route path="my-escrow" element={<MyEscrowPage />} />
           <Route path="detail/:escrowId" element={<EscrowDetailPage />} />
           <Route path="history" element={<EscrowHistoryPage />} />
