@@ -16,6 +16,7 @@ import { useWallet } from "@/core/providers/WalletProvider";
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
 import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal";
 import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal";
+import TransakModal from "@/core/components/modals/TransakModal";
 import SwapTokenModal from "@/core/components/modals/SwapTokenModal";
 
 // Token Item Card Component
@@ -29,6 +30,7 @@ export default function AssetsPage() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
+  const [showTransakModal, setShowTransakModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
 
   // Analyze Address States
@@ -242,10 +244,6 @@ export default function AssetsPage() {
 
   // Format portfolio value for display
   const formattedPortfolioValue = useMemo(() => {
-    if (isPortfolioLoading) {
-      return <span className="text-white text-[2.5rem] font-semibold my-2 opacity-50 animate-pulse">$0.00</span>;
-    }
-
     // Hide balance if enabled
     if (hideBalance) {
       return "••••";
@@ -265,7 +263,7 @@ export default function AssetsPage() {
     } else {
       return `$${totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
-  }, [totalPortfolioValue, isPortfolioLoading, hideBalance]);
+  }, [totalPortfolioValue, hideBalance]);
 
   // Close settings dropdown when clicking outside
   React.useEffect(() => {
@@ -282,7 +280,7 @@ export default function AssetsPage() {
   }, [showSettingsDropdown]);
 
   return (
-    <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4">
+    <div className="relative flex flex-col max-w-[36rem] lg:max-w-[40rem] gap-8 mx-auto w-full bg-transparent px-4">
       <div className="relative z-10">
         {/* Card Wallet - Redesigned to match mockup with interaction */}
         <motion.div
@@ -311,7 +309,9 @@ export default function AssetsPage() {
 
           {/* Header */}
           <div className="relative z-10 text-center">
-            <div className="text-white text-[2.5rem] font-semibold my-2">{formattedPortfolioValue}</div>
+            <div className={`text-white text-[2.5rem] font-semibold my-2 transition-opacity duration-300 ${isPortfolioLoading ? 'opacity-30' : 'opacity-100'}`}>
+              {isPortfolioLoading ? '$0.00' : formattedPortfolioValue}
+            </div>
             <div className="text-white/95 text-base font-medium">Total Portfolio Value</div>
           </div>
 
@@ -320,7 +320,7 @@ export default function AssetsPage() {
             {/* Receive */}
             <div
               onClick={handleReceiveClick}
-              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-4 md:py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-3 md:py-4 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
               style={{
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 backdropFilter: "blur(20px)",
@@ -328,31 +328,11 @@ export default function AssetsPage() {
               }}>
               <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/qr-icon.svg" alt="Receive" className="w-4 h-4 md:w-5 md:h-5" />
               <span className="text-white text-xs md:text-sm font-medium">Receive</span>
-              <svg className="ml-1 w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            {/* Swap */}
-            <div
-              onClick={handleSwapClick}
-              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-4 md:py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
-              style={{
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(20px)",
-                transition: "all 200ms ease-in-out",
-              }}>
-              <svg className="w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 17l4 4m0-4l-4 4M8 7l-4-4m0 4l4-4M12 3v18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="text-white text-xs md:text-sm font-medium">Swap</span>
-              <svg className="ml-1 w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
             </div>
             {/* Send */}
             <div
               onClick={handleSendClick}
-              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-4 md:py-5 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-3 md:py-4 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
               style={{
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 backdropFilter: "blur(20px)",
@@ -360,9 +340,30 @@ export default function AssetsPage() {
               }}>
               <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/send-icon.svg" alt="Send" className="w-4 h-4 md:w-5 md:h-5" />
               <span className="text-white text-xs md:text-sm font-medium">Send</span>
-              <svg className="ml-1 w-4 h-4 md:w-5 md:h-5 text-white/90" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+            </div>
+            {/* Swap */}
+            <div
+              onClick={handleSwapClick}
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-3 md:py-4 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              style={{
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(20px)",
+                transition: "all 200ms ease-in-out",
+              }}>
+              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/swap.svg" alt="Swap" className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="text-white text-xs md:text-sm font-medium">Swap</span>
+            </div>
+            {/* Buy */}
+            <div
+              onClick={() => setShowTransakModal(true)}
+              className="group relative flex-1 flex items-center justify-center gap-2 md:gap-3 py-3 md:py-4 rounded-full cursor-pointer bg-[linear-gradient(105.56deg,rgba(255,255,255,0.003)-4.91%,rgba(255,255,255,0.111951)53.67%,rgba(255,255,255,0.15)95.27%)] hover:bg-white/15 transition-colors"
+              style={{
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(20px)",
+                transition: "all 200ms ease-in-out",
+              }}>
+              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/buy.svg" alt="Buy" className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="text-white text-xs md:text-sm font-medium">Buy</span>
             </div>
           </div>
         </motion.div>
@@ -534,6 +535,11 @@ export default function AssetsPage() {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <SendTokenModal isOpen={showSendModal} onClose={() => setShowSendModal(false)} token={selectedToken} />
+      <ReceiveAddressModal isOpen={showReceive} onClose={() => setShowReceive(false)} />
+      <TransakModal isOpen={showTransakModal} onClose={() => setShowTransakModal(false)} />
 
       {/* Modal Analyze Loading */}
       <AnalyzeLoadingModal isOpen={showAnalyzeLoading} onCancel={handleCancelAnalysis} />
