@@ -150,7 +150,7 @@ else:
         <motion.div variants={itemVariants} className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
             <Code className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-slate-900">Try API</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Documentations</h1>
           </div>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">Test and explore the Fradium API endpoints. Try the analyze-address endpoint to analyze Bitcoin addresses.</p>
         </motion.div>

@@ -83,7 +83,7 @@ const PricingPage = () => {
 
               <div className="mb-8">
                 <div className="text-3xl text-white font-medium mb-2">
-                  0.01 <span className="text-[#9BE4A0]">FUM</span>
+                  0.01 <span className="text-[#9BE4A0]">FRADIUM</span>
                   <span className="text-base text-gray-400"> per address</span>
                 </div>
               </div>
@@ -135,7 +135,7 @@ const PricingPage = () => {
 
               <div className="mb-8">
                 <div className="text-3xl text-white font-medium mb-2">
-                  0.003 <span className="text-[#9BE4A0]">FUM</span>
+                  0.003 <span className="text-[#9BE4A0]">FRADIUM</span>
                   <span className="text-base text-gray-400"> per address</span>
                 </div>
               </div>
