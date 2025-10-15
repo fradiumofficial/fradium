@@ -410,7 +410,7 @@ export const WalletProvider = ({ children }) => {
     const onBalanceUpdated = () => {
       try {
         refreshAllBalances();
-      } catch (_e) {}
+      } catch (_e) { }
     };
     window.addEventListener("balance-updated", onBalanceUpdated);
     return () => window.removeEventListener("balance-updated", onBalanceUpdated);
@@ -472,10 +472,16 @@ export const WalletProvider = ({ children }) => {
   // useEffect for balance and price fetching - placed after function definitions
   useEffect(() => {
     if (identity) {
+      setIsLoading(true);
       // Run all fetch operations in parallel to prevent blocking
-      Promise.all([fetchAddresses(), fetchAllBalances(), fetchAllUSDPrices()]).catch((error) => {
-        console.error("Error in parallel fetch operations:", error);
-      });
+      Promise.all([fetchAddresses(), fetchAllBalances(), fetchAllUSDPrices()])
+        .then(() => {
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error in parallel fetch operations:", error);
+          setIsLoading(false);
+        });
     } else {
       setIsLoading(false);
       setUserWallet(null);

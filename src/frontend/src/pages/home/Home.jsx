@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/providers/AuthProvider.jsx";
 
 const BACKGROUND_URL_2 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-2.webp";
-const HOW_IT_WORKS_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/how-it-works-frames.webp";
+const HOW_IT_WORKS_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/how-it-works-frames2.webp";
 const LOGO_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/logo.png";
 const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
 const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp";
@@ -529,32 +529,32 @@ const Home = React.memo(() => {
                 {/* Header center: logo + title */}
                 <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
                   <img src={LOGO_IMG} alt="Fradium" className="h-5 w-5 sm:h-6 sm:w-6 md:h-10 md:w-10 select-none" />
-                  <h3 className="text-base sm:text-lg md:text-2xl lg:text-3xl leading-[1.1] font-normal text-[#C1FFC5]">How it works?</h3>
+                  <h3 className="text-base sm:text-lg md:text-2xl lg:text-3xl leading-[1.1] font-normal text-[#C1FFC5]">Fradium Escrow</h3>
                 </div>
 
                 {/* Description text */}
                 <div className="text-center mt-2 sm:mt-3 md:mt-6 mb-3 sm:mb-4 md:mb-8">
                   <p className="text-white text-xs sm:text-sm md:text-2xl leading-relaxed">
-                    Create a wallet, enter
+                    Start an escrow,
                     <br />
-                    an address, and get
+                    verify safely, and complete
                     <br />
-                    instant results.
+                    transactions without risk
                   </p>
                 </div>
 
                 {/* Animated action buttons - Marquee */}
                 <div className="mb-4 sm:mb-6 md:mb-8 overflow-hidden">
                   <div className="flex gap-1 sm:gap-2 animate-marquee">
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Address</div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Send Coin</div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Receive Coin</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Check</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Release Payment</div>
                     <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Analyze</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Settle Transaction</div>
                     {/* Duplicate for seamless loop */}
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Address</div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Send Coin</div>
-                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Receive Coin</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Check</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Release Payment</div>
                     <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Analyze</div>
+                    <div className="bg-white/10 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0">Settle Transaction</div>
                   </div>
                 </div>
 
@@ -660,9 +660,9 @@ const Home = React.memo(() => {
 
                   {/* Content below the image */}
                   <div className="relative p-2 z-10">
-                    <h3 className="text-xl md:text-2xl font-medium text-white mb-3">Extension</h3>
+                    <h3 className="text-xl md:text-2xl font-medium text-white mb-3">Fradium Wallet</h3>
                     <div className="flex items-start justify-between">
-                      <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Helps you check the safety of your transaction while browsing Web3.</p>
+                      <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Safeguards your assets by scanning every transaction in real time.</p>
                       <a
                         href="https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp"
                         target="_blank"
@@ -686,7 +686,7 @@ const Home = React.memo(() => {
 
                   {/* Content overlay */}
                   <div className="relative z-10">
-                    <h3 className="text-xl md:text-2xl font-medium text-white">Fradium Wallet</h3>
+                    <h3 className="text-xl md:text-2xl font-medium text-white">Fradium Paylink</h3>
                     <p className="mt-2 max-w-2xl text-xs md:text-sm text-white/75">Fradium Wallet safeguards your assets by scanning every transaction in real time.</p>
                   </div>
 
@@ -726,14 +726,81 @@ const Home = React.memo(() => {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#000510]" />
       </div>
 
+      {/* Our Product Section */}
+      <div className="relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-[#000510]">
+        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
+        </div>
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
+          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6">Our Product</h2>
+            <p className="mx-auto max-w-4xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about hidden risks.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+            {/* Card 1: Fradium Paylink */}
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="absolute top-4 right-4 z-10"><div className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-medium">New Product!</div></div>
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-paylink.webp" alt="Fradium Paylink" className="w-full h-full object-cover" draggable={false} />
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white text-[18px] font-medium">Fradium Paylink</div>
+                  <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                </div>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+              </div>
+            </div>
+            {/* Card 2: Fradium Escrow */}
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="absolute top-4 right-4 z-10"><div className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-medium">New Product!</div></div>
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-escrow.webp" alt="Fradium Escrow" className="w-full h-full object-cover" draggable={false} />
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white text-[18px] font-medium">Fradium Escrow</div>
+                  <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                </div>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+              </div>
+            </div>
+            {/* Card 3: Fradium Wallet */}
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradiums-wallet.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white text-[18px] font-medium">Fradium Wallet</div>
+                  <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                </div>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+              </div>
+            </div>
+            {/* Card 4: Fradium Extension */}
+            <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+              <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative">
+                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-extension.webp" alt="Fradium Extension" className="w-full h-full object-cover" draggable={false} />
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white text-[18px] font-medium">Fradium Extension</div>
+                  <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                </div>
+                <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Background ketiga paling bawah, konten akan diletakkan di atasnya */}
       <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
         </div>
-        {/* Fade dari warna dasar ke background-3 */}
+        {/* Fade ke warna dasar ke background-3 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
-
         {/* Wrapper konten */}
         <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8 md:pt-10 pb-16 sm:pb-20 md:pb-24 lg:pb-32">
           {/* Hero di atas background ketiga */}
@@ -748,59 +815,6 @@ const Home = React.memo(() => {
               </div>
             </div>
           </div>
-
-          {/* Laptop Image - positioned within background 3 content */}
-          <div className="relative flex justify-center items-end mt-16 sm:mt-6 md:mt-8">
-            <div className="relative w-full max-w-3xl sm:max-w-4xl md:max-w-5xl mx-auto">
-              {/* Laptop Frame */}
-              <img
-                src="assets/laptop.webp"
-                alt="MacBook"
-                className="w-full h-auto object-contain"
-                style={{
-                  transform: "translateY(0px)",
-                  marginBottom: "-10%",
-                }}
-                draggable={false}
-              />
-
-              {/* Video Overlay - positioned over the full screen area */}
-              <div
-                className="absolute 
-                top-[2%] left-[9%] w-[82%] h-[105%]
-                md:top-[2%] md:left-[9%] md:w-[82%] md:h-[105%]
-                lg:top-[2%] lg:left-[9%] lg:w-[82%] lg:h-[105%]
-                rounded-lg overflow-hidden">
-                {/* Placeholder sementara - ganti dengan video nanti */}
-                {/* <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-medium">Video Coming Soon</p>
-                    <p className="text-xs text-gray-400 mt-1">Replace this placeholder with your video</p>
-                  </div>
-                </div> */}
-
-                {/* Uncomment dan ganti dengan video nanti:
-                <video
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="metadata"
-                >
-                  <source src="/path/to/your-video.mp4" type="video/mp4" />
-                  <source src="/path/to/your-video.webm" type="video/webm" />
-                  <img src="/path/to/placeholder.jpg" alt="Screen Content" className="w-full h-full object-cover" />
-                </video>
-                */}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -809,4 +823,4 @@ const Home = React.memo(() => {
   );
 });
 
-export default Home;
+export default Home;  

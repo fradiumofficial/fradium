@@ -21,6 +21,7 @@ export default defineConfig({
         global: "globalThis",
       },
     },
+    force: true, // Force re-optimization
   },
   server: {
     proxy: {
