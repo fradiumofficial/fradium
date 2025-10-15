@@ -262,14 +262,8 @@ export default function AIAssistantWidget() {
     });
   };
 
-  const scrollChipsBy = (delta) => {
-    const el = chipsRef.current;
-    if (!el) return;
-    el.scrollTo({ left: el.scrollLeft + delta, behavior: "smooth" });
-  };
-
   return (
-    <div className="fixed right-4 md:right-6 bottom-24 md:bottom-6 z-[30]">
+    <div className="fixed right-4 md:right-12 bottom-24 md:bottom-12 z-[30]">
       {/* Minimal scrollbar utilities */}
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }

@@ -268,14 +268,14 @@ function WalletLayoutContent() {
     <>
       <WelcomingWalletModal isOpen={isCreatingWallet} />
 
-      <div className="relative block md:flex min-h-screen bg-[#0F1219] w-full max-w-full">
-        {/* Global background spanning all wallet sections */}
-        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png" alt="" aria-hidden="true" decoding="async" loading="eager" className="absolute inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
-        <div className="absolute inset-0 z-0 bg-[#0F1219]/25 pointer-events-none" aria-hidden="true"></div>
+      <div className="relative block md:flex min-h-screen bg-transparent w-full max-w-full">
+        {/* Global background spanning all wallet sections (fixed) */}
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/wallet-background.png" alt="" aria-hidden="true" decoding="async" loading="eager" className="fixed inset-0 z-0 w-full h-full object-cover object-center pointer-events-none select-none" />
+        <div className="fixed inset-0 z-0 bg-[#0F1219]/25 pointer-events-none" aria-hidden="true"></div>
         {/* Modal Manage Networks */}
         <ManageNetworksModal isOpen={showManageNetworks} onClose={() => setShowManageNetworks(false)} networkFilters={networkFilters} updateNetworkFilters={updateNetworkFilters} currentNetwork={network} setNetwork={setNetwork} />
         {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}
-        <aside className="relative z-10 w-[200px] lg:w-[240px] xl:w-[320px] bg-transparent flex flex-col py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-white/10 hidden md:flex min-h-screen">
+        <aside className="fixed left-0 top-0 z-20 w-[200px] lg:w-[240px] xl:w-[320px] bg-transparent flex flex-col py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-white/10 hidden md:flex h-screen">
           {/* Logo dan Brand */}
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
@@ -318,7 +318,7 @@ function WalletLayoutContent() {
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
         {/* Topbar khusus mobile */}
-        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219] sticky top-0 z-40 border-b border-[#23272F]">
+        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219] fixed top-0 left-0 right-0 z-40 border-b border-[#23272F]">
           {/* Logo Fradium kiri */}
           <Link to="/">
             <img src="/logo.svg" alt="Fradium Logo" className="w-10 h-10" />
@@ -492,7 +492,7 @@ function WalletLayoutContent() {
             </div>
           </div>
         </div>
-        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col">
+        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 pb-28 md:pb-8 pt-20 md:pt-7 flex flex-col md:pl-[15%] lg:pl-[16%] xl:pl-[18%] xl:pr-[20%]">
           {/* Topbar Network & User for md screens - placed above Outlet to avoid content shrink */}
           <div className="hidden md:flex xl:hidden w-full items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
@@ -504,13 +504,13 @@ function WalletLayoutContent() {
             </div>
           </div>
           <div className="w-full flex justify-center">
-            <div className="w-full max-w-[30rem] sm:max-w-[32rem] md:max-w-[34rem] lg:max-w-[36rem] xl:max-w-[44rem] 2xl:max-w-[48rem] md:-translate-x-[100px] lg:-translate-x-[120px] xl:translate-x-0 transition-transform">
+            <div className="w-full max-w-[30rem] sm:max-w-[32rem] md:max-w-[34rem] lg:max-w-[36rem] xl:max-w-[44rem] 2xl:max-w-[48rem] mx-auto">
               <Outlet />
             </div>
           </div>
         </main>
         {/* ===== START: SIDEBAR KANAN (Desktop) ===== */}
-        <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
+        <aside className="fixed right-0 top-0 z-10 w-100 h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
           {/* Top action buttons */}
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-between items-center">

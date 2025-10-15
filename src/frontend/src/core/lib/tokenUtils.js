@@ -437,7 +437,7 @@ export async function sendIcrcToAccountRaw(tokenSymbol, ownerPrincipalText, suba
   return res?.Ok ?? res;
 }
 
-export async function getBalance(tokenId, principal, useCache = true) {
+export async function getBalance(tokenId, principal, useCache = true, identity = null) {
   const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
   if (!token) throw new Error("Token not found: " + tokenId);
 
@@ -450,7 +450,7 @@ export async function getBalance(tokenId, principal, useCache = true) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await fetchBalanceWithRetry(token, principal, principalString, useCache);
+      return await fetchBalanceWithRetry(token, principal, principalString, useCache, identity);
     } catch (error) {
       lastError = error;
       console.warn(`Balance fetch attempt ${attempt}/${maxRetries} failed for ${token.symbol}:`, error.message);
@@ -462,7 +462,7 @@ export async function getBalance(tokenId, principal, useCache = true) {
 }
 
 // Helper function to fetch balance (extracted from original getBalance logic)
-async function fetchBalanceWithRetry(token, principal, principalString, useCache) {
+async function fetchBalanceWithRetry(token, principal, principalString, useCache, identity = null) {
   if (token.type === "native") {
     try {
       switch (token.id) {
@@ -649,6 +649,29 @@ async function fetchBalanceWithRetry(token, principal, principalString, useCache
         }
       default:
         throw new Error("ICRC token not supported");
+    }
+  }
+
+  if (token.type === "sns") {
+    if (!principal) {
+      throw new Error("Principal is required for SNS tokens");
+    }
+
+    try {
+      // Import SNS Token Service dynamically to avoid circular dependencies
+      const { SNSTokenService } = await import("@/core/services/snsTokenService.js");
+
+      const balance = await SNSTokenService.getBalance(token.symbol, principal, [], identity);
+
+      // Save to cache if useCache is enabled
+      if (useCache && principalString) {
+        saveBalanceToStorage(principalString, token.id, balance.toString());
+      }
+
+      return balance.toString();
+    } catch (error) {
+      console.error(`Error fetching ${token.symbol} balance:`, error);
+      throw new Error(`Failed to fetch ${token.symbol} balance: ${error.message || "Unknown error"}`);
     }
   }
 
@@ -895,6 +918,12 @@ export function getIconByChain(chain, tokenType = null) {
     } else if (tokenType === "cketh") {
       const token = TOKENS_CONFIG.find((t) => t.id === 7); // ckETH token
       return token ? `/${token.imageUrl}` : "/assets/images/coins/cketh.webp";
+    } else {
+      // Check if it's an SNS token
+      const snsToken = TOKENS_CONFIG.find((token) => token.type === "sns" && token.symbol.toLowerCase() === tokenType.toLowerCase());
+      if (snsToken) {
+        return `/${snsToken.imageUrl}`;
+      }
     }
   }
 

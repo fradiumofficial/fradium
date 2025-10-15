@@ -127,9 +127,9 @@ function APILayoutContent() {
     <>
       <WelcomingWalletModal isOpen={isCreatingWallet} />
 
-      <div className="relative block md:flex min-h-screen bg-white w-full max-w-full">
-        {/* Background layers */}
-        <div className="absolute inset-0 z-0 pointer-events-none select-none bg-white">
+      <div className="relative block md:flex min-h-screen bg-transparent w-full max-w-full">
+        {/* Fixed background layers */}
+        <div className="fixed inset-0 z-0 pointer-events-none select-none bg-white">
           <img
             src="/assets/background-2.png"
             alt="bg-2"
@@ -141,20 +141,19 @@ function APILayoutContent() {
           />
         </div>
 
-        {/* Top blur overlay to blend background with navbar */}
-        <div className="absolute inset-x-0 top-0 h-20 sm:h-24 md:h-28 z-[5] pointer-events-none">
+        {/* Fixed blur overlays */}
+        <div className="fixed inset-x-0 top-0 h-20 sm:h-24 md:h-28 z-[5] pointer-events-none">
           <div className="h-full bg-gradient-to-b from-white/90 via-white/60 to-transparent backdrop-blur-sm md:backdrop-blur-md" />
         </div>
 
-        {/* Bottom blur overlay to blend background-2 with page */}
-        <div className="absolute inset-x-0 bottom-0 h-10 z-[5] pointer-events-none">
+        <div className="fixed inset-x-0 bottom-0 h-10 z-[5] pointer-events-none">
           <div className="h-full bg-gradient-to-t from-white/90 via-white/60 to-transparent backdrop-blur-sm md:backdrop-blur-md" />
         </div>
 
         {/* Removed ManageNetworksModal - networks not used in API layout */}
 
         {/* Topbar khusus mobile */}
-        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
+        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white/80 backdrop-blur-md fixed top-0 left-0 right-0 z-40 border-b border-slate-200">
           {/* Logo Fradium kiri */}
           <Link to="/">
             <img src="/assets/logo/fradium-developer-light.svg" alt="Fradium Logo" className="w-10 h-10" />
@@ -164,7 +163,7 @@ function APILayoutContent() {
         </div>
 
         {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}
-        <aside className="relative z-10 w-[200px] lg:w-[240px] xl:w-[320px] bg-white/20 backdrop-blur-md flex flex-col py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-slate-200 hidden md:flex min-h-screen">
+        <aside className="fixed left-0 top-0 z-20 w-[200px] lg:w-[240px] xl:w-[320px] bg-white/20 backdrop-blur-md flex flex-col py-8 pl-5 lg:pl-7 xl:pl-8 border-r border-slate-200 hidden md:flex h-screen">
           {/* Logo dan Brand */}
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
@@ -194,12 +193,12 @@ function APILayoutContent() {
             </nav>
           </div>
           {/* Bottom icons - fixed at bottom */}
-          <SocialLinksSidebar />
+          <SocialLinksSidebar color="#000000" />
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
 
         {/* ===== START: MAIN CONTENT ===== */}
-        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col">
+        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 overflow-visible pb-28 md:pb-8 pt-20 md:pt-7 flex flex-col md:pl-[15%] lg:pl-[16%] xl:pl-[18%] xl:pr-[20%]">
           {/* Topbar User for md screens - placed above Outlet to avoid content shrink */}
           <div className="hidden md:flex xl:hidden w-full items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
@@ -233,7 +232,7 @@ function APILayoutContent() {
         {/* ===== END: MAIN CONTENT ===== */}
 
         {/* ===== START: SIDEBAR KANAN (Desktop) ===== */}
-        <aside className="relative z-10 w-100 min-h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
+        <aside className="fixed right-0 top-0 z-20 w-100 h-screen bg-transparent flex flex-col pt-6 pr-6 pb-6 pl-4 hidden xl:flex">
           <div className="flex flex-col gap-4 w-full z-10 mb-auto">
             <div className="flex gap-3 w-full justify-between items-center">
               {/* Left: FRADIUM balance pill for xl */}

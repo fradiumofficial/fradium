@@ -9,17 +9,28 @@ import ButtonPurple from "@/core/components/ButtonPurple.jsx";
 
 // Helper function to get token info
 function getTokenInfo(tokenType) {
-  const tokenMap = {
-    FRADIUM: { symbol: "FRADIUM", name: "Fradium", imageUrl: "/assets/images/coins/fradium.webp" },
-    ICP: { symbol: "ICP", name: "Internet Computer", imageUrl: "/assets/images/coins/icp.webp" },
-    ckBTC: { symbol: "ckBTC", name: "Chain Key Bitcoin", imageUrl: "/assets/images/coins/ckbtc.webp" },
-    ckETH: { symbol: "ckETH", name: "Chain Key Ethereum", imageUrl: "/assets/images/coins/cketh.webp" },
-    BTC: { symbol: "BTC", name: "Bitcoin", imageUrl: "/assets/images/coins/bitcoin.webp" },
-    ETH: { symbol: "ETH", name: "Ethereum", imageUrl: "/assets/images/coins/ethereum.webp" },
-    SOL: { symbol: "SOL", name: "Solana", imageUrl: "/assets/images/coins/solana.webp" },
-  };
+  // Import TOKENS_CONFIG to get all token information dynamically
+  const { TOKENS_CONFIG } = require("@/core/config/tokenConfig.js");
 
-  return tokenMap[tokenType] || { symbol: tokenType, name: tokenType, imageUrl: "/assets/images/coins/bitcoin.webp" };
+  // Find token in configuration
+  const token = TOKENS_CONFIG.find((t) => t.symbol === tokenType || t.symbol.toLowerCase() === tokenType.toLowerCase() || t.name.toLowerCase() === tokenType.toLowerCase());
+
+  if (token) {
+    return {
+      symbol: token.symbol,
+      name: token.name,
+      imageUrl: token.imageUrl,
+      type: token.type,
+    };
+  }
+
+  // Fallback for unknown tokens
+  return {
+    symbol: tokenType,
+    name: tokenType,
+    imageUrl: "/assets/images/coins/bitcoin.webp",
+    type: "unknown",
+  };
 }
 
 // Helper function to get escrow state color and text

@@ -354,7 +354,7 @@ export const WalletProvider = ({ children }) => {
         // Get principal from Internet Identity
         const principal = identity?.getPrincipal();
 
-        const balance = await getBalance(token.id, principal, useCache);
+        const balance = await getBalance(token.id, principal, useCache, identity);
 
         // For ICRC tokens, balance is already converted to proper units in getBalance
         // For native tokens, we need to convert from smallest unit

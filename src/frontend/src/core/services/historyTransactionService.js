@@ -615,8 +615,40 @@ export async function getICRCTransactionHistory(tokenType, principal, icpAccount
   }
 }
 
+// Function to get SNS token transaction history
+export async function getSNSTransactionHistory(tokenSymbol, principal, limit = 20, identity = null) {
+  try {
+    if (!principal) {
+      throw new Error("Principal is required for SNS transaction history");
+    }
+
+    // Import SNS Token Service dynamically to avoid circular dependencies
+    const { SNSTokenService } = await import("@/core/services/snsTokenService.js");
+
+    const transactions = await SNSTokenService.getTransactionHistory(tokenSymbol, principal, limit, 0, identity);
+
+    return transactions;
+  } catch (error) {
+    console.error(`Error fetching ${tokenSymbol} transaction history:`, error);
+
+    // Handle specific authentication errors
+    if (error.message?.includes("Invalid certificate") || error.message?.includes("Signature verification failed") || error.message?.includes("AgentQueryError")) {
+      console.warn(`Authentication error for ${tokenSymbol} transactions. User may need to re-authenticate.`);
+      return []; // Return empty array instead of throwing
+    }
+
+    // Handle other errors
+    if (error.message?.includes("Anonymous principal")) {
+      console.warn(`Anonymous principal cannot fetch ${tokenSymbol} transactions`);
+      return [];
+    }
+
+    return [];
+  }
+}
+
 // Generic function to get transaction history for any supported network
-export async function getTransactionHistory(address, network, limit = 20) {
+export async function getTransactionHistory(address, network, limit = 20, identity = null) {
   try {
     switch (network.toLowerCase()) {
       case "ethereum":
@@ -635,7 +667,15 @@ export async function getTransactionHistory(address, network, limit = 20) {
         return await getICRCTransactionHistory("fradium", address, limit);
       case "ckbtc":
         return await getICRCTransactionHistory("ckbtc", address, limit);
+      case "cketh":
+        return await getICRCTransactionHistory("cketh", address, limit);
       default:
+        // Check if it's an SNS token
+        const { SNSTokenService } = await import("@/core/services/snsTokenService.js");
+        const tokenConfig = SNSTokenService.getTokenConfig(network);
+        if (tokenConfig) {
+          return await getSNSTransactionHistory(network, address, limit, identity);
+        }
         throw new Error(`Unsupported network: ${network}`);
     }
   } catch (error) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 import { formatAmount, getIconByChain } from "@/core/lib/tokenUtils";
-import { getETHTransactionHistory, getSolanaTransactionHistory, getBitcoinTransactionHistory, getTransactionHistory, getICRCTransactionHistory } from "@/core/services/historyTransactionService";
+import { getETHTransactionHistory, getSolanaTransactionHistory, getBitcoinTransactionHistory, getTransactionHistory, getICRCTransactionHistory, getSNSTransactionHistory } from "@/core/services/historyTransactionService";
 import { useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { getExplorerUrl } from "@/core/lib/chainExplorers";
@@ -111,6 +111,11 @@ function getTokenSymbol(chain, tokenType) {
     if (tokenType === "fradium") return "FRADIUM";
     if (tokenType === "ckbtc") return "ckBTC";
     if (tokenType === "cketh") return "ckETH";
+
+    // Check if it's an SNS token
+    const snsToken = TOKENS_CONFIG.find((token) => token.type === "sns" && token.symbol.toLowerCase() === tokenType.toLowerCase());
+    if (snsToken) return snsToken.symbol;
+
     return "ICP"; // Default to ICP for Internet Computer
   }
   return "TOKEN";
@@ -118,6 +123,7 @@ function getTokenSymbol(chain, tokenType) {
 
 export default function TransactionHistoryPage() {
   const { addresses } = useWallet();
+  const { identity } = useAuth();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -319,6 +325,20 @@ export default function TransactionHistoryPage() {
           })
         );
       }
+
+      // Load SNS token transactions
+      const snsTokens = TOKENS_CONFIG.filter((token) => token.type === "sns");
+      for (const snsToken of snsTokens) {
+        if (icpPrincipal) {
+          console.log(`LOADING ${snsToken.symbol}`);
+          loadingPromises.push(
+            getSNSTransactionHistory(snsToken.symbol, icpPrincipal, ITEMS_PER_PAGE, identity).catch((error) => {
+              console.error(`Error loading ${snsToken.symbol} transactions:`, error);
+              return [];
+            })
+          );
+        }
+      }
       // Execute all loading promises in parallel with timeout
       console.log("LOADING PROMISES", loadingPromises);
       const allPromise = Promise.all(loadingPromises);
@@ -400,7 +420,10 @@ export default function TransactionHistoryPage() {
       const hashMatch = tx.hash && tx.hash.toLowerCase().includes(query);
       const tokenSymbolMatch = getTokenSymbol(tx.chain, tx.tokenType).toLowerCase().includes(query) || (tx.tokenType === "ckbtc" && "ckbtc".includes(query.toLowerCase()));
 
-      if (!titleMatch && !chainMatch && !statusMatch && !fromMatch && !toMatch && !hashMatch && !tokenSymbolMatch) {
+      // Check SNS token symbols
+      const snsTokenMatch = TOKENS_CONFIG.some((token) => token.type === "sns" && (token.symbol.toLowerCase().includes(query) || token.name.toLowerCase().includes(query)));
+
+      if (!titleMatch && !chainMatch && !statusMatch && !fromMatch && !toMatch && !hashMatch && !tokenSymbolMatch && !snsTokenMatch) {
         return false;
       }
     }
@@ -598,13 +621,13 @@ export default function TransactionHistoryPage() {
                           {tx.chain} •{" "}
                           {tx.timestamp
                             ? new Date(tx.timestamp).toLocaleString("id-ID", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: false,
-                            })
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                              })
                             : "Unknown date"}
                         </div>
                       </div>
