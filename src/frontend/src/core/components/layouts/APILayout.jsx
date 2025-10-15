@@ -214,7 +214,7 @@ function APILayoutContent() {
                 const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
                 return (
                   <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <img src="/assets/images/coins/fradium.webp" alt="FUM" className="w-4 h-4" />
+                    <img src="/assets/images/coins/fradium.webp" alt="FRADIUM" className="w-4 h-4" />
                     <span className="text-sm text-slate-700">FRADIUM:</span>
                     <span className="text-sm font-medium text-slate-900">{balanceText}</span>
                     <span className="text-xs text-slate-500">{usdText}</span>
@@ -248,7 +248,7 @@ function APILayoutContent() {
                   const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
                   return (
                     <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
-                      <img src="/assets/images/coins/fradium.webp" alt="FUM" className="w-4 h-4" />
+                      <img src="/assets/images/coins/fradium.webp" alt="FRADIUM" className="w-4 h-4" />
                       <span className="text-sm text-slate-700">FRADIUM:</span>
                       <span className="text-sm font-medium text-slate-900">{balanceText}</span>
                       <span className="text-xs text-slate-500">{usdText}</span>

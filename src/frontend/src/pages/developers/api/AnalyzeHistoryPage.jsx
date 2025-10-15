@@ -52,7 +52,7 @@ const AnalyzeHistoryPage = () => {
               riskScore: null,
               model: "API",
               responseTime: "-",
-              cost: `${fum} FUM`,
+              cost: `${fum} FRADIUM`,
             };
           });
         setItems(mapped);

@@ -165,9 +165,9 @@ const APICreditsPage = () => {
     return { statusColorTotal: "#F59E0B", statusLabelTotal: "Building up" }; // yellow
   }, [totalApproved, remainingFum]);
 
-  // Get FUM balance from wallet context
+  // Get FRADIUM balance from wallet context
   const fumBalance = useMemo(() => {
-    // FUM token has id: 5 in TOKENS_CONFIG
+    // FRADIUM token has id: 5 in TOKENS_CONFIG
     const fumBalanceStr = balances[5] || "0";
     return parseFloat(fumBalanceStr) || 0;
   }, [balances]);
@@ -218,7 +218,7 @@ const APICreditsPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-600 text-sm">Total of Approval</p>
-                  <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(totalApproved)} FUM`}</div>
+                  <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(totalApproved)} FRADIUM`}</div>
                 </div>
                 <ShieldCheck className="w-6 h-6 text-[#2D54B8]" />
               </div>
@@ -228,28 +228,25 @@ const APICreditsPage = () => {
                   {/* Background half circle */}
                   <path d={`M 20 70 A ${gaugeTotal.radius} ${gaugeTotal.radius} 0 0 1 ${20 + gaugeTotal.radius * 2} 70`} fill="none" stroke="#E5E7EB" strokeWidth={gaugeTotal.stroke} strokeLinecap="round" />
                   {/* Used progress arc */}
-                  <path 
-                    d={`M 20 70 A ${gaugeTotal.radius} ${gaugeTotal.radius} 0 0 1 ${20 + gaugeTotal.radius * 2} 70`} 
-                    fill="none" 
-                    stroke={statusColorTotal} 
-                    strokeWidth={gaugeTotal.stroke} 
-                    strokeLinecap="round" 
+                  <path
+                    d={`M 20 70 A ${gaugeTotal.radius} ${gaugeTotal.radius} 0 0 1 ${20 + gaugeTotal.radius * 2} 70`}
+                    fill="none"
+                    stroke={statusColorTotal}
+                    strokeWidth={gaugeTotal.stroke}
+                    strokeLinecap="round"
                     strokeDasharray={`${gaugeTotal.dash} ${gaugeTotal.gap}`}
                     style={{
-                      transition: 'stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease-in-out',
-                      transformOrigin: 'center'
+                      transition: "stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease-in-out",
+                      transformOrigin: "center",
                     }}
                   />
                 </svg>
                 <div className="flex flex-col">
                   <div className="text-sm text-slate-600">Used</div>
-                  <div className="text-lg font-semibold text-slate-900 transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(used)} FUM`}</div>
-                  <div className="text-xs text-slate-500 mt-1 transition-all duration-500 ease-out">{Math.round(gaugeTotal.progressTowardsTarget * 100)}% towards 10 FUM</div>
+                  <div className="text-lg font-semibold text-slate-900 transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(used)} FRADIUM`}</div>
+                  <div className="text-xs text-slate-500 mt-1 transition-all duration-500 ease-out">{Math.round(gaugeTotal.progressTowardsTarget * 100)}% towards 10 FRADIUM</div>
                   <div className="mt-2 inline-flex items-center gap-2">
-                    <span 
-                      className="inline-block w-2.5 h-2.5 rounded-full transition-colors duration-300 ease-in-out" 
-                      style={{ backgroundColor: statusColorTotal }} 
-                    />
+                    <span className="inline-block w-2.5 h-2.5 rounded-full transition-colors duration-300 ease-in-out" style={{ backgroundColor: statusColorTotal }} />
                     <span className="text-xs text-slate-700 transition-colors duration-300 ease-in-out">{statusLabelTotal}</span>
                   </div>
                 </div>
@@ -262,7 +259,7 @@ const APICreditsPage = () => {
             <div className="relative z-10 flex items-start justify-between">
               <div>
                 <p className="text-slate-600 text-sm">Used Amount</p>
-                <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(used)} FUM`}</div>
+                <div className="mt-1 text-slate-900 text-2xl font-semibold transition-all duration-500 ease-out">{isLoadingStats ? "…" : `${formatAmount(used)} FRADIUM`}</div>
               </div>
               <Clock className="w-6 h-6 text-red-500" />
             </div>
@@ -277,9 +274,9 @@ const APICreditsPage = () => {
             <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(600px_180px_at_50%_-40px,rgba(108,140,223,0.18),rgba(45,84,184,0.12)_55%,transparent_75%)]" />
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Approve More FUM</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Approve More FRADIUM</h2>
               </div>
-              <p className="text-slate-600 text-sm mb-4">Initiate a new FUM approval for API usage. This will call icrc2_approve() from your Fradium wallet.</p>
+              <p className="text-slate-600 text-sm mb-4">Initiate a new FRADIUM approval for API usage. This will call icrc2_approve() from your Fradium wallet.</p>
               <div className="mb-4 text-xs text-slate-600">
                 Spender canister: <code className="px-1 py-0.5 bg-slate-100 rounded text-slate-900">{backendIdResolved}</code>
               </div>
@@ -291,7 +288,7 @@ const APICreditsPage = () => {
                 onClick={() => {
                   setShowApproveModal(true);
                 }}>
-                {isBalanceLoading ? "Loading Balance..." : "Approve More FUM"}
+                {isBalanceLoading ? "Loading Balance..." : "Approve More FRADIUM"}
               </LightButton>
             </div>
           </div>
@@ -313,7 +310,7 @@ const APICreditsPage = () => {
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">Amount (FUM)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">Amount (FRADIUM)</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">Time</th>
                     </tr>
                   </thead>
@@ -381,7 +378,7 @@ const APICreditsPage = () => {
 
                   {/* Content */}
                   <div className="flex flex-col items-center p-6 gap-6 h-auto">
-                    <div className="w-full text-center text-slate-900 text-lg font-semibold">{isBalanceLoading ? "Loading Balance..." : "Approve FUM Allowance"}</div>
+                    <div className="w-full text-center text-slate-900 text-lg font-semibold">{isBalanceLoading ? "Loading Balance..." : "Approve FRADIUM Allowance"}</div>
 
                     {/* Icon and Message */}
                     <div className="flex flex-col items-center gap-4 w-full">
@@ -389,8 +386,8 @@ const APICreditsPage = () => {
                         <RefreshCw className={`w-6 h-6 text-blue-600 ${isBalanceLoading ? "animate-spin" : ""}`} />
                       </div>
                       <div className="text-center">
-                        <p className="text-slate-900 font-medium text-base mb-2">{isBalanceLoading ? "Loading your balance..." : "Approve FUM to the backend canister"}</p>
-                        <p className="text-slate-600 text-sm">{isBalanceLoading ? "Please wait while we fetch your current FUM balance." : "This will allow the API backend to spend up to the approved FUM amount on your behalf."}</p>
+                        <p className="text-slate-900 font-medium text-base mb-2">{isBalanceLoading ? "Loading your balance..." : "Approve FRADIUM to the backend canister"}</p>
+                        <p className="text-slate-600 text-sm">{isBalanceLoading ? "Please wait while we fetch your current FRADIUM balance." : "This will allow the API backend to spend up to the approved FRADIUM amount on your behalf."}</p>
                         <p className="text-slate-600 text-xs mt-2">
                           Spender canister: <code className="px-1 py-0.5 bg-slate-100 rounded text-slate-900">{backendIdResolved}</code>
                         </p>
@@ -399,9 +396,9 @@ const APICreditsPage = () => {
 
                     {/* Amount input */}
                     <div className="w-full">
-                      <label className="block text-xs text-slate-600 mb-1">Amount (FUM)</label>
+                      <label className="block text-xs text-slate-600 mb-1">Amount (FRADIUM)</label>
                       <input type="text" inputMode="decimal" pattern="[0-9]*[.]?[0-9]*" value={amountInput} onChange={(e) => setAmountInput(normalizeAmountInput(e.target.value))} placeholder={isBalanceLoading ? "Loading balance..." : "e.g. 10.5"} disabled={isBalanceLoading} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6C8CDF] bg-white text-slate-900 disabled:bg-slate-50 disabled:text-slate-500" />
-                      {isBalanceLoading ? <p className="text-xs text-slate-500 mt-1">Loading your FUM balance...</p> : <p className="text-xs text-slate-500 mt-1">Available balance: {formatAmount(fumBalance)} FUM</p>}
+                      {isBalanceLoading ? <p className="text-xs text-slate-500 mt-1">Loading your FRADIUM balance...</p> : <p className="text-xs text-slate-500 mt-1">Available balance: {formatAmount(fumBalance)} FRADIUM</p>}
                     </div>
 
                     {/* Warning box */}
@@ -438,7 +435,7 @@ const APICreditsPage = () => {
 
                             // Validate against user balance
                             if (n > fumBalance) {
-                              toast.error(`Insufficient balance. You have ${formatAmount(fumBalance)} FUM available.`);
+                              toast.error(`Insufficient balance. You have ${formatAmount(fumBalance)} FRADIUM available.`);
                               setIsApproving(false);
                               return;
                             }
