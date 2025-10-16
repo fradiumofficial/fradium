@@ -1,41 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useState, useRef } from "react";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import ButtonPurple from "@/core/components/ButtonPurple.jsx";
 import Footer from "../../core/components/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/providers/AuthProvider.jsx";
-import MagicBento from "@/core/components/MagicBento.jsx";
+import MagicBento from "./MagicBento.jsx";
 
 const BACKGROUND_URL_2 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-2.webp";
 const HOW_IT_WORKS_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/how-it-works-frames2.webp";
 const LOGO_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/logo.png";
 const BACKGROUND_URL = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-1.webp";
 const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp";
-
-// Ecosystem data with type (dark/light) and logo variants
-const ECOSYSTEM_DATA = [
-  {
-    logo: "assets/images/ecosystems/icpswap.png",
-    type: "dark",
-    name: "ICP Swap",
-  },
-  {
-    logo: "assets/images/ecosystems/icp.png",
-    type: "dark",
-    name: "Internet Computer",
-  },
-  {
-    logo: "https://cdn.cookielaw.org/logos/fab25088-1de1-42e7-998a-23fbde806359/d9cc2aee-36d3-4512-bb0b-93b9af792a07/acc99bc5-cf8f-45ac-afe1-a884fab6bea9/transak-logo.png",
-    type: "dark",
-    name: "Transak",
-  },
-  {
-    logo: "https://lombasi.telkomuniversity.ac.id/assets/img/logos/logo_telyu_lanskap_putih.png",
-    type: "dark",
-    name: "Telkom University",
-  },
-];
 
 const Home = React.memo(() => {
   const { isAuthenticated, handleLogin } = useAuth();
@@ -52,6 +28,23 @@ const Home = React.memo(() => {
       setIsSignUpLoading(false);
     }
   };
+
+  // Refs for scroll animations
+  const heroRef = useRef(null);
+  const cardsRef = useRef(null);
+  const featuresRef = useRef(null);
+  const ctaRef = useRef(null);
+
+  // Scroll-based animations
+  const { scrollYProgress } = useScroll();
+  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -50]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.8]);
+
+  // In-view animations
+  const heroInView = useInView(heroRef, { once: true, margin: "-100px" });
+  const cardsInView = useInView(cardsRef, { once: true, margin: "-50px" });
+  const featuresInView = useInView(featuresRef, { once: true, margin: "-50px" });
+  const ctaInView = useInView(ctaRef, { once: true, margin: "-50px" });
 
   // Fungsi untuk handle launch wallet - cek login dulu
   const handleLaunchWallet = React.useCallback(async () => {
@@ -212,32 +205,32 @@ const Home = React.memo(() => {
           animation: float 3s ease-in-out infinite;
         }
         
-        /* Hover effects - removed scale transform */
+        /* Hover effects */
         .card-hover {
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .card-hover:hover {
-          transform: translateY(-8px);
+          transform: translateY(-8px) scale(1.02);
           box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
         
-        /* Enhanced hover effects for specific cards - removed scale transform */
+        /* Enhanced hover effects for specific cards */
         .card-hover-enhanced {
           transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         .card-hover-enhanced:hover {
-          transform: translateY(-12px);
+          transform: translateY(-12px) scale(1.05);
           box-shadow: 0 30px 60px rgba(0,0,0,0.6);
         }
         
-        /* Custom Fraud Detection Card Hover - removed scale transform */
+        /* Custom Fraud Detection Card Hover */
         .fraud-detection-hover {
           transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
           position: relative;
           overflow: hidden;
         }
         .fraud-detection-hover:hover {
-          transform: translateY(-10px);
+          transform: translateY(-10px) scale(1.05);
           box-shadow: 
             0 25px 50px rgba(0,0,0,0.6),
             0 0 20px rgba(153, 227, 158, 0.15);
@@ -296,12 +289,12 @@ const Home = React.memo(() => {
           opacity: 1;
         }
         
-        /* Smooth scale animation - removed scale transform */
+        /* Smooth scale animation */
         .card-scale {
           transition: transform 0.3s ease-out;
         }
         .card-scale:hover {
-          transform: translateY(-4px);
+          transform: scale(1.03);
         }
         
         /* Button hover effects */
@@ -380,56 +373,6 @@ const Home = React.memo(() => {
         .stagger-4 { animation-delay: 0.4s; }
         .stagger-5 { animation-delay: 0.5s; }
         .stagger-6 { animation-delay: 0.6s; }
-        
-        /* Product card image hover effect */
-        .product-image-hover {
-          transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          overflow: hidden;
-        }
-        .product-image-hover img {
-          transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        .product-image-hover:hover img {
-          transform: scale(1.1);
-        }
-        
-        /* Upper section image hover effect - only for images */
-        .upper-image-hover {
-          overflow: hidden;
-        }
-        .upper-image-hover img {
-          transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        .upper-image-hover:hover img {
-          transform: scale(1.1);
-        }
-        
-        /* Ecosystem scrolling animation - using marquee behavior */
-        .ecosystem-scroll {
-          animation: marquee 20s linear infinite;
-        }
-        
-        /* Ecosystem fade blur effects - extended beyond container */
-        .ecosystem-fade-left {
-          position: absolute;
-          left: -100px;
-          top: 0;
-          bottom: 0;
-          width: 200px;
-          background: linear-gradient(to right, rgba(0, 5, 16, 1), rgba(0, 5, 16, 0.9), rgba(0, 5, 16, 0.6), rgba(0, 5, 16, 0.3), transparent);
-          z-index: 20;
-          pointer-events: none;
-        }
-        .ecosystem-fade-right {
-          position: absolute;
-          right: -100px;
-          top: 0;
-          bottom: 0;
-          width: 200px;
-          background: linear-gradient(to left, rgba(0, 5, 16, 1), rgba(0, 5, 16, 0.9), rgba(0, 5, 16, 0.6), rgba(0, 5, 16, 0.3), transparent);
-          z-index: 20;
-          pointer-events: none;
-        }
       `}</style>
       {/* Tagline di atas background */}
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-12 sm:pt-16 md:pt-24 mt-4 sm:mt-6 md:mt-8 text-center">
@@ -456,7 +399,16 @@ const Home = React.memo(() => {
         <div className="relative z-10 mx-auto w-full max-w-6xl pt-6 sm:pt-8 md:pt-12 lg:pt-14 px-4 sm:px-6">
           <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 md:gap-4">
             {/* Card kiri: About Fradium Web3 Security */}
-            <motion.div className="group relative min-h-[300px] sm:min-h-[320px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 p-3 pr-28 sm:p-4 sm:pr-24 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] fraud-detection-hover card-entrance stagger-1" initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, ease: "easeOut" }}>
+            <motion.div
+              className="group relative min-h-[300px] sm:min-h-[320px] md:min-h-[320px] lg:min-h-[420px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 p-3 pr-28 sm:p-4 sm:pr-24 md:p-8 lg:p-10 lg:pr-[280px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] fraud-detection-hover card-entrance stagger-1"
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              whileHover={{
+                y: -10,
+                scale: 1.05,
+                transition: { duration: 0.4, ease: "easeOut" },
+              }}>
               {/* Glow effect overlay */}
               <div className="fraud-glow"></div>
 
@@ -483,7 +435,7 @@ const Home = React.memo(() => {
                 <p className="max-w-[160px] sm:max-w-[250px] md:max-w-md lg:max-w-lg text-xs sm:text-sm md:text-sm font-normal text-white/75 leading-relaxed">With Fradium, you can easily analyse wallet addresses before making any interaction. Our mission is simple, to help you identify risks, prevent fraud, and navigate the blockchain ecosystem with confidence.</p>
               </div>
               {/* Bento artwork (positioned below button on mobile, right top on desktop) */}
-              <div className="absolute right-[-35px] top-[50px] sm:right-[-15px] sm:top-[60px] md:right-[-50px] md:top-[30px] lg:top-[80px] w-[200px] sm:w-[200px] md:w-[280px] lg:w-[320px] pointer-events-none select-none floating-slow upper-image-hover">
+              <div className="absolute right-[-35px] top-[50px] sm:right-[-15px] sm:top-[60px] md:right-[-50px] md:top-[30px] lg:top-[80px] w-[200px] sm:w-[200px] md:w-[280px] lg:w-[320px] pointer-events-none select-none floating-slow fraud-bg-hover">
                 <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/about-fradiums.webp" alt="Fradium Bento" className="w-full h-auto object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.45)]" decoding="async" loading="lazy" draggable={false} />
               </div>
               {/* Hover glow highlight */}
@@ -496,7 +448,7 @@ const Home = React.memo(() => {
               <div className="fraud-glow"></div>
 
               {/* Background image */}
-              <div className="absolute inset-0 z-0 upper-image-hover">
+              <div className="absolute inset-0 z-0 fraud-bg-hover">
                 <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/frame-fraud-detection.webp" alt="Fraud Detection" className="w-full h-full object-cover" draggable={false} />
               </div>
 
@@ -565,7 +517,16 @@ const Home = React.memo(() => {
           <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-12 md:gap-4">
             {/* Kolom kiri (panjang) */}
             <div className="md:col-span-5">
-              <motion.div className="group relative min-h-[320px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[735px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 pt-3 sm:pt-4 md:pt-8 pl-3 sm:pl-4 pr-3 sm:pr-4 pb-2 sm:pb-3 md:pb-4 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]" initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}>
+              <motion.div
+                className="group relative min-h-[320px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[735px] overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#000000]/60 pt-3 sm:pt-4 md:pt-8 pl-3 sm:pl-4 pr-3 sm:pr-4 pb-2 sm:pb-3 md:pb-4 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]"
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+                whileHover={{
+                  y: -8,
+                  scale: 1.02,
+                  transition: { duration: 0.3, ease: "easeOut" },
+                }}>
                 {/* Header center: logo + title */}
                 <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
                   <img src={LOGO_IMG} alt="Fradium" className="h-5 w-5 sm:h-6 sm:w-6 md:h-10 md:w-10 select-none" />
@@ -599,7 +560,7 @@ const Home = React.memo(() => {
                 </div>
 
                 {/* Background image - positioned from description text */}
-                <div className="absolute inset-x-0 top-[70px] sm:top-[80px] md:top-[90px] bottom-0 z-0 upper-image-hover">
+                <div className="absolute inset-x-0 top-[70px] sm:top-[80px] md:top-[90px] bottom-0 z-0">
                   <img src={HOW_IT_WORKS_IMG} alt="How it works illustration" decoding="async" loading="lazy" draggable={false} className="w-full h-full object-cover rounded-2xl" />
                 </div>
 
@@ -692,9 +653,9 @@ const Home = React.memo(() => {
               {/* Row pertama: dua kartu sejajar */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
                 {/* Kartu kiri - Extension */}
-                <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-2 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+                <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-2 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] card-hover">
                   {/* Background image - half card size with padding */}
-                  <div className="relative z-0 mb-6 upper-image-hover">
+                  <div className="relative z-0 mb-6">
                     <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/extensions.webp" alt="Extension" className="w-full h-[120px] md:h-[140px] lg:h-[199px] object-cover rounded-lg" draggable={false} />
                   </div>
 
@@ -703,7 +664,13 @@ const Home = React.memo(() => {
                     <h3 className="text-xl md:text-2xl font-medium text-white mb-3">Fradium Wallet</h3>
                     <div className="flex items-start justify-between">
                       <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Safeguards your assets by scanningevery transaction in real time.</p>
-                      <a href="https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp" target="_blank" rel="noreferrer" aria-label="Open Fradium Extension in Chrome Web Store" className="w-12 h-12 bg-white/5 border border-gray-600 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-white/10 transition-colors">
+                      <a
+                        href="https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp"
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="Open Fradium Extension in Chrome Web Store"
+                        className="w-12 h-12 bg-white/5 border border-gray-600 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-white/10 transition-colors"
+                      >
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7V17" />
                         </svg>
@@ -712,9 +679,9 @@ const Home = React.memo(() => {
                   </div>
                 </div>
                 {/* Kartu kanan - Fradium Wallet */}
-                <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)]">
+                <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] card-hover">
                   {/* Background image */}
-                  <div className="absolute inset-0 z-0 upper-image-hover">
+                  <div className="absolute inset-0 z-0">
                     <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-wallets.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
                   </div>
 
@@ -730,9 +697,9 @@ const Home = React.memo(() => {
               </div>
 
               {/* Row kedua: satu kartu memanjang */}
-              <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px]">
+              <div className="group relative min-h-[280px] md:min-h-[320px] lg:min-h-[360px] overflow-hidden rounded-[20px] border border-white/10 bg-[#000000]/60 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.40)] backdrop-blur-[2px] card-hover">
                 {/* Background image - positioned at top with controlled height */}
-                <div className="absolute p-2 inset-x-0 top-0 z-0 h-[180px] md:h-[200px] lg:h-[220px] upper-image-hover">
+                <div className="absolute p-2 inset-x-0 top-0 z-0 h-[180px] md:h-[200px] lg:h-[220px]">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/community-card.webp" alt="Community" className="w-full h-full object-cover" draggable={false} />
                 </div>
 
@@ -766,104 +733,118 @@ const Home = React.memo(() => {
           <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
         </div>
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
-          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <div className="text-center mb-12 sm:mb-16 md:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6">Our Product</h2>
             <p className="mx-auto max-w-4xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about hidden risks.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-6">
             {/* Card 1: Fradium Paylink */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
-              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-paylink.webp" alt="Fradium Paylink" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <div className="flex items-end justify-between">
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
                   <div>
-                    <div className="text-white text-[18px] font-medium">Fradium Paylink</div>
-                    <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                    <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Paylink</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
                 </div>
               </div>
             </MagicBento>
+
             {/* Card 2: Fradium Escrow */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
-              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-escrow.webp" alt="Fradium Escrow" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <div className="flex items-end justify-between">
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
                   <div>
-                    <div className="text-white text-[18px] font-medium">Fradium Escrow</div>
-                    <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                    <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Escrow</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
                 </div>
               </div>
             </MagicBento>
+
             {/* Card 3: Fradium Wallet */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
-              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] mb-5 overflow-hidden relative">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradiums-wallet.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <div className="flex items-end justify-between">
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
                   <div>
-                    <div className="text-white text-[18px] font-medium">Fradium Wallet</div>
-                    <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                    <div className="text-white text-xl sm:text-2xl md:text-3xl font-light">Fradium Wallet</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
                 </div>
               </div>
             </MagicBento>
+
             {/* Card 4: Fradium Extension */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
-              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="132, 0, 255"
+            >
+              <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-1 sm:p-2 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="w-full h-[220px] md:h-[260px] rounded-[14px]  mb-5 overflow-hidden relative">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-extension.webp" alt="Fradium Extension" className="w-full h-full object-cover" draggable={false} />
                 </div>
-                <div className="flex items-end justify-between">
+                <div className="flex items-center justify-between px-6 my-4 sm:my-5 md:my-6">
                   <div>
-                    <div className="text-white text-[18px] font-medium">Fradium Extension</div>
-                    <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
+                    <div className="text-white text-lg sm:text-xl md:text-3xl font-light">Fradium Extension</div>
+                    <div className="text-white/70 text-sm sm:text-base md:text-lg font-light leading-relaxed mt-2">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full border border-white/25 text-white/90 text-sm sm:text-base font-medium hover:bg-white/10 transition-colors whitespace-nowrap">Try Now</button>
                 </div>
               </div>
             </MagicBento>
-          </div>
-        </div>
-      </div>
-
-      {/* Ecosystem Section */}
-      <div className="relative mx-auto min-h-[400px] md:min-h-[500px] overflow-hidden bg-[#000510]">
-        <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14] to-[#000510]"></div>
-        </div>
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
-          <div className="text-center mb-12 sm:mb-16 md:mb-20">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6">Ecosystem</h2>
-            <p className="mx-auto max-w-4xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">Trusted by leading projects and partners in the blockchain ecosystem</p>
-          </div>
-
-          {/* Scrolling ecosystem cards */}
-          <div className="relative overflow-hidden">
-            {/* Fade blur effects - positioned at carousel boundaries */}
-            <div className="ecosystem-fade-left"></div>
-            <div className="ecosystem-fade-right"></div>
-            <div className="ecosystem-scroll">
-              {/* Dynamic ecosystem cards - fills screen based on data length */}
-              <div className="flex gap-8 sm:gap-10 md:gap-12 flex-shrink-0">
-                {/* Render multiple sets to ensure screen is filled */}
-                {Array.from({ length: Math.ceil(8 / ECOSYSTEM_DATA.length) }, (_, setIndex) =>
-                  ECOSYSTEM_DATA.map((partner, index) => (
-                    <div key={`set-${setIndex}-${index}`} className="w-[150px] sm:w-[160px] md:w-[180px] h-[90px] sm:h-[100px] md:h-[110px] flex items-center justify-center flex-shrink-0">
-                      <img src={partner.logo} alt={partner.name} className="max-w-[95%] max-h-[90%] object-contain opacity-80 hover:opacity-100 transition-opacity duration-300 rounded-lg" draggable={false} />
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -896,4 +877,4 @@ const Home = React.memo(() => {
   );
 });
 
-export default Home;
+export default Home;  
