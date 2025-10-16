@@ -150,9 +150,9 @@ const ProductsPaylink = () => {
   // Layout desktop
   return (
     <div className="min-h-screen bg-[#000510] text-white relative overflow-hidden flex flex-col">
-      {/* Background layer - starts below navbar */}
-      <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
-        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
+      {/* Background layer - starts from bottom with natural height (no stretch) */}
+      <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -232,18 +232,15 @@ const ProductsPaylink = () => {
           </div>
 
           {/* MacBook section */}
-          <div className="flex justify-center pt-8 items-center">
-            <div className="relative max-w-4xl w-full">
-              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/macbook-paylink.webp" alt="MacBook with Fradium Paylink" className="w-full h-auto max-h-[500px] object-contain mx-auto" draggable={false} />
-              {/* Video overlay for MacBook screen */}
+          <div className="relative z-10 flex justify-center items-center mt-8 px-3">
+            <div className="relative w-full max-w-xl">
+              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/macbook-wallet.webp" alt="MacBook with Fradium Escrow" className="w-full h-auto object-cover mx-auto" draggable={false} />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Video area positioned on MacBook screen */}
-                  <div className="absolute w-[83.7%] h-[54%] top-[23%] left-[8.15%] overflow-hidden rounded-[8px]">
-                    <video className="w-full h-full object-cover" autoPlay loop muted playsInline preload="metadata" poster="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/paylink-dashboard-poster.webp">
-                      <source src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/paylink-dashboard-demo.mp4" type="video/mp4" />
-                      {/* Fallback image if video doesn't load */}
-                      <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/paylink-dashboard-poster.webp" alt="Fradium Paylink Dashboard" className="w-full h-full object-cover" />
+                  <div className="absolute w-[83.7%] h-[54%] top-[23%] left-[8.15%] overflow-hidden rounded-[6px]">
+                    <video className="w-full h-full object-cover" autoPlay loop muted playsInline preload="metadata" poster="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp">
+                      <source src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-demo.mp4" type="video/mp4" />
+                      <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp" alt="Fradium Escrow Dashboard" className="w-full h-full object-cover" />
                     </video>
                   </div>
                 </div>
