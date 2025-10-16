@@ -41,7 +41,7 @@ import SimplePaymentLayout from "@/core/components/layouts/SimplePaymentLayout.j
 import AuthGuard from "@/core/components/auth/AuthGuard.jsx";
 
 // Pages
-import Home from "@/pages/home/Home.jsx";
+import HomePage from "@/pages/home/HomePage.jsx";
 import NotFoundPage from "@/pages/SEO/NotFoundPage.jsx";
 import ListReportPage from "@/pages/report/ListReportPage.jsx";
 import ReportPage from "@/pages/report/DetailReportPage.jsx";
@@ -149,15 +149,12 @@ function NProgressRouter() {
 function AnimatedRoutes() {
   const location = useLocation();
 
-  // Determine layout key - only animate when switching between different layouts
-  const layoutKey = location.pathname.startsWith("/wallet") ? "wallet" : location.pathname.startsWith("/escrow") ? "escrow" : "home";
-
   return (
     <AnimatePresence mode="wait">
       <Routes location={location}>
         {/* Home Routes */}
         <Route path="/" element={<HomeLayout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/balance" element={<BalancePage />} />
           <Route path="/reports" element={<ListReportPage />} />
           <Route path="/reports/create" element={<CreateReportPage />} />

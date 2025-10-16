@@ -273,16 +273,7 @@ function EscrowLayoutContent() {
     return () => window.removeEventListener("openManageNetworks", handleOpenManageNetworks);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0F1219] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingState type="spinner" size="lg" color="primary" />
-          <div className="text-white text-lg">Loading your escrow...</div>
-        </div>
-      </div>
-    );
-  }
+  // Note: keep all hooks above; render logic below to preserve hook order across renders
 
   // Menu configuration for escrow
   const menu = [
@@ -361,6 +352,17 @@ function EscrowLayoutContent() {
       checkForTradeInvitations();
     }
   }, [location.pathname]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0F1219] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingState type="spinner" size="lg" color="primary" />
+          <div className="text-white text-lg">Loading your escrow...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

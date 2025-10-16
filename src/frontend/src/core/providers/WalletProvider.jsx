@@ -383,6 +383,13 @@ export const WalletProvider = ({ children }) => {
     await Promise.all(TOKENS_CONFIG.map((token) => fetchTokenBalance(token)));
   }, [fetchTokenBalance]);
 
+  // Function to initialize balances (for pages that need them)
+  const initializeBalances = useCallback(async () => {
+    if (identity && Object.keys(balances).length === 0) {
+      await fetchAllBalances();
+    }
+  }, [identity, balances, fetchAllBalances]);
+
   // Function to refresh all balances
   const refreshAllBalances = useCallback(async () => {
     if (isRefreshingBalances) return; // Prevent multiple refresh calls
@@ -410,7 +417,7 @@ export const WalletProvider = ({ children }) => {
     const onBalanceUpdated = () => {
       try {
         refreshAllBalances();
-      } catch (_e) { }
+      } catch (_e) {}
     };
     window.addEventListener("balance-updated", onBalanceUpdated);
     return () => window.removeEventListener("balance-updated", onBalanceUpdated);
@@ -438,6 +445,20 @@ export const WalletProvider = ({ children }) => {
     const allTokenIds = TOKENS_CONFIG.map((token) => token.id);
     await Promise.all(allTokenIds.map((tokenId) => fetchTokenUSDPrice(tokenId)));
   }, [fetchTokenUSDPrice]);
+
+  // Function to initialize USD prices (for pages that need them)
+  const initializeUSDPrices = useCallback(async () => {
+    if (identity && Object.keys(usdPrices).length === 0) {
+      await fetchAllUSDPrices();
+    }
+  }, [identity, usdPrices, fetchAllUSDPrices]);
+
+  // Function to initialize both balances and USD prices (for wallet pages)
+  const initializeWalletData = useCallback(async () => {
+    if (identity) {
+      await Promise.all([initializeBalances(), initializeUSDPrices()]);
+    }
+  }, [identity, initializeBalances, initializeUSDPrices]);
 
   // Function to refresh all USD prices
   const refreshAllUSDPrices = useCallback(async () => {
@@ -473,8 +494,9 @@ export const WalletProvider = ({ children }) => {
   useEffect(() => {
     if (identity) {
       setIsLoading(true);
-      // Run all fetch operations in parallel to prevent blocking
-      Promise.all([fetchAddresses(), fetchAllBalances(), fetchAllUSDPrices()])
+      // Only fetch addresses by default, not balances or USD prices
+      // Balances and USD prices should be fetched only when explicitly needed (e.g., in wallet pages)
+      Promise.all([fetchAddresses()])
         .then(() => {
           setIsLoading(false);
         })
@@ -513,7 +535,7 @@ export const WalletProvider = ({ children }) => {
       });
       setAddressesReady(false);
     }
-  }, [identity, fetchAllBalances, fetchAddresses, fetchAllUSDPrices]);
+  }, [identity, fetchAddresses]);
 
   // Clear addresses and balance cache when user changes (principal changes)
   useEffect(() => {
@@ -606,6 +628,7 @@ export const WalletProvider = ({ children }) => {
       balanceErrors,
       isRefreshingBalances,
       fetchAllBalances,
+      initializeBalances,
       refreshAllBalances,
       // USD Price related
       usdPrices,
@@ -613,11 +636,14 @@ export const WalletProvider = ({ children }) => {
       usdPriceErrors,
       isRefreshingPrices,
       fetchAllUSDPrices,
+      initializeUSDPrices,
       refreshAllUSDPrices,
+      // Combined initialization
+      initializeWalletData,
       // Cache management
       clearBalanceCacheManual,
     }),
-    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, calculateNetworkValue, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, refreshAllUSDPrices, clearBalanceCacheManual]
+    [isLoading, userWallet, isCreatingWallet, addAddressToWallet, network, hideBalance, calculateNetworkValue, getNetworkValue, networkFilters, updateNetworkFilters, hasConfirmedWallet, addresses, addressesLoading, fetchAddresses, getAddressesLoadingState, balances, balanceLoading, balanceErrors, isRefreshingBalances, fetchAllBalances, initializeBalances, refreshAllBalances, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, fetchAllUSDPrices, initializeUSDPrices, refreshAllUSDPrices, initializeWalletData, clearBalanceCacheManual]
   );
 
   return <WalletContext.Provider value={walletContextValue}>{children}</WalletContext.Provider>;

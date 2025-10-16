@@ -37,7 +37,7 @@ function WalletLayoutContent() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters, addresses } = useWallet();
+  const { isLoading, isCreatingWallet, network, setNetwork, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, getNetworkValue, networkFilters, updateNetworkFilters, addresses, initializeWalletData } = useWallet();
   const [showManageNetworks, setShowManageNetworks] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
 
@@ -219,6 +219,11 @@ function WalletLayoutContent() {
     window.addEventListener("openManageNetworks", handleOpenManageNetworks);
     return () => window.removeEventListener("openManageNetworks", handleOpenManageNetworks);
   }, []);
+
+  // Initialize wallet data when WalletLayout mounts (for wallet pages that need balances and prices)
+  React.useEffect(() => {
+    initializeWalletData();
+  }, [initializeWalletData]);
 
   // Remove auto-save to prevent conflicts with manual save
 

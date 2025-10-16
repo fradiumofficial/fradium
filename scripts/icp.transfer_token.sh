@@ -19,6 +19,8 @@ AMOUNT_E8S=$(echo "$AMOUNT_E8S" | cut -d. -f1)
 
 echo "Transferring ${AMOUNT_IN_ICP} ICP (${AMOUNT_E8S} e8s) to ${DESTINATION_ADDRESS}..."
 
+echo "CANISTER_ID_ICP_LEDGER: ${CANISTER_ID_ICP_LEDGER}"
+
 # Execute icrc1_transfer
 dfx canister call "${CANISTER_ID_ICP_LEDGER}" icrc1_transfer "(
     record {

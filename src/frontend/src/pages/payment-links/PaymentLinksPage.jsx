@@ -5,18 +5,8 @@ import toast from "react-hot-toast";
 import { Copy, CheckCircle2, AlertCircle, Info, ExternalLink, X, Clock, Ban, Loader2, Download, Share2, ChevronDown } from "lucide-react";
 import QRCodeStyling from "qr-code-styling";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/core/components/ui/DropdownMenu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/core/components/ui/Tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/core/components/ui/Tooltip";
 import { Checkbox } from "@/core/components/ui/Checkbox";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig";
 import ButtonYellow from "@/core/components/ButtonYellow";
@@ -24,7 +14,7 @@ import ButtonYellow from "@/core/components/ButtonYellow";
 const PaymentLinksPage = () => {
   const location = useLocation();
 
-  const isManagePage = location.pathname.includes('/manage');
+  const isManagePage = location.pathname.includes("/manage");
   const activeTab = isManagePage ? "manage" : "create";
 
   const [amount, setAmount] = useState("");
@@ -43,18 +33,12 @@ const PaymentLinksPage = () => {
   const qrCode = useRef(null);
 
   // Map TOKENS_CONFIG to payment link format
-  const tokenOptions = TOKENS_CONFIG.map(token => ({
-    value: token.symbol === "BTC" ? "BTC" :
-      token.symbol === "ETH" ? "ETH" :
-        token.symbol === "SOL" ? "SOL" :
-          token.symbol === "ICP" ? "ICP" :
-            token.symbol === "FRADIUM" ? "Fradium" :
-              token.symbol === "ckBTC" ? "ckBTC" :
-                token.symbol === "ckETH" ? "ckETH" : token.symbol,
+  const tokenOptions = TOKENS_CONFIG.map((token) => ({
+    value: token.symbol === "BTC" ? "BTC" : token.symbol === "ETH" ? "ETH" : token.symbol === "SOL" ? "SOL" : token.symbol === "ICP" ? "ICP" : token.symbol === "FRADIUM" ? "Fradium" : token.symbol === "ckBTC" ? "ckBTC" : token.symbol === "ckETH" ? "ckETH" : token.symbol,
     label: token.name,
     symbol: token.symbol,
     decimals: token.decimals || 8,
-    imageUrl: token.imageUrl
+    imageUrl: token.imageUrl,
   }));
 
   const durationOptions = [
@@ -63,7 +47,7 @@ const PaymentLinksPage = () => {
     { value: "12", label: "12 hours" },
     { value: "24", label: "24 hours" },
     { value: "48", label: "48 hours" },
-    { value: "168", label: "7 days" }
+    { value: "168", label: "7 days" },
   ];
 
   useEffect(() => {
@@ -99,7 +83,6 @@ const PaymentLinksPage = () => {
       qrRef.current.innerHTML = "";
       qrCode.current.append(qrRef.current);
     }
-
   }, [generatedLink, showSuccessModal]);
 
   const loadMyLinks = async () => {
@@ -119,13 +102,13 @@ const PaymentLinksPage = () => {
   };
 
   const getTokenDecimals = () => {
-    const token = tokenOptions.find(t => t.value === tokenType);
+    const token = tokenOptions.find((t) => t.value === tokenType);
     return token ? token.decimals : 8;
   };
 
   const generateRandomSuffix = (length = 7) => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -176,7 +159,7 @@ const PaymentLinksPage = () => {
         amount: amountInSmallestUnit,
         duration_nanos: duration_nanos,
         token: { [tokenType]: null },
-        custom_id: finalId ? [finalId] : []
+        custom_id: finalId ? [finalId] : [],
       });
 
       if ("Ok" in result) {
@@ -241,12 +224,12 @@ const PaymentLinksPage = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Payment Link',
+          title: "Payment Link",
           text: `Pay ${amount} ${getTokenLabel(tokenType)}`,
-          url: generatedLink
+          url: generatedLink,
         });
       } catch (err) {
-        if (err.name !== 'AbortError') {
+        if (err.name !== "AbortError") {
           copyToClipboard(generatedLink);
         }
       }
@@ -261,19 +244,19 @@ const PaymentLinksPage = () => {
   };
 
   const getTokenLabel = (token) => {
-    const t = tokenOptions.find(opt => opt.value === token);
+    const t = tokenOptions.find((opt) => opt.value === token);
     return t ? t.label : token;
   };
 
   const getTokenSymbol = (token) => {
-    const t = tokenOptions.find(opt => opt.value === token);
+    const t = tokenOptions.find((opt) => opt.value === token);
     return t ? t.symbol : token;
   };
 
   const formatAmount = (amount, token) => {
-    const t = tokenOptions.find(opt => opt.value === token);
+    const t = tokenOptions.find((opt) => opt.value === token);
     const decimals = t ? t.decimals : 8;
-    return (Number(amount) / (10 ** decimals)).toFixed(decimals > 8 ? 6 : 8);
+    return (Number(amount) / 10 ** decimals).toFixed(decimals > 8 ? 6 : 8);
   };
 
   const formatDate = (nanos) => {
@@ -283,21 +266,31 @@ const PaymentLinksPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Active": return "text-[#FFE865] bg-[#FFE865]/10";
-      case "Completed": return "text-blue-400 bg-blue-400/10";
-      case "Expired": return "text-amber-400 bg-amber-400/10";
-      case "Cancelled": return "text-red-400 bg-red-400/10";
-      default: return "text-white/70 bg-white/5";
+      case "Active":
+        return "text-[#FFE865] bg-[#FFE865]/10";
+      case "Completed":
+        return "text-blue-400 bg-blue-400/10";
+      case "Expired":
+        return "text-amber-400 bg-amber-400/10";
+      case "Cancelled":
+        return "text-red-400 bg-red-400/10";
+      default:
+        return "text-white/70 bg-white/5";
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "Active": return <Clock className="w-4 h-4" />;
-      case "Completed": return <CheckCircle2 className="w-4 h-4" />;
-      case "Expired": return <AlertCircle className="w-4 h-4" />;
-      case "Cancelled": return <Ban className="w-4 h-4" />;
-      default: return null;
+      case "Active":
+        return <Clock className="w-4 h-4" />;
+      case "Completed":
+        return <CheckCircle2 className="w-4 h-4" />;
+      case "Expired":
+        return <AlertCircle className="w-4 h-4" />;
+      case "Cancelled":
+        return <Ban className="w-4 h-4" />;
+      default:
+        return null;
     }
   };
 
@@ -305,8 +298,8 @@ const PaymentLinksPage = () => {
     return Object.keys(status)[0];
   };
 
-  const selectedToken = tokenOptions.find(t => t.value === tokenType);
-  const selectedDurationLabel = durationOptions.find(d => d.value === duration)?.label || duration;
+  const selectedToken = tokenOptions.find((t) => t.value === tokenType);
+  const selectedDurationLabel = durationOptions.find((d) => d.value === duration)?.label || duration;
 
   return (
     <TooltipProvider>
@@ -321,34 +314,18 @@ const PaymentLinksPage = () => {
         <div>
           <AnimatePresence mode="wait">
             {activeTab === "create" ? (
-              <motion.div
-                key="create"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-4"
-              >
+              <motion.div key="create" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="space-y-4">
                 {/* Form Card */}
                 <div className="bg-[#0A0D14] border border-white/10 rounded-3xl p-8">
                   <div className="space-y-6">
                     {/* Token Type Dropdown */}
                     <div>
-                      <label className="block text-base font-medium text-white mb-3">
-                        Token Type
-                      </label>
+                      <label className="block text-base font-medium text-white mb-3">Token Type</label>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            disabled={isLoading}
-                            className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white text-left focus:outline-none focus:border-[#FFE865] disabled:opacity-50 transition-all flex items-center justify-between hover:border-white/20"
-                          >
+                          <button disabled={isLoading} className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white text-left focus:outline-none focus:border-[#FFE865] disabled:opacity-50 transition-all flex items-center justify-between hover:border-white/20">
                             <div className="flex items-center gap-3">
-                              <img
-                                src={selectedToken?.imageUrl}
-                                alt={selectedToken?.label}
-                                className="w-7 h-7 rounded-full"
-                              />
+                              <img src={selectedToken?.imageUrl} alt={selectedToken?.label} className="w-7 h-7 rounded-full" />
                               <div className="flex flex-col">
                                 <span className="text-white font-medium">{selectedToken?.label}</span>
                                 <span className="text-white/50 text-sm">{selectedToken?.symbol}</span>
@@ -357,22 +334,11 @@ const PaymentLinksPage = () => {
                             <ChevronDown className="w-5 h-5 text-white/50" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl"
-                          align="start"
-                        >
+                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto" align="start">
                           {tokenOptions.map((token) => (
-                            <DropdownMenuItem
-                              key={token.value}
-                              onClick={() => setTokenType(token.value)}
-                              className="text-white hover:bg-white/5 cursor-pointer px-4 py-3 focus:bg-white/5"
-                            >
+                            <DropdownMenuItem key={token.value} onClick={() => setTokenType(token.value)} className="text-white hover:bg-white/5 cursor-pointer px-4 py-3 focus:bg-white/5">
                               <div className="flex items-center gap-3">
-                                <img
-                                  src={token.imageUrl}
-                                  alt={token.label}
-                                  className="w-8 h-8 rounded-full"
-                                />
+                                <img src={token.imageUrl} alt={token.label} className="w-8 h-8 rounded-full" />
                                 <div className="flex flex-col">
                                   <span className="font-medium">{token.label}</span>
                                   <span className="text-white/50 text-xs">{token.symbol}</span>
@@ -386,52 +352,27 @@ const PaymentLinksPage = () => {
 
                     {/* Amount */}
                     <div>
-                      <label className="block text-base font-medium text-white mb-3">
-                        Amount
-                      </label>
+                      <label className="block text-base font-medium text-white mb-3">Amount</label>
                       <div className="relative">
-                        <input
-                          type="number"
-                          step="0.00000001"
-                          min="0"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          placeholder="0.00"
-                          disabled={isLoading}
-                          className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFE865] disabled:opacity-50 transition-all pr-20"
-                        />
-                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-white/50 font-medium">
-                          {selectedToken?.symbol}
-                        </span>
+                        <input type="number" step="0.00000001" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" disabled={isLoading} className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFE865] disabled:opacity-50 transition-all pr-20" />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-white/50 font-medium">{selectedToken?.symbol}</span>
                       </div>
                       <p className="text-sm text-white/50 mt-2">Enter the amount you want to receive</p>
                     </div>
 
                     {/* Expiration Duration Dropdown */}
                     <div>
-                      <label className="block text-base font-medium text-white mb-3">
-                        Expiration Duration
-                      </label>
+                      <label className="block text-base font-medium text-white mb-3">Expiration Duration</label>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            disabled={isLoading}
-                            className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white text-left focus:outline-none focus:border-[#FFE865] disabled:opacity-50 transition-all flex items-center justify-between hover:border-white/20"
-                          >
+                          <button disabled={isLoading} className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white text-left focus:outline-none focus:border-[#FFE865] disabled:opacity-50 transition-all flex items-center justify-between hover:border-white/20">
                             <span className="text-white/70">{selectedDurationLabel}</span>
                             <ChevronDown className="w-5 h-5 text-white/50" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl"
-                          align="start"
-                        >
+                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto" align="start">
                           {durationOptions.map((option) => (
-                            <DropdownMenuItem
-                              key={option.value}
-                              onClick={() => setDuration(option.value)}
-                              className="text-white hover:bg-white/5 cursor-pointer px-4 py-3 focus:bg-white/5"
-                            >
+                            <DropdownMenuItem key={option.value} onClick={() => setDuration(option.value)} className="text-white hover:bg-white/5 cursor-pointer px-4 py-3 focus:bg-white/5">
                               {option.label}
                             </DropdownMenuItem>
                           ))}
@@ -444,12 +385,7 @@ const PaymentLinksPage = () => {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <label className="flex items-center gap-3 text-base font-medium text-white cursor-pointer">
-                          <Checkbox
-                            checked={useCustomId}
-                            onCheckedChange={setUseCustomId}
-                            disabled={isLoading}
-                            className="w-5 h-5"
-                          />
+                          <Checkbox checked={useCustomId} onCheckedChange={setUseCustomId} disabled={isLoading} className="w-5 h-5" />
                           Use Custom ID
                         </label>
                         <Tooltip>
@@ -464,31 +400,13 @@ const PaymentLinksPage = () => {
 
                       <AnimatePresence>
                         {useCustomId && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="space-y-2"
-                          >
-                            <input
-                              type="text"
-                              value={customId}
-                              onChange={(e) => setCustomId(e.target.value)}
-                              placeholder="my-store"
-                              disabled={isLoading}
-                              className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFE865]"
-                              minLength={8}
-                              maxLength={32}
-                            />
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
+                            <input type="text" value={customId} onChange={(e) => setCustomId(e.target.value)} placeholder="my-store" disabled={isLoading} className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white placeholder:text-white/50 focus:outline-none focus:border-[#FFE865]" minLength={8} maxLength={32} />
                           </motion.div>
                         )}
                       </AnimatePresence>
 
-                      {!useCustomId && (
-                        <p className="text-sm text-white/50 mt-2">
-                          A random secure ID will be generated automatically
-                        </p>
-                      )}
+                      {!useCustomId && <p className="text-sm text-white/50 mt-2">A random secure ID will be generated automatically</p>}
                     </div>
 
                     {/* Generate Button - Using ButtonYellow */}
@@ -505,8 +423,7 @@ const PaymentLinksPage = () => {
                             <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" />
                           </svg>
                         )
-                      }
-                    >
+                      }>
                       Generate Payment Link
                     </ButtonYellow>
                   </div>
@@ -517,21 +434,12 @@ const PaymentLinksPage = () => {
                   <Info className="w-5 h-5 text-[#EAD8A9] mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-base font-medium text-[#EAD8A9] mb-1">Rate Limiting</p>
-                    <p className="text-sm text-[#EAD8A9]/80">
-                      You can create up to 10 payment links per hour. Links cannot be modified after creation.
-                    </p>
+                    <p className="text-sm text-[#EAD8A9]/80">You can create up to 10 payment links per hour. Links cannot be modified after creation.</p>
                   </div>
                 </div>
               </motion.div>
             ) : (
-              <motion.div
-                key="manage"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="flex flex-col divide-y divide-[#23272F]"
-              >
+              <motion.div key="manage" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="flex flex-col divide-y divide-[#23272F]">
                 {isLoadingLinks ? (
                   <div className="flex items-center justify-center py-12 bg-[#23272F] rounded-2xl border border-white/10">
                     <Loader2 className="w-8 h-8 animate-spin text-[#FFE865]" />
@@ -540,9 +448,7 @@ const PaymentLinksPage = () => {
                   <div className="bg-[#23272F] rounded-2xl border border-white/10 p-12 text-center">
                     <AlertCircle className="w-12 h-12 text-white/50 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-white mb-2">No Payment Links</h3>
-                    <p className="text-white/70 mb-6 text-sm">
-                      You haven't created any payment links yet
-                    </p>
+                    <p className="text-white/70 mb-6 text-sm">You haven't created any payment links yet</p>
                   </div>
                 ) : (
                   <AnimatePresence>
@@ -551,55 +457,28 @@ const PaymentLinksPage = () => {
                       const linkUrl = `${window.location.origin}/paylink/${link.id}`;
 
                       return (
-                        <motion.div
-                          key={link.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className="py-4 first:pt-0"
-                        >
+                        <motion.div key={link.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3, delay: index * 0.05 }} className="py-4 first:pt-0">
                           <div className="bg-[#23272F] rounded-2xl border border-white/10 p-4 hover:border-[#FFE865]/50 transition-colors">
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-sm font-semibold text-white font-mono truncate">
-                                    {link.id}
-                                  </h3>
-                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(status)}`}>
-                                    {status}
-                                  </span>
+                                  <h3 className="text-sm font-semibold text-white font-mono truncate">{link.id}</h3>
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(status)}`}>{status}</span>
                                 </div>
-                                <p className="text-xs text-white/70">
-                                  {formatDate(link.created_at)}
-                                </p>
+                                <p className="text-xs text-white/70">{formatDate(link.created_at)}</p>
                               </div>
 
                               <div className="flex gap-1">
                                 {status === "Active" && (
-                                  <button
-                                    onClick={() => handleCancelLink(link.id)}
-                                    className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                                    title="Cancel"
-                                  >
+                                  <button onClick={() => handleCancelLink(link.id)} className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Cancel">
                                     <X className="w-4 h-4" />
                                   </button>
                                 )}
-                                <button
-                                  onClick={() => copyToClipboard(linkUrl)}
-                                  className="p-1.5 text-white hover:bg-white/5 rounded-lg transition-colors"
-                                  title="Copy"
-                                >
+                                <button onClick={() => copyToClipboard(linkUrl)} className="p-1.5 text-white hover:bg-white/5 rounded-lg transition-colors" title="Copy">
                                   <Copy className="w-4 h-4" />
                                 </button>
 
-                                <a
-                                  href={linkUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1.5 text-white hover:bg-white/5 rounded-lg transition-colors"
-                                  title="Open"
-                                >
+                                <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-white hover:bg-white/5 rounded-lg transition-colors" title="Open">
                                   <ExternalLink className="w-4 h-4" />
                                 </a>
                               </div>
@@ -614,9 +493,7 @@ const PaymentLinksPage = () => {
                               </div>
                               <div>
                                 <p className="text-white/70 mb-0.5">Expires</p>
-                                <p className="text-white font-semibold">
-                                  {formatDate(link.expires_at)}
-                                </p>
+                                <p className="text-white font-semibold">{formatDate(link.expires_at)}</p>
                               </div>
                             </div>
                           </div>
@@ -633,25 +510,12 @@ const PaymentLinksPage = () => {
         {/* Success Modal */}
         <AnimatePresence>
           {showSuccessModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                className="bg-[#23272F] rounded-2xl border border-white/10 shadow-2xl max-w-md w-full"
-              >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#23272F] rounded-2xl border border-white/10 shadow-2xl max-w-md w-full">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white">Payment Link Created!</h2>
-                    <button
-                      onClick={handleCloseModal}
-                      className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-                    >
+                    <button onClick={handleCloseModal} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
                       <X className="w-5 h-5 text-white" />
                     </button>
                   </div>
@@ -669,20 +533,10 @@ const PaymentLinksPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white/70 mb-2">
-                      Link for Payment
-                    </label>
+                    <label className="block text-sm font-medium text-white/70 mb-2">Link for Payment</label>
                     <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        readOnly
-                        value={generatedLink}
-                        className="w-full pl-4 pr-12 py-3 bg-white/5 border border-white/10 rounded-full text-white text-sm font-mono truncate"
-                      />
-                      <button
-                        onClick={() => copyToClipboard(generatedLink)}
-                        className="absolute right-1 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors"
-                      >
+                      <input type="text" readOnly value={generatedLink} className="w-full pl-4 pr-12 py-3 bg-white/5 border border-white/10 rounded-full text-white text-sm font-mono truncate" />
+                      <button onClick={() => copyToClipboard(generatedLink)} className="absolute right-1 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors">
                         <Copy className="w-4 h-4 text-white" />
                       </button>
                     </div>
@@ -693,19 +547,14 @@ const PaymentLinksPage = () => {
                       className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold 
                py-3 px-6 rounded-full transition-all duration-200 ease-out 
                flex items-center justify-center gap-2 shadow-[inset_0_-2px_6px_rgba(255,255,255,0.1)] 
-               hover:shadow-[inset_0_-3px_8px_rgba(255,255,255,0.15)]"
-                    >
+               hover:shadow-[inset_0_-3px_8px_rgba(255,255,255,0.15)]">
                       Share Link
                     </button>
 
-                    <ButtonYellow
-                      onClick={handleCreateNewLink}
-                      className="flex-1"
-                    >
+                    <ButtonYellow onClick={handleCreateNewLink} className="flex-1">
                       Create New Link
                     </ButtonYellow>
                   </div>
-
                 </div>
               </motion.div>
             </motion.div>
