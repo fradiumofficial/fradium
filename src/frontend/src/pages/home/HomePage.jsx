@@ -804,7 +804,7 @@ const Home = React.memo(() => {
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
         </div>
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-12 sm:pt-20 md:pt-24 pb-14 sm:pb-20 md:pb-24">
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6">Our Product</h2>
             <p className="mx-auto max-w-4xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about hidden risks.</p>
@@ -813,7 +813,7 @@ const Home = React.memo(() => {
             {/* Card 1: Fradium Paylink */}
             <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+                <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-paylink.webp" alt="Fradium Paylink" className="w-full h-full object-cover" draggable={false} />
                 </div>
                 <div className="flex items-end justify-between">
@@ -821,14 +821,14 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Paylink</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
                 </div>
               </div>
             </MagicBento>
             {/* Card 2: Fradium Escrow */}
             <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+                <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-escrow.webp" alt="Fradium Escrow" className="w-full h-full object-cover" draggable={false} />
                 </div>
                 <div className="flex items-end justify-between">
@@ -836,14 +836,14 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Escrow</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
                 </div>
               </div>
             </MagicBento>
             {/* Card 3: Fradium Wallet */}
             <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+                <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradiums-wallet.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
                 </div>
                 <div className="flex items-end justify-between">
@@ -851,14 +851,14 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Wallet</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
                 </div>
               </div>
             </MagicBento>
             {/* Card 4: Fradium Extension */}
             <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="w-full h-[220px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
+                <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-extension.webp" alt="Fradium Extension" className="w-full h-full object-cover" draggable={false} />
                 </div>
                 <div className="flex items-end justify-between">
@@ -866,7 +866,7 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Extension</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-5 py-2 rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Try Now</button>
+                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
                 </div>
               </div>
             </MagicBento>
