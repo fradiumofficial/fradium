@@ -168,7 +168,7 @@ function AnimatedRoutes() {
             }
           />
           <Route path="/faucet" element={<FaucetPage />} />
-          <Route path="/products" element={<ProductsExtension />} />
+          <Route path="/products-extension" element={<ProductsExtension />} />
           <Route path="/products-wallet" element={<ProductsWallet />} />
           <Route path="/products-escrow" element={<ProductsEscrow />} />
           <Route path="/products-paylink" element={<ProductsPaylink />} />
