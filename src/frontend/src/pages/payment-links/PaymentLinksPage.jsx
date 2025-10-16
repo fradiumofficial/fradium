@@ -32,8 +32,8 @@ const PaymentLinksPage = () => {
   const qrRef = useRef(null);
   const qrCode = useRef(null);
 
-  // Map TOKENS_CONFIG to payment link format
-  const tokenOptions = TOKENS_CONFIG.map((token) => ({
+  // Map TOKENS_CONFIG to payment link format (exclude SNS tokens - not supported by backend variant)
+  const tokenOptions = TOKENS_CONFIG.filter((token) => token.type !== "sns").map((token) => ({
     value: token.symbol === "BTC" ? "BTC" : token.symbol === "ETH" ? "ETH" : token.symbol === "SOL" ? "SOL" : token.symbol === "ICP" ? "ICP" : token.symbol === "FRADIUM" ? "Fradium" : token.symbol === "ckBTC" ? "ckBTC" : token.symbol === "ckETH" ? "ckETH" : token.symbol,
     label: token.name,
     symbol: token.symbol,
@@ -144,6 +144,14 @@ const PaymentLinksPage = () => {
     setIsLoading(true);
 
     try {
+      // Safety guard: only allow tokens supported by backend variant
+      const supportedTokens = new Set(["BTC", "ETH", "SOL", "ICP", "Fradium", "ckBTC", "ckETH"]);
+      if (!supportedTokens.has(tokenType)) {
+        toast.error("Selected token is not supported for payment links.");
+        setIsLoading(false);
+        return;
+      }
+
       const decimals = getTokenDecimals();
       const amountInSmallestUnit = BigInt(Math.floor(parseFloat(amount) * 10 ** decimals));
       const durationHours = BigInt(duration);

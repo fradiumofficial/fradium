@@ -47,6 +47,10 @@ module {
   public type TokenCanisterInterface = actor {
     icrc2_transfer_from : shared TransferFromArgs -> async TransferFromResult;
   };
+  
+  // Generic factory to create an actor for arbitrary ICRC/SNS ledger canister
+  // Note: This requires dynamic actor creation via Principal, provided by caller of class
+  public type LedgerFactory = (Principal) -> TokenCanisterInterface;
 
   public type WalletInterface = actor {
     wallet_addresses : shared () -> async {
@@ -62,7 +66,8 @@ module {
     fradiumLedger: TokenCanisterInterface,
     ckBTCLedger: TokenCanisterInterface,
     ckETHLedger: TokenCanisterInterface,
-    wallet: WalletInterface
+    wallet: WalletInterface,
+    createLedgerActor: LedgerFactory
   ) {
     private let MAX_LINKS_PER_HOUR : Nat = 10;
     private let MIN_DURATION : Nat = 300_000_000_000; // 5 minutes
@@ -408,6 +413,10 @@ module {
         case (#Fradium) { await fradiumLedger.icrc2_transfer_from(transferArgs) };
         case (#ckBTC) { await ckBTCLedger.icrc2_transfer_from(transferArgs) };
         case (#ckETH) { await ckETHLedger.icrc2_transfer_from(transferArgs) };
+        case (#SNS(ledgerPrin)) {
+          let ledger = createLedgerActor(ledgerPrin);
+          await ledger.icrc2_transfer_from(transferArgs)
+        };
         case _ { return #Err("Invalid token type for ICRC payment") };
       };
 

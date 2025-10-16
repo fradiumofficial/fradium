@@ -11,12 +11,14 @@ import { ckbtc_ledger } from "declarations/ckbtc_ledger";
 import { cketh_ledger } from "declarations/cketh_ledger";
 import { wallet } from "declarations/wallet";
 import { Principal } from "@dfinity/principal";
-import ButtonGreen from "@/core/components/ButtonGreen.jsx";
+import ButtonPurple from "@/core/components/ButtonPurple.jsx";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { toast } from "react-toastify";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 import { formatAmount } from "@/core/lib/tokenUtils";
 import { useWallet } from "@/core/providers/WalletProvider";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
+import { ChevronDown } from "lucide-react";
 
 // Get backend canister ID from environment variable
 const backendCanisterId = process.env.CANISTER_ID_BACKEND;
@@ -441,22 +443,34 @@ export default function CreateEscrowPage() {
         return (
           <div className="space-y-5">
             <div>
-              <label className="block text-white/90 text-sm font-medium mb-3">You Give</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <AnimatePresence initial={false}>
-                  {tokenChoices.map((t, idx) => (
-                    <motion.button key={t.id} custom={idx} variants={dominoItem} initial="hidden" animate="visible" exit="exit" type="button" onClick={() => setTokenId(t.id)} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${tokenId === t.id ? "border-[#9BE4A0]/60 bg-white/10 ring-2 ring-[#9BE4A0]/20" : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"}`}>
-                      <img src={t.imageUrl} alt={t.label} className="w-7 h-7" />
-                      <div className="flex flex-col items-start flex-1">
-                        <span className="text-white text-sm font-medium leading-tight">{t.label.split("(")[0].trim()}</span>
-                        <span className="text-[#B0B6BE] text-xs leading-tight">{t.chain || "Multi-chain"}</span>
+              <label className="block text-base font-medium text-white mb-3">You Give</label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white text-left focus:outline-none focus:border-[#7C72FE] transition-all flex items-center justify-between hover:border-white/20">
+                    <div className="flex items-center gap-3">
+                      <img src={selected?.imageUrl} alt={selected?.label} className="w-7 h-7 rounded-full" />
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium">{selected?.label?.split("(")[0].trim()}</span>
+                        <span className="text-white/50 text-sm">{selected?.configId ? TOKENS_CONFIG.find((t) => t.id === selected.configId)?.symbol : tokenId}</span>
                       </div>
-
-                      {/* Selection highlight is handled by border/bg classes; no check icon */}
-                    </motion.button>
+                    </div>
+                    <ChevronDown className="w-5 h-5 text-white/50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto" align="start">
+                  {tokenChoices.map((t) => (
+                    <DropdownMenuItem key={t.id} onClick={() => setTokenId(t.id)} className="text-white hover:bg-white/5 cursor-pointer px-4 py-3 focus:bg-white/5">
+                      <div className="flex items-center gap-3">
+                        <img src={t.imageUrl} alt={t.label} className="w-8 h-8 rounded-full" />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{t.label.split("(")[0].trim()}</span>
+                          <span className="text-white/50 text-xs">{TOKENS_CONFIG.find((c) => c.id === t.configId)?.symbol || t.id}</span>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
                   ))}
-                </AnimatePresence>
-              </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div>
@@ -479,7 +493,7 @@ export default function CreateEscrowPage() {
                     min="0"
                   />
                   {amount && (
-                    <button type="button" className="text-xs font-medium text-[#9BE4A0] hover:text-white transition-colors" onClick={() => setAmount("")}>
+                    <button type="button" className="text-xs font-medium text-[#7C72FE] hover:text-white transition-colors" onClick={() => setAmount("")}>
                       CLEAR
                     </button>
                   )}
@@ -501,21 +515,35 @@ export default function CreateEscrowPage() {
                 <motion.div key="you-receive-section" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                   <div>
                     <label className="block text-white/90 text-sm font-medium mb-3">You Receive</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <AnimatePresence initial={false}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="w-full px-5 py-4 bg-transparent border border-white/10 rounded-2xl text-white text-left focus:outline-none focus:border-[#7C72FE] transition-all flex items-center justify-between hover:border-white/20">
+                          <div className="flex items-center gap-3">
+                            <img src={selectedTo?.imageUrl} alt={selectedTo?.label} className="w-7 h-7 rounded-full" />
+                            <div className="flex flex-col">
+                              <span className="text-white font-medium">{selectedTo?.label?.split("(")[0].trim()}</span>
+                              <span className="text-white/50 text-sm">{selectedTo?.configId ? TOKENS_CONFIG.find((t) => t.id === selectedTo.configId)?.symbol : tokenToId}</span>
+                            </div>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-white/50" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto" align="start">
                         {tokenChoices
                           .filter((t) => t.id !== tokenId)
-                          .map((t, idx) => (
-                            <motion.button key={t.id} custom={idx} variants={dominoItem} initial="hidden" animate="visible" exit="exit" type="button" onClick={() => setTokenToId(t.id)} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${tokenToId === t.id ? "border-[#9BE4A0]/60 bg-white/10 ring-2 ring-[#9BE4A0]/20" : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"}`}>
-                              <img src={t.imageUrl} alt={t.label} className="w-7 h-7" />
-                              <div className="flex flex-col items-start flex-1">
-                                <span className="text-white text-sm font-medium leading-tight">{t.label.split("(")[0].trim()}</span>
-                                <span className="text-[#B0B6BE] text-xs leading-tight">{t.chain || "Multi-chain"}</span>
+                          .map((t) => (
+                            <DropdownMenuItem key={t.id} onClick={() => setTokenToId(t.id)} className="text-white hover:bg-white/5 cursor-pointer px-4 py-3 focus:bg-white/5">
+                              <div className="flex items-center gap-3">
+                                <img src={t.imageUrl} alt={t.label} className="w-8 h-8 rounded-full" />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{t.label.split("(")[0].trim()}</span>
+                                  <span className="text-white/50 text-xs">{TOKENS_CONFIG.find((c) => c.id === t.configId)?.symbol || t.id}</span>
+                                </div>
                               </div>
-                            </motion.button>
+                            </DropdownMenuItem>
                           ))}
-                      </AnimatePresence>
-                    </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <div>
@@ -543,7 +571,7 @@ export default function CreateEscrowPage() {
                           min="0"
                         />
                         {amountTo && (
-                          <button type="button" className="text-xs font-medium text-[#9BE4A0] hover:text-white transition-colors" onClick={() => setAmountTo("")}>
+                          <button type="button" className="text-xs font-medium text-[#7C72FE] hover:text-white transition-colors" onClick={() => setAmountTo("")}>
                             CLEAR
                           </button>
                         )}
@@ -562,7 +590,7 @@ export default function CreateEscrowPage() {
                           const pct = (diff / giveUSD) * 100;
                           const positive = diff >= 0;
                           return (
-                            <span className={positive ? "text-[#9BE4A0]" : "text-red-400"}>
+                            <span className={positive ? "text-[#7C72FE]" : "text-red-400"}>
                               {positive ? "+" : ""}
                               {diff.toFixed(2)} USD ({pct.toFixed(2)}%)
                             </span>
@@ -591,7 +619,7 @@ export default function CreateEscrowPage() {
                   if (errors.recipient) setErrors({ ...errors, recipient: "" });
                 }}
                 placeholder="aaaaa-aa... (Leave empty for open trade)"
-                className={`w-full bg-white/5 border ${errors.recipient ? "border-red-400" : "border-white/10"} focus:bg-white/10 focus:border-[#9BE4A0] text-white rounded-xl px-4 py-3 outline-none placeholder:text-white/40 font-mono text-sm transition-colors`}
+                className={`w-full bg-white/5 border ${errors.recipient ? "border-red-400" : "border-white/10"} focus:bg-white/10 focus:border-[#7C72FE] text-white rounded-xl px-4 py-3 outline-none placeholder:text-white/40 font-mono text-sm transition-colors`}
               />
               {errors.recipient && <p className="text-red-400 text-xs mt-1">{errors.recipient}</p>}
               <p className="text-[#B0B6BE] text-xs mt-2">{recipient.trim() ? "Escrow will wait for this specific user to accept" : "Escrow will be open for any user to accept"}</p>
@@ -604,7 +632,7 @@ export default function CreateEscrowPage() {
               <label className="block text-white/90 text-sm font-medium mb-2">Expire After</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {EXPIRE_OPTIONS.map((opt) => (
-                  <button key={opt.seconds} type="button" onClick={() => setExpireAfter(opt.seconds)} className={`px-3 py-2 rounded-lg border text-xs transition-colors ${expireAfter === opt.seconds ? "bg-white/10 border-[#9BE4A0] text-white" : "bg-white/5 border-white/10 text-[#B0B6BE] hover:bg-white/10 hover:text-white"}`}>
+                  <button key={opt.seconds} type="button" onClick={() => setExpireAfter(opt.seconds)} className={`px-3 py-2 rounded-lg border text-xs transition-colors ${expireAfter === opt.seconds ? "bg-white/10 border-[#7C72FE] text-white" : "bg-white/5 border-white/10 text-[#B0B6BE] hover:bg-white/10 hover:text-white"}`}>
                     {opt.label}
                   </button>
                 ))}
@@ -621,14 +649,14 @@ export default function CreateEscrowPage() {
               <label className="block text-white/90 text-sm font-medium mb-2">
                 Description <span className="text-gray-400">(Optional)</span>
               </label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={500} className="w-full bg-white/5 border border-white/10 focus:bg-white/10 focus:border-[#9BE4A0] text-white rounded-xl px-4 py-3 outline-none placeholder:text-white/40 resize-none transition-colors" placeholder="Add a note about this payment (e.g., Invoice #123, Payment for services)" />
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={500} className="w-full bg-white/5 border border-white/10 focus:bg-white/10 focus:border-[#7C72FE] text-white rounded-xl px-4 py-3 outline-none placeholder:text-white/40 resize-none transition-colors" placeholder="Add a note about this payment (e.g., Invoice #123, Payment for services)" />
               <p className="text-[#B0B6BE] text-xs mt-1">{description.length}/500 characters</p>
             </div>
 
             {/* Review Summary */}
             <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
               <h3 className="text-white font-medium text-sm mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-[#9BE4A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-[#7C72FE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Review Escrow Details
@@ -699,43 +727,42 @@ export default function CreateEscrowPage() {
         <p className="text-gray-400">Secure peer-to-peer trading with escrow protection</p>
       </div>
 
-      {/* Progress Indicator */}
-      <div className="mb-8">
-        <div className="flex items-center justify-center mb-4">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              {/* Step Circle */}
-              <div className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all ${currentStep === step.id ? "bg-[#9BE4A0] text-black ring-4 ring-[#9BE4A0]/20" : currentStep > step.id ? "bg-[#9BE4A0]/50 text-white" : "bg-white/10 text-gray-400"}`}>
-                  {currentStep > step.id ? (
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    step.id
-                  )}
-                </div>
-                <div className="mt-2 text-center hidden sm:block">
-                  <div className={`text-xs font-medium ${currentStep >= step.id ? "text-white" : "text-gray-500"}`}>{step.title}</div>
-                </div>
-              </div>
-
-              {/* Connector Line */}
-              {index < steps.length - 1 && <div className={`w-16 h-[2px] mx-4 transition-colors ${currentStep > step.id ? "bg-[#9BE4A0]" : "bg-white/10"}`} />}
-            </div>
-          ))}
-        </div>
-
-        {/* Mobile step indicator */}
-        <div className="sm:hidden text-center">
-          <p className="text-sm text-gray-400">
-            Step {currentStep} of {steps.length}: <span className="text-white font-medium">{steps[currentStep - 1].title}</span>
-          </p>
-        </div>
-      </div>
-
       {/* Form Container */}
-      <div className="bg-[#181C22] rounded-2xl border border-[#23272F] p-6 sm:p-8">
+      <div className="bg-[#0A0D14] border border-white/10 rounded-3xl p-8">
+        {/* Progress Indicator (inside card) */}
+        <div className="mb-6">
+          <div className="flex items-center justify-center mb-4">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                {/* Step Circle */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all ${currentStep === step.id ? "bg-[#7C72FE] text-white ring-4 ring-[#7C72FE]/20" : currentStep > step.id ? "bg-[#7C72FE]/50 text-white" : "bg-white/10 text-gray-400"}`}>
+                    {currentStep > step.id ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      step.id
+                    )}
+                  </div>
+                  <div className="mt-2 text-center hidden sm:block">
+                    <div className={`text-xs font-medium ${currentStep >= step.id ? "text-white" : "text-gray-500"}`}>{step.title}</div>
+                  </div>
+                </div>
+
+                {/* Connector Line */}
+                {index < steps.length - 1 && <div className={`w-16 h-[2px] mx-4 transition-colors ${currentStep > step.id ? "bg-[#7C72FE]" : "bg-white/10"}`} />}
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile step indicator */}
+          <div className="sm:hidden text-center">
+            <p className="text-sm text-gray-400">
+              Step {currentStep} of {steps.length}: <span className="text-white font-medium">{steps[currentStep - 1].title}</span>
+            </p>
+          </div>
+        </div>
         {/* Step Content */}
         <div className={`transition-all duration-300 ${isTransitioning ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>{renderStepContent()}</div>
 
@@ -758,22 +785,22 @@ export default function CreateEscrowPage() {
             </span>
 
             {currentStep < 3 ? (
-              <ButtonGreen size="sm" fontWeight="medium" onClick={nextStep}>
+              <ButtonPurple size="sm" fontWeight="medium" onClick={nextStep}>
                 <span className="inline-flex items-center gap-2">
                   Next
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </span>
-              </ButtonGreen>
+              </ButtonPurple>
             ) : !isAuthenticated ? (
-              <ButtonGreen onClick={handleLogin} disabled={submitting}>
+              <ButtonPurple onClick={handleLogin} disabled={submitting}>
                 Login to Submit
-              </ButtonGreen>
+              </ButtonPurple>
             ) : (
-              <ButtonGreen onClick={onSubmit} disabled={submitting || !amount || Number(amount) <= 0}>
+              <ButtonPurple onClick={onSubmit} disabled={submitting || !amount || Number(amount) <= 0}>
                 {submitting ? "Processing..." : "Create Escrow"}
-              </ButtonGreen>
+              </ButtonPurple>
             )}
           </div>
         </div>

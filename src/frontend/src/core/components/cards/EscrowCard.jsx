@@ -6,11 +6,11 @@ import { copyToClipboard } from "@/core/lib/clipboardUtils";
 import { useNavigate } from "react-router-dom";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import ButtonPurple from "@/core/components/ButtonPurple.jsx";
+import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 
 // Helper function to get token info
 function getTokenInfo(tokenType) {
-  // Import TOKENS_CONFIG to get all token information dynamically
-  const { TOKENS_CONFIG } = require("@/core/config/tokenConfig.js");
+  // Use TOKENS_CONFIG imported at the top
 
   // Find token in configuration
   const token = TOKENS_CONFIG.find((t) => t.symbol === tokenType || t.symbol.toLowerCase() === tokenType.toLowerCase() || t.name.toLowerCase() === tokenType.toLowerCase());

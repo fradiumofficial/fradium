@@ -10,6 +10,8 @@ module {
     #BTC;
     #ETH;
     #SOL;
+    // Dynamic ICRC/SNS token by ledger canister principal
+    #SNS : Principal;
   };
 
   public type PaymentStatus = {

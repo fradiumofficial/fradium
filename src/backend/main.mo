@@ -97,13 +97,19 @@ persistent actor Fradium {
   );
 
   // Paylink module initialization
+  // Factory to create a dynamic ICRC/SNS ledger actor by principal for paylink payments
+  transient let createPaylinkLedgerActor = func (p: Principal) : PaylinkModule.TokenCanisterInterface {
+    actor (Principal.toText(p))
+  };
+
   transient let paylinkModule = PaylinkModule.PaylinkModule(
     Principal.fromActor(Fradium),
     IcpLedgerOriginal,
     FradiumLedgerOriginal,
     CkbtcLedgerOriginal,
     CkethLedgerOriginal,
-    WalletCanisterOriginal
+    WalletCanisterOriginal,
+    createPaylinkLedgerActor
   );
 
   // API module initialization

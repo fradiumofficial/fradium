@@ -28,11 +28,11 @@ const ProductsEscrow = () => {
       // Jika belum login, lakukan login dulu
       await handleLogin(({ user, isAuthenticated: authStatus }) => {
         // Callback setelah login berhasil - redirect ke P2P Trade page
-        navigate("/escrow/list");
+        navigate("/escrow");
       });
     } else {
       // Jika sudah login, langsung redirect ke P2P Trade page
-      navigate("/escrow/list");
+      navigate("/escrow");
     }
   };
 
