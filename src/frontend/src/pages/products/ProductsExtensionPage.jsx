@@ -45,26 +45,27 @@ const ProductsExtension = () => {
   };
 
   if (isMobile) {
-    // Layout mobile khusus
+    // Layout mobile - struktur sama dengan desktop, ukuran disesuaikan
     return (
       <>
-        <div className="min-h-screen bg-[#000510] text-white font-inter w-full pb-16 relative overflow-hidden">
+        <div className="min-h-screen bg-[#000510] text-white font-inter w-full relative overflow-hidden">
           {/* Background layer - starts from bottom with natural height */}
           <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
             <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
           </div>
           {/* Soft fade at top edge to blend with navbar */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#000510] to-transparent z-0" />
-          {/* Hero Section */}
-          <section className="relative z-10 w-full flex flex-col items-center mt-20 justify-center pt-10 px-4">
+
+          {/* Hero Section - sama dengan desktop tapi mobile layout */}
+          <section className="relative z-10 w-full max-w-7xl mx-auto pt-20 px-4 flex flex-col items-center justify-center">
             <Reveal>
-              <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-2">FRADIUM EXTENSION</span>
+              <span className="block text-[#9beb83] text-[14px] font-semibold tracking-[0.15em] mb-3 text-center">FRADIUM EXTENSION</span>
             </Reveal>
-            <Reveal delay={80}>
-              <h1 className="text-[24px] font-medium leading-tight mb-4 text-center">
+            <Reveal delay={90}>
+              <h1 className="text-[28px] font-medium leading-tight mb-4 text-center">
                 About Fradium Extension
               </h1>
-              <p className="text-[#B0B6BE] text-[14px] leading-[1.6] text-center max-w-[360px] mx-auto mb-6">
+              <p className="text-[#B0B6BE] text-[14px] leading-[1.6] text-center max-w-[340px] mx-auto mb-6">
                 Fradium Extension lets you analyse wallet addresses and smart contracts directly in your browser, showing instant risk checks so you can spot threats without leaving the page.
               </p>
             </Reveal>
@@ -75,55 +76,60 @@ const ProductsExtension = () => {
                   window.open("https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp", "_blank");
                 }}
                 fontWeight="medium"
-                className="w-full max-w-xs"
+                className="h-[44px] text-[16px]"
                 textClassName="text-center leading-tight">
                 Download Extension
               </ButtonGreen>
             </Reveal>
           </section>
 
-          {/* Gambar utama */}
-          <div className="relative z-10 w-full flex justify-center items-center mb-4 mt-10 px-2">
-            <Reveal>
-              <div className="group transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-                <img src="/assets/images/products-extension.png" alt="Fradium Extension UI" className="w-full max-w-[340px] rounded-2xl" />
+          {/* Content Section 1: About Fradium Extension - mobile grid */}
+          <section className="relative z-10 w-full max-w-[1200px] mx-auto mt-16 px-4 grid grid-cols-1 gap-8 items-center">
+            {/* Mobile: Text di atas */}
+            <div className="flex flex-col items-center text-center">
+              <div className="flex justify-center items-center w-full">
+                <Reveal>
+                  <div className="group transition-transform mb-16 duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
+                    <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/about-fradium-extension.webp" alt="Fradium Extension UI" className="max-w-[340px] w-full rounded-2xl" />
+                  </div>
+                </Reveal>
               </div>
-            </Reveal>
-          </div>
+              <Reveal>
+                <span className="block text-[#9beb83] text-[13px] font-semibold tracking-[0.15em] mb-2">KEY FEATURE</span>
+              </Reveal>
+              <Reveal delay={80}>
+                <h2 className="text-[24px] font-medium mb-4">About Fradium Extension</h2>
+              </Reveal>
+              <Reveal delay={140}>
+                <p className="text-[#B0B6BE] text-[14px] font-normal leading-[1.6] text-center max-w-[340px]">Fradium Extension is a browser tool designed to help you assess the safety of blockchain interactions as you navigate Web3 platforms. After downloading and installing the extension, you can analyse wallet addresses and smart contracts directly from your browser. The extension runs checks in the background and displays risk information on the spot, so you can review potential threats without leaving the page or switching to another tool.</p>
+              </Reveal>
+            </div>
+            {/* Mobile: Image di bawah */}
 
-          {/* About Section */}
-          <section className="relative z-10 w-full flex flex-col items-center px-4 mt-2">
-            <Reveal>
-              <span className="block text-[#9beb83] text-[13px] font-semibold tracking-[0.15em] mb-1">KEY FEATURE</span>
-            </Reveal>
-            <Reveal delay={80}>
-              <h2 className="text-[20px] font-medium mb-2 text-center">About Fradium Extension</h2>
-            </Reveal>
-            <Reveal delay={140}>
-              <p className="text-[#B0B6BE] text-[14px] max-w-[340px] font-normal leading-[1.6] text-justify mb-4">Fradium Extension is a browser tool designed to help you assess the safety of blockchain interactions as you navigate Web3 platforms. After downloading and installing the extension, you can analyse wallet addresses and smart contracts directly from your browser. The extension runs checks in the background and displays risk information on the spot, so you can review potential threats without leaving the page or switching to another tool.</p>
-            </Reveal>
           </section>
 
-          {/* Gambar kedua */}
-          <div className="relative z-10 w-full flex justify-center items-center my-6 px-2">
-            <Reveal>
-              <div className="group transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-                <img src="/assets/images/products-extension-works.png" alt="How It Works" className="w-full max-w-[340px] rounded-2xl" />
-              </div>
-            </Reveal>
-          </div>
-
-          {/* How it works */}
-          <section className="relative z-10 w-full flex flex-col items-center px-4 mt-2">
-            <Reveal>
-              <span className="block text-[#9beb83] text-[13px] font-semibold tracking-[0.15em] mb-1">KEY FEATURE</span>
-            </Reveal>
-            <Reveal delay={80}>
-              <h2 className="text-[20px] font-medium mb-2 text-center">How It Works</h2>
-            </Reveal>
-            <Reveal delay={140}>
-              <p className="text-[#B0B6BE] text-[14px] max-w-[340px] font-normal leading-[1.6] text-justify">To use the Fradium Extension, simply download and install it on your browser. Once installed, you have two ways to scan wallet addresses or smart contracts. You can highlight the address or contract on any page, right-click, and select 'Scan with Fradium'. Alternatively, you can open the extension, enter the address or contract manually, and click the analyse button to check its risk level. Both options give you clear results directly in your browser, so you can verify before interacting.</p>
-            </Reveal>
+          {/* Content Section 2: How It Works - mobile grid */}
+          <section className="relative z-10 w-full mb-14 pb-12 max-w-[1200px] mx-auto mt-12 px-4 grid grid-cols-1 gap-8 items-center">
+            {/* Mobile: Image di atas */}
+            <div className="flex justify-center items-center w-full">
+              <Reveal>
+                <div className="group transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
+                  <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/how-it-works.webp" alt="How It Works" className="max-w-[340px] w-full rounded-2xl" />
+                </div>
+              </Reveal>
+            </div>
+            {/* Mobile: Text di bawah */}
+            <div className="flex flex-col items-center text-center">
+              <Reveal>
+                <span className="block text-[#9beb83] text-[13px] font-semibold tracking-[0.15em] mb-2">KEY FEATURE</span>
+              </Reveal>
+              <Reveal delay={80}>
+                <h2 className="text-[24px] font-medium mb-4">How It Works</h2>
+              </Reveal>
+              <Reveal delay={140}>
+                <p className="text-[#B0B6BE] text-[14px] font-normal leading-[1.6] text-center max-w-[340px]">To use the Fradium Extension, simply download and install it on your browser. Once installed, you have two ways to scan wallet addresses or smart contracts. You can highlight the address or contract on any page, right-click, and select 'Scan with Fradium'. Alternatively, you can open the extension, enter the address or contract manually, and click the analyse button to check its risk level. Both options give you clear results directly in your browser, so you can verify before interacting.</p>
+              </Reveal>
+            </div>
           </section>
         </div>
         <Footer />
