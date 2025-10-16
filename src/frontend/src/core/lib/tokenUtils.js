@@ -860,6 +860,178 @@ async function fetchUSDPriceWithRetry(token) {
   return fallbackPrice;
 }
 
+// Token visibility management functions for localStorage
+function getTokenVisibilityKey(principal, tokenId) {
+  const principalString = principal?.toString() || "default";
+  return `token_visibility_${principalString}_${tokenId}`;
+}
+
+function getUserSettingsKey(principal) {
+  const principalString = principal?.toString() || "default";
+  return `user_token_settings_${principalString}`;
+}
+
+function hasUserTokenSettings(principal) {
+  try {
+    const key = getUserSettingsKey(principal);
+    return localStorage.getItem(key) !== null;
+  } catch (error) {
+    console.error("Error checking user token settings:", error);
+    return false;
+  }
+}
+
+function initializeUserTokenSettings(principal) {
+  try {
+    const principalString = principal?.toString() || "default";
+    const key = getUserSettingsKey(principal);
+
+    // Mark user as initialized
+    localStorage.setItem(key, JSON.stringify({ initialized: true, timestamp: Date.now() }));
+
+    // Set default visibility for all tokens
+    TOKENS_CONFIG.forEach((token) => {
+      const tokenKey = getTokenVisibilityKey(principal, token.id);
+      let isVisible = true;
+
+      // SNS tokens are hidden by default for new users
+      if (token.type === "sns") {
+        isVisible = false;
+      }
+
+      localStorage.setItem(tokenKey, JSON.stringify(isVisible));
+    });
+
+    console.log(`Initialized token settings for new user: ${principalString}`);
+  } catch (error) {
+    console.error("Error initializing user token settings:", error);
+  }
+}
+
+export function getTokenVisibility(principal, tokenId) {
+  try {
+    const key = getTokenVisibilityKey(principal, tokenId);
+    const saved = localStorage.getItem(key);
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+
+    // Check if this is a new user (no token visibility settings at all)
+    if (!hasUserTokenSettings(principal)) {
+      // Initialize default settings for new user
+      initializeUserTokenSettings(principal);
+    }
+
+    // Get the token to check if it's SNS
+    const token = TOKENS_CONFIG.find((t) => t.id === tokenId);
+    if (token && token.type === "sns") {
+      // Default SNS tokens to hidden for new users
+      return false;
+    }
+
+    // Default to visible (true) for non-SNS tokens
+    return true;
+  } catch (error) {
+    console.error("Error loading token visibility from localStorage:", error);
+    return true; // Default to visible
+  }
+}
+
+export function setTokenVisibility(principal, tokenId, isVisible) {
+  try {
+    const key = getTokenVisibilityKey(principal, tokenId);
+    localStorage.setItem(key, JSON.stringify(isVisible));
+  } catch (error) {
+    console.error("Error saving token visibility to localStorage:", error);
+  }
+}
+
+export function getAllTokenVisibility(principal) {
+  try {
+    const principalString = principal?.toString() || "default";
+    const prefix = `token_visibility_${principalString}_`;
+    const visibility = {};
+
+    // Get all keys that match our pattern
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        const tokenId = parseInt(key.replace(prefix, ""));
+        if (!isNaN(tokenId)) {
+          visibility[tokenId] = getTokenVisibility(principal, tokenId);
+        }
+      }
+    }
+
+    return visibility;
+  } catch (error) {
+    console.error("Error loading all token visibility from localStorage:", error);
+    return {};
+  }
+}
+
+export function clearTokenVisibility(principal, tokenId = null) {
+  try {
+    const principalString = principal?.toString() || "default";
+    const prefix = `token_visibility_${principalString}_`;
+
+    if (tokenId !== null) {
+      // Clear specific token visibility
+      const key = getTokenVisibilityKey(principal, tokenId);
+      localStorage.removeItem(key);
+    } else {
+      // Clear all token visibility for this principal
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix)) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => {
+        localStorage.removeItem(key);
+      });
+    }
+  } catch (error) {
+    console.error("Error clearing token visibility:", error);
+  }
+}
+
+// Function to manually initialize user token settings (useful for existing users)
+export function initializeUserTokenSettingsManually(principal) {
+  try {
+    const principalString = principal?.toString() || "default";
+    const key = getUserSettingsKey(principal);
+
+    // Mark user as initialized
+    localStorage.setItem(key, JSON.stringify({ initialized: true, timestamp: Date.now() }));
+
+    // Set default visibility for all tokens
+    TOKENS_CONFIG.forEach((token) => {
+      const tokenKey = getTokenVisibilityKey(principal, token.id);
+      let isVisible = true;
+
+      // SNS tokens are hidden by default for new users
+      if (token.type === "sns") {
+        isVisible = false;
+      }
+
+      localStorage.setItem(tokenKey, JSON.stringify(isVisible));
+    });
+
+    console.log(`Manually initialized token settings for user: ${principalString}`);
+    return true;
+  } catch (error) {
+    console.error("Error manually initializing user token settings:", error);
+    return false;
+  }
+}
+
+// Function to check if user is new (hasn't been initialized yet)
+export function isNewUser(principal) {
+  return !hasUserTokenSettings(principal);
+}
+
 // Export cache management functions
 export { clearBalanceCache };
 

@@ -12,12 +12,19 @@ import { TOKENS_CONFIG, NETWORK_CONFIG } from "@/core/config/tokenConfig.js";
 // Wallet Provider
 import { useWallet } from "@/core/providers/WalletProvider";
 
+// Auth Provider
+import { useAuth } from "@/core/providers/AuthProvider";
+
+// Utils
+import { getTokenVisibility } from "@/core/lib/tokenUtils.js";
+
 // Modal Components
 import ReceiveAddressModal from "@/core/components/modals/ReceiveAddressModal";
 import AnalyzeResultModal from "@/core/components/modals/AnalyzeResultModal";
 import AnalyzeLoadingModal from "@/core/components/modals/AnalyzeLoadingModal";
 import TransakModal from "@/core/components/modals/TransakModal";
 import SwapTokenModal from "@/core/components/modals/SwapTokenModal";
+import ManageTokensModal from "@/core/components/modals/ManageTokensModal";
 
 // Token Item Card Component
 import TokenItemCard from "@/core/components/cards/TokenItemCard";
@@ -26,11 +33,15 @@ export default function AssetsPage() {
   // Wallet Provider - Get balance state and functions
   const { balances, balanceLoading, balanceErrors, isRefreshingBalances, refreshAllBalances, network, networkFilters, usdPrices, usdPriceLoading, usdPriceErrors, isRefreshingPrices, refreshAllUSDPrices, hideBalance } = useWallet();
 
+  // Auth Provider - Get user identity for token visibility
+  const { identity } = useAuth();
+
   // Modal States
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [showTransakModal, setShowTransakModal] = useState(false);
+  const [showManageTokensModal, setShowManageTokensModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
 
   // Analyze Address States
@@ -167,10 +178,18 @@ export default function AssetsPage() {
     setShowSettingsDropdown(false);
   };
 
-  // Filter tokens based on network selection, search query, and zero value filter
+  // Filter tokens based on network selection, search query, zero value filter, and token visibility
   const filteredTokens = useMemo(() => {
+    const principal = identity?.getPrincipal?.();
+
     return TOKENS_CONFIG.filter((token) => {
-      // First, check if the token's network is enabled in networkFilters
+      // First, check if the token is visible (not disabled by user)
+      const isTokenVisible = getTokenVisibility(principal, token.id);
+      if (!isTokenVisible) {
+        return false; // Hide token if user has disabled it
+      }
+
+      // Then, check if the token's network is enabled in networkFilters
       const isNetworkEnabled = networkFilters[token.chain];
       if (!isNetworkEnabled) {
         return false; // Hide token if its network is disabled
@@ -202,15 +221,22 @@ export default function AssetsPage() {
 
       return networkMatch && searchMatch && zeroValueMatch;
     });
-  }, [networkFilters, network, searchQuery, hideZeroValue, balances]);
+  }, [networkFilters, network, searchQuery, hideZeroValue, balances, identity]);
 
-  // Calculate total portfolio value
+  // Calculate total portfolio value (only for visible tokens)
   const { totalPortfolioValue, isPortfolioLoading } = useMemo(() => {
     let total = 0;
     let hasAnyLoading = false;
     let hasAnyError = false;
+    const principal = identity?.getPrincipal?.();
 
     TOKENS_CONFIG.forEach((token) => {
+      // Only include visible tokens in portfolio calculation
+      const isTokenVisible = getTokenVisibility(principal, token.id);
+      if (!isTokenVisible) {
+        return; // Skip hidden tokens
+      }
+
       const balance = balances[token.id];
       const usdPrice = usdPrices[token.id];
       const isBalanceLoading = balanceLoading[token.id];
@@ -240,7 +266,7 @@ export default function AssetsPage() {
       isPortfolioLoading: hasAnyLoading,
       hasPortfolioError: hasAnyError,
     };
-  }, [balances, usdPrices, balanceLoading, usdPriceLoading, balanceErrors, usdPriceErrors]);
+  }, [balances, usdPrices, balanceLoading, usdPriceLoading, balanceErrors, usdPriceErrors, identity]);
 
   // Format portfolio value for display
   const formattedPortfolioValue = useMemo(() => {
@@ -309,9 +335,7 @@ export default function AssetsPage() {
 
           {/* Header */}
           <div className="relative z-10 text-center">
-            <div className={`text-white text-[2.5rem] font-semibold my-2 transition-opacity duration-300 ${isPortfolioLoading ? 'opacity-30' : 'opacity-100'}`}>
-              {isPortfolioLoading ? '$0.00' : formattedPortfolioValue}
-            </div>
+            <div className={`text-white text-[2.5rem] font-semibold my-2 transition-opacity duration-300 ${isPortfolioLoading ? "opacity-30" : "opacity-100"}`}>{isPortfolioLoading ? "$0.00" : formattedPortfolioValue}</div>
             <div className="text-white/95 text-base font-medium">Total Portfolio Value</div>
           </div>
 
@@ -478,6 +502,16 @@ export default function AssetsPage() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Manage Tokens Button */}
+        <motion.div className="mt-6 flex justify-center" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
+          <button className="py-3 px-6 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 group backdrop-blur-md" onClick={() => setShowManageTokensModal(true)}>
+            <div className="flex items-center justify-center gap-3">
+              <img src="/assets/icons/construction.svg" alt="Manage Tokens" className="w-4 h-4 text-[#B0B6BE] group-hover:text-white transition-colors" />
+              <span className="text-[#B0B6BE] group-hover:text-white text-sm font-medium transition-colors">Manage Tokens</span>
+            </div>
+          </button>
+        </motion.div>
       </div>
 
       {/* Modal Send Coin */}
@@ -546,6 +580,9 @@ export default function AssetsPage() {
 
       {/* Modal Analyze Result */}
       <AnalyzeResultModal isOpen={showAnalyzeResult} onClose={handleCloseAnalyzeResult} analysisResult={analysisResult} />
+
+      {/* Modal Manage Tokens */}
+      <ManageTokensModal isOpen={showManageTokensModal} onClose={() => setShowManageTokensModal(false)} />
     </div>
   );
 }

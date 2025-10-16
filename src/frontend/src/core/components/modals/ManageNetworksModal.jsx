@@ -42,7 +42,7 @@ export default function ManageNetworksModal({ isOpen, onClose, networkFilters, u
       duration: 2000,
       style: {
         background: "#23272F",
-        color: "#9BE4A0",
+        color: "#ffffff",
         border: "1px solid #393E4B",
         borderRadius: "8px",
         fontSize: "14px",
@@ -61,7 +61,7 @@ export default function ManageNetworksModal({ isOpen, onClose, networkFilters, u
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/60 backdrop-blur-sm" onClick={handleCancel}>
+        <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/60 backdrop-blur-sm" onClick={handleCancel}>
           <div className="w-full max-w-[500px] mx-auto" onClick={(e) => e.stopPropagation()}>
             <motion.div initial={{ opacity: 0, scale: 0.95, y: -20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -20 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-col items-center p-4 gap-4 h-auto bg-[#171A1C] rounded-2xl border border-white/10">
               {/* Title */}
@@ -77,7 +77,7 @@ export default function ManageNetworksModal({ isOpen, onClose, networkFilters, u
                         <span className="text-white text-lg font-medium">{network.name}</span>
                       </div>
                       {/* Custom Switch */}
-                      <button className={`w-11 h-6 rounded-full flex items-center transition-colors duration-200 ${tempNetworkFilters[network.name] ? "bg-[#9BE4A0]" : "bg-[#23272F]"}`} onClick={() => handleToggleNetwork(network.name)}>
+                      <button className={`w-11 h-6 rounded-full flex items-center transition-colors duration-200 ${tempNetworkFilters[network.name] ? "bg-[#7C72FE]" : "bg-[#23272F]"}`} onClick={() => handleToggleNetwork(network.name)}>
                         <span className={`inline-block w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${tempNetworkFilters[network.name] ? "translate-x-5" : "translate-x-0"}`} />
                       </button>
                     </motion.div>
