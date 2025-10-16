@@ -36,7 +36,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
     // Load real-time token prices
     const loadPrices = async () => {
       const tokens = availableTokens.map((t) => t.symbol);
-      const prices = await SwapService.getTokenPrices(tokens);
+      const prices = await swapService.getTokenPrices(tokens);
       setTokenPrices(prices);
     };
 
@@ -62,7 +62,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
       setIsLoading(true);
       setError(null);
 
-      const quote = await SwapService.getSwapQuote({
+      const quote = await swapService.getSwapQuote({
         fromToken: fromToken.symbol,
         toToken: toToken.symbol,
         amount: parseFloat(fromAmount),
@@ -140,13 +140,16 @@ export default function SwapTokenModal({ isOpen, onClose }) {
       });
 
       if (result.success) {
+        // Convert BigInt to display number
+        const outputAmount = swapService.fromSmallestUnit(result.amountOut, toToken.symbol);
+        
         // Success - close modal and refresh balances
         onClose();
         // Trigger balance refresh
         window.dispatchEvent(new CustomEvent("refreshBalances"));
 
         // Show success message
-        alert(`Swap successful! You received ${result.amountOut.toFixed(6)} ${toToken.symbol}`);
+        alert(`Swap successful! You received ${outputAmount.toFixed(6)} ${toToken.symbol}`);
       } else {
         throw new Error(result.error || "Swap failed");
       }
@@ -296,9 +299,6 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                 <span className="text-white">
                   1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}
                 </span>
-                <span className="text-white">
-                  1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}
-                </span>
               </div>
               
               <div className="flex justify-between text-sm">
@@ -311,16 +311,10 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                 <span className="text-white">
                   {swapQuote.fee.toFixed(6)} {fromToken.symbol}
                 </span>
-                <span className="text-white">
-                  {swapQuote.fee.toFixed(6)} {fromToken.symbol}
-                </span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span className="text-white/70">Min Received</span>
-                <span className="text-white">
-                  {swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}
-                </span>
                 <span className="text-white">
                   {swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}
                 </span>
@@ -360,13 +354,6 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                 </svg>
                 {error}
               </p>
-            </div>
-          )}
-
-          {/* Authentication Check */}
-          {!isAuthenticated && (
-            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <p className="text-yellow-400 text-sm">Please connect your wallet to perform swaps</p>
             </div>
           )}
 
