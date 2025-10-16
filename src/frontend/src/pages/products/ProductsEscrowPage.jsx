@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "@/core/providers/AuthProvider";
 import SidebarButton from "@/core/components/SidebarButton";
 import Footer from "../../core/components/Footer.jsx";
+import MagicBento from "@/core/components/MagicBento.jsx";
 import ButtonGreen from "@/core/components/ButtonGreen";
 
 // Custom hook untuk deteksi mobile
@@ -158,98 +159,103 @@ const ProductsEscrow = () => {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
 
       {/* Main Content */}
-      <main className="relative z-10 pt-28 px-4 sm:px-6 flex-1">
-        <div className="container mx-auto max-w-[1300px]">
-          {/* Top content before background */}
-          <div className="flex items-start justify-between gap-6 mb-12">
-            <div className="flex-1 min-w-[320px]">
-              <span className="block text-[#9beb83] text-[15px] font-semibold tracking-[0.15em] mb-3 uppercase">FRADIUM ESCROW</span>
-              <h1 className="text-white text-[36px] font-medium leading-tight mb-3">Secure transactions with smart escrow</h1>
-              <p className="text-[#B0B6BE] text-[14px] md:text-[15px] max-w-3xl">Fradium Escrow provides secure transaction protection with smart contract automation, ensuring safe exchanges between parties with automated dispute resolution.</p>
-            </div>
-            <div className="shrink-0 hidden md:block pt-4">
-              <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[18px] h-[18px] md:w-[23px] md:h-[23px]" onClick={handleLaunchEscrow}>
-                Try Escrow
+      <main className="relative z-10 pt-32 sm:pt-36 px-4 sm:px-6 flex-1">
+        <div className="container mx-auto max-w-[1200px] pb-24 md:pb-32">
+          {/* Local animations for escrow cards */}
+          <style>{`
+            @keyframes escrow-shine {
+              from { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+              20% { opacity: .25; }
+              60% { opacity: .15; }
+              to { transform: translateX(150%) skewX(-20deg); opacity: 0; }
+            }
+          `}</style>
+          {/* Top hero - centered like the design */}
+          <div className="flex flex-col items-center justify-center text-center mb-20 md:mb-24">
+            <span className="block text-[#9beb83] text-[14px] font-semibold tracking-[0.18em] mb-3 uppercase">FRADIUM ESCROW</span>
+            <h1 className="text-white text-[36px] md:text-[40px] font-medium leading-tight mb-4">About Fradium Escrow</h1>
+            <p className="text-[#B0B6BE] text-[14px] md:text-[15px] leading-relaxed max-w-[880px] mx-auto mb-6">
+              Fradium Escrow acts as a trusted intermediary that protects your assets before, during, and after every transaction. If the recipient’s wallet is detected as unsafe, funds are instantly returned. It ensures zero loss from fraudulent or high-risk addresses. When verified as safe, the transaction proceeds seamlessly to the recipient.
+            </p>
+            <div className="pt-1">
+              <ButtonGreen
+                size="md"
+                fontWeight="medium"
+                onClick={handleLaunchEscrow}
+                icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg"
+                iconSize="w-[18px] h-[18px]"
+              >
+                Try Fradium Escrow
               </ButtonGreen>
             </div>
           </div>
 
-          {/* Cards section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 md:gap-4 mb-16 justify-items-center">
-            {/* Card 1: Secure Escrow */}
-            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/safe-transaction.webp" alt="Secure Escrow" className="w-full h-full object-cover" draggable={false} />
+          {/* Feature cards - 3 columns on desktop */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 pt-6 mb-40 md:mb-48 justify-items-stretch">
+            {/* Card 1: Smart Verification */}
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              particleCount={12}
+              glowColor="153, 227, 158"
+              className="group w-full rounded-[22px] border border-white/12 bg-[#0B0F14]/70 backdrop-blur-[2px] p-6 md:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.45)] relative overflow-hidden"
+            >
+              <div className="pointer-events-none absolute inset-0 rounded-[22px]" />
+              <div className="relative w-14 h-14 rounded-full bg-[#151A1F] border border-white/10 flex items-center justify-center mb-5 shadow-[0_8px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:scale-105">
+                <img src="/assets/verification.svg" alt="Verification" className="w-[22px] h-[22px]" />
               </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-white text-[18px] md:text-[20px] font-medium">Secure Escrow</div>
-                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Automated smart contract protection for safe transactions</div>
-                </div>
-                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+              <div className="relative text-white text-[22px] md:text-[26px] font-medium mb-3">Smart Verification</div>
+              <p className="relative text-[#B0B6BE] text-[14px] leading-[1.8]">Fradium’s AI‑powered risk engine checks the recipient’s address reputation and blockchain activity to ensure your funds only reach safe destinations.</p>
+            </MagicBento>
 
-            {/* Card 2: Dispute Resolution */}
-            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/analyze-address.webp" alt="Dispute Resolution" className="w-full h-full object-cover" draggable={false} />
+            {/* Card 2: Auto Refund System */}
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              particleCount={12}
+              glowColor="153, 227, 158"
+              className="group w-full rounded-[22px] border border-white/12 bg-[#0B0F14]/70 backdrop-blur-[2px] p-6 md:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.45)] relative overflow-hidden"
+            >
+              <div className="pointer-events-none absolute inset-0 rounded-[22px]" />
+              <div className="relative w-14 h-14 rounded-full bg-[#151A1F] border border-white/10 flex items-center justify-center mb-5 shadow-[0_8px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:scale-105">
+                <img src="/assets/refund.svg" alt="Auto Refund" className="w-[22px] h-[22px]" />
               </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-white text-[18px] md:text-[20px] font-medium">Dispute Resolution</div>
-                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Automated arbitration system for fair conflict resolution</div>
-                </div>
-                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+              <div className="relative text-white text-[22px] md:text-[26px] font-medium mb-3">Auto Refund System</div>
+              <p className="relative text-[#B0B6BE] text-[14px] leading-[1.8]">If a suspicious or high‑risk wallet is detected, Fradium Escrow instantly returns the assets to your account. No manual dispute, no waiting time.</p>
+            </MagicBento>
 
-            {/* Card 3: Transaction History */}
-            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/history.webp" alt="Transaction History" className="w-full h-full object-cover" draggable={false} />
+            {/* Card 3: Trust Without Middlemen */}
+            <MagicBento
+              textAutoHide={false}
+              enableStars={true}
+              enableSpotlight={true}
+              enableBorderGlow={false}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              particleCount={12}
+              glowColor="153, 227, 158"
+              className="group w-full rounded-[22px] border border-white/12 bg-[#0B0F14]/70 backdrop-blur-[2px] p-6 md:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.45)] relative overflow-hidden"
+            >
+              <div className="pointer-events-none absolute inset-0 rounded-[22px]" />
+              <div className="relative w-14 h-14 rounded-full bg-[#151A1F] border border-white/10 flex items-center justify-center mb-5 shadow-[0_8px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:scale-105">
+                <img src="/assets/encrypted.svg" alt="Encrypted" className="w-[22px] h-[22px]" />
               </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-white text-[18px] md:text-[20px] font-medium">Transaction History</div>
-                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Complete audit trail of all escrow transactions</div>
-                </div>
-                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+              <div className="relative text-white text-[22px] md:text-[26px] font-medium mb-3">Trust Without Middlemen</div>
+              <p className="relative text-[#B0B6BE] text-[14px] leading-[1.8]">Send and receive assets securely without relying on third‑party custodians. Protection through transparent, on‑chain validation — decentralized and verifiable.</p>
+            </MagicBento>
           </div>
 
-          {/* MacBook section */}
-          <div className="flex justify-center pt-8 items-center">
-            <div className="relative max-w-4xl w-full">
-              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/macbook-wallet.webp" alt="MacBook with Fradium Escrow" className="w-full h-auto max-h-[500px] object-contain mx-auto" draggable={false} />
-              {/* Video overlay for MacBook screen */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Video area positioned on MacBook screen */}
-                  <div className="absolute w-[83.7%] h-[54%] top-[23%] left-[8.15%] overflow-hidden rounded-[8px]">
-                    <video className="w-full h-full object-cover" autoPlay loop muted playsInline preload="metadata" poster="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp">
-                      <source src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-demo.mp4" type="video/mp4" />
-                      {/* Fallback image if video doesn't load */}
-                      <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp" alt="Fradium Escrow Dashboard" className="w-full h-full object-cover" />
-                    </video>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
 
