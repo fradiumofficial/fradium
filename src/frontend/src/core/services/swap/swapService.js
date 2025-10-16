@@ -1,43 +1,39 @@
-// ICPSwap Integration Service - FIXED Authentication
+// ICPSwap Integration Service - MAINNET VERSION
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 import { AuthClient } from "@dfinity/auth-client";
 
-// ==================== YOUR ACTUAL CANISTER IDS ====================
+// ==================== MAINNET CANISTER IDS ====================
 const NETWORK_CONFIG = {
-  local: {
-    host: "http://localhost:4943",
-    swapFactory: "kuvqc-2h777-77777-aaagq-cai",
-    positionIndex: "kgth3-wx777-77777-aaafq-cai",
+  mainnet: {
+    host: "https://ic0.app",
+    swapFactory: "ggzvv-5qaaa-aaaag-qck7a-cai",  // ICPSwap mainnet factory
   }
 };
 
+// ✅ MAINNET TOKEN ADDRESSES
 const TOKEN_CANISTERS = {
-  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",
-  FRADIUM: "sr4wk-4qaaa-aaaae-qfdta-cai",
-  ckBTC: "mc6ru-gyaaa-aaaar-qaaaq-cai",
-  ckETH: "apia6-jaaaa-aaaar-qabma-cai"
+  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",      // Same on mainnet
+  ckBTC: "mxzaz-hqaaa-aaaar-qaada-cai",    // Mainnet ckBTC
+  ckETH: "ss2fx-dyaaa-aaaar-qacoq-cai",    // Mainnet ckETH
+  // Add FRADIUM mainnet canister if it exists:
+  // FRADIUM: "xxxxx-xxxxx-xxxxx-xxxxx-cai"
 };
 
 const TOKEN_DECIMALS = {
   ICP: 8,
-  FRADIUM: 8,
   ckBTC: 8,
-  ckETH: 18
+  ckETH: 18,
+  FRADIUM: 8
 };
 
-const KNOWN_POOLS = {
-  "ckBTC_ckETH": {
-    canisterId: "m74gv-ax777-77777-aaarq-cai",
-    fee: 3000,
-    token0: "apia6-jaaaa-aaaar-qabma-cai", // ckETH
-    token1: "mc6ru-gyaaa-aaaar-qaaaq-cai"  // ckBTC
-  }
-};
+// Pool IDs will be fetched from factory - no hardcoding needed!
+const KNOWN_POOLS = {};
 
+// Mainnet pool fees (if needed for deposits)
 const POOL_FEES = {
-  "apia6-jaaaa-aaaar-qabma-cai": 9500,
-  "mc6ru-gyaaa-aaaar-qaaaq-cai": 11500
+  "ss2fx-dyaaa-aaaar-qacoq-cai": 10000,  // ckETH
+  "mxzaz-hqaaa-aaaar-qaada-cai": 10000   // ckBTC
 };
 
 // ==================== CANDID INTERFACES ====================
@@ -265,46 +261,41 @@ function estimateSwapOutput(amountIn, sqrtPriceX96, zeroForOne, decimals0, decim
 
 export class ICPSwapService {
   constructor() {
-    this.isLocal = true;
-    this.config = NETWORK_CONFIG.local;
+    // ✅ CRITICAL: Set to false for mainnet!
+    this.isLocal = false;
+    this.config = NETWORK_CONFIG.mainnet;
     this.agent = null;
     this.authClient = null;
     this.knownPools = { ...KNOWN_POOLS };
   }
 
-  // ✅ FIX: Initialize with proper authenticated agent
+  // ✅ Initialize with mainnet agent (NO fetchRootKey!)
   async initialize() {
     this.authClient = await AuthClient.create();
     
     const isAuthenticated = await this.authClient.isAuthenticated();
     
     if (isAuthenticated) {
-      // Get the authenticated identity
       const identity = await this.authClient.getIdentity();
       
-      // Create authenticated agent
       this.agent = await HttpAgent.create({
         host: this.config.host,
-        identity: identity  // ← CRITICAL: Use authenticated identity
+        identity: identity
       });
       
-      console.log("✅ Authenticated agent created for:", identity.getPrincipal().toString());
+      console.log("✅ Authenticated mainnet agent created for:", identity.getPrincipal().toString());
     } else {
-      // Create anonymous agent for unauthenticated users
       this.agent = new HttpAgent({ host: this.config.host });
-      console.log("⚠️ Anonymous agent created (user not logged in)");
+      console.log("⚠️ Anonymous mainnet agent created (user not logged in)");
     }
 
-    if (this.isLocal) {
-      await this.agent.fetchRootKey().catch(err => {
-        console.warn("Unable to fetch root key:", err);
-      });
-    }
+    // ✅ REMOVED: fetchRootKey() - NOT NEEDED ON MAINNET!
+    // This was causing your signature verification error!
 
     return this.agent;
   }
 
-  // ✅ FIX: Add method to reinitialize agent after login
+  // ✅ Reinitialize agent after login
   async reinitializeAgent() {
     if (!this.authClient) {
       await this.initialize();
@@ -318,20 +309,18 @@ export class ICPSwapService {
       identity: identity
     });
 
-    if (this.isLocal) {
-      await this.agent.fetchRootKey();
-    }
+    // ✅ NO fetchRootKey on mainnet!
 
-    console.log("✅ Agent reinitialized with principal:", identity.getPrincipal().toString());
+    console.log("✅ Mainnet agent reinitialized with principal:", identity.getPrincipal().toString());
   }
 
-  // ✅ FIX: Add login method that properly reinitializes agent
+  // ✅ Login with Internet Identity (mainnet)
   async login() {
     return new Promise((resolve, reject) => {
       this.authClient.login({
-        identityProvider: "http://rdmx6-jaaaa-aaaaa-aaadq-cai.localhost:4943",
+        // ✅ Use mainnet Internet Identity
+        identityProvider: "https://identity.ic0.app",
         onSuccess: async () => {
-          // Reinitialize agent with authenticated identity
           await this.reinitializeAgent();
           resolve();
         },
@@ -384,11 +373,13 @@ export class ICPSwapService {
     return [token0, token1].sort().join('_');
   }
 
+  // ✅ Find pool by querying mainnet factory
   async findPool(token0Symbol, token1Symbol) {
     const key = this.getPoolKey(token0Symbol, token1Symbol);
 
+    // Check cache first
     if (this.knownPools[key]) {
-      console.log('✅ Using known pool:', this.knownPools[key]);
+      console.log('✅ Using cached pool:', this.knownPools[key]);
       return {
         canisterId: Principal.fromText(this.knownPools[key].canisterId),
         fee: this.knownPools[key].fee,
@@ -397,7 +388,49 @@ export class ICPSwapService {
       };
     }
 
-    console.warn(`No pool found for ${token0Symbol}/${token1Symbol}`);
+    // Query mainnet factory for pools
+    try {
+      console.log('🔍 Querying ICPSwap factory for pools...');
+      const factory = await this.getFactoryActor();
+      const poolsResult = await factory.getPools();
+
+      if ('ok' in poolsResult) {
+        const pools = poolsResult.ok;
+        console.log(`✅ Found ${pools.length} pools on mainnet`);
+
+        // Find matching pool
+        const token0Addr = TOKEN_CANISTERS[token0Symbol];
+        const token1Addr = TOKEN_CANISTERS[token1Symbol];
+
+        const matchingPool = pools.find(pool => {
+          const hasToken0 = pool.token0.address === token0Addr || pool.token1.address === token0Addr;
+          const hasToken1 = pool.token0.address === token1Addr || pool.token1.address === token1Addr;
+          return hasToken0 && hasToken1;
+        });
+
+        if (matchingPool) {
+          // Cache it
+          this.knownPools[key] = {
+            canisterId: matchingPool.canisterId.toString(),
+            fee: Number(matchingPool.fee),
+            token0: matchingPool.token0.address,
+            token1: matchingPool.token1.address
+          };
+
+          console.log('✅ Found pool:', matchingPool.canisterId.toString());
+          return {
+            canisterId: matchingPool.canisterId,
+            fee: Number(matchingPool.fee),
+            token0: matchingPool.token0,
+            token1: matchingPool.token1
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error querying factory:', error);
+    }
+
+    console.warn(`❌ No pool found for ${token0Symbol}/${token1Symbol} on mainnet`);
     return null;
   }
 
@@ -406,7 +439,7 @@ export class ICPSwapService {
       const pool = await this.findPool(fromToken, toToken);
 
       if (!pool) {
-        throw new Error(`No liquidity pool exists for ${fromToken}/${toToken}. Please create a pool first.`);
+        throw new Error(`No liquidity pool exists for ${fromToken}/${toToken} on ICPSwap mainnet.`);
       }
 
       const poolActor = await this.getPoolActor(pool.canisterId.toString());
@@ -447,7 +480,7 @@ export class ICPSwapService {
 
         if ('ok' in quoteResult) {
           quoteFromPool = this.fromSmallestUnit(quoteResult.ok, toToken);
-          console.log("✅ Got quote from pool:", quoteFromPool, toToken);
+          console.log("✅ Got quote from mainnet pool:", quoteFromPool, toToken);
         }
       } catch (error) {
         console.log("Pool doesn't support quote function, using calculation");
@@ -456,16 +489,6 @@ export class ICPSwapService {
       const finalOutput = quoteFromPool || estimatedOutput;
       const feePercentage = Number(poolData.fee) / 1000000;
       const fee = amount * feePercentage;
-
-      if (finalOutput < amount * 0.0001) {
-        console.warn("⚠️ WARNING: Output seems too low!", {
-          input: amount,
-          output: finalOutput,
-          ratio: finalOutput / amount,
-          sqrtPriceX96: poolData.sqrtPriceX96.toString(),
-          liquidity: poolData.liquidity.toString()
-        });
-      }
 
       return {
         rate: finalOutput / amount,
@@ -495,7 +518,7 @@ export class ICPSwapService {
     userPrincipal
   }) {
     try {
-      console.log("🔄 Starting swap:", { fromToken, toToken, amount });
+      console.log("🔄 Starting mainnet swap:", { fromToken, toToken, amount });
 
       const pool = await this.findPool(fromToken, toToken);
       if (!pool) throw new Error(`No pool exists for ${fromToken}/${toToken}`);
@@ -509,7 +532,7 @@ export class ICPSwapService {
       const minAmountOutSmallest = this.toSmallestUnit(minAmountOut, toToken);
 
       const transactionFee = await fromTokenActor.icrc1_fee();
-      const poolFee = BigInt(POOL_FEES[TOKEN_CANISTERS[fromToken]]);
+      const poolFee = BigInt(POOL_FEES[TOKEN_CANISTERS[fromToken]] || 10000);
       const balance = await fromTokenActor.icrc1_balance_of({ owner: user, subaccount: [] });
 
       const totalAmountForApproval = amountInSmallest + poolFee + transactionFee;
@@ -520,7 +543,7 @@ export class ICPSwapService {
       }
       console.log("💵 Balance check successful.");
 
-      console.log(`📝 Approving pool to spend ${this.fromSmallestUnit(totalAmountForApproval, fromToken)} ${fromToken} (amount + fees)...`);
+      console.log(`📝 Approving pool to spend ${this.fromSmallestUnit(totalAmountForApproval, fromToken)} ${fromToken}...`);
       const approveResult = await fromTokenActor.icrc2_approve({
         spender: { owner: pool.canisterId, subaccount: [] },
         amount: totalAmountForApproval,
@@ -546,7 +569,7 @@ export class ICPSwapService {
       const metadata = await poolActor.metadata();
       const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
 
-      console.log("⚡ Executing swap...");
+      console.log("⚡ Executing swap on mainnet...");
       const swapResult = await poolActor.swap({
         amountIn: amountInSmallest.toString(),
         zeroForOne,
@@ -557,7 +580,7 @@ export class ICPSwapService {
 
       const amountOut = BigInt(swapResult.ok);
       const outputAmount = this.fromSmallestUnit(amountOut, toToken);
-      console.log("✅ Swap successful! Received:", outputAmount, toToken);
+      console.log("✅ Mainnet swap successful! Received:", outputAmount, toToken);
 
       return { success: true, amountOut, message: "Swap completed successfully" };
 
@@ -587,7 +610,23 @@ export class ICPSwapService {
   }
 
   async getAllPools() {
-    return Object.values(this.knownPools);
+    try {
+      const factory = await this.getFactoryActor();
+      const poolsResult = await factory.getPools();
+      
+      if ('ok' in poolsResult) {
+        return poolsResult.ok.map(pool => ({
+          canisterId: pool.canisterId.toString(),
+          fee: Number(pool.fee),
+          token0: pool.token0,
+          token1: pool.token1,
+          tickSpacing: pool.tickSpacing
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching pools:', error);
+    }
+    return [];
   }
 
   async getTokenPrices(tokenSymbols) {
