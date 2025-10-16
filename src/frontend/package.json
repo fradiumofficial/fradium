@@ -33,6 +33,7 @@
     "date-fns": "^4.1.0",
     "face-api.js": "^0.22.2",
     "framer-motion": "^12.23.6",
+    "gsap": "^3.13.0",
     "js-sha256": "^0.11.0",
     "langchain": "^0.3.34",
     "lucide-react": "^0.479.0",

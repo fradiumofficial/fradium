@@ -31,6 +31,7 @@ export const AuthProvider = ({
       const client = await AuthClient.create({
         identityProvider: getIdentityProvider(),
       });
+      window.authClient = client;
       setAuthClient(client);
       await updateIdentity(client);
     };
@@ -51,6 +52,16 @@ export const AuthProvider = ({
             Actor.agentOf(canister).replaceIdentity(newIdentity);
           }
         });
+
+        // ✅ CRITICAL FIX: Reinitialize swap service agent with authenticated identity
+        if (window.swapService && window.swapService.reinitializeAgent) {
+          try {
+            await window.swapService.reinitializeAgent();
+            console.log("✅ SwapService agent reinitialized on app load");
+          } catch (err) {
+            console.error("Failed to reinitialize swap service:", err);
+          }
+        }
 
         setIsLoading(true);
 
@@ -114,6 +125,16 @@ export const AuthProvider = ({
         Actor.agentOf(canister).replaceIdentity(newIdentity);
       }
     });
+
+    // ✅ CRITICAL FIX: Reinitialize swap service agent after login
+    if (window.swapService && window.swapService.reinitializeAgent) {
+      try {
+        await window.swapService.reinitializeAgent();
+        console.log("✅ SwapService agent reinitialized after login");
+      } catch (err) {
+        console.error("Failed to reinitialize swap service:", err);
+      }
+    }
 
     setIsLoading(true);
 

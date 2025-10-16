@@ -1,737 +1,647 @@
-// Native Swap Service
-// Direct integration with ICPSwap APIs for atomic token swapping
-
+// ICPSwap Integration Service - FIXED Authentication
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
+import { AuthClient } from "@dfinity/auth-client";
 
-// Environment-based configuration
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-// ICPSwap canister IDs (from ICPSwap-Labs documentation)
-const ICPSWAP_FACTORY_CANISTER = "4mmnk-kiaaa-aaaag-qbllq-cai";
-const ICPSWAP_POOL_CANISTER = "xmiu5-jqaaa-aaaag-qbz7q-cai";
-
-// Token mappings - Same IDs for local and mainnet (using specified_id)
-const TOKEN_MAPPINGS = {
-  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",        // ICP Ledger (same for local/mainnet)
-  FRADIUM: "sr4wk-4qaaa-aaaae-qfdta-cai",   // FRADIUM Ledger (same for local/mainnet)
-  ckBTC: "mc6ru-gyaaa-aaaar-qaaaq-cai",     // ckBTC Ledger (same for local/mainnet)
-  ckETH: "apia6-jaaaa-aaaar-qabma-cai"       // ckETH Ledger (same for local/mainnet)
+// ==================== YOUR ACTUAL CANISTER IDS ====================
+const NETWORK_CONFIG = {
+  local: {
+    host: "http://localhost:4943",
+    swapFactory: "kuvqc-2h777-77777-aaagq-cai",
+    positionIndex: "kgth3-wx777-77777-aaafq-cai",
+  }
 };
 
-// ICRC-2 Interface for token transfers
-const ICRC2_INTERFACE = {
-  icrc2_transfer: "([{from_subaccount: opt blob; to: {owner: principal; subaccount: opt blob}; amount: nat; fee: opt nat; memo: opt blob; created_at_time: opt nat64}]) -> {Ok: nat; Err: {GenericError: {message: text; error_code: nat}; TemporarilyUnavailable: text; BadBurn: {min_burn_amount: nat}; Duplicate: {duplicate_of: nat}; BadFee: {expected_fee: nat}; CreatedInFuture: {ledger_time: nat64}; TooOld: null; InsufficientFunds: {balance: nat}}; Notify: nat}",
-  icrc1_balance_of: "({owner: principal; subaccount: opt blob}) -> nat",
-  icrc1_fee: "() -> nat"
+const TOKEN_CANISTERS = {
+  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",
+  FRADIUM: "sr4wk-4qaaa-aaaae-qfdta-cai",
+  ckBTC: "mc6ru-gyaaa-aaaar-qaaaq-cai",
+  ckETH: "apia6-jaaaa-aaaar-qabma-cai"
 };
 
-export class SwapService {
-  /**
-   * Search for available liquidity pools using ICPSwap Factory
-   * Based on ICPSwap-Labs documentation: https://github.com/ICPSwap-Labs/docs/tree/main/01.SwapFactory
-   * @param {string} token0 - First token canister ID
-   * @param {string} token1 - Second token canister ID
-   * @returns {Promise<Array>} Available pools
-   */
-  static async searchPools(token0, token1) {
-    try {
-      const agent = new HttpAgent({ 
-        host: isLocal ? "http://localhost:4943" : "https://ic0.app" 
+const TOKEN_DECIMALS = {
+  ICP: 8,
+  FRADIUM: 8,
+  ckBTC: 8,
+  ckETH: 18
+};
+
+const KNOWN_POOLS = {
+  "ckBTC_ckETH": {
+    canisterId: "m74gv-ax777-77777-aaarq-cai",
+    fee: 3000,
+    token0: "apia6-jaaaa-aaaar-qabma-cai", // ckETH
+    token1: "mc6ru-gyaaa-aaaar-qaaaq-cai"  // ckBTC
+  }
+};
+
+const POOL_FEES = {
+  "apia6-jaaaa-aaaar-qabma-cai": 9500,
+  "mc6ru-gyaaa-aaaar-qaaaq-cai": 11500
+};
+
+// ==================== CANDID INTERFACES ====================
+
+const getICRCInterface = () => ({ IDL }) => {
+  const Account = IDL.Record({
+    owner: IDL.Principal,
+    subaccount: IDL.Opt(IDL.Vec(IDL.Nat8))
+  });
+
+  const TransferArg = IDL.Record({
+    from_subaccount: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    to: Account,
+    amount: IDL.Nat,
+    fee: IDL.Opt(IDL.Nat),
+    memo: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    created_at_time: IDL.Opt(IDL.Nat64)
+  });
+
+  const TransferError = IDL.Variant({
+    BadFee: IDL.Record({ expected_fee: IDL.Nat }),
+    BadBurn: IDL.Record({ min_burn_amount: IDL.Nat }),
+    InsufficientFunds: IDL.Record({ balance: IDL.Nat }),
+    TooOld: IDL.Null,
+    CreatedInFuture: IDL.Record({ ledger_time: IDL.Nat64 }),
+    Duplicate: IDL.Record({ duplicate_of: IDL.Nat }),
+    TemporarilyUnavailable: IDL.Null,
+    GenericError: IDL.Record({
+      error_code: IDL.Nat,
+      message: IDL.Text
+    }),
+    AllowanceChanged: IDL.Record({ current_allowance: IDL.Nat }),
+  });
+
+  const ApproveArgs = IDL.Record({
+    from_subaccount: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    spender: Account,
+    amount: IDL.Nat,
+    expected_allowance: IDL.Opt(IDL.Nat),
+    expires_at: IDL.Opt(IDL.Nat64),
+    fee: IDL.Opt(IDL.Nat),
+    memo: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    created_at_time: IDL.Opt(IDL.Nat64),
+  });
+
+  const AllowanceArgs = IDL.Record({
+    account: Account,
+    spender: Account
+  });
+
+  const Allowance = IDL.Record({
+    allowance: IDL.Nat,
+    expires_at: IDL.Opt(IDL.Nat64)
+  });
+
+  return IDL.Service({
+    icrc1_name: IDL.Func([], [IDL.Text], ['query']),
+    icrc1_symbol: IDL.Func([], [IDL.Text], ['query']),
+    icrc1_decimals: IDL.Func([], [IDL.Nat8], ['query']),
+    icrc1_fee: IDL.Func([], [IDL.Nat], ['query']),
+    icrc1_balance_of: IDL.Func([Account], [IDL.Nat], ['query']),
+    icrc1_transfer: IDL.Func([TransferArg], [IDL.Variant({ Ok: IDL.Nat, Err: TransferError })], []),
+    icrc2_approve: IDL.Func([ApproveArgs], [IDL.Variant({ Ok: IDL.Nat, Err: TransferError })], []),
+    icrc2_allowance: IDL.Func([AllowanceArgs], [Allowance], ['query'])
+  });
+};
+
+const getSwapPoolInterface = () => ({ IDL }) => {
+  const Token = IDL.Record({
+    address: IDL.Text,
+    standard: IDL.Text
+  });
+
+  const DepositArgs = IDL.Record({
+    token: IDL.Text,
+    amount: IDL.Nat,
+    fee: IDL.Nat
+  });
+
+  const SwapArgs = IDL.Record({
+    amountIn: IDL.Text,
+    zeroForOne: IDL.Bool,
+    amountOutMinimum: IDL.Text
+  });
+
+  const Error = IDL.Variant({
+    CommonError: IDL.Null,
+    InternalError: IDL.Text,
+    UnsupportedToken: IDL.Text,
+    InsufficientFunds: IDL.Null
+  });
+
+  const PoolMetadata = IDL.Record({
+    fee: IDL.Nat,
+    key: IDL.Text,
+    sqrtPriceX96: IDL.Nat,
+    tick: IDL.Int,
+    liquidity: IDL.Nat,
+    token0: Token,
+    token1: Token,
+    maxLiquidityPerTick: IDL.Nat,
+    nextPositionId: IDL.Nat,
+  });
+
+  return IDL.Service({
+    depositFrom: IDL.Func(
+      [DepositArgs],
+      [IDL.Variant({ ok: IDL.Nat, err: Error })],
+      []
+    ),
+
+    swap: IDL.Func(
+      [SwapArgs],
+      [IDL.Variant({ ok: IDL.Nat, err: Error })],
+      []
+    ),
+
+    metadata: IDL.Func(
+      [],
+      [IDL.Variant({ ok: PoolMetadata, err: Error })],
+      ['query']
+    ),
+
+    getUserUnusedBalance: IDL.Func(
+      [IDL.Principal],
+      [IDL.Variant({ ok: IDL.Record({ balance0: IDL.Nat, balance1: IDL.Nat }), err: Error })],
+      ['query']
+    ),
+
+    withdraw: IDL.Func(
+      [IDL.Record({ token: IDL.Text, amount: IDL.Nat, fee: IDL.Nat })],
+      [IDL.Variant({ ok: IDL.Nat, err: Error })],
+      []
+    ),
+
+    quote: IDL.Func(
+      [IDL.Record({ amountIn: IDL.Text, zeroForOne: IDL.Bool })],
+      [IDL.Variant({ ok: IDL.Nat, err: Error })],
+      ['query']
+    )
+  });
+};
+
+const getSwapFactoryInterface = () => ({ IDL }) => {
+  const Token = IDL.Record({
+    address: IDL.Text,
+    standard: IDL.Text,
+  });
+
+  const PoolData = IDL.Record({
+    fee: IDL.Nat,
+    key: IDL.Text,
+    tickSpacing: IDL.Int,
+    token0: Token,
+    token1: Token,
+    canisterId: IDL.Principal,
+  });
+
+  return IDL.Service({
+    getPools: IDL.Func([], [IDL.Variant({ ok: IDL.Vec(PoolData), err: IDL.Text })], ['query']),
+  });
+};
+
+// ==================== HELPER FUNCTIONS ====================
+
+function safeStringify(obj) {
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}
+
+function formatErrorForDisplay(error) {
+  if (!error) return 'Unknown error';
+
+  if (typeof error === 'string') return error;
+
+  if (error.InternalError) return `Internal Error: ${error.InternalError}`;
+  if (error.UnsupportedToken) return `Unsupported Token: ${error.UnsupportedToken}`;
+  if (error.InsufficientFunds) return 'Insufficient Funds';
+  if (error.CommonError) return 'Common Error';
+
+  if (error.message) return error.message;
+
+  return 'Unknown error occurred';
+}
+
+// ==================== PRICE CALCULATION ====================
+
+function calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1) {
+  const Q96 = 2n ** 96n;
+  const sqrtPrice = BigInt(sqrtPriceX96);
+  
+  const numerator = sqrtPrice * sqrtPrice;
+  const denominator = Q96 * Q96;
+  
+  const rawPrice = Number(numerator) / Number(denominator);
+  const decimalAdjustment = Math.pow(10, decimals1 - decimals0);
+  
+  return rawPrice * decimalAdjustment;
+}
+
+function estimateSwapOutput(amountIn, sqrtPriceX96, zeroForOne, decimals0, decimals1, feeTier) {
+  const price_token0_in_token1 = calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1);
+  let estimatedOutput;
+  if (zeroForOne) {
+    estimatedOutput = amountIn * price_token0_in_token1;
+  } else {
+    estimatedOutput = amountIn / price_token0_in_token1;
+  }
+  const feeMultiplier = 1 - (feeTier / 1000000);
+  return estimatedOutput * feeMultiplier;
+}
+
+// ==================== SWAP SERVICE ====================
+
+export class ICPSwapService {
+  constructor() {
+    this.isLocal = true;
+    this.config = NETWORK_CONFIG.local;
+    this.agent = null;
+    this.authClient = null;
+    this.knownPools = { ...KNOWN_POOLS };
+  }
+
+  // ✅ FIX: Initialize with proper authenticated agent
+  async initialize() {
+    this.authClient = await AuthClient.create();
+    
+    const isAuthenticated = await this.authClient.isAuthenticated();
+    
+    if (isAuthenticated) {
+      // Get the authenticated identity
+      const identity = await this.authClient.getIdentity();
+      
+      // Create authenticated agent
+      this.agent = await HttpAgent.create({
+        host: this.config.host,
+        identity: identity  // ← CRITICAL: Use authenticated identity
       });
       
-      // ICPSwap Factory interface based on documentation
-      const factoryActor = Actor.createActor(
-        { 
-          // Function to get pools for a token pair
-          get_pools: "([{token0: principal; token1: principal}]) -> [{pool_id: text; token0: principal; token1: principal; fee: nat; liquidity: nat}]",
-          // Function to get all pools
-          get_all_pools: "() -> [{pool_id: text; token0: principal; token1: principal; fee: nat; liquidity: nat}]"
+      console.log("✅ Authenticated agent created for:", identity.getPrincipal().toString());
+    } else {
+      // Create anonymous agent for unauthenticated users
+      this.agent = new HttpAgent({ host: this.config.host });
+      console.log("⚠️ Anonymous agent created (user not logged in)");
+    }
+
+    if (this.isLocal) {
+      await this.agent.fetchRootKey().catch(err => {
+        console.warn("Unable to fetch root key:", err);
+      });
+    }
+
+    return this.agent;
+  }
+
+  // ✅ FIX: Add method to reinitialize agent after login
+  async reinitializeAgent() {
+    if (!this.authClient) {
+      await this.initialize();
+      return;
+    }
+
+    const identity = await this.authClient.getIdentity();
+    
+    this.agent = await HttpAgent.create({
+      host: this.config.host,
+      identity: identity
+    });
+
+    if (this.isLocal) {
+      await this.agent.fetchRootKey();
+    }
+
+    console.log("✅ Agent reinitialized with principal:", identity.getPrincipal().toString());
+  }
+
+  // ✅ FIX: Add login method that properly reinitializes agent
+  async login() {
+    return new Promise((resolve, reject) => {
+      this.authClient.login({
+        identityProvider: "http://rdmx6-jaaaa-aaaaa-aaadq-cai.localhost:4943",
+        onSuccess: async () => {
+          // Reinitialize agent with authenticated identity
+          await this.reinitializeAgent();
+          resolve();
         },
-        { 
-          agent, 
-          canisterId: ICPSWAP_FACTORY_CANISTER 
-        }
+        onError: reject
+      });
+    });
+  }
+
+  async getAgent() {
+    if (!this.agent) {
+      await this.initialize();
+    }
+    return this.agent;
+  }
+
+  async getTokenActor(canisterId) {
+    const agent = await this.getAgent();
+    return Actor.createActor(getICRCInterface(), { agent, canisterId });
+  }
+
+  async getFactoryActor() {
+    const agent = await this.getAgent();
+    return Actor.createActor(getSwapFactoryInterface(), {
+      agent,
+      canisterId: this.config.swapFactory
+    });
+  }
+
+  async getPoolActor(poolCanisterId) {
+    const agent = await this.getAgent();
+    return Actor.createActor(getSwapPoolInterface(), {
+      agent,
+      canisterId: poolCanisterId
+    });
+  }
+
+  registerPool(token0Symbol, token1Symbol, poolCanisterId, fee = 3000) {
+    const key = this.getPoolKey(token0Symbol, token1Symbol);
+    this.knownPools[key] = {
+      canisterId: poolCanisterId,
+      fee,
+      token0: TOKEN_CANISTERS[token0Symbol],
+      token1: TOKEN_CANISTERS[token1Symbol]
+    };
+    console.log(`✅ Pool registered: ${key} -> ${poolCanisterId}`);
+    return this.knownPools[key];
+  }
+
+  getPoolKey(token0, token1) {
+    return [token0, token1].sort().join('_');
+  }
+
+  async findPool(token0Symbol, token1Symbol) {
+    const key = this.getPoolKey(token0Symbol, token1Symbol);
+
+    if (this.knownPools[key]) {
+      console.log('✅ Using known pool:', this.knownPools[key]);
+      return {
+        canisterId: Principal.fromText(this.knownPools[key].canisterId),
+        fee: this.knownPools[key].fee,
+        token0: { address: this.knownPools[key].token0, standard: "ICRC2" },
+        token1: { address: this.knownPools[key].token1, standard: "ICRC2" }
+      };
+    }
+
+    console.warn(`No pool found for ${token0Symbol}/${token1Symbol}`);
+    return null;
+  }
+
+  async getSwapQuote({ fromToken, toToken, amount }) {
+    try {
+      const pool = await this.findPool(fromToken, toToken);
+
+      if (!pool) {
+        throw new Error(`No liquidity pool exists for ${fromToken}/${toToken}. Please create a pool first.`);
+      }
+
+      const poolActor = await this.getPoolActor(pool.canisterId.toString());
+      const metadata = await poolActor.metadata();
+
+      if ('err' in metadata) {
+        const errorMsg = formatErrorForDisplay(metadata.err);
+        throw new Error(`Pool error: ${errorMsg}`);
+      }
+
+      const poolData = metadata.ok;
+
+      const zeroForOne = TOKEN_CANISTERS[fromToken] === poolData.token0.address;
+
+      const decimals0 = TOKEN_DECIMALS[
+        Object.keys(TOKEN_CANISTERS).find(k => TOKEN_CANISTERS[k] === poolData.token0.address)
+      ];
+      const decimals1 = TOKEN_DECIMALS[
+        Object.keys(TOKEN_CANISTERS).find(k => TOKEN_CANISTERS[k] === poolData.token1.address)
+      ];
+
+      const estimatedOutput = estimateSwapOutput(
+        amount,
+        poolData.sqrtPriceX96,
+        zeroForOne,
+        decimals0,
+        decimals1,
+        Number(poolData.fee)
       );
 
-      // Try to get pools for specific token pair first
+      let quoteFromPool = null;
       try {
-        const pools = await factoryActor.get_pools([
-          { 
-            token0: Principal.fromText(token0), 
-            token1: Principal.fromText(token1) 
-          }
-        ]);
-        return pools;
-      } catch (pairError) {
-        console.warn("Failed to get pools for specific pair, trying all pools:", pairError);
-        
-        // Fallback: get all pools and filter
-        const allPools = await factoryActor.get_all_pools();
-        return allPools.filter(pool => 
-          (pool.token0.toString() === token0 && pool.token1.toString() === token1) ||
-          (pool.token0.toString() === token1 && pool.token1.toString() === token0)
-        );
-      }
-    } catch (error) {
-      console.error("Pool search error:", error);
-      return [];
-    }
-  }
+        const amountInSmallest = this.toSmallestUnit(amount, fromToken);
+        const quoteResult = await poolActor.quote({
+          amountIn: amountInSmallest.toString(),
+          zeroForOne
+        });
 
-  /**
-   * Get real-time swap quote from ICPSwap pool or fallback to market-based calculation
-   * @param {Object} params - Swap parameters
-   * @param {string} params.fromToken - Source token symbol
-   * @param {string} params.toToken - Destination token symbol  
-   * @param {number} params.amount - Amount to swap
-   * @returns {Promise<Object>} Real swap quote
-   */
-  static async getSwapQuote({ fromToken, toToken, amount }) {
-    try {
-      // Validate tokens
-      if (!TOKEN_MAPPINGS[fromToken] || !TOKEN_MAPPINGS[toToken]) {
-        throw new Error(`Unsupported token pair: ${fromToken}/${toToken}`);
-      }
-
-      const fromCanisterId = TOKEN_MAPPINGS[fromToken];
-      const toCanisterId = TOKEN_MAPPINGS[toToken];
-      const amountInSmallestUnit = this.toSmallestUnit(amount, fromToken);
-
-      // Try to get quote from ICPSwap pools first
-      try {
-        const pools = await this.searchPools(fromCanisterId, toCanisterId);
-        
-        if (pools.length > 0) {
-          // Use the pool with highest liquidity
-          const bestPool = pools.reduce((best, current) => 
-            current.liquidity > best.liquidity ? current : best
-          );
-
-          // Get quote from the pool using ICPSwap Pool interface
-          // Based on ICPSwap-Labs documentation: https://github.com/ICPSwap-Labs/docs/tree/main/02.SwapPool
-          const agent = new HttpAgent({ 
-            host: isLocal ? "http://localhost:4943" : "https://ic0.app" 
-          });
-          const poolActor = Actor.createActor(
-            { 
-              // ICPSwap Pool interface functions
-              get_quote: "([{amount_in: nat; token_in: principal; token_out: principal}]) -> {amount_out: nat; fee: nat; price_impact: float}",
-              // Alternative quote function that might be available
-              quote: "([{amount_in: nat; token_in: principal; token_out: principal}]) -> {amount_out: nat; fee: nat; price_impact: float}",
-              // Get pool info
-              get_pool_info: "() -> {token0: principal; token1: principal; reserve0: nat; reserve1: nat; fee: nat; liquidity: nat}"
-            },
-            { 
-              agent, 
-              canisterId: bestPool.pool_id || bestPool.id 
-            }
-          );
-
-          // Try different quote function names
-          let quote;
-          try {
-            quote = await poolActor.get_quote([
-              {
-                amount_in: amountInSmallestUnit,
-                token_in: Principal.fromText(fromCanisterId),
-                token_out: Principal.fromText(toCanisterId)
-              }
-            ]);
-          } catch (quoteError) {
-            console.warn("get_quote failed, trying quote:", quoteError);
-            try {
-              quote = await poolActor.quote([
-                {
-                  amount_in: amountInSmallestUnit,
-                  token_in: Principal.fromText(fromCanisterId),
-                  token_out: Principal.fromText(toCanisterId)
-                }
-              ]);
-            } catch (altQuoteError) {
-              console.error("Both quote functions failed:", altQuoteError);
-              throw new Error("Unable to get quote from pool");
-            }
-          }
-
-          return {
-            rate: Number(quote.amount_out) / Number(amountInSmallestUnit),
-            estimatedOutput: this.fromSmallestUnit(quote.amount_out, toToken),
-            fee: this.fromSmallestUnit(quote.fee, fromToken),
-            priceImpact: quote.price_impact.toFixed(2),
-            minAmountOut: this.fromSmallestUnit(quote.amount_out * 95n / 100n, toToken), // 5% slippage
-            validFor: 300, // 5 minutes
-            poolId: bestPool.pool_id || bestPool.id,
-            source: 'pool'
-          };
+        if ('ok' in quoteResult) {
+          quoteFromPool = this.fromSmallestUnit(quoteResult.ok, toToken);
+          console.log("✅ Got quote from pool:", quoteFromPool, toToken);
         }
-      } catch (poolError) {
-        console.warn("Pool-based quote failed, falling back to market-based calculation:", poolError);
+      } catch (error) {
+        console.log("Pool doesn't support quote function, using calculation");
       }
 
-      // Fallback: Calculate quote based on market prices
-      return await this.getMarketBasedQuote({ fromToken, toToken, amount });
+      const finalOutput = quoteFromPool || estimatedOutput;
+      const feePercentage = Number(poolData.fee) / 1000000;
+      const fee = amount * feePercentage;
 
-    } catch (error) {
-      console.error("Swap quote error:", error);
-      throw new Error(`Failed to get swap quote: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get market-based quote when pools are not available
-   * @param {Object} params - Quote parameters
-   * @returns {Promise<Object>} Market-based quote
-   */
-  static async getMarketBasedQuote({ fromToken, toToken, amount }) {
-    try {
-      // Get real-time token prices
-      const prices = await this.getTokenPrices([fromToken, toToken]);
-      
-      if (!prices[fromToken] || !prices[toToken]) {
-        throw new Error(`Unable to fetch prices for ${fromToken} or ${toToken}`);
-      }
-
-      // Calculate exchange rate based on USD prices
-      const fromPriceUSD = prices[fromToken];
-      const toPriceUSD = prices[toToken];
-      const rate = fromPriceUSD / toPriceUSD;
-
-      // Calculate estimated output
-      const estimatedOutput = amount * rate;
-      
-      // Calculate fee (0.3% of input amount)
-      const fee = amount * 0.003;
-      
-      // Calculate price impact (simulate based on amount)
-      const priceImpact = Math.min(amount * 0.001, 2.0); // Max 2% impact
-      
-      // Calculate minimum amount out (5% slippage tolerance)
-      const minAmountOut = estimatedOutput * 0.95;
-
-      return {
-        rate,
-        estimatedOutput,
-        fee,
-        priceImpact: priceImpact.toFixed(2),
-        minAmountOut,
-        validFor: 300, // 5 minutes
-        poolId: null,
-        source: 'market'
-      };
-    } catch (error) {
-      console.error("Market-based quote error:", error);
-      throw new Error(`Failed to calculate market-based quote: ${error.message}`);
-    }
-  }
-
-  /**
-   * Execute atomic swap transaction using ICRC-2 standards
-   * @param {Object} params - Swap execution parameters
-   * @param {string} params.fromToken - Source token symbol
-   * @param {string} params.toToken - Destination token symbol
-   * @param {number} params.amount - Amount to swap
-   * @param {number} params.minAmountOut - Minimum amount out (slippage protection)
-   * @param {string|null} params.recipient - Recipient address (null for self)
-   * @param {string} params.userPrincipal - User's principal for authentication
-   * @returns {Promise<Object>} Swap result
-   */
-  static async executeSwap({ fromToken, toToken, amount, minAmountOut, recipient, userPrincipal }) {
-    try {
-      // Validate parameters
-      if (!TOKEN_MAPPINGS[fromToken] || !TOKEN_MAPPINGS[toToken]) {
-        throw new Error(`Unsupported token pair: ${fromToken}/${toToken}`);
-      }
-
-      if (amount <= 0) {
-        throw new Error("Invalid swap amount");
-      }
-
-      if (!userPrincipal) {
-        throw new Error("User principal is required for swap execution");
-      }
-
-      const fromCanisterId = TOKEN_MAPPINGS[fromToken];
-      const toCanisterId = TOKEN_MAPPINGS[toToken];
-      const amountInSmallestUnit = this.toSmallestUnit(amount, fromToken);
-      const minAmountOutInSmallestUnit = this.toSmallestUnit(minAmountOut, toToken);
-      const userPrincipalObj = Principal.fromText(userPrincipal);
-
-      // Get fresh quote to ensure accuracy
-      const quote = await this.getSwapQuote({ fromToken, toToken, amount });
-      
-      // Check if quote is still valid (within slippage tolerance)
-      if (quote.estimatedOutput < minAmountOut) {
-        throw new Error(`Slippage too high. Expected: ${minAmountOut}, Got: ${quote.estimatedOutput}`);
-      }
-
-      // If quote is from pool, execute pool-based swap
-      if (quote.source === 'pool' && quote.poolId) {
-        return await this.executePoolSwap({
-          quote,
-          fromToken,
-          toToken,
-          amount,
-          minAmountOut,
-          recipient,
-          userPrincipal
+      if (finalOutput < amount * 0.0001) {
+        console.warn("⚠️ WARNING: Output seems too low!", {
+          input: amount,
+          output: finalOutput,
+          ratio: finalOutput / amount,
+          sqrtPriceX96: poolData.sqrtPriceX96.toString(),
+          liquidity: poolData.liquidity.toString()
         });
       }
 
-      // If quote is market-based, execute direct token transfer
-      return await this.executeDirectSwap({
-        quote,
-        fromToken,
-        toToken,
-        amount,
-        minAmountOut,
-        recipient,
-        userPrincipal
-      });
+      return {
+        rate: finalOutput / amount,
+        estimatedOutput: finalOutput,
+        fee,
+        priceImpact: "0.10",
+        minAmountOut: finalOutput * 0.95,
+        validFor: 300,
+        poolId: pool.canisterId.toString(),
+        poolFee: Number(poolData.fee),
+        source: 'icpswap',
+        poolPrice: calculatePriceFromSqrt(poolData.sqrtPriceX96, decimals0, decimals1),
+        poolLiquidity: Number(poolData.liquidity)
+      };
 
     } catch (error) {
-      console.error("Swap execution error:", error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Execute pool-based swap
-   * @param {Object} params - Swap parameters
-   * @returns {Promise<Object>} Swap result
-   */
-  static async executePoolSwap({ quote, fromToken, toToken, amount, minAmountOut, recipient, userPrincipal }) {
-    try {
-      const fromCanisterId = TOKEN_MAPPINGS[fromToken];
-      const toCanisterId = TOKEN_MAPPINGS[toToken];
-      const amountInSmallestUnit = this.toSmallestUnit(amount, fromToken);
-      const minAmountOutInSmallestUnit = this.toSmallestUnit(minAmountOut, toToken);
-      const userPrincipalObj = Principal.fromText(userPrincipal);
-
-      // Step 1: Transfer tokens to pool
-      const agent = new HttpAgent({ 
-        host: isLocal ? "http://localhost:4943" : "https://ic0.app" 
-      });
-      
-      const fromTokenActor = Actor.createActor(
-        ICRC2_INTERFACE,
-        { agent, canisterId: fromCanisterId }
-      );
-
-      // Check user balance
-      const balance = await fromTokenActor.icrc1_balance_of({
-        owner: userPrincipalObj,
-        subaccount: []
-      });
-
-      if (balance < amountInSmallestUnit) {
-        throw new Error(`Insufficient balance. Available: ${this.fromSmallestUnit(balance, fromToken)}, Required: ${amount}`);
-      }
-
-      // Get token fee
-      const fee = await fromTokenActor.icrc1_fee();
-
-      // Transfer tokens to pool
-      const transferResult = await fromTokenActor.icrc2_transfer([
-        {
-          from_subaccount: [],
-          to: { owner: Principal.fromText(quote.poolId), subaccount: [] },
-          amount: amountInSmallestUnit,
-          fee: [fee],
-          memo: [],
-          created_at_time: []
-        }
-      ]);
-
-      if ('Err' in transferResult) {
-        throw new Error(`Token transfer failed: ${JSON.stringify(transferResult.Err)}`);
-      }
-
-      // Step 2: Execute swap in pool using ICPSwap Pool interface
-      // Based on ICPSwap-Labs documentation: https://github.com/ICPSwap-Labs/docs/tree/main/02.SwapPool
-      const poolActor = Actor.createActor(
-        { 
-          // ICPSwap Pool swap functions
-          swap: "([{amount_in: nat; token_in: principal; token_out: principal; min_amount_out: nat; recipient: principal}]) -> {Ok: {amount_out: nat; transaction_id: text}; Err: text}",
-          // Alternative swap function names that might be available
-          execute_swap: "([{amount_in: nat; token_in: principal; token_out: principal; min_amount_out: nat; recipient: principal}]) -> {Ok: {amount_out: nat; transaction_id: text}; Err: text}",
-          // Trade function
-          trade: "([{amount_in: nat; token_in: principal; token_out: principal; min_amount_out: nat; recipient: principal}]) -> {Ok: {amount_out: nat; transaction_id: text}; Err: text}"
-        },
-        { 
-          agent, 
-          canisterId: quote.poolId 
-        }
-      );
-
-      // Try different swap function names
-      let swapResult;
-      try {
-        swapResult = await poolActor.swap([
-          {
-            amount_in: amountInSmallestUnit,
-            token_in: Principal.fromText(fromCanisterId),
-            token_out: Principal.fromText(toCanisterId),
-            min_amount_out: minAmountOutInSmallestUnit,
-            recipient: recipient ? Principal.fromText(recipient) : userPrincipalObj
-          }
-        ]);
-      } catch (swapError) {
-        console.warn("swap failed, trying execute_swap:", swapError);
-        try {
-          swapResult = await poolActor.execute_swap([
-            {
-              amount_in: amountInSmallestUnit,
-              token_in: Principal.fromText(fromCanisterId),
-              token_out: Principal.fromText(toCanisterId),
-              min_amount_out: minAmountOutInSmallestUnit,
-              recipient: recipient ? Principal.fromText(recipient) : userPrincipalObj
-            }
-          ]);
-        } catch (executeError) {
-          console.warn("execute_swap failed, trying trade:", executeError);
-          try {
-            swapResult = await poolActor.trade([
-              {
-                amount_in: amountInSmallestUnit,
-                token_in: Principal.fromText(fromCanisterId),
-                token_out: Principal.fromText(toCanisterId),
-                min_amount_out: minAmountOutInSmallestUnit,
-                recipient: recipient ? Principal.fromText(recipient) : userPrincipalObj
-              }
-            ]);
-          } catch (tradeError) {
-            console.error("All swap functions failed:", tradeError);
-            throw new Error("Unable to execute swap in pool");
-          }
-        }
-      }
-
-      if ('Err' in swapResult) {
-        throw new Error(`Swap execution failed: ${swapResult.Err}`);
-      }
-
-      return {
-        success: true,
-        transactionId: swapResult.Ok.transaction_id,
-        amountOut: this.fromSmallestUnit(swapResult.Ok.amount_out, toToken),
-        message: "Pool swap executed successfully"
-      };
-    } catch (error) {
-      console.error("Pool swap execution error:", error);
+      console.error("Quote error:", error);
       throw error;
     }
   }
 
-  /**
-   * Execute direct token transfer (for market-based swaps)
-   * @param {Object} params - Swap parameters
-   * @returns {Promise<Object>} Swap result
-   */
-  static async executeDirectSwap({ quote, fromToken, toToken, amount, minAmountOut, recipient, userPrincipal }) {
+  async executeSwap({
+    fromToken,
+    toToken,
+    amount,
+    minAmountOut,
+    userPrincipal
+  }) {
     try {
-      const fromCanisterId = TOKEN_MAPPINGS[fromToken];
-      const toCanisterId = TOKEN_MAPPINGS[toToken];
-      const amountInSmallestUnit = this.toSmallestUnit(amount, fromToken);
-      const userPrincipalObj = Principal.fromText(userPrincipal);
+      console.log("🔄 Starting swap:", { fromToken, toToken, amount });
 
-      // For direct swaps, we simulate the swap by transferring tokens
-      // In a real implementation, this would involve a more complex mechanism
-      const agent = new HttpAgent({ 
-        host: isLocal ? "http://localhost:4943" : "https://ic0.app" 
-      });
-      
-      const fromTokenActor = Actor.createActor(
-        ICRC2_INTERFACE,
-        { agent, canisterId: fromCanisterId }
-      );
+      const pool = await this.findPool(fromToken, toToken);
+      if (!pool) throw new Error(`No pool exists for ${fromToken}/${toToken}`);
+      console.log("✅ Pool found:", pool.canisterId.toString());
 
-      // Check user balance
-      const balance = await fromTokenActor.icrc1_balance_of({
-        owner: userPrincipalObj,
-        subaccount: []
-      });
+      const poolActor = await this.getPoolActor(pool.canisterId.toString());
+      const fromTokenActor = await this.getTokenActor(TOKEN_CANISTERS[fromToken]);
+      const user = Principal.fromText(userPrincipal);
 
-      if (balance < amountInSmallestUnit) {
-        throw new Error(`Insufficient balance. Available: ${this.fromSmallestUnit(balance, fromToken)}, Required: ${amount}`);
+      const amountInSmallest = this.toSmallestUnit(amount, fromToken);
+      const minAmountOutSmallest = this.toSmallestUnit(minAmountOut, toToken);
+
+      const transactionFee = await fromTokenActor.icrc1_fee();
+      const poolFee = BigInt(POOL_FEES[TOKEN_CANISTERS[fromToken]]);
+      const balance = await fromTokenActor.icrc1_balance_of({ owner: user, subaccount: [] });
+
+      const totalAmountForApproval = amountInSmallest + poolFee + transactionFee;
+      const totalNeededInWallet = totalAmountForApproval + transactionFee;
+
+      if (balance < totalNeededInWallet) {
+        throw new Error(`Insufficient balance. Have: ${this.fromSmallestUnit(balance, fromToken)}, Need: ${this.fromSmallestUnit(totalNeededInWallet, fromToken)}`);
       }
+      console.log("💵 Balance check successful.");
 
-      // Get token fee
-      const fee = await fromTokenActor.icrc1_fee();
+      console.log(`📝 Approving pool to spend ${this.fromSmallestUnit(totalAmountForApproval, fromToken)} ${fromToken} (amount + fees)...`);
+      const approveResult = await fromTokenActor.icrc2_approve({
+        spender: { owner: pool.canisterId, subaccount: [] },
+        amount: totalAmountForApproval,
+        fee: [],
+        memo: [], from_subaccount: [], created_at_time: [], expires_at: [], expected_allowance: []
+      });
 
-      // For demonstration, we'll just transfer the tokens
-      // In production, this would involve a more sophisticated swap mechanism
-      const transferResult = await fromTokenActor.icrc2_transfer([
-        {
-          from_subaccount: [],
-          to: { owner: recipient ? Principal.fromText(recipient) : userPrincipalObj, subaccount: [] },
-          amount: amountInSmallestUnit,
-          fee: [fee],
-          memo: [],
-          created_at_time: []
-        }
-      ]);
+      if ('Err' in approveResult) throw new Error(`Approval failed: ${formatErrorForDisplay(approveResult.Err)}`);
+      console.log("✅ Approval successful.");
 
-      if ('Err' in transferResult) {
-        throw new Error(`Token transfer failed: ${JSON.stringify(transferResult.Err)}`);
-      }
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-      return {
-        success: true,
-        transactionId: `direct_${Date.now()}`,
-        amountOut: quote.estimatedOutput,
-        message: "Direct swap executed successfully (Note: This is a simulated swap for demonstration)"
-      };
+      console.log("💸 Depositing tokens to pool...");
+      const depositResult = await poolActor.depositFrom({
+        token: TOKEN_CANISTERS[fromToken],
+        amount: Number(amountInSmallest),
+        fee: Number(poolFee)
+      });
+
+      if ('err' in depositResult) throw new Error(`Deposit failed: ${formatErrorForDisplay(depositResult.err)}`);
+      console.log("✅ Deposit successful.");
+
+      const metadata = await poolActor.metadata();
+      const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
+
+      console.log("⚡ Executing swap...");
+      const swapResult = await poolActor.swap({
+        amountIn: amountInSmallest.toString(),
+        zeroForOne,
+        amountOutMinimum: minAmountOutSmallest.toString()
+      });
+
+      if ('err' in swapResult) throw new Error(`Swap failed: ${formatErrorForDisplay(swapResult.err)}`);
+
+      const amountOut = BigInt(swapResult.ok);
+      const outputAmount = this.fromSmallestUnit(amountOut, toToken);
+      console.log("✅ Swap successful! Received:", outputAmount, toToken);
+
+      return { success: true, amountOut, message: "Swap completed successfully" };
+
     } catch (error) {
-      console.error("Direct swap execution error:", error);
-      throw error;
+      console.error("❌ Swap execution error:", error);
+      return { success: false, error: error.message || "Unknown error", details: error };
     }
   }
 
-  /**
-   * Get liquidity pool information using ICPSwap Pool interface
-   * Based on ICPSwap-Labs documentation: https://github.com/ICPSwap-Labs/docs/tree/main/02.SwapPool
-   * @param {string} poolId - Pool canister ID
-   * @returns {Promise<Object>} Pool information
-   */
-  static async getPoolInfo(poolId) {
+  async getTokenBalance(tokenSymbol, userPrincipal) {
     try {
-      const agent = new HttpAgent({ 
-        host: isLocal ? "http://localhost:4943" : "https://ic0.app" 
-      });
-      const poolActor = Actor.createActor(
-        { 
-          // ICPSwap Pool info functions
-          get_pool_info: "() -> {token0: principal; token1: principal; reserve0: nat; reserve1: nat; fee: nat; liquidity: nat}",
-          // Alternative pool info function names
-          pool_info: "() -> {token0: principal; token1: principal; reserve0: nat; reserve1: nat; fee: nat; liquidity: nat}",
-          // Get reserves
-          get_reserves: "() -> {reserve0: nat; reserve1: nat; fee: nat; liquidity: nat}"
-        },
-        { 
-          agent, 
-          canisterId: poolId 
-        }
-      );
-
-      // Try different pool info function names
-      let poolInfo;
-      try {
-        poolInfo = await poolActor.get_pool_info();
-      } catch (infoError) {
-        console.warn("get_pool_info failed, trying pool_info:", infoError);
-        try {
-          poolInfo = await poolActor.pool_info();
-        } catch (poolInfoError) {
-          console.warn("pool_info failed, trying get_reserves:", poolInfoError);
-          try {
-            const reserves = await poolActor.get_reserves();
-            poolInfo = {
-              token0: null,
-              token1: null,
-              ...reserves
-            };
-          } catch (reservesError) {
-            console.error("All pool info functions failed:", reservesError);
-            throw new Error("Unable to get pool information");
-          }
-        }
+      if (!TOKEN_CANISTERS[tokenSymbol]) {
+        console.warn(`Token ${tokenSymbol} not configured`);
+        return 0;
       }
 
-      return poolInfo;
-    } catch (error) {
-      console.error("Pool info error:", error);
-      throw new Error(`Failed to get pool info: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get user's token balance
-   * @param {string} tokenSymbol - Token symbol
-   * @param {string} userPrincipal - User's principal
-   * @returns {Promise<number>} Token balance
-   */
-  static async getTokenBalance(tokenSymbol, userPrincipal) {
-    try {
-      const canisterId = TOKEN_MAPPINGS[tokenSymbol];
-      if (!canisterId) {
-        throw new Error(`Unsupported token: ${tokenSymbol}`);
-      }
-
-      const agent = new HttpAgent({ 
-        host: isLocal ? "http://localhost:4943" : "https://ic0.app" 
-      });
-      const tokenActor = Actor.createActor(
-        ICRC2_INTERFACE,
-        { agent, canisterId }
-      );
-
-      const balance = await tokenActor.icrc1_balance_of({
+      const actor = await this.getTokenActor(TOKEN_CANISTERS[tokenSymbol]);
+      const balance = await actor.icrc1_balance_of({
         owner: Principal.fromText(userPrincipal),
         subaccount: []
       });
-
       return this.fromSmallestUnit(balance, tokenSymbol);
     } catch (error) {
-      console.error("Balance check error:", error);
+      console.error(`Balance check error for ${tokenSymbol}:`, error);
       return 0;
     }
   }
 
-  /**
-   * Get real-time token prices from multiple sources
-   * @param {Array<string>} tokens - Array of token symbols
-   * @returns {Promise<Object>} Token prices in USD
-   */
-  static async getTokenPrices(tokens) {
-    try {
-      // Use CoinGecko API for real-time prices
-      const tokenIds = {
-        'ICP': 'internet-computer',
-        'ckBTC': 'bitcoin',
-        'ckETH': 'ethereum',
-        'FRADIUM': 'fradium' // This might need adjustment based on actual listing
-      };
-
-      const ids = tokens.map(token => tokenIds[token]).filter(Boolean).join(',');
-      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
-      const data = await response.json();
-
-      const prices = {};
-      tokens.forEach(token => {
-        const id = tokenIds[token];
-        prices[token] = data[id]?.usd || 0;
-      });
-
-      return prices;
-    } catch (error) {
-      console.error("Price fetch error:", error);
-      // Fallback to estimated prices
-      return {
-        'ICP': 10.0,
-        'ckBTC': 40000.0,
-        'ckETH': 2500.0,
-        'FRADIUM': 0.01
-      };
-    }
+  async getAllPools() {
+    return Object.values(this.knownPools);
   }
 
-  /**
-   * Get swap history for a user
-   * @param {string} userPrincipal - User's principal
-   * @param {number} limit - Number of transactions to fetch
-   * @returns {Promise<Array>} Swap history
-   */
-  static async getSwapHistory(userPrincipal, limit = 10) {
-    try {
-      // This would integrate with your backend to fetch swap history
-      // For now, return empty array as we're focusing on native swaps
-      return [];
-    } catch (error) {
-      console.error("Swap history error:", error);
-      return [];
+  async getTokenPrices(tokenSymbols) {
+    const prices = {};
+    for (const symbol of tokenSymbols) {
+      prices[symbol] = 0;
     }
+    return prices;
   }
 
-  /**
-   * Get supported token pairs
-   * @returns {Array} List of supported token pairs
-   */
-  static getSupportedPairs() {
-    const tokens = Object.keys(TOKEN_MAPPINGS);
-    const pairs = [];
+  async getPoolInfo(poolId) {
+    try {
+      const poolActor = await this.getPoolActor(poolId);
+      const metadata = await poolActor.metadata();
 
-    for (let i = 0; i < tokens.length; i++) {
-      for (let j = 0; j < tokens.length; j++) {
-        if (i !== j) {
-          pairs.push({
-            from: tokens[i],
-            to: tokens[j],
-            fromCanisterId: TOKEN_MAPPINGS[tokens[i]],
-            toCanisterId: TOKEN_MAPPINGS[tokens[j]]
-          });
-        }
+      if ('err' in metadata) {
+        const errorMsg = formatErrorForDisplay(metadata.err);
+        throw new Error(`Metadata error: ${errorMsg}`);
       }
+
+      const poolData = metadata.ok;
+
+      return {
+        poolId,
+        token0: poolData.token0,
+        token1: poolData.token1,
+        fee: Number(poolData.fee),
+        liquidity: Number(poolData.liquidity),
+        tick: poolData.tick,
+        sqrtPriceX96: poolData.sqrtPriceX96.toString()
+      };
+    } catch (error) {
+      console.error("Failed to get pool info:", error);
+      return null;
     }
-
-    return pairs;
   }
 
-  /**
-   * Check if token pair is supported
-   * @param {string} fromToken - Source token symbol
-   * @param {string} toToken - Destination token symbol
-   * @returns {boolean} Whether pair is supported
-   */
-  static isPairSupported(fromToken, toToken) {
-    return TOKEN_MAPPINGS[fromToken] && TOKEN_MAPPINGS[toToken];
-  }
-
-  /**
-   * Get token info for ICPSwap
-   * @param {string} tokenSymbol - Token symbol
-   * @returns {Object|null} Token info
-   */
-  static getTokenInfo(tokenSymbol) {
-    const canisterId = TOKEN_MAPPINGS[tokenSymbol];
-    if (!canisterId) return null;
-
-    return {
-      symbol: tokenSymbol,
-      canisterId,
-      decimals: this.getTokenDecimals(tokenSymbol)
-    };
-  }
-
-  /**
-   * Get token decimals
-   * @param {string} tokenSymbol - Token symbol
-   * @returns {number} Token decimals
-   */
-  static getTokenDecimals(tokenSymbol) {
-    const decimalsMap = {
-      ICP: 8,
-      FRADIUM: 8,
-      ckBTC: 8,
-      ckETH: 18
-    };
-
-    return decimalsMap[tokenSymbol] || 8;
-  }
-
-  /**
-   * Format amount for display
-   * @param {number} amount - Amount to format
-   * @param {string} tokenSymbol - Token symbol
-   * @returns {string} Formatted amount
-   */
-  static formatAmount(amount, tokenSymbol) {
-    const decimals = this.getTokenDecimals(tokenSymbol);
-    return parseFloat(amount).toFixed(decimals);
-  }
-
-  /**
-   * Convert amount to smallest unit
-   * @param {number} amount - Amount to convert
-   * @param {string} tokenSymbol - Token symbol
-   * @returns {bigint} Amount in smallest unit
-   */
-  static toSmallestUnit(amount, tokenSymbol) {
-    const decimals = this.getTokenDecimals(tokenSymbol);
+  toSmallestUnit(amount, tokenSymbol) {
+    const decimals = TOKEN_DECIMALS[tokenSymbol] || 8;
     return BigInt(Math.floor(amount * Math.pow(10, decimals)));
   }
 
-  /**
-   * Convert from smallest unit
-   * @param {bigint} amount - Amount in smallest unit
-   * @param {string} tokenSymbol - Token symbol
-   * @returns {number} Amount in standard unit
-   */
-  static fromSmallestUnit(amount, tokenSymbol) {
-    const decimals = this.getTokenDecimals(tokenSymbol);
+  fromSmallestUnit(amount, tokenSymbol) {
+    const decimals = TOKEN_DECIMALS[tokenSymbol] || 8;
     return Number(amount) / Math.pow(10, decimals);
   }
+
+  getSupportedTokens() {
+    return Object.keys(TOKEN_CANISTERS);
+  }
+
+  isTokenSupported(tokenSymbol) {
+    return tokenSymbol in TOKEN_CANISTERS;
+  }
 }
+
+export const swapService = new ICPSwapService();
