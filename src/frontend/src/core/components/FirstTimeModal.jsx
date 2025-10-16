@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ButtonGreen from "./ButtonGreen.jsx";
 
-const FirstTimeModal = ({ onClose, onSkip }) => {
+const FirstTimeModal = ({ onClose, onSkip, onScrollToProducts }) => {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -28,6 +28,18 @@ const FirstTimeModal = ({ onClose, onSkip }) => {
         }, 300);
     };
 
+    const [isButtonLoading, setIsButtonLoading] = useState(false);
+
+    const handleSeeHowItWorks = () => {
+        setIsButtonLoading(true);
+        setIsVisible(false);
+
+        // Delay untuk memberikan efek loading yang terlihat
+        setTimeout(() => {
+            onScrollToProducts();
+        }, 500);
+    };
+
     return (
         <AnimatePresence>
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -35,7 +47,10 @@ const FirstTimeModal = ({ onClose, onSkip }) => {
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    exit={{
+                        opacity: 0,
+                        transition: { duration: isButtonLoading ? 0.6 : 0.3 }
+                    }}
                     transition={{ duration: 0.3 }}
                     className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                     onClick={handleClose}
@@ -49,13 +64,18 @@ const FirstTimeModal = ({ onClose, onSkip }) => {
                         scale: isVisible ? 1 : 0.9,
                         y: isVisible ? 0 : 20
                     }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    exit={{
+                        opacity: 0,
+                        scale: isButtonLoading ? 1.05 : 0.9,
+                        y: isButtonLoading ? -10 : 20,
+                        transition: { duration: 0.4, ease: "easeOut" }
+                    }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="relative w-full max-w-md mx-auto bg-[#1a1a1a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+                    className="relative w-full max-w-lg mx-auto bg-[#171A1C] rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 pb-4">
-                        <h2 className="text-xl font-semibold text-white">
+                    <div className="flex items-center justify-between px-4 pt-6 pb-4">
+                        <h2 className="text-lg font-normal text-white">
                             What's New in Fradium?
                         </h2>
                         <button
@@ -70,7 +90,7 @@ const FirstTimeModal = ({ onClose, onSkip }) => {
                     </div>
 
                     {/* Main Content */}
-                    <div className="px-6 pb-6">
+                    <div className="px-2 pb-6">
                         {/* Image */}
                         <div className="relative mb-6">
                             <img
@@ -81,35 +101,32 @@ const FirstTimeModal = ({ onClose, onSkip }) => {
                             />
                         </div>
 
-                        {/* Text Content */}
-                        <div className="mb-6">
+                        {/* Text Content - Center Aligned */}
+                        <div className="mb-8 text-center">
                             <h3 className="text-lg font-semibold text-white mb-3">
                                 Introducing Fradium Escrow and Paylink
                             </h3>
-                            <p className="text-sm text-white/80 leading-relaxed">
+                            <p className="text-sm text-white/80 leading-relaxed max-w-md mx-auto">
                                 Fradium Escrow secures your transfers by verifying recipient safety, while Fradium Paylink enables instant, address-free payments through secure links. All backed by Fradium's protection layer.
                             </p>
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3">
+                        <div className="flex px-2 gap-4">
                             <button
                                 onClick={handleSkip}
-                                className="flex-1 px-4 py-3 rounded-full bg-gray-700/50 text-white text-sm font-medium hover:bg-gray-700/70 transition-colors"
+                                className="flex-1 px-6 py-1.5 rounded-full bg-[#232527] border border-gray-500/50 text-white text-sm font-medium hover:bg-gray-700/70 transition-colors"
                             >
                                 Skip this
                             </button>
                             <div className="flex-1">
                                 <ButtonGreen
-                                    size="md"
+                                    size="sm"
                                     fullWidth
-                                    onClick={() => {
-                                        // Navigate to how it works or close modal
-                                        handleClose();
-                                    }}
-                                    className="w-full"
+                                    loading={isButtonLoading}
+                                    onClick={handleSeeHowItWorks}
                                 >
-                                    See how it works
+                                    {isButtonLoading ? "Loading..." : "See how it works"}
                                 </ButtonGreen>
                             </div>
                         </div>

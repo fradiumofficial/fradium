@@ -21,6 +21,7 @@ const Home = React.memo(() => {
   const navigate = useNavigate();
   const [isSignUpLoading, setIsSignUpLoading] = useState(false);
   const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
+  const [highlightProducts, setHighlightProducts] = useState(false);
 
   const handleSignUp = async () => {
     setIsSignUpLoading(true);
@@ -38,6 +39,7 @@ const Home = React.memo(() => {
   const cardsRef = useRef(null);
   const featuresRef = useRef(null);
   const ctaRef = useRef(null);
+  const ourProductsRef = useRef(null);
 
   // Scroll-based animations
   const { scrollYProgress } = useScroll();
@@ -96,6 +98,34 @@ const Home = React.memo(() => {
     markAsVisited(); // Mark as visited when modal is skipped
   };
 
+  // Handle scroll to Our Products section
+  const handleScrollToProducts = () => {
+    setShowFirstTimeModal(false); // Tutup modal sepenuhnya
+    markAsVisited(); // Mark as visited when modal is closed
+
+    // Delay scroll untuk memberikan efek yang lebih smooth
+    setTimeout(() => {
+      if (ourProductsRef.current) {
+        // Smooth scroll dengan offset untuk header
+        const elementPosition = ourProductsRef.current.offsetTop;
+        const offsetPosition = elementPosition - 80; // Offset untuk header
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+
+        // Trigger highlight effect
+        setHighlightProducts(true);
+
+        // Remove highlight after animation
+        setTimeout(() => {
+          setHighlightProducts(false);
+        }, 2000);
+      }
+    }, 500); // Delay yang lebih lama untuk memberikan efek loading
+  };
+
   const appear = "opacity-100 translate-y-0"; // Simplified, no conditional rendering
 
   return (
@@ -105,6 +135,7 @@ const Home = React.memo(() => {
         <FirstTimeModal
           onClose={handleModalClose}
           onSkip={handleModalSkip}
+          onScrollToProducts={handleScrollToProducts}
         />
       )}
 
@@ -777,13 +808,18 @@ const Home = React.memo(() => {
         </div>
 
         {/* Our Product Section */}
-        <div className="relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-[#000510]">
+        <div
+          ref={ourProductsRef}
+          className={`relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-[#000510] transition-all duration-1000 ${highlightProducts ? 'ring-4 ring-[#99E39E]/30 ring-opacity-50 shadow-[0_0_50px_rgba(153,227,158,0.3)]' : ''
+            }`}
+        >
           <div className="absolute inset-0 z-0 pointer-events-none select-none">
             <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
           </div>
           <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
             <div className="text-center mb-12 sm:mb-16 md:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6">Our Product</h2>
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium leading-tight text-white mb-4 sm:mb-6 transition-all duration-1000 ${highlightProducts ? 'animate-pulse text-[#99E39E] drop-shadow-[0_0_20px_rgba(153,227,158,0.5)]' : ''
+                }`}>Our Product</h2>
               <p className="mx-auto max-w-4xl text-white/80 text-sm sm:text-base md:text-lg leading-relaxed">With Fradium, every wallet address is checked in real time, so you can focus on using crypto without worrying about hidden risks.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-6">
