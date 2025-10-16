@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import ButtonPurple from "@/core/components/ButtonPurple.jsx";
@@ -6,6 +6,9 @@ import Footer from "../../core/components/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/providers/AuthProvider.jsx";
 import MagicBento from "@/core/components/MagicBento.jsx";
+import FirstTimeModal from "@/core/components/FirstTimeModal.jsx";
+import { hasVisitedBefore, markAsVisited } from "@/core/utils/localStorage.js";
+import "@/core/utils/modalTest.js";
 
 const BACKGROUND_URL_2 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-2.webp";
 const HOW_IT_WORKS_IMG = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/how-it-works-frames2.webp";
@@ -41,6 +44,8 @@ const Home = React.memo(() => {
   const { isAuthenticated, handleLogin } = useAuth();
   const navigate = useNavigate();
   const [isSignUpLoading, setIsSignUpLoading] = useState(false);
+  const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
+  const productsRef = useRef(null);
 
   const handleSignUp = async () => {
     setIsSignUpLoading(true);
@@ -74,10 +79,44 @@ const Home = React.memo(() => {
     setIsMounted(true);
   }, []);
 
+  // First-time modal check
+  useEffect(() => {
+    const visited = hasVisitedBefore();
+    if (!visited) setShowFirstTimeModal(true);
+  }, []);
+
+  const handleModalClose = () => {
+    setShowFirstTimeModal(false);
+    markAsVisited();
+  };
+
+  const handleModalSkip = () => {
+    setShowFirstTimeModal(false);
+    markAsVisited();
+  };
+
+  const handleScrollToProducts = () => {
+    setShowFirstTimeModal(false);
+    markAsVisited();
+    setTimeout(() => {
+      if (productsRef.current) {
+        const top = productsRef.current.offsetTop - 80;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
+    }, 500);
+  };
+
   const appear = "opacity-100 translate-y-0"; // Simplified, no conditional rendering
 
   return (
     <section className="relative bg-[#000510] w-full overflow-hidden">
+      {showFirstTimeModal && (
+        <FirstTimeModal
+          onClose={handleModalClose}
+          onSkip={handleModalSkip}
+          onScrollToProducts={handleScrollToProducts}
+        />
+      )}
       <style>{`
         @keyframes fradium-float {
           0%, 100% { 
@@ -761,7 +800,7 @@ const Home = React.memo(() => {
       </div>
 
       {/* Our Product Section */}
-      <div className="relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-[#000510]">
+      <div ref={productsRef} className="relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-[#000510]">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
         </div>
