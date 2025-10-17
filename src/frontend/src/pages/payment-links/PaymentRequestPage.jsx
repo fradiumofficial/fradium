@@ -13,6 +13,7 @@ import AIAnalyzeService from "@/core/services/ai/aiAnalyze.js";
 import QRCodeStyling from "qr-code-styling";
 import { motion, AnimatePresence } from "framer-motion";
 import ButtonYellow from "@/core/components/ButtonYellow";
+import { formatAmount as formatAmountDisplay } from "@/core/lib/tokenUtils";
 
 const PaymentRequestPage = () => {
   const { linkId } = useParams();
@@ -57,8 +58,9 @@ const PaymentRequestPage = () => {
     return tokenConfig[tokenType] || tokenConfig.Fradium;
   };
 
-  const formatAmount = (amount, decimals) => {
-    return (Number(amount) / 10 ** decimals).toFixed(8);
+  const formatAmountPretty = (amountNat, decimals) => {
+    const human = Number(amountNat) / 10 ** decimals;
+    return formatAmountDisplay(human);
   };
 
   const formatRiskLevel = (riskValue) => {
@@ -163,7 +165,7 @@ const PaymentRequestPage = () => {
             }
 
             setPaymentDetails({
-              amount: formatAmount(details.amount, config.decimals),
+              amount: formatAmountPretty(details.amount, config.decimals),
               tokenName: config.name,
               address: details.creator.toText(),
               expiresAt: details.expires_at ? new Date(Number(details.expires_at) / 1000000).toLocaleString() : null,
@@ -201,8 +203,8 @@ const PaymentRequestPage = () => {
     if (linkDetails && qrRef.current && !isAnalyzing && !paymentSuccess) {
       const paymentUrl = `${window.location.origin}/paylink/${linkId}`;
       qrCode.current = new QRCodeStyling({
-        width: 200,
-        height: 200,
+        width: 160,
+        height: 160,
         data: paymentUrl,
         margin: 0,
         dotsOptions: { color: "#000000", type: "rounded" },
@@ -306,7 +308,7 @@ const PaymentRequestPage = () => {
       if ("Ok" in executeResult) {
         toast.success("Payment successful!", { id: loadingToast });
         setPaymentDetails({
-          amount: formatAmount(linkDetails.amount, config.decimals),
+          amount: formatAmountPretty(linkDetails.amount, config.decimals),
           tokenName: config.name,
           address: linkDetails.creator.toText(),
           expiresAt: linkDetails.expires_at ? new Date(Number(linkDetails.expires_at) / 1000000).toLocaleString() : null,
@@ -374,7 +376,7 @@ const PaymentRequestPage = () => {
       if ("Ok" in recordResult) {
         toast.success("Payment successful!", { id: loadingToast });
         setPaymentDetails({
-          amount: formatAmount(linkDetails.amount, config.decimals),
+          amount: formatAmountPretty(linkDetails.amount, config.decimals),
           tokenName: config.name,
           address: destinationAddress,
           expiresAt: linkDetails.expires_at ? new Date(Number(linkDetails.expires_at) / 1000000).toLocaleString() : null,
@@ -408,8 +410,8 @@ const PaymentRequestPage = () => {
 
   if (isLoading) {
     return (
-      <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md mx-auto p-8 bg-[#F7F7F7] rounded-3xl shadow-lg">
+      <div className="fixed inset-0 z-20 flex items-center justify-center bg-transparent px-4 py-8">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-[30rem] p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex flex-col items-center space-y-6">
             <div className="relative w-32 h-32">
               <div className="absolute inset-0 rounded-full border-2 border-[#C9A962]/20" />
@@ -468,61 +470,63 @@ const PaymentRequestPage = () => {
 
   if (paymentSuccess && paymentDetails) {
     return (
-      <div className="relative flex flex-col max-w-3xl mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl shadow-lg overflow-hidden">
-          <div className="relative bg-gradient-to-br from-gray-50 to-white pt-12 pb-8 px-8">
-            <div className="flex justify-center mb-6">
+      <div className="fixed inset-0 z-20 flex items-center justify-center bg-transparent px-4 py-8">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-[30rem] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="relative pt-6 pb-4 px-6 border-b border-slate-200 bg-white">
+            <div className="flex justify-center mb-4">
               <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.1, type: "spring", stiffness: 200 }}>
-                <img src="/assets/paylink-success.svg" alt="Success" className="w-16 h-16" />
+                <img src="/assets/paylink-success.svg" alt="Success" className="w-12 h-12" />
               </motion.div>
             </div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-center">
-              <h2 className="text-2xl font-bold text-[#C9A962] mb-2 uppercase tracking-wide">Payment Has Been Completed!</h2>
-              <p className="text-gray-600">Transaction completed without any issues</p>
+              <h2 className="text-xl font-bold text-[#C9A962] mb-1 uppercase tracking-wide">Payment Completed</h2>
+              <p className="text-gray-600 text-sm">Transaction completed without any issues</p>
             </motion.div>
           </div>
-          <div className="px-8 pb-8">
-            <div className="grid grid-cols-2 gap-6">
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="space-y-1">
-                <p className="text-sm text-gray-500">Amount</p>
-                <p className="text-2xl font-bold text-[#C9A962]">
-                  {paymentDetails.amount} {paymentDetails.tokenName}
-                </p>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.55 }} className="space-y-1">
-                <p className="text-sm text-gray-500">Address</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-mono text-gray-900 truncate">{paymentDetails.address.slice(0, 12)}...</p>
-                  <button onClick={() => handleCopyAddress(paymentDetails.address)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                    <Copy className="w-4 h-4 text-gray-400" />
-                  </button>
-                </div>
-              </motion.div>
+          <div className="px-6 pb-6 bg-white">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 flex items-start justify-between gap-6">
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="space-y-1">
+                  <p className="text-xs text-gray-500">Amount</p>
+                  <p className="text-xl font-bold text-[#C9A962]">
+                    {paymentDetails.amount} {paymentDetails.tokenName}
+                  </p>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.55 }} className="space-y-1 text-right">
+                  <p className="text-xs text-gray-500">Address</p>
+                  <div className="flex items-center gap-2 justify-end">
+                    <p className="text-xs font-mono text-gray-900 truncate max-w-[12rem]">{paymentDetails.address.slice(0, 12)}...</p>
+                    <button onClick={() => handleCopyAddress(paymentDetails.address)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                      <Copy className="w-3.5 h-3.5 text-gray-400" />
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }} className="space-y-1">
-                <p className="text-sm text-gray-500">Token type</p>
-                <p className="text-lg font-bold text-[#C9A962]">{paymentDetails.tokenName}</p>
+                <p className="text-xs text-gray-500">Token type</p>
+                <p className="text-base font-bold text-[#C9A962]">{paymentDetails.tokenName}</p>
               </motion.div>
               {paymentDetails.expiresAt && (
                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.65 }} className="space-y-1">
-                  <p className="text-sm text-gray-500">Expires</p>
-                  <p className="text-sm text-gray-900">{paymentDetails.expiresAt}</p>
+                  <p className="text-xs text-gray-500">Expires</p>
+                  <p className="text-xs text-gray-900">{paymentDetails.expiresAt}</p>
                 </motion.div>
               )}
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }} className="space-y-1">
-                <p className="text-sm text-gray-500">Paid by</p>
-                <p className="text-sm font-mono text-gray-900 truncate">{paymentDetails.paidBy.slice(0, 15)}...</p>
+                <p className="text-xs text-gray-500">Paid by</p>
+                <p className="text-xs font-mono text-gray-900 truncate">{paymentDetails.paidBy.slice(0, 15)}...</p>
               </motion.div>
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.75 }} className="space-y-1">
-                <p className="text-sm text-gray-500">Paid on</p>
-                <p className="text-sm text-gray-900">{paymentDetails.paidOn}</p>
+                <p className="text-xs text-gray-500">Paid on</p>
+                <p className="text-xs text-gray-900">{paymentDetails.paidOn}</p>
               </motion.div>
             </div>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col sm:flex-row gap-3 mt-8">
-              <button onClick={() => navigate("/wallet")} className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-transparent hover:bg-yellow-50/50 border-2 border-[#AA8D42] rounded-full transition-colors duration-200 ease-out text-base font-semibold text-[#AA8D42]">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col sm:flex-row gap-3 mt-6">
+              <button onClick={() => navigate("/wallet")} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-transparent hover:bg-yellow-50/50 border border-[#AA8D42] rounded-xl transition-colors duration-200 ease-out text-sm font-semibold text-[#AA8D42]">
                 Explore Fradium
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <ButtonYellow onClick={handleShareSuccess} className="flex-1" size="lg">
+              <ButtonYellow onClick={handleShareSuccess} className="flex-1" size="sm">
                 Share
               </ButtonYellow>
             </motion.div>
@@ -534,11 +538,11 @@ const PaymentRequestPage = () => {
 
   if (!linkDetails) {
     return (
-      <div className="relative flex flex-col max-w-[33rem] gap-8 mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center bg-[#F7F7F7] rounded-3xl p-12 shadow-lg">
+      <div className="fixed inset-0 z-20 flex items-center justify-center bg-transparent px-4 py-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[30rem] text-center bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Link Not Found</h2>
-          <p className="text-gray-600 mb-6">This payment link is invalid or has been removed.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">Payment Link Not Found</h2>
+          <p className="text-gray-600 text-sm mb-5">This payment link is invalid or has been removed.</p>
           <ButtonYellow onClick={() => navigate("/wallet")}>Go to Wallet</ButtonYellow>
         </motion.div>
       </div>
@@ -627,35 +631,35 @@ const PaymentRequestPage = () => {
       </AnimatePresence>
 
       {/* --- CSS LAYERING FIX: Added z-20 to lift this page's content above the layout sidebars --- */}
-      <div className="relative z-20 flex flex-col max-w-3xl mx-auto w-full bg-transparent px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-[#F7F7F7] rounded-3xl shadow-lg overflow-hidden">
-          <div className="text-center pt-8 pb-6 px-6">
-            <h1 className="text-2xl font-bold text-gray-900">Payment Request</h1>
+      <div className="fixed inset-0 z-20 flex items-center justify-center bg-transparent px-4 py-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[30rem] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="text-center pt-6 pb-4 px-6 border-b border-slate-200">
+            <h1 className="text-xl font-bold text-gray-900">Payment Request</h1>
           </div>
-          <div className="px-8 pb-6">
+          <div className="px-6 pb-4 bg-white">
             <AnimatePresence>
               {showAnalysisResult && analysisResult && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} layout>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-2">Payment Request Analysis</h3>
+                  <h3 className="text-xs font-semibold text-gray-800 mb-2">Payment Request Analysis</h3>
                   {isAnalysisMinimized ? (
-                    <div onClick={handleToggleAnalysisView} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors ${analysisResult.result.isSafe ? "bg-green-100 hover:bg-green-200/60 border-green-200" : "bg-red-100 hover:bg-red-200/60 border-red-200"} border`}>
+                    <div onClick={handleToggleAnalysisView} className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors ${analysisResult.result.isSafe ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"} border`}>
                       <div className="flex items-center gap-2">
                         {analysisResult.result.isSafe ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <AlertTriangle className="w-5 h-5 text-red-600" />}
-                        <p className={`font-semibold text-sm ${analysisResult.result.isSafe ? "text-green-800" : "text-red-800"}`}>Address is {analysisResult.result.isSafe ? "Safe" : "Risky"}</p>
+                        <p className={`font-semibold text-xs ${analysisResult.result.isSafe ? "text-green-800" : "text-red-800"}`}>Address is {analysisResult.result.isSafe ? "Safe" : "Risky"}</p>
                       </div>
                       <div className="flex items-center gap-1 text-sm font-semibold text-gray-700">
                         Show Details <ChevronDown className="w-4 h-4" />
                       </div>
                     </div>
                   ) : (
-                    <div className={`p-4 rounded-2xl border ${analysisResult.result.isSafe ? "bg-green-50/50 border-green-200" : "bg-red-50/50 border-red-200"}`}>
+                    <div className={`p-3 rounded-2xl border ${analysisResult.result.isSafe ? "bg-green-50/50 border-green-200" : "bg-red-50/50 border-red-200"}`}>
                       {/* --- CLICK AREA FIX: onClick and cursor-pointer added to this div --- */}
                       <div onClick={handleToggleAnalysisView} className="flex items-start justify-between cursor-pointer">
                         <div className="flex items-center gap-3">
                           <img src={analysisResult.result.isSafe ? "/assets/images/ai-safe-result.svg" : "/assets/images/ai-unsafe-result.svg"} alt="Analysis Icon" className="w-12 h-12" />
                           <div>
-                            <h3 className={`text-lg font-semibold ${analysisResult.result.isSafe ? "text-green-800" : "text-red-800"}`}>Address is {analysisResult.result.isSafe ? "SAFE" : "RISKY"}</h3>
-                            <p className="text-sm text-gray-600">Confidence Level: {analysisResult.result.confidence}%</p>
+                            <h3 className={`text-base font-semibold ${analysisResult.result.isSafe ? "text-green-800" : "text-red-800"}`}>Address is {analysisResult.result.isSafe ? "SAFE" : "RISKY"}</h3>
+                            <p className="text-xs text-gray-600">Confidence Level: {analysisResult.result.confidence}%</p>
                           </div>
                         </div>
                         {/* --- Changed from <button> to <div> as the parent is now the clickable element --- */}
@@ -663,27 +667,27 @@ const PaymentRequestPage = () => {
                           <ChevronUp className="w-5 h-5 text-gray-600" />
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-3 mt-4 text-left">
-                        <div className="p-3 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center text-xs text-gray-500">
+                      <div className="grid grid-cols-3 gap-2 mt-3 text-left">
+                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex items-center text-[10px] text-gray-500">
                             <Wallet className="w-4 h-4 mr-1.5" />
                             <span>Transactions</span>
                           </div>
-                          <div className="mt-1 text-xl font-medium text-gray-900">{analysisResult.result.stats.transactions}</div>
+                          <div className="mt-1 text-lg font-medium text-gray-900">{analysisResult.result.stats.transactions}</div>
                         </div>
-                        <div className="p-3 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center text-xs text-gray-500">
+                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex items-center text-[10px] text-gray-500">
                             <Gauge className="w-4 h-4 mr-1.5" />
                             <span>Risk</span>
                           </div>
-                          <div className={`mt-1 text-xl font-medium ${analysisResult.result.isSafe ? "text-green-700" : "text-red-700"}`}>{formatRiskLevel(analysisResult.result.stats.totalVolume)}</div>
+                          <div className={`mt-1 text-lg font-medium ${analysisResult.result.isSafe ? "text-green-700" : "text-red-700"}`}>{formatRiskLevel(analysisResult.result.stats.totalVolume)}</div>
                         </div>
-                        <div className="p-3 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center text-xs text-gray-500">
+                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex items-center text-[10px] text-gray-500">
                             <Users className="w-4 h-4 mr-1.5" />
                             <span>Source</span>
                           </div>
-                          <div className="mt-1 text-xl font-medium text-gray-900">{sourceInfo.label}</div>
+                          <div className="mt-1 text-lg font-medium text-gray-900">{sourceInfo.label}</div>
                         </div>
                       </div>
                     </div>
@@ -692,70 +696,65 @@ const PaymentRequestPage = () => {
               )}
             </AnimatePresence>
           </div>
-          <div className="px-8 pb-8 space-y-6">
+          <div className="px-6 pb-6 space-y-5 bg-white">
             <div className="flex flex-col items-center">
-              <div className="bg-white p-4 rounded-2xl shadow-md mb-6 relative">
-                <div ref={qrRef} className="w-[200px] h-[200px]" />
+              <div className="bg-white p-3 rounded-2xl border border-slate-200 mb-5 relative">
+                <div ref={qrRef} className="w-[180px] h-[180px] flex items-center justify-center" />
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-2 shadow-md">
-                  <div className="w-10 h-10 bg-[#C9A962] rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-xl">₣</span>
+                  <div className="w-8 h-8 bg-[#C9A962] rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">₣</span>
                   </div>
                 </div>
               </div>
               <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-1">
-                  Pay for {formatAmount(linkDetails.amount, config.decimals)} {config.name}
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  Pay for {formatAmountPretty(linkDetails.amount, config.decimals)} {config.name}
                 </h2>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[#F7F7F7] rounded-xl p-4">
-                {" "}
-                <p className="text-sm text-gray-500 mb-1">Amount</p>{" "}
-                <p className="text-lg font-bold text-[#C9A962]">
-                  {" "}
-                  {formatAmount(linkDetails.amount, config.decimals)} {config.name}{" "}
-                </p>{" "}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 flex items-start justify-between gap-6">
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-500 mb-1">Amount</p>
+                  <p className="text-base font-bold text-[#C9A962]">
+                    {formatAmountPretty(linkDetails.amount, config.decimals)} {config.name}
+                  </p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-xs text-gray-500 mb-1">Address</p>
+                  <div className="flex items-center gap-2 justify-end">
+                    <p className="text-xs font-mono text-gray-900 truncate max-w-[12rem]"> {linkDetails.creator.toText().slice(0, 10)}... </p>
+                    <button onClick={() => handleCopyAddress(linkDetails.creator.toText())} className="text-gray-400 hover:text-gray-600 transition-colors">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="bg-[#F7F7F7] rounded-xl p-4">
-                {" "}
-                <p className="text-sm text-gray-500 mb-1">Address</p>{" "}
-                <div className="flex items-center gap-2">
-                  {" "}
-                  <p className="text-sm font-mono text-gray-900 truncate"> {linkDetails.creator.toText().slice(0, 10)}... </p>{" "}
-                  <button onClick={() => handleCopyAddress(linkDetails.creator.toText())} className="text-gray-400 hover:text-gray-600 transition-colors">
-                    {" "}
-                    <Copy className="w-4 h-4" />{" "}
-                  </button>{" "}
-                </div>{" "}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Token Type</p>
+                <p className="text-base font-bold text-[#C9A962]">{config.name}</p>
               </div>
-              <div className="bg-[#F7F7F7] rounded-xl p-4">
-                {" "}
-                <p className="text-sm text-gray-500 mb-1">Token Type</p> <p className="text-lg font-bold text-[#C9A962]">{config.name}</p>{" "}
-              </div>
-              <div className="bg-[#F7F7F7] rounded-xl p-4">
-                {" "}
-                <p className="text-sm text-gray-500 mb-1">Status</p>{" "}
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full">
-                  {" "}
-                  <span className="text-sm font-medium text-gray-600"> {isCompleted ? "Paid" : isExpired ? "Expired" : isCancelled ? "Cancelled" : "Not yet paid"} </span>{" "}
-                </div>{" "}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Status</p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full border border-slate-200">
+                  <span className="text-xs font-medium text-gray-600"> {isCompleted ? "Paid" : isExpired ? "Expired" : isCancelled ? "Cancelled" : "Not yet paid"} </span>
+                </div>
               </div>
 
               {linkDetails.expires_at && (
-                <div className="bg-[#F7F7F7] rounded-xl p-4 col-span-2">
+                <div className="col-span-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1 flex items-center gap-1.5">
+                      <p className="text-xs text-gray-500 mb-1 flex items-center gap-1.5">
                         <Clock className="w-4 h-4" />
                         Expires
                       </p>
-                      <p className="text-sm font-medium text-gray-900 mt-2">{new Date(Number(linkDetails.expires_at) / 1000000).toLocaleString()}</p>
+                      <p className="text-xs font-medium text-gray-900 mt-2">{new Date(Number(linkDetails.expires_at) / 1000000).toLocaleString()}</p>
                     </div>
                     {timeLeft && !isCompleted && (
                       <div className="text-right">
-                        <p className="text-sm text-gray-500 mb-1">Time left</p>
-                        <p className={`text-lg font-bold ${timeLeft === "Expired" ? "text-red-600" : "text-[#C9A962]"}`}>{timeLeft}</p>
+                        <p className="text-xs text-gray-500 mb-1">Time left</p>
+                        <p className={`text-base font-bold ${timeLeft === "Expired" ? "text-red-600" : "text-[#C9A962]"}`}>{timeLeft}</p>
                       </div>
                     )}
                   </div>
@@ -764,21 +763,21 @@ const PaymentRequestPage = () => {
             </div>
 
             {isCreator && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl bg-blue-50 border border-blue-200">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-3 rounded-xl bg-blue-50 border border-blue-200">
                 {" "}
                 <div className="flex items-start gap-3">
                   {" "}
                   <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />{" "}
                   <div className="flex-1">
                     {" "}
-                    <h3 className="font-semibold text-blue-900">You Created This Link</h3> <p className="text-sm text-blue-700 mt-1"> This is your payment request. Share it with others to receive payment. </p>{" "}
+                    <h3 className="font-semibold text-blue-900 text-sm">You Created This Link</h3> <p className="text-xs text-blue-700 mt-1"> This is your payment request. Share it with others to receive payment. </p>{" "}
                   </div>{" "}
                 </div>{" "}
               </motion.div>
             )}
             <div className="flex gap-3">
               {!isCreator && !showAnalysisResult && (
-                <button onClick={performRiskAnalysis} disabled={isAnalyzing} className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-gray-50 border-2 border-gray-200 rounded-xl transition-colors text-base font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={performRiskAnalysis} disabled={isAnalyzing} className="flex-1 flex items-center justify-end gap-2 px-5 py-3 bg-white hover:bg-gray-50 border border-slate-200 rounded-xl transition-colors text-sm font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Search className="w-5 h-5" />
                   Analyze Address
                 </button>
@@ -787,32 +786,32 @@ const PaymentRequestPage = () => {
               {!isCreator && (
                 <>
                   {isCompleted ? (
-                    <div className="flex-1 bg-green-100 border-2 border-green-300 rounded-xl p-4 text-center">
+                    <div className="flex-1 bg-green-50 border border-green-300 rounded-xl p-3 text-center">
                       {" "}
-                      <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-1" /> <p className="text-green-700 font-semibold text-sm">Payment Completed</p>{" "}
+                      <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto mb-1" /> <p className="text-green-700 font-semibold text-xs">Payment Completed</p>{" "}
                     </div>
                   ) : isExpired ? (
-                    <div className="flex-1 bg-red-100 border-2 border-red-300 rounded-xl p-4 text-center">
+                    <div className="flex-1 bg-red-50 border border-red-300 rounded-xl p-3 text-center">
                       {" "}
-                      <Clock className="w-6 h-6 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-sm">Link Expired</p>{" "}
+                      <Clock className="w-5 h-5 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-xs">Link Expired</p>{" "}
                     </div>
                   ) : isCancelled ? (
-                    <div className="flex-1 bg-red-100 border-2 border-red-300 rounded-xl p-4 text-center">
+                    <div className="flex-1 bg-red-50 border border-red-300 rounded-xl p-3 text-center">
                       {" "}
-                      <Ban className="w-6 h-6 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-sm">Link Cancelled</p>{" "}
+                      <Ban className="w-5 h-5 text-red-600 mx-auto mb-1" /> <p className="text-red-700 font-semibold text-xs">Link Cancelled</p>{" "}
                     </div>
                   ) : (
-                    <ButtonYellow onClick={isNativeToken ? handlePayNative : handlePayICRC} disabled={isPaying || (analysisResult && !analysisResult.result?.isSafe)} className="flex-1" size="lg">
+                    <ButtonYellow onClick={isNativeToken ? handlePayNative : handlePayICRC} disabled={isPaying || (analysisResult && !analysisResult.result?.isSafe)} className="flex-1" size="md">
                       <div className="flex items-center gap-2">
                         {isPaying ? (
                           <>
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>Processing...</span>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span className="text-sm">Processing...</span>
                           </>
                         ) : (
                           <>
-                            <Wallet className="w-5 h-5" />
-                            <span>Pay Now</span>
+                            <Wallet className="w-4 h-4" />
+                            <span className="text-sm">Pay Now</span>
                           </>
                         )}
                       </div>
@@ -821,11 +820,11 @@ const PaymentRequestPage = () => {
                 </>
               )}
             </div>
-            {analysisResult && !analysisResult.result?.isSafe && !isCreator && <p className="text-sm text-red-600 text-center font-medium"> Payment disabled due to security concerns. This address has been flagged as suspicious. </p>}
+            {analysisResult && !analysisResult.result?.isSafe && !isCreator && <p className="text-xs text-red-600 text-center font-medium"> Payment disabled due to security concerns. This address has been flagged as suspicious. </p>}
             {isCreator && (
-              <div className="text-center p-4 bg-gray-100 rounded-xl">
+              <div className="text-center p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 {" "}
-                <p className="text-sm text-gray-600">You cannot pay your own payment link</p>{" "}
+                <p className="text-xs text-gray-600">You cannot pay your own payment link</p>{" "}
               </div>
             )}
           </div>

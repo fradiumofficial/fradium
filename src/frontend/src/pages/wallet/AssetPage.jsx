@@ -306,7 +306,7 @@ export default function AssetsPage() {
   }, [showSettingsDropdown]);
 
   return (
-    <div className="relative flex flex-col max-w-[36rem] lg:max-w-[40rem] gap-8 mx-auto w-full bg-transparent px-4">
+    <div className="relative flex flex-col max-w-[35rem] lg:max-w-[35rem] gap-8 mx-auto w-full bg-transparent px-4">
       <div className="relative z-10">
         {/* Card Wallet - Redesigned to match mockup with interaction */}
         <motion.div

@@ -75,6 +75,7 @@ import APICreditsPage from "@/pages/developers/api/APICreditsPage.jsx";
 import APIDocumentationPage from "@/pages/developers/api/APIDocumentationPage.jsx";
 import PaymentLinksPage from "@/pages/payment-links/PaymentLinksPage.jsx";
 import PaymentRequestPage from "@/pages/payment-links/PaymentRequestPage.jsx";
+import PaymentLinkHistoryPage from "@/pages/payment-links/PaymentLinkHistoryPage.jsx";
 
 // NProgress
 NProgress.configure({
@@ -193,7 +194,7 @@ function AnimatedRoutes() {
           }>
           <Route index element={<PaymentLinksPage />} />
           <Route path="create" element={<PaymentLinksPage />} />
-          <Route path="manage" element={<PaymentLinksPage />} />
+          <Route path="manage" element={<PaymentLinkHistoryPage />} />
         </Route>
 
         {/* Wallet Routes */}

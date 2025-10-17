@@ -139,8 +139,9 @@ const SendTokenModal = ({ isOpen, onClose }) => {
 
   const supportedTokens = useMemo(() => {
     if (!destination.trim()) return [];
-    return getSupportedTokensForAddress(destination.trim());
-  }, [destination]);
+    const principal = identity?.getPrincipal?.();
+    return getSupportedTokensForAddress(destination.trim(), principal);
+  }, [destination, identity]);
 
   const currentBalance = useMemo(() => {
     if (!selectedToken) return 0;

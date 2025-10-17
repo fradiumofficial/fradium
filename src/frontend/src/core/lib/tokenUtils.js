@@ -125,10 +125,25 @@ export function detectAddressNetwork(address) {
 }
 
 // Return list of tokens supported by the detected network of the address
-export function getSupportedTokensForAddress(address) {
+export function getSupportedTokensForAddress(address, principal = null) {
   const network = detectAddressNetwork(address);
   if (network === "Unknown") return [];
-  return TOKENS_CONFIG.filter((t) => t.chain === network);
+
+  // Filter by network first
+  const networkTokens = TOKENS_CONFIG.filter((t) => t.chain === network);
+
+  // If no principal provided, return all network tokens
+  if (!principal) return networkTokens;
+
+  // Filter by user visibility settings
+  return networkTokens.filter((token) => {
+    try {
+      return getTokenVisibility(principal, token.id);
+    } catch (error) {
+      console.error(`Error checking visibility for token ${token.symbol}:`, error);
+      return true; // Default to visible if error
+    }
+  });
 }
 
 // Very simple fee info by network/token
@@ -1102,6 +1117,35 @@ export function getIconByChain(chain, tokenType = null) {
   // For other chains, find by chain name
   const token = TOKENS_CONFIG.find((t) => t.chain.toLowerCase() === chain.toLowerCase());
   return token ? `/${token.imageUrl}` : "/assets/images/coins/bitcoin.webp";
+}
+
+// Ensure path starts with "/" so it works from nested routes
+function ensureLeadingSlash(path) {
+  if (!path || typeof path !== "string") return null;
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+// Normalize symbol variants from UI (e.g., "Fradium" -> "FRADIUM")
+function normalizeSymbol(symbol) {
+  if (!symbol) return symbol;
+  const s = String(symbol);
+  if (s.toLowerCase() === "fradium") return "FRADIUM";
+  return s.toUpperCase();
+}
+
+// Get token icon by symbol with safe public path
+export function getTokenIconBySymbol(symbol) {
+  try {
+    const normalized = normalizeSymbol(symbol);
+    const token = TOKENS_CONFIG.find((t) => t.symbol === normalized || t.symbol?.toUpperCase?.() === normalized);
+    if (token?.imageUrl) {
+      return ensureLeadingSlash(token.imageUrl);
+    }
+  } catch (e) {
+    console.warn("getTokenIconBySymbol error:", e);
+  }
+  // Fallback generic icon
+  return "/assets/images/coins/bitcoin.webp";
 }
 
 // Get ckETH helper contract address for deposits

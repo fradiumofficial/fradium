@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { formatAmount, getIconByChain } from "@/core/lib/tokenUtils";
+import { formatAmount, getIconByChain, getTokenVisibility } from "@/core/lib/tokenUtils";
 import { getETHTransactionHistory, getSolanaTransactionHistory, getBitcoinTransactionHistory, getTransactionHistory, getICRCTransactionHistory, getSNSTransactionHistory } from "@/core/services/historyTransactionService";
 import { useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
@@ -245,21 +245,36 @@ export default function TransactionHistoryPage() {
         setIsLoading(true);
         setError(null);
       }
-      // Track which tokens we're loading
+
+      // Get principal for token visibility check
+      const principal = identity?.getPrincipal?.();
+
+      // Helper function to check if token is visible
+      const isTokenVisible = (tokenId) => {
+        if (!principal) return true; // Default to visible if no principal
+        try {
+          return getTokenVisibility(principal, tokenId);
+        } catch (error) {
+          console.error(`Error checking visibility for token ${tokenId}:`, error);
+          return true; // Default to visible if error
+        }
+      };
+
+      // Track which tokens we're loading based on visibility
       const tokensToLoad = [];
-      if (addresses?.ethereum) tokensToLoad.push("ethereum");
-      if (addresses?.solana) tokensToLoad.push("solana");
-      if (addresses?.bitcoin) tokensToLoad.push("bitcoin");
-      if (icpPrincipal && icpAccount) tokensToLoad.push("icp");
-      if (icpPrincipal) tokensToLoad.push("fradium");
-      if (icpPrincipal) tokensToLoad.push("ckbtc");
-      if (icpPrincipal) tokensToLoad.push("cketh");
+      if (addresses?.ethereum && isTokenVisible(2)) tokensToLoad.push("ethereum"); // ETH token ID: 2
+      if (addresses?.solana && isTokenVisible(3)) tokensToLoad.push("solana"); // SOL token ID: 3
+      if (addresses?.bitcoin && isTokenVisible(1)) tokensToLoad.push("bitcoin"); // BTC token ID: 1
+      if (icpPrincipal && icpAccount && isTokenVisible(4)) tokensToLoad.push("icp"); // ICP token ID: 4
+      if (icpPrincipal && isTokenVisible(5)) tokensToLoad.push("fradium"); // Fradium token ID: 5
+      if (icpPrincipal && isTokenVisible(6)) tokensToLoad.push("ckbtc"); // ckBTC token ID: 6
+      if (icpPrincipal && isTokenVisible(7)) tokensToLoad.push("cketh"); // ckETH token ID: 7
       // Load transactions for all supported networks
       // Create parallel loading promises for better performance
       console.log("LOADING PROMISES 1");
       const loadingPromises = [];
-      // Load ETH transactions
-      if (addresses?.ethereum) {
+      // Load ETH transactions (only if token is visible)
+      if (addresses?.ethereum && isTokenVisible(2)) {
         loadingPromises.push(
           getETHTransactionHistory(addresses.ethereum, "sepolia", ITEMS_PER_PAGE).catch((error) => {
             console.error("Error loading ETH transactions:", error);
@@ -267,8 +282,8 @@ export default function TransactionHistoryPage() {
           })
         );
       }
-      // Load Solana transactions
-      if (addresses?.solana) {
+      // Load Solana transactions (only if token is visible)
+      if (addresses?.solana && isTokenVisible(3)) {
         loadingPromises.push(
           getSolanaTransactionHistory(addresses.solana, "devnet", ITEMS_PER_PAGE).catch((error) => {
             console.error("Error loading Solana transactions:", error);
@@ -276,8 +291,8 @@ export default function TransactionHistoryPage() {
           })
         );
       }
-      // Load Bitcoin transactions
-      if (addresses?.bitcoin) {
+      // Load Bitcoin transactions (only if token is visible)
+      if (addresses?.bitcoin && isTokenVisible(1)) {
         loadingPromises.push(
           getBitcoinTransactionHistory(addresses.bitcoin, "testnet", ITEMS_PER_PAGE).catch((error) => {
             console.error("Error loading Bitcoin transactions:", error);
@@ -285,8 +300,8 @@ export default function TransactionHistoryPage() {
           })
         );
       }
-      // Load ICP transactions
-      if (addresses?.icp_account) {
+      // Load ICP transactions (only if token is visible)
+      if (addresses?.icp_account && isTokenVisible(4)) {
         loadingPromises.push(
           getICRCTransactionHistory("icp", icpPrincipal, addresses.icp_account, ITEMS_PER_PAGE).catch((error) => {
             console.error("Error loading ICP transactions:", error);
@@ -294,8 +309,8 @@ export default function TransactionHistoryPage() {
           })
         );
       }
-      // Load Fradium transactions
-      if (icpPrincipal) {
+      // Load Fradium transactions (only if token is visible)
+      if (icpPrincipal && isTokenVisible(5)) {
         console.log("LOADING FRADIUM");
         loadingPromises.push(
           getICRCTransactionHistory("fradium", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
@@ -305,8 +320,8 @@ export default function TransactionHistoryPage() {
         );
       }
 
-      // Load ckBTC transactions
-      if (icpPrincipal) {
+      // Load ckBTC transactions (only if token is visible)
+      if (icpPrincipal && isTokenVisible(6)) {
         console.log("LOADING CKBTC");
         loadingPromises.push(
           getICRCTransactionHistory("ckbtc", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
@@ -315,8 +330,8 @@ export default function TransactionHistoryPage() {
           })
         );
       }
-      // Load ckETH transactions
-      if (icpPrincipal) {
+      // Load ckETH transactions (only if token is visible)
+      if (icpPrincipal && isTokenVisible(7)) {
         console.log("LOADING CKETH");
         loadingPromises.push(
           getICRCTransactionHistory("cketh", icpPrincipal, null, ITEMS_PER_PAGE).catch((error) => {
@@ -326,10 +341,10 @@ export default function TransactionHistoryPage() {
         );
       }
 
-      // Load SNS token transactions
+      // Load SNS token transactions (only if token is visible)
       const snsTokens = TOKENS_CONFIG.filter((token) => token.type === "sns");
       for (const snsToken of snsTokens) {
-        if (icpPrincipal) {
+        if (icpPrincipal && isTokenVisible(snsToken.id)) {
           console.log(`LOADING ${snsToken.symbol}`);
           loadingPromises.push(
             getSNSTransactionHistory(snsToken.symbol, icpPrincipal, ITEMS_PER_PAGE, identity).catch((error) => {
@@ -385,7 +400,7 @@ export default function TransactionHistoryPage() {
   // Load transaction history on component mount
   useEffect(() => {
     loadTransactionHistory();
-  }, [addresses]);
+  }, [addresses, identity]);
 
   // Reset filters only when addresses change (new wallet connection)
   useEffect(() => {

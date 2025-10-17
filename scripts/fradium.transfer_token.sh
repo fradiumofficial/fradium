@@ -20,7 +20,7 @@ AMOUNT_E8S=$(echo "$AMOUNT_E8S" | cut -d. -f1)
 echo "Transferring ${AMOUNT_IN_FRADIUM} FRADIUM (${AMOUNT_E8S} e8s) to ${DESTINATION_ADDRESS}..."
 
 # Execute icrc1_transfer
-dfx canister call "${CANISTER_ID_FRADIUM_LEDGER}" icrc1_transfer "(
+dfx canister call "${CANISTER_ID_FRADIUM_LEDGER}"  icrc1_transfer "(
     record {
         from_subaccount = null;
         to = record { owner = principal \"${DESTINATION_ADDRESS}\"; subaccount = null; };
@@ -29,6 +29,6 @@ dfx canister call "${CANISTER_ID_FRADIUM_LEDGER}" icrc1_transfer "(
         memo = null;
         created_at_time = null;
     }
-)"
+)" --network ic
 
 echo "Transfer completed successfully!"
