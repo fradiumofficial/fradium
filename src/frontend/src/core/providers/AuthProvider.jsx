@@ -53,11 +53,10 @@ export const AuthProvider = ({
           }
         });
 
-        // ✅ CRITICAL FIX: Reinitialize swap service agent with authenticated identity
+        // ✅ Pass identity from AuthProvider to swapService
         if (window.swapService && window.swapService.reinitializeAgent) {
           try {
-            await window.swapService.reinitializeAgent();
-            console.log("✅ SwapService agent reinitialized on app load");
+            await window.swapService.reinitializeAgent(newIdentity);
           } catch (err) {
             console.error("Failed to reinitialize swap service:", err);
           }
@@ -125,11 +124,10 @@ export const AuthProvider = ({
       }
     });
 
-    // ✅ CRITICAL FIX: Reinitialize swap service agent after login
+    // ✅ Pass identity from AuthProvider to swapService
     if (window.swapService && window.swapService.reinitializeAgent) {
       try {
-        await window.swapService.reinitializeAgent();
-        console.log("✅ SwapService agent reinitialized after login");
+        await window.swapService.reinitializeAgent(newIdentity);
       } catch (err) {
         console.error("Failed to reinitialize swap service:", err);
       }

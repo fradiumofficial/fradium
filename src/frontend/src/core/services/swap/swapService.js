@@ -1,40 +1,63 @@
-// ICPSwap Integration Service - MAINNET VERSION
+// ICPSwap Integration Service - REFACTORED TO USE AuthProvider
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
-import { AuthClient } from "@dfinity/auth-client";
 
-// ==================== MAINNET CANISTER IDS ====================
+// ==================== MAINNET ONLY CONFIGURATION ====================
 const NETWORK_CONFIG = {
-  mainnet: {
-    host: "https://ic0.app",
-    swapFactory: "ggzvv-5qaaa-aaaag-qck7a-cai",  // ICPSwap mainnet factory
-  }
+  host: "https://ic0.app",
+  swapFactory: "4mmnk-kiaaa-aaaag-qbllq-cai",
+  positionIndex: "w4a7l-dqaaa-aaaag-qjhpq-cai",
 };
 
-// ✅ MAINNET TOKEN ADDRESSES
+// Tokens available in your system
 const TOKEN_CANISTERS = {
-  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",      // Same on mainnet
-  ckBTC: "mxzaz-hqaaa-aaaar-qaada-cai",    // Mainnet ckBTC
-  ckETH: "ss2fx-dyaaa-aaaar-qacoq-cai",    // Mainnet ckETH
-  // Add FRADIUM mainnet canister if it exists:
-  // FRADIUM: "xxxxx-xxxxx-xxxxx-xxxxx-cai"
+  FRADIUM: "sr4wk-4qaaa-aaaae-qfdta-cai",
+  ckBTC: "mc6ru-gyaaa-aaaar-qaaaq-cai",
+  ckETH: "apia6-jaaaa-aaaar-qabma-cai"
 };
 
 const TOKEN_DECIMALS = {
-  ICP: 8,
+  FRADIUM: 8,
   ckBTC: 8,
-  ckETH: 18,
-  FRADIUM: 8
+  ckETH: 18
 };
 
-// Pool IDs will be fetched from factory - no hardcoding needed!
-const KNOWN_POOLS = {};
+const KNOWN_POOLS = {
+  "FRADIUM_ckBTC": {
+    canisterId: "hm2re-zqaaa-aaaar-qbxqq-cai",
+    fee: 3000,
+    token0: "mc6ru-gyaaa-aaaar-qaaaq-cai",
+    token1: "sr4wk-4qaaa-aaaae-qfdta-cai",
+    status: "no_liquidity"
+  },
+  "FRADIUM_ckETH": {
+    canisterId: "hfz2y-pyaaa-aaaar-qbxra-cai",
+    fee: 3000,
+    token0: "apia6-jaaaa-aaaar-qabma-cai",
+    token1: "sr4wk-4qaaa-aaaae-qfdta-cai",
+    status: "no_liquidity"
+  }
+};
 
-// Mainnet pool fees (if needed for deposits)
 const POOL_FEES = {
-  "ss2fx-dyaaa-aaaar-qacoq-cai": 10000,  // ckETH
-  "mxzaz-hqaaa-aaaar-qaada-cai": 10000   // ckBTC
+  "apia6-jaaaa-aaaar-qabma-cai": 9500,
+  "mc6ru-gyaaa-aaaar-qaaaq-cai": 11500,
+  "sr4wk-4qaaa-aaaae-qfdta-cai": 10000
 };
+
+export const SUPPORTED_SWAP_PAIRS = [
+  { from: "FRADIUM", to: "ckBTC", hasLiquidity: false },
+  { from: "FRADIUM", to: "ckETH", hasLiquidity: false },
+  { from: "ckBTC", to: "FRADIUM", hasLiquidity: false },
+  { from: "ckETH", to: "FRADIUM", hasLiquidity: false }
+];
+
+export function isSwapPairSupported(fromSymbol, toSymbol) {
+  return SUPPORTED_SWAP_PAIRS.some(
+    pair => (pair.from === fromSymbol && pair.to === toSymbol) ||
+            (pair.from === toSymbol && pair.to === fromSymbol)
+  );
+}
 
 // ==================== CANDID INTERFACES ====================
 
@@ -177,82 +200,42 @@ const getSwapPoolInterface = () => ({ IDL }) => {
   });
 };
 
-const getSwapFactoryInterface = () => ({ IDL }) => {
-  const Token = IDL.Record({
-    address: IDL.Text,
-    standard: IDL.Text,
-  });
-
-  const PoolData = IDL.Record({
-    fee: IDL.Nat,
-    key: IDL.Text,
-    tickSpacing: IDL.Int,
-    token0: Token,
-    token1: Token,
-    canisterId: IDL.Principal,
-  });
-
-  return IDL.Service({
-    getPools: IDL.Func([], [IDL.Variant({ ok: IDL.Vec(PoolData), err: IDL.Text })], ['query']),
-  });
-};
-
 // ==================== HELPER FUNCTIONS ====================
-
-function safeStringify(obj) {
-  const seen = new WeakSet();
-  return JSON.stringify(obj, (key, value) => {
-    if (typeof value === 'bigint') {
-      return value.toString();
-    }
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return '[Circular]';
-      }
-      seen.add(value);
-    }
-    return value;
-  });
-}
 
 function formatErrorForDisplay(error) {
   if (!error) return 'Unknown error';
-
   if (typeof error === 'string') return error;
-
   if (error.InternalError) return `Internal Error: ${error.InternalError}`;
   if (error.UnsupportedToken) return `Unsupported Token: ${error.UnsupportedToken}`;
   if (error.InsufficientFunds) return 'Insufficient Funds';
   if (error.CommonError) return 'Common Error';
-
   if (error.message) return error.message;
-
   return 'Unknown error occurred';
 }
-
-// ==================== PRICE CALCULATION ====================
 
 function calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1) {
   const Q96 = 2n ** 96n;
   const sqrtPrice = BigInt(sqrtPriceX96);
-  
+
   const numerator = sqrtPrice * sqrtPrice;
   const denominator = Q96 * Q96;
-  
+
   const rawPrice = Number(numerator) / Number(denominator);
-  const decimalAdjustment = Math.pow(10, decimals1 - decimals0);
-  
+  const decimalAdjustment = Math.pow(10, decimals0 - decimals1);
+
   return rawPrice * decimalAdjustment;
 }
 
 function estimateSwapOutput(amountIn, sqrtPriceX96, zeroForOne, decimals0, decimals1, feeTier) {
   const price_token0_in_token1 = calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1);
+
   let estimatedOutput;
   if (zeroForOne) {
     estimatedOutput = amountIn * price_token0_in_token1;
   } else {
     estimatedOutput = amountIn / price_token0_in_token1;
   }
+
   const feeMultiplier = 1 - (feeTier / 1000000);
   return estimatedOutput * feeMultiplier;
 }
@@ -261,71 +244,44 @@ function estimateSwapOutput(amountIn, sqrtPriceX96, zeroForOne, decimals0, decim
 
 export class ICPSwapService {
   constructor() {
-    // ✅ CRITICAL: Set to false for mainnet!
-    this.isLocal = false;
-    this.config = NETWORK_CONFIG.mainnet;
+    this.config = NETWORK_CONFIG;
     this.agent = null;
-    this.authClient = null;
     this.knownPools = { ...KNOWN_POOLS };
   }
 
-  // ✅ Initialize with mainnet agent (NO fetchRootKey!)
-  async initialize() {
-    this.authClient = await AuthClient.create();
-    
-    const isAuthenticated = await this.authClient.isAuthenticated();
-    
-    if (isAuthenticated) {
-      const identity = await this.authClient.getIdentity();
-      
-      this.agent = await HttpAgent.create({
-        host: this.config.host,
-        identity: identity
-      });
-      
-      console.log("✅ Authenticated mainnet agent created for:", identity.getPrincipal().toString());
-    } else {
+  // ✅ NEW: Initialize with identity from AuthProvider
+  async initializeWithIdentity(identity) {
+    if (!identity) {
       this.agent = new HttpAgent({ host: this.config.host });
-      console.log("⚠️ Anonymous mainnet agent created (user not logged in)");
+      return this.agent;
     }
 
-    // ✅ REMOVED: fetchRootKey() - NOT NEEDED ON MAINNET!
-    // This was causing your signature verification error!
-
-    return this.agent;
-  }
-
-  // ✅ Reinitialize agent after login
-  async reinitializeAgent() {
-    if (!this.authClient) {
-      await this.initialize();
-      return;
-    }
-
-    const identity = await this.authClient.getIdentity();
-    
     this.agent = await HttpAgent.create({
       host: this.config.host,
       identity: identity
     });
 
-    // ✅ NO fetchRootKey on mainnet!
-
-    console.log("✅ Mainnet agent reinitialized with principal:", identity.getPrincipal().toString());
+    return this.agent;
   }
 
-  // ✅ Login with Internet Identity (mainnet)
-  async login() {
-    return new Promise((resolve, reject) => {
-      this.authClient.login({
-        // ✅ Use mainnet Internet Identity
-        identityProvider: "https://identity.ic0.app",
-        onSuccess: async () => {
-          await this.reinitializeAgent();
-          resolve();
-        },
-        onError: reject
-      });
+  // ✅ MODIFIED: Simplified - no longer creates AuthClient
+  async initialize() {
+    if (!this.agent) {
+      this.agent = new HttpAgent({ host: this.config.host });
+    }
+    return this.agent;
+  }
+
+  // ✅ MODIFIED: Now accepts identity parameter from AuthProvider
+  async reinitializeAgent(identity) {
+    if (!identity) {
+      console.warn("⚠️ No identity provided for reinitializeAgent");
+      return;
+    }
+
+    this.agent = await HttpAgent.create({
+      host: this.config.host,
+      identity: identity
     });
   }
 
@@ -341,14 +297,6 @@ export class ICPSwapService {
     return Actor.createActor(getICRCInterface(), { agent, canisterId });
   }
 
-  async getFactoryActor() {
-    const agent = await this.getAgent();
-    return Actor.createActor(getSwapFactoryInterface(), {
-      agent,
-      canisterId: this.config.swapFactory
-    });
-  }
-
   async getPoolActor(poolCanisterId) {
     const agent = await this.getAgent();
     return Actor.createActor(getSwapPoolInterface(), {
@@ -357,81 +305,28 @@ export class ICPSwapService {
     });
   }
 
-  registerPool(token0Symbol, token1Symbol, poolCanisterId, fee = 3000) {
-    const key = this.getPoolKey(token0Symbol, token1Symbol);
-    this.knownPools[key] = {
-      canisterId: poolCanisterId,
-      fee,
-      token0: TOKEN_CANISTERS[token0Symbol],
-      token1: TOKEN_CANISTERS[token1Symbol]
-    };
-    console.log(`✅ Pool registered: ${key} -> ${poolCanisterId}`);
-    return this.knownPools[key];
-  }
-
   getPoolKey(token0, token1) {
     return [token0, token1].sort().join('_');
   }
 
-  // ✅ Find pool by querying mainnet factory
   async findPool(token0Symbol, token1Symbol) {
+    if (!isSwapPairSupported(token0Symbol, token1Symbol)) {
+      throw new Error(`Swap pair ${token0Symbol}/${token1Symbol} is not supported. Only FRADIUM ↔ ckBTC and FRADIUM ↔ ckETH pairs are available.`);
+    }
+
     const key = this.getPoolKey(token0Symbol, token1Symbol);
 
-    // Check cache first
     if (this.knownPools[key]) {
-      console.log('✅ Using cached pool:', this.knownPools[key]);
       return {
         canisterId: Principal.fromText(this.knownPools[key].canisterId),
         fee: this.knownPools[key].fee,
         token0: { address: this.knownPools[key].token0, standard: "ICRC2" },
-        token1: { address: this.knownPools[key].token1, standard: "ICRC2" }
+        token1: { address: this.knownPools[key].token1, standard: "ICRC2" },
+        status: this.knownPools[key].status
       };
     }
 
-    // Query mainnet factory for pools
-    try {
-      console.log('🔍 Querying ICPSwap factory for pools...');
-      const factory = await this.getFactoryActor();
-      const poolsResult = await factory.getPools();
-
-      if ('ok' in poolsResult) {
-        const pools = poolsResult.ok;
-        console.log(`✅ Found ${pools.length} pools on mainnet`);
-
-        // Find matching pool
-        const token0Addr = TOKEN_CANISTERS[token0Symbol];
-        const token1Addr = TOKEN_CANISTERS[token1Symbol];
-
-        const matchingPool = pools.find(pool => {
-          const hasToken0 = pool.token0.address === token0Addr || pool.token1.address === token0Addr;
-          const hasToken1 = pool.token0.address === token1Addr || pool.token1.address === token1Addr;
-          return hasToken0 && hasToken1;
-        });
-
-        if (matchingPool) {
-          // Cache it
-          this.knownPools[key] = {
-            canisterId: matchingPool.canisterId.toString(),
-            fee: Number(matchingPool.fee),
-            token0: matchingPool.token0.address,
-            token1: matchingPool.token1.address
-          };
-
-          console.log('✅ Found pool:', matchingPool.canisterId.toString());
-          return {
-            canisterId: matchingPool.canisterId,
-            fee: Number(matchingPool.fee),
-            token0: matchingPool.token0,
-            token1: matchingPool.token1
-          };
-        }
-      }
-    } catch (error) {
-      console.error('Error querying factory:', error);
-    }
-
-    console.warn(`❌ No pool found for ${token0Symbol}/${token1Symbol} on mainnet`);
-    return null;
+    throw new Error(`No pool found for ${token0Symbol}/${token1Symbol}`);
   }
 
   async getSwapQuote({ fromToken, toToken, amount }) {
@@ -439,7 +334,7 @@ export class ICPSwapService {
       const pool = await this.findPool(fromToken, toToken);
 
       if (!pool) {
-        throw new Error(`No liquidity pool exists for ${fromToken}/${toToken} on ICPSwap mainnet.`);
+        throw new Error(`No liquidity pool exists for ${fromToken}/${toToken}.`);
       }
 
       const poolActor = await this.getPoolActor(pool.canisterId.toString());
@@ -451,7 +346,7 @@ export class ICPSwapService {
       }
 
       const poolData = metadata.ok;
-
+      const hasLiquidity = Number(poolData.liquidity) > 0;
       const zeroForOne = TOKEN_CANISTERS[fromToken] === poolData.token0.address;
 
       const decimals0 = TOKEN_DECIMALS[
@@ -470,38 +365,23 @@ export class ICPSwapService {
         Number(poolData.fee)
       );
 
-      let quoteFromPool = null;
-      try {
-        const amountInSmallest = this.toSmallestUnit(amount, fromToken);
-        const quoteResult = await poolActor.quote({
-          amountIn: amountInSmallest.toString(),
-          zeroForOne
-        });
-
-        if ('ok' in quoteResult) {
-          quoteFromPool = this.fromSmallestUnit(quoteResult.ok, toToken);
-          console.log("✅ Got quote from mainnet pool:", quoteFromPool, toToken);
-        }
-      } catch (error) {
-        console.log("Pool doesn't support quote function, using calculation");
-      }
-
-      const finalOutput = quoteFromPool || estimatedOutput;
       const feePercentage = Number(poolData.fee) / 1000000;
       const fee = amount * feePercentage;
 
       return {
-        rate: finalOutput / amount,
-        estimatedOutput: finalOutput,
+        rate: estimatedOutput / amount,
+        estimatedOutput: estimatedOutput,
         fee,
         priceImpact: "0.10",
-        minAmountOut: finalOutput * 0.95,
+        minAmountOut: estimatedOutput * 0.95,
         validFor: 300,
         poolId: pool.canisterId.toString(),
         poolFee: Number(poolData.fee),
         source: 'icpswap',
         poolPrice: calculatePriceFromSqrt(poolData.sqrtPriceX96, decimals0, decimals1),
-        poolLiquidity: Number(poolData.liquidity)
+        poolLiquidity: Number(poolData.liquidity),
+        hasLiquidity: hasLiquidity,
+        status: pool.status
       };
 
     } catch (error) {
@@ -518,13 +398,20 @@ export class ICPSwapService {
     userPrincipal
   }) {
     try {
-      console.log("🔄 Starting mainnet swap:", { fromToken, toToken, amount });
-
       const pool = await this.findPool(fromToken, toToken);
       if (!pool) throw new Error(`No pool exists for ${fromToken}/${toToken}`);
-      console.log("✅ Pool found:", pool.canisterId.toString());
 
       const poolActor = await this.getPoolActor(pool.canisterId.toString());
+      const metadata = await poolActor.metadata();
+      
+      if ('err' in metadata) {
+        throw new Error(`Pool error: ${formatErrorForDisplay(metadata.err)}`);
+      }
+
+      if (Number(metadata.ok.liquidity) === 0) {
+        throw new Error(`Cannot execute swap: Pool has no liquidity. This pool exists but needs liquidity to be added before swaps can be performed.`);
+      }
+
       const fromTokenActor = await this.getTokenActor(TOKEN_CANISTERS[fromToken]);
       const user = Principal.fromText(userPrincipal);
 
@@ -532,7 +419,7 @@ export class ICPSwapService {
       const minAmountOutSmallest = this.toSmallestUnit(minAmountOut, toToken);
 
       const transactionFee = await fromTokenActor.icrc1_fee();
-      const poolFee = BigInt(POOL_FEES[TOKEN_CANISTERS[fromToken]] || 10000);
+      const poolFee = BigInt(POOL_FEES[TOKEN_CANISTERS[fromToken]]);
       const balance = await fromTokenActor.icrc1_balance_of({ owner: user, subaccount: [] });
 
       const totalAmountForApproval = amountInSmallest + poolFee + transactionFee;
@@ -541,9 +428,7 @@ export class ICPSwapService {
       if (balance < totalNeededInWallet) {
         throw new Error(`Insufficient balance. Have: ${this.fromSmallestUnit(balance, fromToken)}, Need: ${this.fromSmallestUnit(totalNeededInWallet, fromToken)}`);
       }
-      console.log("💵 Balance check successful.");
 
-      console.log(`📝 Approving pool to spend ${this.fromSmallestUnit(totalAmountForApproval, fromToken)} ${fromToken}...`);
       const approveResult = await fromTokenActor.icrc2_approve({
         spender: { owner: pool.canisterId, subaccount: [] },
         amount: totalAmountForApproval,
@@ -552,11 +437,9 @@ export class ICPSwapService {
       });
 
       if ('Err' in approveResult) throw new Error(`Approval failed: ${formatErrorForDisplay(approveResult.Err)}`);
-      console.log("✅ Approval successful.");
 
       await new Promise(resolve => setTimeout(resolve, 3000));
 
-      console.log("💸 Depositing tokens to pool...");
       const depositResult = await poolActor.depositFrom({
         token: TOKEN_CANISTERS[fromToken],
         amount: Number(amountInSmallest),
@@ -564,12 +447,9 @@ export class ICPSwapService {
       });
 
       if ('err' in depositResult) throw new Error(`Deposit failed: ${formatErrorForDisplay(depositResult.err)}`);
-      console.log("✅ Deposit successful.");
 
-      const metadata = await poolActor.metadata();
       const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
 
-      console.log("⚡ Executing swap on mainnet...");
       const swapResult = await poolActor.swap({
         amountIn: amountInSmallest.toString(),
         zeroForOne,
@@ -580,12 +460,11 @@ export class ICPSwapService {
 
       const amountOut = BigInt(swapResult.ok);
       const outputAmount = this.fromSmallestUnit(amountOut, toToken);
-      console.log("✅ Mainnet swap successful! Received:", outputAmount, toToken);
 
       return { success: true, amountOut, message: "Swap completed successfully" };
 
     } catch (error) {
-      console.error("❌ Swap execution error:", error);
+      console.error("Swap execution error:", error);
       return { success: false, error: error.message || "Unknown error", details: error };
     }
   }
@@ -610,23 +489,7 @@ export class ICPSwapService {
   }
 
   async getAllPools() {
-    try {
-      const factory = await this.getFactoryActor();
-      const poolsResult = await factory.getPools();
-      
-      if ('ok' in poolsResult) {
-        return poolsResult.ok.map(pool => ({
-          canisterId: pool.canisterId.toString(),
-          fee: Number(pool.fee),
-          token0: pool.token0,
-          token1: pool.token1,
-          tickSpacing: pool.tickSpacing
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching pools:', error);
-    }
-    return [];
+    return Object.values(this.knownPools);
   }
 
   async getTokenPrices(tokenSymbols) {
@@ -635,33 +498,6 @@ export class ICPSwapService {
       prices[symbol] = 0;
     }
     return prices;
-  }
-
-  async getPoolInfo(poolId) {
-    try {
-      const poolActor = await this.getPoolActor(poolId);
-      const metadata = await poolActor.metadata();
-
-      if ('err' in metadata) {
-        const errorMsg = formatErrorForDisplay(metadata.err);
-        throw new Error(`Metadata error: ${errorMsg}`);
-      }
-
-      const poolData = metadata.ok;
-
-      return {
-        poolId,
-        token0: poolData.token0,
-        token1: poolData.token1,
-        fee: Number(poolData.fee),
-        liquidity: Number(poolData.liquidity),
-        tick: poolData.tick,
-        sqrtPriceX96: poolData.sqrtPriceX96.toString()
-      };
-    } catch (error) {
-      console.error("Failed to get pool info:", error);
-      return null;
-    }
   }
 
   toSmallestUnit(amount, tokenSymbol) {
