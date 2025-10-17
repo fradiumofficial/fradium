@@ -27,9 +27,10 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
   // Only show tokens that have swap pairs
   const availableTokens = useMemo(() => {
-    return TOKENS_CONFIG.filter((token) => 
-      ["FRADIUM", "ckBTC", "ckETH"].includes(token.symbol) &&
-      token.type === "icrc" && 
+    const supportedTokens = swapService.getSupportedTokens();
+
+    return TOKENS_CONFIG.filter((token) =>
+      supportedTokens.includes(token.symbol) &&
       token.chain === "Internet Computer"
     );
   }, []);
@@ -37,7 +38,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
   // Get available TO tokens based on FROM token selection
   const getAvailableToTokens = (selectedFromToken) => {
     if (!selectedFromToken) return availableTokens;
-    
+
     return availableTokens.filter(token => {
       if (token.symbol === selectedFromToken.symbol) return false;
       return isSwapPairSupported(selectedFromToken.symbol, token.symbol);
@@ -106,13 +107,13 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
   const handleFromTokenChange = (token) => {
     setFromToken(token);
-    
+
     // Check if current toToken is still valid
     const availableToTokens = getAvailableToTokens(token);
     if (!availableToTokens.find(t => t.symbol === toToken?.symbol)) {
       setToToken(availableToTokens[0] || null);
     }
-    
+
     setFromAmount("");
     setToAmount("");
     setSwapQuote(null);
@@ -223,7 +224,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-yellow-200">
-                  <strong>Demo Mode:</strong> Pools are deployed on ICPSwap mainnet but currently have no liquidity. 
+                  <strong>Demo Mode:</strong> Pools are deployed on ICPSwap mainnet but currently have no liquidity.
                   Swap quotes are calculated but cannot be executed until liquidity is added.
                 </div>
               </div>
@@ -250,9 +251,9 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto z-[10000]">
                         {availableTokens.map((token) => (
-                          <DropdownMenuItem 
-                            key={token.id} 
-                            onClick={() => handleFromTokenChange(token)} 
+                          <DropdownMenuItem
+                            key={token.id}
+                            onClick={() => handleFromTokenChange(token)}
                             className="text-white hover:bg-white/5 cursor-pointer px-4 py-3"
                           >
                             <div className="flex items-center gap-3">
@@ -267,11 +268,11 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <input 
-                      type="number" 
-                      placeholder="0.0" 
-                      value={fromAmount} 
-                      onChange={(e) => setFromAmount(e.target.value)} 
+                    <input
+                      type="number"
+                      placeholder="0.0"
+                      value={fromAmount}
+                      onChange={(e) => setFromAmount(e.target.value)}
                       className="w-24 px-4 py-3 bg-transparent border border-white/10 rounded-xl text-white placeholder-[#B0B6BE] focus:outline-none focus:ring-2 focus:ring-[#9BE4A0]"
                     />
                   </div>
@@ -284,8 +285,8 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
                 {/* Swap Direction Button */}
                 <div className="flex justify-end pr-8">
-                  <button 
-                    onClick={handleSwapTokens} 
+                  <button
+                    onClick={handleSwapTokens}
                     className="p-4 rounded-full bg-[#23272F] border border-[#393E4B] hover:bg-[#393E4B] transition-colors"
                     disabled={!fromToken || !toToken}
                   >
@@ -312,9 +313,9 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto z-[10000]">
                         {getAvailableToTokens(fromToken).map((token) => (
-                          <DropdownMenuItem 
-                            key={token.id} 
-                            onClick={() => handleToTokenChange(token)} 
+                          <DropdownMenuItem
+                            key={token.id}
+                            onClick={() => handleToTokenChange(token)}
                             className="text-white hover:bg-white/5 cursor-pointer px-4 py-3"
                           >
                             <div className="flex items-center gap-3">
@@ -329,11 +330,11 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <input 
-                      type="text" 
-                      placeholder="0.0" 
-                      value={isLoading ? "Loading..." : toAmount || "0"} 
-                      readOnly 
+                    <input
+                      type="text"
+                      placeholder="0.0"
+                      value={isLoading ? "Loading..." : toAmount || "0"}
+                      readOnly
                       className="w-24 px-4 py-3 bg-[#FFFFFF08] border border-white/10 rounded-xl text-white/70 cursor-not-allowed"
                     />
                   </div>
@@ -343,7 +344,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                 {swapQuote && !error && (
                   <div className="bg-[#23272F] border border-[#393E4B] rounded-lg p-4 space-y-2">
                     <h4 className="text-white font-medium text-sm mb-3">Swap Details</h4>
-                    
+
                     {!swapQuote.hasLiquidity && (
                       <div className="bg-orange-500/10 border border-orange-500/20 rounded p-2 mb-3">
                         <p className="text-orange-400 text-xs">
@@ -400,15 +401,15 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
-                  <button 
-                    className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" 
+                  <button
+                    className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors"
                     onClick={handleClose}
                   >
                     Cancel
                   </button>
-                  <button 
-                    className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
-                    onClick={handleSwap} 
+                  <button
+                    className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleSwap}
                     disabled={isSwapDisabled() || !swapQuote?.hasLiquidity}
                   >
                     {isSwapping ? "Swapping..." : swapQuote?.hasLiquidity ? "Swap" : "No Liquidity"}

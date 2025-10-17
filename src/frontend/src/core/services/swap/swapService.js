@@ -13,52 +13,49 @@ const NETWORK_CONFIG = {
 const TOKEN_CANISTERS = {
   FRADIUM: "sr4wk-4qaaa-aaaae-qfdta-cai",
   ckBTC: "mc6ru-gyaaa-aaaar-qaaaq-cai",
-  ckETH: "apia6-jaaaa-aaaar-qabma-cai"
+  ckETH: "apia6-jaaaa-aaaar-qabma-cai",
+  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",  // ICP Ledger
+  KONG: "o7oak-iyaaa-aaaaq-aadzq-cai"  // KongSwap SNS token
 };
 
 const TOKEN_DECIMALS = {
   FRADIUM: 8,
   ckBTC: 8,
-  ckETH: 18
+  ckETH: 18,
+  ICP: 8,
+  KONG: 8
 };
 
 const KNOWN_POOLS = {
-  "FRADIUM_ckBTC": {
-    canisterId: "hm2re-zqaaa-aaaar-qbxqq-cai",
-    fee: 3000,
-    token0: "mc6ru-gyaaa-aaaar-qaaaq-cai",
-    token1: "sr4wk-4qaaa-aaaae-qfdta-cai",
-    status: "no_liquidity"
-  },
-  "FRADIUM_ckETH": {
-    canisterId: "hfz2y-pyaaa-aaaar-qbxra-cai",
-    fee: 3000,
-    token0: "apia6-jaaaa-aaaar-qabma-cai",
-    token1: "sr4wk-4qaaa-aaaae-qfdta-cai",
-    status: "no_liquidity"
+  "ICP_KONG": {
+    canisterId: "ye4fx-gqaaa-aaaag-qnara-cai",  // ICPSwap ICP/KONG pool
+    fee: 3000,  // Standard ICPSwap fee
+    token0: "o7oak-iyaaa-aaaaq-aadzq-cai",  // KONG
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai",  // ICP
+    status: "active_with_liquidity"
   }
 };
 
 const POOL_FEES = {
-  "apia6-jaaaa-aaaar-qabma-cai": 9500,
-  "mc6ru-gyaaa-aaaar-qaaaq-cai": 11500,
-  "sr4wk-4qaaa-aaaae-qfdta-cai": 10000
+  "apia6-jaaaa-aaaar-qabma-cai": 9500,  // ckETH
+  "mc6ru-gyaaa-aaaar-qaaaq-cai": 11500, // ckBTC
+  "sr4wk-4qaaa-aaaae-qfdta-cai": 10000, // FRADIUM
+  "ryjl3-tyaaa-aaaaa-aaaba-cai": 10000, // ICP
+  "o7oak-iyaaa-aaaaq-aadzq-cai": 10000  // KONG
 };
 
 export const SUPPORTED_SWAP_PAIRS = [
-  { from: "FRADIUM", to: "ckBTC", hasLiquidity: false },
-  { from: "FRADIUM", to: "ckETH", hasLiquidity: false },
-  { from: "ckBTC", to: "FRADIUM", hasLiquidity: false },
-  { from: "ckETH", to: "FRADIUM", hasLiquidity: false }
+  // ICP/KONG pair
+  { from: "ICP", to: "KONG", hasLiquidity: true },
+  { from: "KONG", to: "ICP", hasLiquidity: true },
 ];
 
 export function isSwapPairSupported(fromSymbol, toSymbol) {
   return SUPPORTED_SWAP_PAIRS.some(
     pair => (pair.from === fromSymbol && pair.to === toSymbol) ||
-            (pair.from === toSymbol && pair.to === fromSymbol)
+      (pair.from === toSymbol && pair.to === fromSymbol)
   );
 }
-
 // ==================== CANDID INTERFACES ====================
 
 const getICRCInterface = () => ({ IDL }) => {
@@ -403,7 +400,7 @@ export class ICPSwapService {
 
       const poolActor = await this.getPoolActor(pool.canisterId.toString());
       const metadata = await poolActor.metadata();
-      
+
       if ('err' in metadata) {
         throw new Error(`Pool error: ${formatErrorForDisplay(metadata.err)}`);
       }
