@@ -150,9 +150,9 @@ const ProductsWallet = () => {
   // Layout desktop lama
   return (
     <div className="min-h-screen bg-[#000510] text-white relative overflow-hidden flex flex-col">
-      {/* Background layer - starts below navbar (not from top) */}
-      <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
-        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
+      {/* Background layer - starts from bottom with natural height (no stretch) */}
+      <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
+        <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />

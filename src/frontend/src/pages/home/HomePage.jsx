@@ -106,6 +106,11 @@ const Home = React.memo(() => {
     }, 500);
   };
 
+  // Handle navigation to product pages
+  const handleProductNavigation = (productType) => {
+    navigate(`/products-${productType}`);
+  };
+
   const appear = "opacity-100 translate-y-0"; // Simplified, no conditional rendering
 
   return (
@@ -821,7 +826,12 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Paylink</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
+                  <button
+                    onClick={() => handleProductNavigation('paylink')}
+                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
+                  >
+                    Try Now
+                  </button>
                 </div>
               </div>
             </MagicBento>
@@ -836,7 +846,12 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Escrow</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
+                  <button
+                    onClick={() => handleProductNavigation('escrow')}
+                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
+                  >
+                    Try Now
+                  </button>
                 </div>
               </div>
             </MagicBento>
@@ -851,7 +866,12 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Wallet</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
+                  <button
+                    onClick={() => handleProductNavigation('wallet')}
+                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
+                  >
+                    Try Now
+                  </button>
                 </div>
               </div>
             </MagicBento>
@@ -866,7 +886,12 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Extension</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">Try Now</button>
+                  <button
+                    onClick={() => handleProductNavigation('extension')}
+                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
+                  >
+                    Try Now
+                  </button>
                 </div>
               </div>
             </MagicBento>
