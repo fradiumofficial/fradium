@@ -11,17 +11,11 @@ const NETWORK_CONFIG = {
 
 // Tokens available in your system
 const TOKEN_CANISTERS = {
-  FRADIUM: "sr4wk-4qaaa-aaaae-qfdta-cai",
-  ckBTC: "mc6ru-gyaaa-aaaar-qaaaq-cai",
-  ckETH: "apia6-jaaaa-aaaar-qabma-cai",
   ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",  // ICP Ledger
   KONG: "o7oak-iyaaa-aaaaq-aadzq-cai"  // KongSwap SNS token
 };
 
 const TOKEN_DECIMALS = {
-  FRADIUM: 8,
-  ckBTC: 8,
-  ckETH: 18,
   ICP: 8,
   KONG: 8
 };
@@ -37,9 +31,6 @@ const KNOWN_POOLS = {
 };
 
 const POOL_FEES = {
-  "apia6-jaaaa-aaaar-qabma-cai": 9500,  // ckETH
-  "mc6ru-gyaaa-aaaar-qaaaq-cai": 11500, // ckBTC
-  "sr4wk-4qaaa-aaaae-qfdta-cai": 10000, // FRADIUM
   "ryjl3-tyaaa-aaaaa-aaaba-cai": 10000, // ICP
   "o7oak-iyaaa-aaaaq-aadzq-cai": 10000  // KONG
 };
@@ -394,11 +385,15 @@ export class ICPSwapService {
     minAmountOut,
     userPrincipal
   }) {
+    let depositSucceeded = false;
+    let poolActor = null;
+    let pool = null;
+
     try {
-      const pool = await this.findPool(fromToken, toToken);
+      pool = await this.findPool(fromToken, toToken);
       if (!pool) throw new Error(`No pool exists for ${fromToken}/${toToken}`);
 
-      const poolActor = await this.getPoolActor(pool.canisterId.toString());
+      poolActor = await this.getPoolActor(pool.canisterId.toString());
       const metadata = await poolActor.metadata();
 
       if ('err' in metadata) {
@@ -406,7 +401,7 @@ export class ICPSwapService {
       }
 
       if (Number(metadata.ok.liquidity) === 0) {
-        throw new Error(`Cannot execute swap: Pool has no liquidity. This pool exists but needs liquidity to be added before swaps can be performed.`);
+        throw new Error(`Cannot execute swap: Pool has no liquidity`);
       }
 
       const fromTokenActor = await this.getTokenActor(TOKEN_CANISTERS[fromToken]);
@@ -426,43 +421,167 @@ export class ICPSwapService {
         throw new Error(`Insufficient balance. Have: ${this.fromSmallestUnit(balance, fromToken)}, Need: ${this.fromSmallestUnit(totalNeededInWallet, fromToken)}`);
       }
 
+      // Step 1: Approve
+      console.log("Step 1/4: Approving tokens...");
       const approveResult = await fromTokenActor.icrc2_approve({
         spender: { owner: pool.canisterId, subaccount: [] },
         amount: totalAmountForApproval,
         fee: [],
-        memo: [], from_subaccount: [], created_at_time: [], expires_at: [], expected_allowance: []
+        memo: [],
+        from_subaccount: [],
+        created_at_time: [],
+        expires_at: [],
+        expected_allowance: []
       });
 
-      if ('Err' in approveResult) throw new Error(`Approval failed: ${formatErrorForDisplay(approveResult.Err)}`);
+      if ('Err' in approveResult) {
+        throw new Error(`Approval failed: ${formatErrorForDisplay(approveResult.Err)}`);
+      }
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log("✓ Approval successful");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Step 2: Deposit - Keep as BigInt (Candid nat accepts both Number and BigInt)
+      console.log("Step 2/4: Depositing to pool...");
+      console.log(`Depositing ${amountInSmallest} units (${amount} ${fromToken})`);
 
       const depositResult = await poolActor.depositFrom({
         token: TOKEN_CANISTERS[fromToken],
-        amount: Number(amountInSmallest),
-        fee: Number(poolFee)
+        amount: amountInSmallest,  // Keep as BigInt - safer for large amounts
+        fee: poolFee
       });
 
-      if ('err' in depositResult) throw new Error(`Deposit failed: ${formatErrorForDisplay(depositResult.err)}`);
+      if ('err' in depositResult) {
+        throw new Error(`Deposit failed: ${formatErrorForDisplay(depositResult.err)}`);
+      }
 
-      const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
+      depositSucceeded = true;
+      console.log("✓ Deposit successful");
 
+      // Step 3: Verify deposit
+      console.log("Step 3/4: Verifying deposit...");
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const balanceCheck = await poolActor.getUserUnusedBalance(user);
+      if ('err' in balanceCheck) {
+        console.warn("⚠️ Could not verify deposit balance");
+      } else {
+        const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
+        const depositedBalance = zeroForOne ? balanceCheck.ok.balance0 : balanceCheck.ok.balance1;
+        console.log(`✓ Verified: ${depositedBalance} units in pool`);
+
+        if (depositedBalance < amountInSmallest * 95n / 100n) {
+          console.warn(`⚠️ Warning: Deposited amount (${depositedBalance}) is less than expected (${amountInSmallest})`);
+        }
+      }
+
+      // Step 4: Execute swap
+      console.log("Step 4/4: Executing swap...");
       const swapResult = await poolActor.swap({
         amountIn: amountInSmallest.toString(),
-        zeroForOne,
+        zeroForOne: TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address,
         amountOutMinimum: minAmountOutSmallest.toString()
       });
 
-      if ('err' in swapResult) throw new Error(`Swap failed: ${formatErrorForDisplay(swapResult.err)}`);
+      if ('err' in swapResult) {
+        throw new Error(`SWAP_FAILED: ${formatErrorForDisplay(swapResult.err)}`);
+      }
 
       const amountOut = BigInt(swapResult.ok);
       const outputAmount = this.fromSmallestUnit(amountOut, toToken);
 
-      return { success: true, amountOut, message: "Swap completed successfully" };
+      console.log(`✓ Swap successful: ${outputAmount} ${toToken}`);
+
+      return {
+        success: true,
+        amountOut: outputAmount,
+        amountOutRaw: amountOut,
+        message: "Swap completed successfully",
+        txHash: swapResult.ok.toString()
+      };
 
     } catch (error) {
-      console.error("Swap execution error:", error);
-      return { success: false, error: error.message || "Unknown error", details: error };
+      console.error("❌ Swap error:", error.message);
+
+      // ==================== AUTOMATIC RECOVERY ====================
+      // If deposit succeeded but swap failed, attempt recovery
+      if (depositSucceeded && poolActor && pool) {
+        console.warn("⚠️ Swap failed after deposit. Attempting automatic recovery...");
+
+        try {
+          const user = Principal.fromText(userPrincipal);
+          const balanceCheck = await poolActor.getUserUnusedBalance(user);
+
+          if ('ok' in balanceCheck) {
+            const metadata = await poolActor.metadata();
+            const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
+            const stuckBalance = zeroForOne ? balanceCheck.ok.balance0 : balanceCheck.ok.balance1;
+
+            if (stuckBalance > 0n) {
+              console.log(`🔄 Found ${stuckBalance} stuck units. Withdrawing...`);
+
+              const poolFee = BigInt(POOL_FEES[TOKEN_CANISTERS[fromToken]]);
+
+              // Try to withdraw the stuck amount minus fee
+              const withdrawAmount = stuckBalance > poolFee ? stuckBalance - poolFee : stuckBalance;
+
+              const withdrawResult = await poolActor.withdraw({
+                token: TOKEN_CANISTERS[fromToken],
+                amount: withdrawAmount,
+                fee: poolFee
+              });
+
+              if ('ok' in withdrawResult) {
+                const recoveredAmount = this.fromSmallestUnit(withdrawAmount, fromToken);
+                console.log(`✅ Recovery successful: ${recoveredAmount} ${fromToken} returned to wallet`);
+
+                return {
+                  success: false,
+                  error: error.message,
+                  recovered: true,
+                  recoveredAmount: recoveredAmount,
+                  message: `Swap failed but ${recoveredAmount} ${fromToken} was automatically recovered to your wallet. The pool may be experiencing issues - please try again later.`
+                };
+              } else {
+                console.warn("⚠️ Withdrawal failed:", formatErrorForDisplay(withdrawResult.err));
+              }
+            } else {
+              console.log("ℹ️ No stuck balance found - swap may have partially succeeded");
+            }
+          }
+        } catch (recoveryError) {
+          console.error("❌ Recovery attempt failed:", recoveryError);
+        }
+      }
+
+      // ==================== MANUAL RECOVERY INSTRUCTIONS ====================
+      // If auto-recovery failed, provide manual instructions
+      const errorResponse = {
+        success: false,
+        error: error.message || "Unknown error",
+        recovered: false,
+        details: error
+      };
+
+      if (depositSucceeded) {
+        errorResponse.needsManualRecovery = true;
+        errorResponse.recoveryInstructions = {
+          message: "Tokens may be stuck in the pool. Follow these steps to recover:",
+          steps: [
+            `1. Check your unused balance: poolActor.getUserUnusedBalance(Principal.fromText("${userPrincipal}"))`,
+            `2. If balance exists, withdraw: poolActor.withdraw({ token: "${TOKEN_CANISTERS[fromToken]}", amount: YOUR_BALANCE, fee: ${POOL_FEES[TOKEN_CANISTERS[fromToken]]} })`,
+            `3. Pool canister: ${pool.canisterId.toString()}`
+          ],
+          poolCanisterId: pool.canisterId.toString(),
+          userPrincipal: userPrincipal,
+          tokenCanister: TOKEN_CANISTERS[fromToken]
+        };
+
+        console.error("⚠️ MANUAL RECOVERY NEEDED:", errorResponse.recoveryInstructions.message);
+        errorResponse.recoveryInstructions.steps.forEach(step => console.error(step));
+      }
+
+      return errorResponse;
     }
   }
 
