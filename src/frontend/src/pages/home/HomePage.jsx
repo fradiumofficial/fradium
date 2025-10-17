@@ -115,13 +115,7 @@ const Home = React.memo(() => {
 
   return (
     <section className="relative bg-[#000510] w-full overflow-hidden">
-      {showFirstTimeModal && (
-        <FirstTimeModal
-          onClose={handleModalClose}
-          onSkip={handleModalSkip}
-          onScrollToProducts={handleScrollToProducts}
-        />
-      )}
+      {showFirstTimeModal && <FirstTimeModal onClose={handleModalClose} onSkip={handleModalSkip} onScrollToProducts={handleScrollToProducts} />}
       <style>{`
         @keyframes fradium-float {
           0%, 100% { 
@@ -826,10 +820,7 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Paylink</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button
-                    onClick={() => handleProductNavigation('paylink')}
-                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
-                  >
+                  <button onClick={() => handleProductNavigation("paylink")} className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">
                     Try Now
                   </button>
                 </div>
@@ -846,10 +837,7 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Escrow</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button
-                    onClick={() => handleProductNavigation('escrow')}
-                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
-                  >
+                  <button onClick={() => handleProductNavigation("escrow")} className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">
                     Try Now
                   </button>
                 </div>
@@ -866,10 +854,7 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Wallet</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button
-                    onClick={() => handleProductNavigation('wallet')}
-                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
-                  >
+                  <button onClick={() => handleProductNavigation("wallet")} className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">
                     Try Now
                   </button>
                 </div>
@@ -886,10 +871,7 @@ const Home = React.memo(() => {
                     <div className="text-white text-[18px] font-medium">Fradium Extension</div>
                     <div className="text-[#B0B6BE] text-[12px] mt-1">Map the crypto Identify wallet risks before any transaction</div>
                   </div>
-                  <button
-                    onClick={() => handleProductNavigation('extension')}
-                    className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors"
-                  >
+                  <button onClick={() => handleProductNavigation("extension")} className="ml-4 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 text-white/90 text-xs md:text-sm hover:bg-white/10 transition-colors">
                     Try Now
                   </button>
                 </div>
@@ -949,6 +931,43 @@ const Home = React.memo(() => {
                 <ButtonGreen size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] md:w-[23px] md:h-[23px]" onClick={handleLaunchWallet}>
                   Try it free
                 </ButtonGreen>
+              </div>
+            </div>
+          </div>
+
+          {/* Laptop Image - positioned within background 3 content */}
+          <div className="relative flex justify-center items-end mt-16 sm:mt-6 md:mt-8">
+            <div className="relative w-full max-w-3xl sm:max-w-4xl md:max-w-5xl mx-auto">
+              {/* Laptop Frame */}
+              <img
+                src="assets/laptop.webp"
+                alt="MacBook"
+                className="w-full h-auto object-contain"
+                style={{
+                  transform: "translateY(0px)",
+                  marginBottom: "-10%",
+                }}
+                draggable={false}
+              />
+
+              <div
+                className="absolute 
+                top-[2%] left-[9%] w-[82%] h-[105%]
+                md:top-[2%] md:left-[9%] md:w-[82%] md:h-[105%]
+                lg:top-[2%] lg:left-[9%] lg:w-[82%] lg:h-[105%]
+                rounded-lg overflow-hidden">
+                {/* Placeholder sementara - ganti dengan video nanti */}
+                <video
+                  src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1760675496/Test_zp3tvf.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: "100%",
+                    borderRadius: "12px",
+                  }}
+                />
               </div>
             </div>
           </div>
