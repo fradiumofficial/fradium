@@ -952,9 +952,9 @@ const Home = React.memo(() => {
 
               <div
                 className="absolute 
-                top-[2%] left-[9%] w-[82%] h-[105%]
-                md:top-[2%] md:left-[9%] md:w-[82%] md:h-[105%]
-                lg:top-[2%] lg:left-[9%] lg:w-[82%] lg:h-[105%]
+                top-[2.5%] left-[8.5%] w-[83%] h-[109%]
+                md:top-[2.5%] md:left-[8.5%] md:w-[83%] md:h-[109%]
+                lg:top-[2.5s%] lg:left-[8.5%] lg:w-[83%] lg:h-[109%]
                 rounded-lg overflow-hidden">
                 {/* Placeholder sementara - ganti dengan video nanti */}
                 <video
@@ -963,10 +963,7 @@ const Home = React.memo(() => {
                   loop
                   muted
                   playsInline
-                  style={{
-                    width: "100%",
-                    borderRadius: "12px",
-                  }}
+                  className="w-full h-full object-cover rounded-lg"
                 />
               </div>
             </div>
