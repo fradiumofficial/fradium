@@ -356,12 +356,12 @@ export const WalletProvider = ({ children }) => {
 
         const balance = await getBalance(token.id, principal, useCache, identity);
 
-        // For ICRC tokens, balance is already converted to proper units in getBalance
-        // For native tokens, we need to convert from smallest unit
         let formattedBalance;
-        if (token.type === "icrc") {
+        if (token.type === "icrc" || token.type === "sns") {
+          // Already in token units, just format
           formattedBalance = Number(balance).toFixed(6);
         } else {
+          // Native tokens need conversion from smallest unit
           formattedBalance = (Number(balance) / Math.pow(10, token.decimals)).toFixed(6);
         }
 
@@ -417,7 +417,7 @@ export const WalletProvider = ({ children }) => {
     const onBalanceUpdated = () => {
       try {
         refreshAllBalances();
-      } catch (_e) {}
+      } catch (_e) { }
     };
     window.addEventListener("balance-updated", onBalanceUpdated);
     return () => window.removeEventListener("balance-updated", onBalanceUpdated);

@@ -84,6 +84,7 @@ const SNS_INDEX_INTERFACE = ({ IDL }) => {
     fee: IDL.Opt(IDL.Nat),
     memo: IDL.Opt(Memo),
     created_at_time: IDL.Opt(Timestamp),
+    spender: IDL.Opt(Account),
   });
 
   const Mint = IDL.Record({
@@ -98,17 +99,26 @@ const SNS_INDEX_INTERFACE = ({ IDL }) => {
     amount: IDL.Nat,
     memo: IDL.Opt(Memo),
     created_at_time: IDL.Opt(Timestamp),
+    spender: IDL.Opt(Account),
   });
 
-  const TransactionOperation = IDL.Variant({
-    Transfer: Transfer,
-    Mint: Mint,
-    Burn: Burn,
+  const Approve = IDL.Record({
+    from: Account,
+    spender: Account,
+    amount: IDL.Nat,
+    expected_allowance: IDL.Opt(IDL.Nat),
+    expires_at: IDL.Opt(IDL.Nat64),
+    fee: IDL.Opt(IDL.Nat),
+    memo: IDL.Opt(Memo),
+    created_at_time: IDL.Opt(Timestamp),
   });
 
   const Transaction = IDL.Record({
-    operation: IDL.Opt(TransactionOperation),
-    memo: IDL.Opt(Memo),
+    kind: IDL.Text,
+    mint: IDL.Opt(Mint),
+    burn: IDL.Opt(Burn),
+    transfer: IDL.Opt(Transfer),
+    approve: IDL.Opt(Approve),
     timestamp: Timestamp,
   });
 
@@ -124,7 +134,11 @@ const SNS_INDEX_INTERFACE = ({ IDL }) => {
   });
 
   return IDL.Service({
-    get_account_transactions: IDL.Func([GetTransactionsRequest], [IDL.Variant({ Ok: GetTransactionsResponse, Err: IDL.Text })], ["query"]),
+    get_account_transactions: IDL.Func(
+      [GetTransactionsRequest],
+      [IDL.Variant({ Ok: GetTransactionsResponse, Err: IDL.Text })],
+      ["query"]
+    ),
   });
 };
 
@@ -156,11 +170,35 @@ export class SNSTokenService {
   }
 
   /**
-   * Create agent for IC network
-   * @param {Identity} identity - Authenticated identity
-   * @returns {HttpAgent} Configured agent
+   * Create anonymous agent for IC network (for query calls)
+   * @returns {HttpAgent} Configured anonymous agent
    */
-  static createAgent(identity = null) {
+  static createAnonymousAgent() {
+    const agent = new HttpAgent({
+      host: isLocal ? "http://localhost:4943" : "https://ic0.app",
+    });
+
+    // Fetch root key for local development
+    if (isLocal) {
+      agent.fetchRootKey().catch((err) => {
+        console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
+        console.error(err);
+      });
+    }
+
+    return agent;
+  }
+
+  /**
+   * Create authenticated agent for IC network (for update calls)
+   * @param {Identity} identity - Authenticated identity
+   * @returns {HttpAgent} Configured authenticated agent
+   */
+  static createAuthenticatedAgent(identity) {
+    if (!identity) {
+      throw new Error("Identity is required for authenticated operations");
+    }
+
     const agent = new HttpAgent({
       identity,
       host: isLocal ? "http://localhost:4943" : "https://ic0.app",
@@ -178,13 +216,12 @@ export class SNSTokenService {
   }
 
   /**
-   * Create ICRC-1 actor for SNS token
+   * Create ICRC-1 actor for SNS token (for query calls - no auth needed)
    * @param {string} ledgerCanisterId - Ledger canister ID
-   * @param {Identity} identity - Authenticated identity
    * @returns {Actor} ICRC-1 actor
    */
-  static createLedgerActor(ledgerCanisterId, identity = null) {
-    const agent = this.createAgent(identity);
+  static createLedgerActorAnonymous(ledgerCanisterId) {
+    const agent = this.createAnonymousAgent();
     return Actor.createActor(ICRC1_INTERFACE, {
       agent,
       canisterId: Principal.fromText(ledgerCanisterId),
@@ -192,13 +229,26 @@ export class SNSTokenService {
   }
 
   /**
-   * Create SNS Index actor for transaction history
-   * @param {string} indexCanisterId - Index canister ID
+   * Create ICRC-1 actor for SNS token (for update calls - auth required)
+   * @param {string} ledgerCanisterId - Ledger canister ID
    * @param {Identity} identity - Authenticated identity
+   * @returns {Actor} ICRC-1 actor
+   */
+  static createLedgerActorAuthenticated(ledgerCanisterId, identity) {
+    const agent = this.createAuthenticatedAgent(identity);
+    return Actor.createActor(ICRC1_INTERFACE, {
+      agent,
+      canisterId: Principal.fromText(ledgerCanisterId),
+    });
+  }
+
+  /**
+   * Create SNS Index actor for transaction history (query call - no auth needed)
+   * @param {string} indexCanisterId - Index canister ID
    * @returns {Actor} SNS Index actor
    */
-  static createIndexActor(indexCanisterId, identity = null) {
-    const agent = this.createAgent(identity);
+  static createIndexActor(indexCanisterId) {
+    const agent = this.createAnonymousAgent();
     return Actor.createActor(SNS_INDEX_INTERFACE, {
       agent,
       canisterId: Principal.fromText(indexCanisterId),
@@ -207,20 +257,21 @@ export class SNSTokenService {
 
   /**
    * Get SNS token balance
+   * ✅ QUERY CALL - No authentication needed
    * @param {string} symbol - Token symbol
    * @param {string|Principal} principal - User principal
    * @param {Array} subaccount - Optional subaccount
-   * @param {Identity} identity - Authenticated identity
    * @returns {Promise<number>} Token balance
    */
-  static async getBalance(symbol, principal, subaccount = [], identity = null) {
+  static async getBalance(symbol, principal, subaccount = []) {
     try {
       const tokenConfig = this.getTokenConfig(symbol);
       if (!tokenConfig) {
         throw new Error(`SNS token ${symbol} not found`);
       }
 
-      const actor = this.createLedgerActor(tokenConfig.ledgerCanisterId, identity);
+      // ✅ Use anonymous actor - queries don't need authentication
+      const actor = this.createLedgerActorAnonymous(tokenConfig.ledgerCanisterId);
       const principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
 
       const result = await actor.icrc1_balance_of({
@@ -229,7 +280,8 @@ export class SNSTokenService {
       });
 
       // Convert from smallest unit to token units
-      return Number(result) / Math.pow(10, tokenConfig.decimals);
+      const balance = Number(result) / Math.pow(10, tokenConfig.decimals);
+      return balance;
     } catch (error) {
       console.error(`Error fetching ${symbol} balance:`, error);
       throw new Error(`Failed to fetch ${symbol} balance: ${error.message}`);
@@ -238,18 +290,19 @@ export class SNSTokenService {
 
   /**
    * Get SNS token fee
+   * ✅ QUERY CALL - No authentication needed
    * @param {string} symbol - Token symbol
-   * @param {Identity} identity - Authenticated identity
    * @returns {Promise<number>} Token fee
    */
-  static async getFee(symbol, identity = null) {
+  static async getFee(symbol) {
     try {
       const tokenConfig = this.getTokenConfig(symbol);
       if (!tokenConfig) {
         throw new Error(`SNS token ${symbol} not found`);
       }
 
-      const actor = this.createLedgerActor(tokenConfig.ledgerCanisterId, identity);
+      // ✅ Use anonymous actor - queries don't need authentication
+      const actor = this.createLedgerActorAnonymous(tokenConfig.ledgerCanisterId);
       const fee = await actor.icrc1_fee();
 
       // Convert from smallest unit to token units
@@ -263,6 +316,7 @@ export class SNSTokenService {
 
   /**
    * Transfer SNS tokens
+   * ⚠️ UPDATE CALL - Authentication required
    * @param {string} symbol - Token symbol
    * @param {string|Principal} fromPrincipal - From principal
    * @param {string|Principal} toPrincipal - To principal
@@ -270,27 +324,31 @@ export class SNSTokenService {
    * @param {Array} fromSubaccount - From subaccount
    * @param {Array} toSubaccount - To subaccount
    * @param {Array} memo - Optional memo
-   * @param {Identity} identity - Authenticated identity
+   * @param {Identity} identity - Authenticated identity (REQUIRED)
    * @returns {Promise<Object>} Transfer result
    */
-  static async transfer(symbol, fromPrincipal, toPrincipal, amount, fromSubaccount = [], toSubaccount = [], memo = [], identity = null) {
+  static async transfer(symbol, fromPrincipal, toPrincipal, amount, fromSubaccount = [], toSubaccount = [], memo = [], identity) {
     try {
+      if (!identity) {
+        throw new Error("Authentication required for transfers. Please log in.");
+      }
+
       const tokenConfig = this.getTokenConfig(symbol);
       if (!tokenConfig) {
         throw new Error(`SNS token ${symbol} not found`);
       }
 
-      const actor = this.createLedgerActor(tokenConfig.ledgerCanisterId, identity);
+      // ✅ Use authenticated actor - transfers need authentication
+      const actor = this.createLedgerActorAuthenticated(tokenConfig.ledgerCanisterId, identity);
 
       // Convert amount to smallest unit
       const amountInSmallestUnit = BigInt(Math.floor(amount * Math.pow(10, tokenConfig.decimals)));
 
       // Get fee
-      const fee = await this.getFee(symbol, identity);
+      const fee = await this.getFee(symbol);
       const feeInSmallestUnit = BigInt(Math.floor(fee * Math.pow(10, tokenConfig.decimals)));
 
       const fromPrincipalObj = typeof fromPrincipal === "string" ? Principal.fromText(fromPrincipal) : fromPrincipal;
-
       const toPrincipalObj = typeof toPrincipal === "string" ? Principal.fromText(toPrincipal) : toPrincipal;
 
       const result = await actor.icrc1_transfer({
@@ -322,95 +380,106 @@ export class SNSTokenService {
   }
 
   /**
-   * Get SNS token transaction history
-   * @param {string} symbol - Token symbol
-   * @param {string|Principal} principal - User principal
-   * @param {number} limit - Number of transactions to fetch
-   * @param {number} offset - Offset for pagination
-   * @param {Identity} identity - Authenticated identity
-   * @returns {Promise<Array>} Transaction history
-   */
-  static async getTransactionHistory(symbol, principal, limit = 20, offset = 0, identity = null) {
+ * Get SNS token transaction history
+ * ✅ QUERY CALL - No authentication needed
+ * @param {string} symbol - Token symbol
+ * @param {string|Principal} principal - User principal
+ * @param {number} limit - Number of transactions to fetch
+ * @param {number} offset - Offset for pagination
+ * @returns {Promise<Array>} Transaction history
+ */
+  static async getTransactionHistory(symbol, principal, limit = 20, offset = 0) {
     try {
       const tokenConfig = this.getTokenConfig(symbol);
       if (!tokenConfig) {
         throw new Error(`SNS token ${symbol} not found`);
       }
 
-      const actor = this.createIndexActor(tokenConfig.indexCanisterId, identity);
+      const actor = this.createIndexActor(tokenConfig.indexCanisterId);
       const principalObj = typeof principal === "string" ? Principal.fromText(principal) : principal;
 
-      // Convert principal to account identifier (simplified)
-      const accountId = principalObj.toText();
-
       const result = await actor.get_account_transactions({
-        max_results: BigInt(limit),
-        start: [BigInt(offset)],
         account: {
           owner: principalObj,
           subaccount: [],
         },
+        start: offset > 0 ? [BigInt(offset)] : [],
+        max_results: BigInt(limit),
       });
 
       if (result.Err) {
         throw new Error(`Failed to fetch transactions: ${result.Err}`);
       }
 
-      const transactions = result.Ok.transactions
+      const transactionArray = result.Ok?.transactions || result.Ok?.txs || [];
+
+      const transactions = transactionArray
         .map((tx) => {
-          const operation = tx.transaction.operation[0];
-          if (!operation) return null;
+          const transfer = tx.transaction.transfer?.[0];
+          const mint = tx.transaction.mint?.[0];
+          const burn = tx.transaction.burn?.[0];
+          const approve = tx.transaction.approve?.[0];
 
           let fromPrincipal, toPrincipal, amount, fee, kind;
           let isSent = false;
 
-          if (operation.Transfer) {
-            const transfer = operation.Transfer;
+          if (transfer) {
             fromPrincipal = transfer.from.owner;
             toPrincipal = transfer.to.owner;
             amount = Number(transfer.amount);
-            fee = transfer.fee[0] ? Number(transfer.fee[0]) : 0;
+            fee = transfer.fee?.[0] ? Number(transfer.fee[0]) : 0;
             kind = "Transfer";
             isSent = fromPrincipal.toText() === principalObj.toText();
-          } else if (operation.Mint) {
-            const mint = operation.Mint;
-            fromPrincipal = Principal.fromText("system"); // Mints come from the system
+          } else if (mint) {
+            fromPrincipal = Principal.fromText("2vxsx-fae");
             toPrincipal = mint.to.owner;
             amount = Number(mint.amount);
             fee = 0;
             kind = "Mint";
-            isSent = false; // Mints are always received by the user if they are the recipient
-          } else if (operation.Burn) {
-            const burn = operation.Burn;
+            isSent = false;
+          } else if (burn) {
             fromPrincipal = burn.from.owner;
-            toPrincipal = Principal.fromText("system"); // Burns go to the system
+            toPrincipal = Principal.fromText("2vxsx-fae");
             amount = Number(burn.amount);
-            fee = 0; // Assuming no fee for burn, adjust if SNS specifies
+            fee = 0;
             kind = "Burn";
             isSent = burn.from.owner.toText() === principalObj.toText();
+          } else if (approve) {
+            return null;
           } else {
-            return null; // Unsupported operation type
+            return null;
           }
 
           const otherParty = isSent ? toPrincipal.toText() : fromPrincipal.toText();
           const otherPartyStr = otherParty || "Unknown";
 
-          const decimals = tokenConfig.decimals || 8; // Fallback to 8 if not specified
+          const decimals = tokenConfig.decimals || 8;
           const divisor = Math.pow(10, decimals);
+
+          let title;
+          if (kind === "Mint") {
+            title = `Minted`;
+          } else if (kind === "Burn") {
+            title = `Burned`;
+          } else {
+            title = isSent
+              ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`
+              : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`;
+          }
 
           return {
             hash: tx.id.toString(),
             chain: "Internet Computer",
-            title: isSent ? `Transfer ${symbol} to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received ${symbol} from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+            title: title,
             amount: isSent ? -amount / divisor : amount / divisor,
-            status: "Completed", // SNS transactions are typically completed once in index
-            timestamp: Number(tx.transaction.timestamp) / 1000000, // Convert nanoseconds to milliseconds
+            status: "Completed",
+            timestamp: Number(tx.transaction.timestamp) / 1000000,
             from: fromPrincipal.toText() || "Unknown",
             to: toPrincipal.toText() || "Unknown",
             fee: fee / divisor,
-            memo: operation.Transfer?.memo || operation.Mint?.memo || operation.Burn?.memo || [],
+            memo: transfer?.memo || mint?.memo || burn?.memo || [],
             kind: kind,
-            tokenType: symbol.toLowerCase(), // Use token symbol as tokenType for SNS
+            tokenType: symbol.toLowerCase(),
             symbol: symbol,
           };
         })
@@ -425,20 +494,26 @@ export class SNSTokenService {
 
   /**
    * Get SNS token metadata
+   * ✅ QUERY CALL - No authentication needed
    * @param {string} symbol - Token symbol
-   * @param {Identity} identity - Authenticated identity
    * @returns {Promise<Object>} Token metadata
    */
-  static async getMetadata(symbol, identity = null) {
+  static async getMetadata(symbol) {
     try {
       const tokenConfig = this.getTokenConfig(symbol);
       if (!tokenConfig) {
         throw new Error(`SNS token ${symbol} not found`);
       }
 
-      const actor = this.createLedgerActor(tokenConfig.ledgerCanisterId, identity);
+      // ✅ Use anonymous actor - queries don't need authentication
+      const actor = this.createLedgerActorAnonymous(tokenConfig.ledgerCanisterId);
 
-      const [name, symbolResult, decimals, totalSupply] = await Promise.all([actor.icrc1_name(), actor.icrc1_symbol(), actor.icrc1_decimals(), actor.icrc1_total_supply()]);
+      const [name, symbolResult, decimals, totalSupply] = await Promise.all([
+        actor.icrc1_name(),
+        actor.icrc1_symbol(),
+        actor.icrc1_decimals(),
+        actor.icrc1_total_supply()
+      ]);
 
       return {
         name: name,
@@ -457,16 +532,16 @@ export class SNSTokenService {
 
   /**
    * Get balances for all SNS tokens
+   * ✅ QUERY CALL - No authentication needed
    * @param {string|Principal} principal - User principal
-   * @param {Identity} identity - Authenticated identity
    * @returns {Promise<Object>} Balances object
    */
-  static async getAllBalances(principal, identity = null) {
+  static async getAllBalances(principal) {
     try {
       const snsTokens = this.getAllSNSTokens();
       const balancePromises = snsTokens.map(async (token) => {
         try {
-          const balance = await this.getBalance(token.symbol, principal, [], identity);
+          const balance = await this.getBalance(token.symbol, principal, []);
           return { symbol: token.symbol, balance };
         } catch (error) {
           console.error(`Error fetching ${token.symbol} balance:`, error);
@@ -490,19 +565,19 @@ export class SNSTokenService {
 
   /**
    * Get transaction history for all SNS tokens
+   * ✅ QUERY CALL - No authentication needed
    * @param {string|Principal} principal - User principal
    * @param {number} limit - Number of transactions per token
-   * @param {Identity} identity - Authenticated identity
    * @returns {Promise<Array>} Combined transaction history
    */
-  static async getAllTransactionHistory(principal, limit = 10, identity = null) {
+  static async getAllTransactionHistory(principal, limit = 10) {
     try {
       const snsTokens = this.getAllSNSTokens();
 
       // Fetch all transaction histories in parallel
       const historyPromises = snsTokens.map(async (token) => {
         try {
-          const transactions = await this.getTransactionHistory(token.symbol, principal, limit, 0, identity);
+          const transactions = await this.getTransactionHistory(token.symbol, principal, limit, 0);
           return transactions;
         } catch (error) {
           console.error(`Error fetching ${token.symbol} transaction history:`, error);

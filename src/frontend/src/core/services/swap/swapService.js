@@ -1,18 +1,17 @@
-// ICPSwap Integration Service - COMPLETE FIXED VERSION
+// ICPSwap Integration Service
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 
-// ==================== MAINNET ONLY CONFIGURATION ====================
+// ==================== MAINNET CONFIGURATION ====================
 const NETWORK_CONFIG = {
   host: "https://ic0.app",
   swapFactory: "4mmnk-kiaaa-aaaag-qbllq-cai",
   positionIndex: "w4a7l-dqaaa-aaaag-qjhpq-cai",
 };
 
-// Tokens available in your system
 const TOKEN_CANISTERS = {
-  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",  // ICP Ledger
-  KONG: "o7oak-iyaaa-aaaaq-aadzq-cai"  // KongSwap SNS token
+  ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",
+  KONG: "o7oak-iyaaa-aaaaq-aadzq-cai"
 };
 
 const TOKEN_DECIMALS = {
@@ -20,14 +19,13 @@ const TOKEN_DECIMALS = {
   KONG: 8
 };
 
-// ✅ FIXED: These are LEDGER TRANSFER FEES, not pool fees
-// Will be populated dynamically by querying actual token fees
+// Populated dynamically by querying actual ledger fees
 const TOKEN_TRANSFER_FEES = {};
 
 const KNOWN_POOLS = {
   "ICP_KONG": {
-    canisterId: "ye4fx-gqaaa-aaaag-qnara-cai",  // ICPSwap ICP/KONG pool
-    fee: 3000,  // Standard ICPSwap swap fee (0.3%)
+    canisterId: "ye4fx-gqaaa-aaaag-qnara-cai",
+    fee: 3000,  // 0.3% swap fee
     token0: "o7oak-iyaaa-aaaaq-aadzq-cai",  // KONG
     token1: "ryjl3-tyaaa-aaaaa-aaaba-cai",  // ICP
     status: "active_with_liquidity"
@@ -35,7 +33,6 @@ const KNOWN_POOLS = {
 };
 
 export const SUPPORTED_SWAP_PAIRS = [
-  // ICP/KONG pair
   { from: "ICP", to: "KONG", hasLiquidity: true },
   { from: "KONG", to: "ICP", hasLiquidity: true },
 ];
@@ -204,20 +201,17 @@ function formatErrorForDisplay(error) {
 function calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1) {
   const Q96 = 2n ** 96n;
   const sqrtPrice = BigInt(sqrtPriceX96);
-
   const numerator = sqrtPrice * sqrtPrice;
   const denominator = Q96 * Q96;
-
   const rawPrice = Number(numerator) / Number(denominator);
   const decimalAdjustment = Math.pow(10, decimals0 - decimals1);
-
   return rawPrice * decimalAdjustment;
 }
 
 function estimateSwapOutput(amountIn, sqrtPriceX96, zeroForOne, decimals0, decimals1, feeTier) {
   const price_token0_in_token1 = calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1);
-
   let estimatedOutput;
+  
   if (zeroForOne) {
     estimatedOutput = amountIn * price_token0_in_token1;
   } else {
@@ -234,12 +228,11 @@ export class ICPSwapService {
   constructor() {
     this.config = NETWORK_CONFIG;
     this.agent = null;
-    this._identity = null; // ✅ Store identity separately
+    this._identity = null;
     this.knownPools = { ...KNOWN_POOLS };
     this.feesInitialized = false;
   }
 
-  // ✅ NEW: Initialize with identity from AuthProvider
   async initializeWithIdentity(identity) {
     if (!identity) {
       this.agent = new HttpAgent({ host: this.config.host });
@@ -250,86 +243,62 @@ export class ICPSwapService {
         host: this.config.host,
         identity: identity
       });
-      console.log("✅ Initialized with principal:", identity.getPrincipal().toString());
     }
 
-    // Query actual token fees
     await this.queryTokenFees();
-
     return this.agent;
   }
 
-  // ✅ MODIFIED: Now queries actual token fees
   async initialize() {
     if (!this.agent) {
       this.agent = new HttpAgent({ host: this.config.host });
       this._identity = null;
     }
-
-    // Query actual token fees
     await this.queryTokenFees();
-
     return this.agent;
   }
 
-  // ✅ NEW: Query actual transfer fees for all tokens
   async queryTokenFees() {
-    if (this.feesInitialized) {
-      console.log("ℹ️ Token fees already initialized");
-      return TOKEN_TRANSFER_FEES;
-    }
-
-    console.log("🔍 Querying actual token transfer fees...");
+    if (this.feesInitialized) return TOKEN_TRANSFER_FEES;
 
     for (const [symbol, canisterId] of Object.entries(TOKEN_CANISTERS)) {
       try {
         const actor = await this.getTokenActor(canisterId);
         const fee = await actor.icrc1_fee();
         TOKEN_TRANSFER_FEES[canisterId] = BigInt(fee);
-        console.log(`✓ ${symbol} (${canisterId}) transfer fee: ${fee} (${this.fromSmallestUnit(fee, symbol)} ${symbol})`);
       } catch (error) {
-        console.error(`❌ Failed to query fee for ${symbol}:`, error);
-        // Fallback to 10000 if query fails (safe default for most ICRC tokens)
-        TOKEN_TRANSFER_FEES[canisterId] = BigInt(10000);
-        console.warn(`⚠️ Using fallback fee of 10000 for ${symbol}`);
+        console.error(`Failed to query fee for ${symbol}:`, error);
+        TOKEN_TRANSFER_FEES[canisterId] = BigInt(10000); // Safe fallback
       }
     }
 
     this.feesInitialized = true;
-    console.log("✅ All token fees initialized:", TOKEN_TRANSFER_FEES);
     return TOKEN_TRANSFER_FEES;
   }
 
-  // ✅ NEW: Get token transfer fee (with fallback)
   getTokenTransferFee(tokenCanisterId) {
     const fee = TOKEN_TRANSFER_FEES[tokenCanisterId];
     if (!fee) {
-      console.warn(`⚠️ Fee not found for ${tokenCanisterId}, using fallback 10000`);
+      console.warn(`Fee not found for ${tokenCanisterId}, using fallback`);
       return BigInt(10000);
     }
     return BigInt(fee);
   }
 
-  // ✅ MODIFIED: Now accepts identity parameter from AuthProvider
   async reinitializeAgent(identity) {
     if (!identity) {
-      console.warn("⚠️ No identity provided for reinitializeAgent");
+      console.warn("No identity provided for reinitializeAgent");
       return;
     }
 
-    // Store identity separately since HttpAgent doesn't expose it
     this._identity = identity;
-
     this.agent = await HttpAgent.create({
       host: this.config.host,
       identity: identity
     });
 
-    // Re-query fees with new agent
     this.feesInitialized = false;
     await this.queryTokenFees();
-
-    console.log("✅ Agent recreated with principal:", identity.getPrincipal().toString());
   }
 
   async getAgent() {
@@ -339,12 +308,10 @@ export class ICPSwapService {
     return this.agent;
   }
 
-  // ✅ NEW: Get the stored identity
   getIdentity() {
     return this._identity;
   }
 
-  // ✅ NEW: Check if authenticated
   isAuthenticated() {
     return !!this._identity;
   }
@@ -398,8 +365,7 @@ export class ICPSwapService {
       const metadata = await poolActor.metadata();
 
       if ('err' in metadata) {
-        const errorMsg = formatErrorForDisplay(metadata.err);
-        throw new Error(`Pool error: ${errorMsg}`);
+        throw new Error(`Pool error: ${formatErrorForDisplay(metadata.err)}`);
       }
 
       const poolData = metadata.ok;
@@ -460,14 +426,11 @@ export class ICPSwapService {
     let approvalSucceeded = false;
 
     try {
-      // ✅ SAFETY CHECK: Ensure we have authentication
       if (!this._identity) {
         throw new Error("Not authenticated. Please log in first.");
       }
 
-      // ✅ SAFETY CHECK: Ensure fees are initialized
       if (!this.feesInitialized) {
-        console.log("⚠️ Fees not initialized, querying now...");
         await this.queryTokenFees();
       }
 
@@ -491,24 +454,13 @@ export class ICPSwapService {
       const amountInSmallest = this.toSmallestUnit(amount, fromToken);
       const minAmountOutSmallest = this.toSmallestUnit(minAmountOut, toToken);
 
-      // ✅ FIXED: Use queried token transfer fee
       const transactionFee = this.getTokenTransferFee(TOKEN_CANISTERS[fromToken]);
       const depositFee = this.getTokenTransferFee(TOKEN_CANISTERS[fromToken]);
 
-      console.log(`📊 Fee breakdown for ${fromToken}:`);
-      console.log(`   - Transaction fee: ${transactionFee} (${this.fromSmallestUnit(transactionFee, fromToken)} ${fromToken})`);
-      console.log(`   - Deposit fee: ${depositFee} (${this.fromSmallestUnit(depositFee, fromToken)} ${fromToken})`);
-
       const balance = await fromTokenActor.icrc1_balance_of({ owner: user, subaccount: [] });
 
-      // ✅ FIXED: Correct calculation using queried fees
       const totalAmountForApproval = amountInSmallest + depositFee + transactionFee;
-      const totalNeededInWallet = totalAmountForApproval + transactionFee; // Extra fee for approval tx
-
-      console.log(`💰 Balance check:`);
-      console.log(`   - Your balance: ${this.fromSmallestUnit(balance, fromToken)} ${fromToken}`);
-      console.log(`   - Amount to swap: ${amount} ${fromToken}`);
-      console.log(`   - Total needed: ${this.fromSmallestUnit(totalNeededInWallet, fromToken)} ${fromToken}`);
+      const totalNeededInWallet = totalAmountForApproval + transactionFee;
 
       if (balance < totalNeededInWallet) {
         const shortfall = this.fromSmallestUnit(totalNeededInWallet - balance, fromToken);
@@ -520,9 +472,8 @@ export class ICPSwapService {
         );
       }
 
-      // ==================== STEP 1: APPROVE ====================
-      console.log("\n=== STEP 1/4: APPROVING TOKENS ===");
-      console.log(`Approving ${this.fromSmallestUnit(totalAmountForApproval, fromToken)} ${fromToken} for pool ${pool.canisterId.toString()}`);
+      // STEP 1: APPROVE
+      console.log("Approving tokens for swap...");
 
       const approveResult = await fromTokenActor.icrc2_approve({
         spender: { owner: pool.canisterId, subaccount: [] },
@@ -540,20 +491,15 @@ export class ICPSwapService {
       }
 
       approvalSucceeded = true;
-      console.log("✅ Approval successful, block:", approveResult.Ok);
-
-      // Wait for approval to propagate
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // ==================== STEP 2: DEPOSIT ====================
-      console.log("\n=== STEP 2/4: DEPOSITING TO POOL ===");
-      console.log(`Depositing ${this.fromSmallestUnit(amountInSmallest, fromToken)} ${fromToken}`);
-      console.log(`Deposit fee: ${this.fromSmallestUnit(depositFee, fromToken)} ${fromToken}`);
+      // STEP 2: DEPOSIT
+      console.log("Depositing to pool...");
 
       const depositResult = await poolActor.depositFrom({
         token: TOKEN_CANISTERS[fromToken],
         amount: amountInSmallest,
-        fee: depositFee  // ✅ FIXED: Using correct queried fee
+        fee: depositFee
       });
 
       if ('err' in depositResult) {
@@ -561,32 +507,27 @@ export class ICPSwapService {
       }
 
       depositSucceeded = true;
-      console.log("✅ Deposit successful, amount:", depositResult.ok);
 
-      // ==================== STEP 3: VERIFY DEPOSIT ====================
-      console.log("\n=== STEP 3/4: VERIFYING DEPOSIT ===");
+      // STEP 3: VERIFY DEPOSIT
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       const balanceCheck = await poolActor.getUserUnusedBalance(user);
       if ('err' in balanceCheck) {
-        console.warn("⚠️ Could not verify deposit balance:", formatErrorForDisplay(balanceCheck.err));
+        console.warn("Could not verify deposit balance:", formatErrorForDisplay(balanceCheck.err));
       } else {
         const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
         const depositedBalance = zeroForOne ? balanceCheck.ok.balance0 : balanceCheck.ok.balance1;
-        console.log(`✓ Verified pool balance: ${this.fromSmallestUnit(depositedBalance, fromToken)} ${fromToken}`);
 
-        // Safety check: ensure deposit was successful
         if (depositedBalance < amountInSmallest * 95n / 100n) {
           console.warn(
-            `⚠️ WARNING: Deposited amount (${this.fromSmallestUnit(depositedBalance, fromToken)}) ` +
+            `WARNING: Deposited amount (${this.fromSmallestUnit(depositedBalance, fromToken)}) ` +
             `is less than expected (${amount}). Proceeding with caution...`
           );
         }
       }
 
-      // ==================== STEP 4: EXECUTE SWAP ====================
-      console.log("\n=== STEP 4/4: EXECUTING SWAP ===");
-      console.log(`Swapping for minimum ${this.fromSmallestUnit(minAmountOutSmallest, toToken)} ${toToken}`);
+      // STEP 4: EXECUTE SWAP
+      console.log("Executing swap...");
 
       const swapResult = await poolActor.swap({
         amountIn: amountInSmallest.toString(),
@@ -601,13 +542,10 @@ export class ICPSwapService {
       const amountOut = BigInt(swapResult.ok);
       const outputAmount = this.fromSmallestUnit(amountOut, toToken);
 
-      console.log(`\n✅ SWAP SUCCESSFUL!`);
-      console.log(`   Received: ${outputAmount} ${toToken}`);
-      console.log(`   Transaction: ${swapResult.ok.toString()}`);
+      console.log(`Swap successful: Received ${outputAmount} ${toToken}`);
 
-      // ==================== STEP 5: AUTO-WITHDRAW TOKENS ====================
-      console.log("\n=== STEP 5/5: WITHDRAWING TOKENS TO WALLET ===");
-      console.log(`Withdrawing ${outputAmount} ${toToken} to your wallet...`);
+      // STEP 5: AUTO-WITHDRAW
+      console.log("Withdrawing tokens to wallet...");
 
       const withdrawFee = this.getTokenTransferFee(TOKEN_CANISTERS[toToken]);
       const withdrawAmount = amountOut > withdrawFee ? amountOut - withdrawFee : amountOut;
@@ -619,7 +557,7 @@ export class ICPSwapService {
       });
 
       if ('err' in withdrawResult) {
-        console.warn(`⚠️ Swap succeeded but withdrawal failed: ${formatErrorForDisplay(withdrawResult.err)}`);
+        console.warn(`Swap succeeded but withdrawal failed: ${formatErrorForDisplay(withdrawResult.err)}`);
         return {
           success: true,
           amountOut: outputAmount,
@@ -637,9 +575,7 @@ export class ICPSwapService {
       }
 
       const withdrawnAmount = this.fromSmallestUnit(withdrawAmount, toToken);
-      console.log(`✅ WITHDRAWAL SUCCESSFUL!`);
-      console.log(`   ${withdrawnAmount} ${toToken} sent to your wallet`);
-      console.log(`   Withdrawal TX: ${withdrawResult.ok.toString()}`);
+      console.log(`Withdrawal successful: ${withdrawnAmount} ${toToken} sent to wallet`);
 
       return {
         success: true,
@@ -651,11 +587,11 @@ export class ICPSwapService {
       };
 
     } catch (error) {
-      console.error("\n❌ SWAP ERROR:", error.message);
+      console.error("Swap error:", error.message);
 
-      // ==================== AUTOMATIC RECOVERY ====================
+      // AUTOMATIC RECOVERY
       if (depositSucceeded && poolActor && pool) {
-        console.warn("\n⚠️ DEPOSIT SUCCEEDED BUT SWAP FAILED - ATTEMPTING AUTOMATIC RECOVERY");
+        console.warn("Deposit succeeded but swap failed - attempting automatic recovery");
 
         try {
           const user = Principal.fromText(userPrincipal);
@@ -667,12 +603,7 @@ export class ICPSwapService {
             const stuckBalance = zeroForOne ? balanceCheck.ok.balance0 : balanceCheck.ok.balance1;
 
             if (stuckBalance > 0n) {
-              console.log(`🔄 Found ${this.fromSmallestUnit(stuckBalance, fromToken)} ${fromToken} stuck in pool`);
-              console.log(`🔄 Attempting withdrawal...`);
-
               const withdrawFee = this.getTokenTransferFee(TOKEN_CANISTERS[fromToken]);
-
-              // Calculate safe withdrawal amount
               const withdrawAmount = stuckBalance > withdrawFee ? stuckBalance - withdrawFee : stuckBalance;
 
               const withdrawResult = await poolActor.withdraw({
@@ -683,30 +614,26 @@ export class ICPSwapService {
 
               if ('ok' in withdrawResult) {
                 const recoveredAmount = this.fromSmallestUnit(withdrawAmount, fromToken);
-                console.log(`\n✅ RECOVERY SUCCESSFUL!`);
-                console.log(`   Recovered: ${recoveredAmount} ${fromToken}`);
-                console.log(`   Returned to your wallet`);
+                console.log(`Recovery successful: ${recoveredAmount} ${fromToken} returned to wallet`);
 
                 return {
                   success: false,
                   error: error.message,
                   recovered: true,
                   recoveredAmount: recoveredAmount,
-                  message: `Swap failed but ${recoveredAmount} ${fromToken} was automatically recovered to your wallet. Please try again or contact support if the issue persists.`
+                  message: `Swap failed but ${recoveredAmount} ${fromToken} was automatically recovered to your wallet.`
                 };
               } else {
-                console.error("❌ Automatic withdrawal failed:", formatErrorForDisplay(withdrawResult.err));
+                console.error("Automatic withdrawal failed:", formatErrorForDisplay(withdrawResult.err));
               }
-            } else {
-              console.log("ℹ️ No stuck balance found - funds may have been processed");
             }
           }
         } catch (recoveryError) {
-          console.error("❌ Recovery attempt failed:", recoveryError);
+          console.error("Recovery attempt failed:", recoveryError);
         }
       }
 
-      // ==================== MANUAL RECOVERY INSTRUCTIONS ====================
+      // ERROR RESPONSE WITH RECOVERY INSTRUCTIONS
       const errorResponse = {
         success: false,
         error: error.message || "Unknown error",
@@ -715,37 +642,17 @@ export class ICPSwapService {
       };
 
       if (depositSucceeded && !approvalSucceeded) {
-        errorResponse.message = "Approval succeeded but deposit failed. Your funds are safe in your wallet. No recovery needed.";
+        errorResponse.message = "Approval succeeded but deposit failed. Your funds are safe in your wallet.";
       } else if (depositSucceeded) {
         errorResponse.needsManualRecovery = true;
-        errorResponse.message = "⚠️ FUNDS MAY BE STUCK IN POOL - Manual recovery may be needed";
+        errorResponse.message = "Funds may be stuck in pool - manual recovery may be needed";
         errorResponse.recoveryInstructions = {
-          message: "Automatic recovery failed. You may need to manually recover your tokens:",
+          message: "Automatic recovery failed. You may need to manually recover your tokens.",
           poolCanisterId: pool.canisterId.toString(),
           userPrincipal: userPrincipal,
           tokenCanister: TOKEN_CANISTERS[fromToken],
-          tokenSymbol: fromToken,
-          steps: [
-            `1. Open your browser console and run:`,
-            `   const poolActor = await getPoolActor("${pool.canisterId.toString()}");`,
-            `   const balance = await poolActor.getUserUnusedBalance(Principal.fromText("${userPrincipal}"));`,
-            `   console.log("Your stuck balance:", balance);`,
-            ``,
-            `2. If balance exists, withdraw:`,
-            `   const withdrawResult = await poolActor.withdraw({`,
-            `     token: "${TOKEN_CANISTERS[fromToken]}",`,
-            `     amount: YOUR_BALANCE_MINUS_FEE,`,
-            `     fee: ${this.getTokenTransferFee(TOKEN_CANISTERS[fromToken])}`,
-            `   });`,
-            ``,
-            `3. Contact ICPSwap support with pool ID: ${pool.canisterId.toString()}`
-          ]
+          tokenSymbol: fromToken
         };
-
-        console.error("\n⚠️ MANUAL RECOVERY MAY BE NEEDED");
-        console.error("Pool:", pool.canisterId.toString());
-        console.error("User:", userPrincipal);
-        console.error("Token:", TOKEN_CANISTERS[fromToken]);
       }
 
       return errorResponse;
@@ -801,17 +708,12 @@ export class ICPSwapService {
     return tokenSymbol in TOKEN_CANISTERS;
   }
 
-  // ✅ NEW: Manual recovery helper function
+  // Manual recovery helper
   async recoverStuckFunds(userPrincipal, fromToken, poolCanisterId) {
     try {
-      console.log("\n🔧 MANUAL RECOVERY TOOL");
-      console.log("=======================");
-
       const poolActor = await this.getPoolActor(poolCanisterId);
       const user = Principal.fromText(userPrincipal);
 
-      // Check stuck balance
-      console.log("1️⃣ Checking for stuck funds...");
       const balanceCheck = await poolActor.getUserUnusedBalance(user);
 
       if ('err' in balanceCheck) {
@@ -823,12 +725,10 @@ export class ICPSwapService {
         throw new Error(`Cannot get pool metadata: ${formatErrorForDisplay(metadata.err)}`);
       }
 
-      // Determine which balance to check based on token
       const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
       const stuckBalance = zeroForOne ? balanceCheck.ok.balance0 : balanceCheck.ok.balance1;
 
       if (stuckBalance === 0n) {
-        console.log("✅ No stuck funds found - you're all clear!");
         return {
           success: true,
           message: "No stuck funds found",
@@ -837,10 +737,8 @@ export class ICPSwapService {
       }
 
       const stuckAmount = this.fromSmallestUnit(stuckBalance, fromToken);
-      console.log(`💰 Found stuck funds: ${stuckAmount} ${fromToken}`);
+      console.log(`Found stuck funds: ${stuckAmount} ${fromToken}`);
 
-      // Attempt withdrawal
-      console.log("2️⃣ Attempting withdrawal...");
       const withdrawFee = this.getTokenTransferFee(TOKEN_CANISTERS[fromToken]);
       const withdrawAmount = stuckBalance > withdrawFee ? stuckBalance - withdrawFee : stuckBalance;
 
@@ -855,7 +753,7 @@ export class ICPSwapService {
       }
 
       const recoveredAmount = this.fromSmallestUnit(withdrawAmount, fromToken);
-      console.log(`✅ Recovery successful: ${recoveredAmount} ${fromToken} returned to wallet`);
+      console.log(`Recovery successful: ${recoveredAmount} ${fromToken} returned to wallet`);
 
       return {
         success: true,
@@ -865,7 +763,7 @@ export class ICPSwapService {
       };
 
     } catch (error) {
-      console.error("❌ Recovery failed:", error);
+      console.error("Recovery failed:", error);
       return {
         success: false,
         error: error.message,
@@ -874,17 +772,13 @@ export class ICPSwapService {
     }
   }
 
-  // ✅ NEW: Check if user has stuck funds in any pool
+  // Check for stuck funds across all pools
   async checkForStuckFunds(userPrincipal) {
-    console.log("\n🔍 SCANNING FOR STUCK FUNDS");
-    console.log("============================");
-
     const stuckFunds = [];
     const user = Principal.fromText(userPrincipal);
 
     for (const [poolKey, poolInfo] of Object.entries(this.knownPools)) {
       try {
-        console.log(`Checking pool: ${poolKey}...`);
         const poolActor = await this.getPoolActor(poolInfo.canisterId);
         const balanceCheck = await poolActor.getUserUnusedBalance(user);
 
@@ -923,7 +817,7 @@ export class ICPSwapService {
             }
 
             stuckFunds.push(stuck);
-            console.log(`⚠️ Found stuck funds in ${poolKey}:`, stuck.funds);
+            console.log(`Found stuck funds in ${poolKey}:`, stuck.funds);
           }
         }
       } catch (error) {
@@ -931,16 +825,14 @@ export class ICPSwapService {
       }
     }
 
-    if (stuckFunds.length === 0) {
-      console.log("✅ No stuck funds found in any pool");
-    } else {
-      console.log(`\n⚠️ Found stuck funds in ${stuckFunds.length} pool(s)`);
+    if (stuckFunds.length > 0) {
+      console.log(`Found stuck funds in ${stuckFunds.length} pool(s)`);
     }
 
     return stuckFunds;
   }
 
-  // ✅ NEW: Get detailed fee breakdown
+  // Get detailed fee breakdown
   getFeesBreakdown(amount, fromToken) {
     const amountInSmallest = this.toSmallestUnit(amount, fromToken);
     const transferFee = this.getTokenTransferFee(TOKEN_CANISTERS[fromToken]);
@@ -965,7 +857,7 @@ export class ICPSwapService {
 
 export const swapService = new ICPSwapService();
 
-// ✅ EXPORT RECOVERY UTILITIES
+// Recovery utilities
 export const recoveryUtils = {
   async checkStuckFunds(userPrincipal) {
     return await swapService.checkForStuckFunds(userPrincipal);
@@ -980,7 +872,7 @@ export const recoveryUtils = {
   }
 };
 
-// ✅ CRITICAL: Make it globally available so AuthProvider can reinitialize it
+// Make globally available for AuthProvider
 if (typeof window !== 'undefined') {
   window.swapService = swapService;
 }
