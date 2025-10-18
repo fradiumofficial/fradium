@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X, ArrowUpDown, ChevronDown, AlertTriangle } from "lucide-react";
+import { X, ArrowUpDown, ChevronDown, AlertTriangle, Info } from "lucide-react";
 
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
 import { useWallet } from "@/core/providers/WalletProvider";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { swapService, isSwapPairSupported } from "@/core/services/swap/swapService.js";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
-
-if (typeof window !== 'undefined') {
-  window.swapService = swapService;
-}
 
 export default function SwapTokenModal({ isOpen, onClose }) {
   const { balances, usdPrices } = useWallet();
@@ -24,21 +20,18 @@ export default function SwapTokenModal({ isOpen, onClose }) {
   const [error, setError] = useState(null);
   const [swapQuote, setSwapQuote] = useState(null);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
 
-  // Only show tokens that have swap pairs
   const availableTokens = useMemo(() => {
     const supportedTokens = swapService.getSupportedTokens();
-
     return TOKENS_CONFIG.filter((token) =>
       supportedTokens.includes(token.symbol) &&
       token.chain === "Internet Computer"
     );
   }, []);
 
-  // Get available TO tokens based on FROM token selection
   const getAvailableToTokens = (selectedFromToken) => {
     if (!selectedFromToken) return availableTokens;
-
     return availableTokens.filter(token => {
       if (token.symbol === selectedFromToken.symbol) return false;
       return isSwapPairSupported(selectedFromToken.symbol, token.symbol);
@@ -46,15 +39,52 @@ export default function SwapTokenModal({ isOpen, onClose }) {
   };
 
   useEffect(() => {
+    const ensureSwapServiceIdentity = async () => {
+      if (isAuthenticated && identity) {
+        try {
+          // Check if swapService has identity stored
+          const storedIdentity = swapService.getIdentity?.();
+          const principal = storedIdentity?.getPrincipal()?.toString();
+
+          if (!principal) {
+            console.warn("⚠️ Swap service missing identity, initializing now...");
+            await swapService.reinitializeAgent(identity);
+
+            // Verify after reinit
+            const newIdentity = swapService.getIdentity?.();
+            const newPrincipal = newIdentity?.getPrincipal()?.toString();
+
+            if (newPrincipal) {
+              console.log("✅ Swap service identity initialized:", newPrincipal);
+            } else {
+              console.error("❌ Identity still missing after initialization!");
+              setError("Failed to initialize swap service. Please try logging out and back in.");
+            }
+          } else {
+            console.log("✅ Swap service already has identity:", principal);
+          }
+        } catch (error) {
+          console.error("❌ Failed to check/initialize swap service identity:", error);
+          setError("Failed to initialize swap service. Please try logging out and back in.");
+        }
+      }
+    };
+
+    if (isOpen) {
+      ensureSwapServiceIdentity();
+    }
+  }, [isOpen, isAuthenticated, identity]);
+
+  useEffect(() => {
     if (availableTokens.length > 0 && !fromToken) {
-      const fradiumToken = availableTokens.find((token) => token.symbol === "FRADIUM");
-      setFromToken(fradiumToken || availableTokens[0]);
+      const icpToken = availableTokens.find((token) => token.symbol === "ICP");
+      setFromToken(icpToken || availableTokens[0]);
     }
 
     if (availableTokens.length > 0 && !toToken && fromToken) {
       const availableToTokens = getAvailableToTokens(fromToken);
-      const ckBTCToken = availableToTokens.find((token) => token.symbol === "ckBTC");
-      setToToken(ckBTCToken || availableToTokens[0]);
+      const kongToken = availableToTokens.find((token) => token.symbol === "KONG");
+      setToToken(kongToken || availableToTokens[0]);
     }
   }, [availableTokens, fromToken]);
 
@@ -66,6 +96,35 @@ export default function SwapTokenModal({ isOpen, onClose }) {
       setToAmount("");
     }
   }, [fromToken, toToken, fromAmount]);
+
+  const calculateTotalCost = () => {
+    if (!fromToken || !fromAmount) return null;
+
+    const swapAmount = parseFloat(fromAmount);
+
+    // Get dynamic fee from swapService
+    const tokenCanisterId = fromToken.symbol === "ICP"
+      ? "ryjl3-tyaaa-aaaaa-aaaba-cai"
+      : "o7oak-iyaaa-aaaaq-aadzq-cai";
+
+    const transferFee = swapService.getTokenTransferFee?.(tokenCanisterId) || BigInt(10000);
+    const feeInTokens = Number(transferFee) / 100000000; // Convert to token units
+
+    return {
+      swapAmount,
+      poolFee: feeInTokens,
+      approveTxFee: feeInTokens,
+      depositTxFee: feeInTokens,
+      totalCost: swapAmount + (feeInTokens * 3), // 3 fees total
+      breakdown: {
+        swap: swapAmount,
+        poolFee: feeInTokens,
+        txFees: feeInTokens * 2
+      }
+    };
+  };
+
+  const totalCost = calculateTotalCost();
 
   const getSwapQuote = async () => {
     if (!fromToken || !toToken || !fromAmount) return;
@@ -107,13 +166,10 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
   const handleFromTokenChange = (token) => {
     setFromToken(token);
-
-    // Check if current toToken is still valid
     const availableToTokens = getAvailableToTokens(token);
     if (!availableToTokens.find(t => t.symbol === toToken?.symbol)) {
       setToToken(availableToTokens[0] || null);
     }
-
     setFromAmount("");
     setToAmount("");
     setSwapQuote(null);
@@ -141,11 +197,14 @@ export default function SwapTokenModal({ isOpen, onClose }) {
       return;
     }
 
-    const userBalance = await swapService.getTokenBalance(fromToken.symbol, principal);
-    const swapAmount = parseFloat(fromAmount);
+    const userBalance = parseFloat(getBalanceForToken(fromToken));
+    if (!totalCost) {
+      setError("Unable to calculate total cost");
+      return;
+    }
 
-    if (userBalance < swapAmount) {
-      setError(`Insufficient balance. You have ${userBalance.toFixed(6)} ${fromToken.symbol}, but trying to swap ${swapAmount.toFixed(6)} ${fromToken.symbol}`);
+    if (userBalance < totalCost.totalCost) {
+      setError(`Insufficient balance. You have ${userBalance.toFixed(6)} ${fromToken.symbol}, but need ${totalCost.totalCost.toFixed(6)} (including ${totalCost.poolFee.toFixed(6)} pool fee + ${totalCost.txFees.toFixed(6)} transaction fees)`);
       return;
     }
 
@@ -156,16 +215,25 @@ export default function SwapTokenModal({ isOpen, onClose }) {
       const result = await swapService.executeSwap({
         fromToken: fromToken.symbol,
         toToken: toToken.symbol,
-        amount: swapAmount,
+        amount: parseFloat(fromAmount),
         minAmountOut: swapQuote.minAmountOut,
         userPrincipal: principal,
       });
 
       if (result.success) {
-        const outputAmount = swapService.fromSmallestUnit(result.amountOut, toToken.symbol);
+        // Trigger balance refresh using the correct event name
+        window.dispatchEvent(new CustomEvent("balance-updated"));
+
+        alert(`Swap successful! You received ${result.amountOut.toFixed(6)} ${toToken.symbol}`);
+
+        // Close modal after a short delay to allow balance refresh
+        setTimeout(() => {
+          onClose();
+        }, 500);
+      } else if (result.recovered) {
+        alert(result.message);
+        window.dispatchEvent(new CustomEvent("balance-updated"));
         onClose();
-        window.dispatchEvent(new CustomEvent("refreshBalances"));
-        alert(`Swap successful! You received ${outputAmount.toFixed(6)} ${toToken.symbol}`);
       } else {
         throw new Error(result.error || "Swap failed");
       }
@@ -184,6 +252,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
     setError(null);
     setIsLoading(false);
     setIsSwapping(false);
+    setShowFeeBreakdown(false);
     onClose();
   };
 
@@ -199,11 +268,19 @@ export default function SwapTokenModal({ isOpen, onClose }) {
     if (!fromAmount || !swapQuote) return true;
     if (isSwapping || isLoading) return true;
 
-    const userBalance = parseFloat(getBalanceForToken(fromToken));
-    const swapAmount = parseFloat(fromAmount || "0");
-    if (userBalance < swapAmount) return true;
+    if (totalCost) {
+      const userBalance = parseFloat(getBalanceForToken(fromToken));
+      if (userBalance < totalCost.totalCost) return true;
+    }
 
     return false;
+  };
+
+  const isAmountTooSmall = () => {
+    if (!fromToken || !fromAmount) return false;
+    const amount = parseFloat(fromAmount);
+    const minViable = fromToken.symbol === "ICP" ? 0.001 : 0.00001;
+    return amount > 0 && amount < minViable;
   };
 
   if (!isOpen) return null;
@@ -219,20 +296,8 @@ export default function SwapTokenModal({ isOpen, onClose }) {
           <div className="flex flex-col items-center p-4 gap-4">
             <div className="w-full text-center text-white text-lg font-medium">Swap Tokens</div>
 
-            {/* Liquidity Warning Banner */}
-            <div className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-yellow-200">
-                  <strong>Demo Mode:</strong> Pools are deployed on ICPSwap mainnet but currently have no liquidity.
-                  Swap quotes are calculated but cannot be executed until liquidity is added.
-                </div>
-              </div>
-            </div>
-
             <div className="w-full rounded-xl bg-[#FFFFFF08] border-white/10 p-5">
               <div className="space-y-4">
-                {/* From Token */}
                 <div>
                   <label className="block text-white/90 text-[13px] font-medium mb-2">From</label>
                   <div className="flex gap-2">
@@ -251,11 +316,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto z-[10000]">
                         {availableTokens.map((token) => (
-                          <DropdownMenuItem
-                            key={token.id}
-                            onClick={() => handleFromTokenChange(token)}
-                            className="text-white hover:bg-white/5 cursor-pointer px-4 py-3"
-                          >
+                          <DropdownMenuItem key={token.id} onClick={() => handleFromTokenChange(token)} className="text-white hover:bg-white/5 cursor-pointer px-4 py-3">
                             <div className="flex items-center gap-3">
                               <img src={token.imageUrl} alt={token.name} className="w-6 h-6 rounded-full" />
                               <div className="flex flex-col">
@@ -268,33 +329,53 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <input
-                      type="number"
-                      placeholder="0.0"
-                      value={fromAmount}
-                      onChange={(e) => setFromAmount(e.target.value)}
-                      className="w-24 px-4 py-3 bg-transparent border border-white/10 rounded-xl text-white placeholder-[#B0B6BE] focus:outline-none focus:ring-2 focus:ring-[#9BE4A0]"
-                    />
+                    <input type="number" placeholder="0.0" value={fromAmount} onChange={(e) => setFromAmount(e.target.value)} className="w-24 px-4 py-3 bg-transparent border border-white/10 rounded-xl text-white placeholder-[#B0B6BE] focus:outline-none focus:ring-2 focus:ring-[#9BE4A0]" />
                   </div>
-                  {fromToken && (
-                    <div className="text-xs text-white/60 mt-1">
-                      Balance: {getBalanceForToken(fromToken)} {fromToken.symbol}
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="text-xs text-white/60">Balance: {getBalanceForToken(fromToken)} {fromToken?.symbol}</div>
+                    {fromToken && totalCost && (
+                      <button onClick={() => setShowFeeBreakdown(!showFeeBreakdown)} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        {showFeeBreakdown ? "Hide" : "Show"} fees
+                      </button>
+                    )}
+                  </div>
+
+                  {showFeeBreakdown && totalCost && (
+                    <div className="mt-2 p-3 bg-[#23272F] border border-[#393E4B] rounded-lg space-y-1">
+                      <div className="text-xs font-medium text-white/80 mb-2">Total Cost Breakdown:</div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/60">Swap Amount</span>
+                        <span className="text-white">{totalCost.swapAmount.toFixed(6)} {fromToken.symbol}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/60">Pool Fee</span>
+                        <span className="text-white">{totalCost.poolFee.toFixed(6)} {fromToken.symbol}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/60">Transaction Fees (×2)</span>
+                        <span className="text-white">{totalCost.txFees.toFixed(6)} {fromToken.symbol}</span>
+                      </div>
+                      <div className="pt-2 mt-2 border-t border-white/10 flex justify-between text-xs font-medium">
+                        <span className="text-white">Total Required</span>
+                        <span className="text-white">{totalCost.totalCost.toFixed(6)} {fromToken.symbol}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {isAmountTooSmall() && (
+                    <div className="mt-2 p-2 bg-orange-500/10 border border-orange-500/20 rounded text-xs text-orange-400">
+                      ⚠️ Amount is very small. Recommended minimum: {fromToken.symbol === "ICP" ? "0.001" : "0.00001"} {fromToken.symbol}
                     </div>
                   )}
                 </div>
 
-                {/* Swap Direction Button */}
                 <div className="flex justify-end pr-8">
-                  <button
-                    onClick={handleSwapTokens}
-                    className="p-4 rounded-full bg-[#23272F] border border-[#393E4B] hover:bg-[#393E4B] transition-colors"
-                    disabled={!fromToken || !toToken}
-                  >
+                  <button onClick={handleSwapTokens} className="p-4 rounded-full bg-[#23272F] border border-[#393E4B] hover:bg-[#393E4B] transition-colors" disabled={!fromToken || !toToken}>
                     <ArrowUpDown className="w-5 h-5 text-white/90" />
                   </button>
                 </div>
 
-                {/* To Token */}
                 <div>
                   <label className="block text-white/90 text-[13px] font-medium mb-2">To</label>
                   <div className="flex gap-2">
@@ -313,11 +394,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-[#161B22] border-white/10 rounded-xl max-h-[300px] overflow-y-auto z-[10000]">
                         {getAvailableToTokens(fromToken).map((token) => (
-                          <DropdownMenuItem
-                            key={token.id}
-                            onClick={() => handleToTokenChange(token)}
-                            className="text-white hover:bg-white/5 cursor-pointer px-4 py-3"
-                          >
+                          <DropdownMenuItem key={token.id} onClick={() => handleToTokenChange(token)} className="text-white hover:bg-white/5 cursor-pointer px-4 py-3">
                             <div className="flex items-center gap-3">
                               <img src={token.imageUrl} alt={token.name} className="w-6 h-6 rounded-full" />
                               <div className="flex flex-col">
@@ -330,50 +407,32 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <input
-                      type="text"
-                      placeholder="0.0"
-                      value={isLoading ? "Loading..." : toAmount || "0"}
-                      readOnly
-                      className="w-24 px-4 py-3 bg-[#FFFFFF08] border border-white/10 rounded-xl text-white/70 cursor-not-allowed"
-                    />
+                    <input type="text" placeholder="0.0" value={isLoading ? "Loading..." : toAmount || "0"} readOnly className="w-24 px-4 py-3 bg-[#FFFFFF08] border border-white/10 rounded-xl text-white/70 cursor-not-allowed" />
                   </div>
                 </div>
 
-                {/* Swap Details */}
                 {swapQuote && !error && (
                   <div className="bg-[#23272F] border border-[#393E4B] rounded-lg p-4 space-y-2">
                     <h4 className="text-white font-medium text-sm mb-3">Swap Details</h4>
 
                     {!swapQuote.hasLiquidity && (
                       <div className="bg-orange-500/10 border border-orange-500/20 rounded p-2 mb-3">
-                        <p className="text-orange-400 text-xs">
-                          ⚠️ This pool has no liquidity. Quote shown is based on initial pool price. Swap execution will fail until liquidity is added.
-                        </p>
+                        <p className="text-orange-400 text-xs">⚠️ This pool has no liquidity. Quote shown is based on initial pool price. Swap execution will fail until liquidity is added.</p>
                       </div>
                     )}
 
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Rate</span>
-                      <span className="text-white">
-                        1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}
-                      </span>
+                      <span className="text-white">1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}</span>
                     </div>
-
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Fee</span>
-                      <span className="text-white">
-                        {swapQuote.fee.toFixed(6)} {fromToken.symbol}
-                      </span>
+                      <span className="text-white">{swapQuote.fee.toFixed(6)} {fromToken.symbol}</span>
                     </div>
-
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Min Received</span>
-                      <span className="text-white">
-                        {swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}
-                      </span>
+                      <span className="text-white">{swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}</span>
                     </div>
-
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Pool Status</span>
                       <span className={`text-sm ${swapQuote.hasLiquidity ? 'text-green-400' : 'text-orange-400'}`}>
@@ -383,42 +442,27 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                   </div>
                 )}
 
-                {/* Auth Warning */}
                 {!isAuthenticated && (
                   <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                    <p className="text-yellow-400 text-sm">
-                      Please connect your wallet to perform swaps
-                    </p>
+                    <p className="text-yellow-400 text-sm">Please connect your wallet to perform swaps</p>
                   </div>
                 )}
 
-                {/* Error Display */}
                 {error && (
                   <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                     <p className="text-red-400 text-sm">{error}</p>
                   </div>
                 )}
 
-                {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
-                  <button
-                    className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors"
-                    onClick={handleClose}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleSwap}
-                    disabled={isSwapDisabled() || !swapQuote?.hasLiquidity}
-                  >
+                  <button className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={handleClose}>Cancel</button>
+                  <button className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleSwap} disabled={isSwapDisabled() || !swapQuote?.hasLiquidity}>
                     {isSwapping ? "Swapping..." : swapQuote?.hasLiquidity ? "Swap" : "No Liquidity"}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Footer */}
             <div className="w-full px-2 pb-2">
               <div className="text-xs text-[#B0B6BE] text-center">
                 Powered by ICPSwap • Pools: {fromToken?.symbol}/{toToken?.symbol}
