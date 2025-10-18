@@ -7,13 +7,13 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({
   children,
-  canisters = {}, // Object of canister instances
-  onLoginSuccess = null, // Custom login success handler
-  onLogout = null, // Custom logout handler
-  redirectAfterLogin = null, // Default redirect after login
-  redirectAfterLogout = null, // Default redirect after logout
-  getProfileFunction = null, // Function to get user profile
-  identityProvider = null, // Custom identity provider
+  canisters = {},
+  onLoginSuccess = null,
+  onLogout = null,
+  redirectAfterLogin = null,
+  redirectAfterLogout = null,
+  getProfileFunction = null,
+  identityProvider = null,
 }) => {
   const [authClient, setAuthClient] = useState(null);
   const [user, setUser] = useState(null);
@@ -21,7 +21,6 @@ export const AuthProvider = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Use provided identity provider or default
   const getIdentityProvider = () => {
     return identityProvider || getInternetIdentityNetwork();
   };
@@ -38,10 +37,44 @@ export const AuthProvider = ({
     initAuth();
   }, []);
 
+  // ✅ NEW: Helper function to initialize swap service with retry
+  const initializeSwapService = async (newIdentity, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      if (window.swapService && window.swapService.reinitializeAgent) {
+        try {
+          console.log(`🔄 Attempt ${i + 1}: Initializing swap service with identity...`);
+          await window.swapService.reinitializeAgent(newIdentity);
+          
+          // ✅ FIXED: Check if identity was stored properly
+          const storedIdentity = window.swapService.getIdentity?.();
+          const principal = storedIdentity?.getPrincipal()?.toString();
+          
+          if (principal) {
+            console.log("✅ Swap service initialized with principal:", principal);
+            return true;
+          } else {
+            console.warn(`⚠️ Attempt ${i + 1}: No principal found after init`);
+          }
+        } catch (err) {
+          console.error(`❌ Attempt ${i + 1} failed:`, err);
+        }
+      } else {
+        console.warn(`⚠️ Attempt ${i + 1}: swapService not ready yet, waiting...`);
+      }
+      
+      // Wait before retry (100ms, 200ms, 400ms)
+      await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, i)));
+    }
+    
+    console.error("❌ Failed to initialize swap service after all retries");
+    return false;
+  };
+
   const updateIdentity = async (client) => {
     try {
       const authenticated = await client.isAuthenticated();
       setIsAuthenticated(authenticated);
+      
       if (authenticated) {
         const newIdentity = client.getIdentity();
         setIdentity(newIdentity);
@@ -53,15 +86,8 @@ export const AuthProvider = ({
           }
         });
 
-        // ✅ CRITICAL FIX: Reinitialize swap service agent with authenticated identity
-        if (window.swapService && window.swapService.reinitializeAgent) {
-          try {
-            await window.swapService.reinitializeAgent();
-            console.log("✅ SwapService agent reinitialized on app load");
-          } catch (err) {
-            console.error("Failed to reinitialize swap service:", err);
-          }
-        }
+        // ✅ FIXED: Initialize swap service with retry logic
+        await initializeSwapService(newIdentity);
 
         setIsLoading(true);
 
@@ -94,8 +120,17 @@ export const AuthProvider = ({
   const handleLogin = async (customLoginSuccessHandler = null) => {
     if (!authClient) return;
 
-    // Konfigurasi untuk membuka window baru, bukan tab
-    const windowFeatures = ["width=500", "height=600", "scrollbars=yes", "resizable=yes", "toolbar=no", "menubar=no", "location=no", "status=no", "directories=no"].join(",");
+    const windowFeatures = [
+      "width=500",
+      "height=600",
+      "scrollbars=yes",
+      "resizable=yes",
+      "toolbar=no",
+      "menubar=no",
+      "location=no",
+      "status=no",
+      "directories=no"
+    ].join(",");
 
     await new Promise((resolve, reject) => {
       const loginOptions = {
@@ -111,6 +146,7 @@ export const AuthProvider = ({
 
       authClient.login(loginOptions);
     });
+    
     const newIdentity = authClient.getIdentity();
     await handleLoginSuccess(newIdentity, customLoginSuccessHandler);
   };
@@ -125,15 +161,8 @@ export const AuthProvider = ({
       }
     });
 
-    // ✅ CRITICAL FIX: Reinitialize swap service agent after login
-    if (window.swapService && window.swapService.reinitializeAgent) {
-      try {
-        await window.swapService.reinitializeAgent();
-        console.log("✅ SwapService agent reinitialized after login");
-      } catch (err) {
-        console.error("Failed to reinitialize swap service:", err);
-      }
-    }
+    // ✅ FIXED: Initialize swap service with retry logic
+    await initializeSwapService(newIdentity);
 
     setIsLoading(true);
 
@@ -169,9 +198,6 @@ export const AuthProvider = ({
     } else {
       if (redirectAfterLogin) {
         window.open(redirectAfterLogin, "_blank");
-      } else {
-        // Jika tidak ada redirectAfterLogin, tidak reload halaman
-        // Biarkan user tetap di halaman yang sama
       }
     }
   };
@@ -197,6 +223,7 @@ export const AuthProvider = ({
     await authClient.logout();
     setUser(null);
     setIsAuthenticated(false);
+    setIdentity(null);
 
     // Use custom logout handler or default redirect
     if (onLogout) {
@@ -226,8 +253,8 @@ export const AuthProvider = ({
         isLoading,
         user,
         authClient,
-        canisters, // Expose canisters for use in components
-        refreshUser, // Add refreshUser function
+        canisters,
+        refreshUser,
       }}>
       {children}
     </AuthContext.Provider>
