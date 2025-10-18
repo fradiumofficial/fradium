@@ -357,7 +357,7 @@ const SendTokenModal = ({ isOpen, onClose }) => {
                   {/* Continue */}
                   <motion.div variants={itemVariants} className="w-full px-2 sm:px-3 pb-2">
                     <ButtonGreen fullWidth disabled={!destination.trim() || !selectedToken || !amount || parseFloat(amount) <= 0} fontWeight="semibold" onClick={handleContinue}>
-                      Continue
+                      Begin Analyze
                     </ButtonGreen>
                   </motion.div>
                 </motion.div>

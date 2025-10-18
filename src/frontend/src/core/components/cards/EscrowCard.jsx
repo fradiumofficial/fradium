@@ -7,28 +7,30 @@ import { useNavigate } from "react-router-dom";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import ButtonPurple from "@/core/components/ButtonPurple.jsx";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
+import { getTokenIconBySymbol } from "@/core/lib/tokenUtils.js";
 
 // Helper function to get token info
 function getTokenInfo(tokenType) {
-  // Use TOKENS_CONFIG imported at the top
+  // Normalize token symbol
+  const normalizedSymbol = typeof tokenType === "string" ? tokenType.toUpperCase() : tokenType;
 
   // Find token in configuration
-  const token = TOKENS_CONFIG.find((t) => t.symbol === tokenType || t.symbol.toLowerCase() === tokenType.toLowerCase() || t.name.toLowerCase() === tokenType.toLowerCase());
+  const token = TOKENS_CONFIG.find((t) => t.symbol === normalizedSymbol || t.symbol?.toUpperCase() === normalizedSymbol || t.name?.toLowerCase() === tokenType?.toLowerCase());
 
   if (token) {
     return {
       symbol: token.symbol,
       name: token.name,
-      imageUrl: token.imageUrl,
+      imageUrl: getTokenIconBySymbol(token.symbol),
       type: token.type,
     };
   }
 
-  // Fallback for unknown tokens
+  // Fallback for unknown tokens using getTokenIconBySymbol
   return {
-    symbol: tokenType,
-    name: tokenType,
-    imageUrl: "/assets/images/coins/bitcoin.webp",
+    symbol: normalizedSymbol,
+    name: normalizedSymbol,
+    imageUrl: getTokenIconBySymbol(normalizedSymbol),
     type: "unknown",
   };
 }

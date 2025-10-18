@@ -61,6 +61,9 @@ export default function AssetsPage() {
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
   const [hideZeroValue, setHideZeroValue] = useState(false);
 
+  // Token visibility refresh state
+  const [tokenVisibilityRefresh, setTokenVisibilityRefresh] = useState(0);
+
   // Hover/interaction states
   const [isCardHover, setIsCardHover] = useState(false);
   const [cardMouse, setCardMouse] = useState({ x: 0, y: 0 });
@@ -221,22 +224,15 @@ export default function AssetsPage() {
 
       return networkMatch && searchMatch && zeroValueMatch;
     });
-  }, [networkFilters, network, searchQuery, hideZeroValue, balances, identity]);
+  }, [networkFilters, network, searchQuery, hideZeroValue, balances, identity, tokenVisibilityRefresh]);
 
-  // Calculate total portfolio value (only for visible tokens)
+  // Calculate portfolio value based on balance data (without token visibility dependency)
   const { totalPortfolioValue, isPortfolioLoading } = useMemo(() => {
     let total = 0;
     let hasAnyLoading = false;
     let hasAnyError = false;
-    const principal = identity?.getPrincipal?.();
 
     TOKENS_CONFIG.forEach((token) => {
-      // Only include visible tokens in portfolio calculation
-      const isTokenVisible = getTokenVisibility(principal, token.id);
-      if (!isTokenVisible) {
-        return; // Skip hidden tokens
-      }
-
       const balance = balances[token.id];
       const usdPrice = usdPrices[token.id];
       const isBalanceLoading = balanceLoading[token.id];
@@ -266,7 +262,38 @@ export default function AssetsPage() {
       isPortfolioLoading: hasAnyLoading,
       hasPortfolioError: hasAnyError,
     };
-  }, [balances, usdPrices, balanceLoading, usdPriceLoading, balanceErrors, usdPriceErrors, identity]);
+  }, [balances, usdPrices, balanceLoading, usdPriceLoading, balanceErrors, usdPriceErrors, tokenVisibilityRefresh]);
+
+  // Calculate visible portfolio value (only for visible tokens)
+  const visiblePortfolioValue = useMemo(() => {
+    let total = 0;
+    const principal = identity?.getPrincipal?.();
+
+    TOKENS_CONFIG.forEach((token) => {
+      // Only include visible tokens in portfolio calculation
+      const isTokenVisible = getTokenVisibility(principal, token.id);
+      if (!isTokenVisible) {
+        return; // Skip hidden tokens
+      }
+
+      const balance = balances[token.id];
+      const usdPrice = usdPrices[token.id];
+      const isBalanceLoading = balanceLoading[token.id];
+      const hasBalanceError = balanceErrors[token.id];
+      const isUsdPriceLoading = usdPriceLoading[token.id];
+      const hasUsdPriceError = usdPriceErrors[token.id];
+
+      // Calculate value if we have both balance and price
+      if (balance && usdPrice && !isBalanceLoading && !isUsdPriceLoading && !hasBalanceError && !hasUsdPriceError) {
+        const numericBalance = parseFloat(balance);
+        if (!isNaN(numericBalance) && numericBalance > 0) {
+          total += numericBalance * usdPrice;
+        }
+      }
+    });
+
+    return total;
+  }, [balances, usdPrices, balanceLoading, usdPriceLoading, balanceErrors, usdPriceErrors, identity, tokenVisibilityRefresh]);
 
   // Format portfolio value for display
   const formattedPortfolioValue = useMemo(() => {
@@ -275,21 +302,21 @@ export default function AssetsPage() {
       return "••••";
     }
 
-    if (totalPortfolioValue === 0) {
+    if (visiblePortfolioValue === 0) {
       return "$0.00";
     }
 
     // Format with appropriate decimal places
-    if (totalPortfolioValue < 0.01) {
+    if (visiblePortfolioValue < 0.01) {
       return "$0.0000";
-    } else if (totalPortfolioValue < 1) {
-      return `$${totalPortfolioValue.toFixed(4)}`;
-    } else if (totalPortfolioValue < 1000) {
-      return `$${totalPortfolioValue.toFixed(2)}`;
+    } else if (visiblePortfolioValue < 1) {
+      return `$${visiblePortfolioValue.toFixed(4)}`;
+    } else if (visiblePortfolioValue < 1000) {
+      return `$${visiblePortfolioValue.toFixed(2)}`;
     } else {
-      return `$${totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return `$${visiblePortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
-  }, [totalPortfolioValue, hideBalance]);
+  }, [visiblePortfolioValue, hideBalance]);
 
   // Close settings dropdown when clicking outside
   React.useEffect(() => {
@@ -305,13 +332,43 @@ export default function AssetsPage() {
     };
   }, [showSettingsDropdown]);
 
+  // Listen for token visibility updates from ManageTokensModal
+  React.useEffect(() => {
+    const handleTokenVisibilityUpdate = (event) => {
+      const { principal } = event.detail;
+      const currentPrincipal = identity?.getPrincipal?.();
+
+      // Only refresh if the update is for the current user
+      if (currentPrincipal && principal === currentPrincipal.toString()) {
+        // Force re-render by updating refresh state
+        setTokenVisibilityRefresh((prev) => prev + 1);
+
+        // Also refresh balances to ensure data is up to date
+        refreshAllBalances();
+        refreshAllUSDPrices();
+
+        console.log("🔄 Token visibility updated, refreshing token list and balances");
+      }
+    };
+
+    window.addEventListener("tokenVisibilityUpdated", handleTokenVisibilityUpdate);
+    return () => {
+      window.removeEventListener("tokenVisibilityUpdated", handleTokenVisibilityUpdate);
+    };
+  }, [identity, refreshAllBalances, refreshAllUSDPrices]);
+
   return (
     <div className="relative flex flex-col max-w-[35rem] lg:max-w-[35rem] gap-8 mx-auto w-full bg-transparent px-4">
       <div className="relative z-10">
         {/* Card Wallet - Redesigned to match mockup with interaction */}
         <motion.div
           className="group relative w-full overflow-hidden rounded-[28px] p-6 bg-gradient-to-b from-[#7C72FE] via-[#5A52C6] to-[#433BA6] ring-1 ring-white/15"
-          style={{ boxShadow: "0 5px 18px -4px rgba(74,66,170,0.6), 0 0 0 1px #7C77C4" }}
+          style={{
+            boxShadow: "0 5px 18px -4px rgba(74,66,170,0.6), 0 0 0 1px #7C77C4",
+            transform: "translateZ(0)",
+            willChange: "auto",
+            contain: "layout style paint",
+          }}
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           whileHover={{ boxShadow: "0 12px 28px -6px rgba(74,66,170,0.15), 0 0 0 1px #7C77C4" }}
@@ -416,11 +473,14 @@ export default function AssetsPage() {
                         background: "linear-gradient(180deg, rgba(17,22,28,0.92), rgba(11,17,22,0.88))",
                         boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
                         backdropFilter: "blur(10px)",
+                        transform: "translateZ(0)",
+                        willChange: "auto",
+                        contain: "layout style paint",
                       }}
                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}>
+                      transition={{ duration: 0.15, ease: "easeOut" }}>
                       <div className="py-2">
                         <button onClick={handleHideZeroValue} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors">
                           {hideZeroValue ? (
@@ -457,11 +517,11 @@ export default function AssetsPage() {
           {/* Search Input with Animation */}
           <AnimatePresence>
             {showSearch && (
-              <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: "auto", marginTop: 12 }} exit={{ opacity: 0, height: 0, marginTop: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden">
+              <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: "auto", marginTop: 12 }} exit={{ opacity: 0, height: 0, marginTop: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }} className="overflow-hidden" style={{ contain: "layout style paint" }}>
                 <div className="relative">
-                  <input type="text" placeholder="Search tokens..." value={searchQuery} onChange={handleSearchChange} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-2 text-white text-sm placeholder-[#B0B6BE] outline-none focus:border-[#9BE4A0] transition-colors" autoFocus />
+                  <input type="text" placeholder="Search tokens..." value={searchQuery} onChange={handleSearchChange} className="w-full bg-[#23272F] border border-[#393E4B] rounded-lg px-4 py-2 text-white text-sm placeholder-[#B0B6BE] outline-none focus:border-[#9BE4A0] transition-colors" autoFocus style={{ transform: "translateZ(0)" }} />
                   {searchQuery && (
-                    <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#B0B6BE] hover:text-white transition-colors" onClick={() => setSearchQuery("")}>
+                    <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#B0B6BE] hover:text-white transition-colors" onClick={() => setSearchQuery("")} style={{ transform: "translateZ(0)" }}>
                       ×
                     </motion.button>
                   )}
@@ -474,26 +534,29 @@ export default function AssetsPage() {
         <div className="flex flex-col divide-y divide-[#23272F]">
           <AnimatePresence mode="wait">
             {filteredTokens.length > 0 ? (
-              <motion.div key="token-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                <AnimatePresence>
-                  {filteredTokens.map((token, index) => (
-                    <motion.div
-                      key={token.id || index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{
-                        duration: 0.3,
-                        delay: index * 0.05,
-                        ease: "easeOut",
-                      }}>
-                      <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={!!balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={!!usdPriceErrors[token.id]} hideBalance={hideBalance} />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+              <motion.div key="token-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} style={{ contain: "layout style paint" }}>
+                {filteredTokens.map((token, index) => (
+                  <motion.div
+                    key={token.id || index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{
+                      duration: 0.2,
+                      delay: Math.min(index * 0.02, 0.1),
+                      ease: "easeOut",
+                    }}
+                    style={{
+                      transform: "translateZ(0)",
+                      willChange: "auto",
+                      contain: "layout style paint",
+                    }}>
+                    <TokenItemCard token={token} onClick={handleTokenClick} balance={balances[token.id] || "0.000000"} isLoading={balanceLoading[token.id]} hasError={!!balanceErrors[token.id]} usdPrice={usdPrices[token.id]} usdPriceLoading={usdPriceLoading[token.id]} usdPriceError={!!usdPriceErrors[token.id]} hideBalance={hideBalance} />
+                  </motion.div>
+                ))}
               </motion.div>
             ) : (
-              <motion.div key="no-results" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="flex items-center justify-center py-8">
+              <motion.div key="no-results" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }} className="flex items-center justify-center py-8" style={{ contain: "layout style paint" }}>
                 <div className="text-center">
                   <div className="text-[#B0B6BE] text-sm mb-2">{searchQuery ? `No tokens found for "${searchQuery}"${network !== "All Networks" ? ` in ${network}` : ""}` : network !== "All Networks" ? `No tokens available in ${network}` : "No tokens found"}</div>
                   <div className="text-[#9BEB83] text-xs">{searchQuery ? "Try a different search term" : network !== "All Networks" ? `Switch to "All Networks" to see all tokens` : "Add addresses to see your tokens here"}</div>
@@ -504,8 +567,8 @@ export default function AssetsPage() {
         </div>
 
         {/* Manage Tokens Button */}
-        <motion.div className="mt-6 flex justify-center" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
-          <button className="py-3 px-6 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 group backdrop-blur-md" onClick={() => setShowManageTokensModal(true)}>
+        <motion.div className="mt-6 flex justify-center" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.1 }} style={{ contain: "layout style paint" }}>
+          <button className="py-3 px-6 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 group backdrop-blur-md" onClick={() => setShowManageTokensModal(true)} style={{ transform: "translateZ(0)" }}>
             <div className="flex items-center justify-center gap-3">
               <img src="/assets/icons/construction.svg" alt="Manage Tokens" className="w-4 h-4 text-[#B0B6BE] group-hover:text-white transition-colors" />
               <span className="text-[#B0B6BE] group-hover:text-white text-sm font-medium transition-colors">Manage Tokens</span>

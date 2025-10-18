@@ -439,7 +439,7 @@ const PaymentRequestPage = () => {
             <motion.div className="absolute w-[172px] h-[172px] bg-gradient-to-b from-[#C9A962]/20 to-[#C9A962]/10 rounded-full" animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }} />
             <motion.div className="absolute w-[134px] h-[134px] bg-gradient-to-b from-[#C9A962]/25 to-[#C9A962]/15 rounded-full" animate={{ scale: [1, 1.1, 1], opacity: [0.25, 0.35, 0.25] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }} />
             <motion.div className="absolute w-[100px] h-[100px]" animate={{ scale: [1, 1.05, 1], rotate: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
-              <img src="/assets/images/analisis.png" alt="Analyzing" className="w-[100px] h-[100px] drop-shadow-[-5px_5px_20px_rgba(0,0,0,0.1)]" />
+              <img src="/assets/images/analisis.webp" alt="Analyzing" className="w-[100px] h-[100px] drop-shadow-[-5px_5px_20px_rgba(0,0,0,0.1)]" />
             </motion.div>
           </div>
           <div className="flex flex-col items-center gap-3 w-full">

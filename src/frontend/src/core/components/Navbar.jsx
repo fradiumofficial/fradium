@@ -53,7 +53,7 @@ const navigationItems = [
   { label: "Home", href: "/" },
   { label: "Docs", href: "https://fradium.gitbook.io/docs", external: true },
   { label: "View Reports", href: "/reports" },
-  { label: "FAQ", href: "/assistant" },
+  { label: "Assistant", href: "/assistant" },
 ];
 
 const Navbar = () => {

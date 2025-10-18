@@ -79,7 +79,7 @@ export default function AnalyseAddressPage() {
 
             {/* Main Analysis Icons */}
             <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5, rotate: -10 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-              <img src="/assets/images/analisis.png" alt="Analyze Address" className="w-32 h-32" />
+              <img src="/assets/images/analisis.webp" alt="Analyze Address" className="w-32 h-32" />
             </motion.div>
           </motion.div>
 

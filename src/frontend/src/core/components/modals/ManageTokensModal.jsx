@@ -112,10 +112,22 @@ const ManageTokensModal = ({ isOpen, onClose }) => {
         setTokenVisibility(principal, parseInt(tokenId), isVisible);
       });
 
+      // Wait a bit to ensure localStorage is updated
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Notify app that token visibility has changed
       try {
-        window.dispatchEvent(new CustomEvent("tokenVisibilityUpdated", { detail: { principal: principal?.toString?.() } }));
-      } catch (_e) {}
+        const event = new CustomEvent("tokenVisibilityUpdated", {
+          detail: {
+            principal: principal?.toString?.(),
+            timestamp: Date.now(),
+          },
+        });
+        window.dispatchEvent(event);
+        console.log("📢 Token visibility update event dispatched");
+      } catch (error) {
+        console.error("Error dispatching token visibility event:", error);
+      }
 
       setHasChanges(false);
       // Close modal after successful save

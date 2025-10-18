@@ -106,7 +106,7 @@ export const AuthProvider = ({
       };
 
       if (process.env.DFX_NETWORK === "ic") {
-        loginOptions.derivationOrigin = "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io";
+        // loginOptions.derivationOrigin = "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io";
       }
 
       authClient.login(loginOptions);

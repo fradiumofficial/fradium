@@ -27,7 +27,7 @@ export default function AnalysisProgressModal({ isOpen }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm rounded-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm rounded-lg overflow-x-hidden">
       <div className="bg-[#23272F] px-4 py-12 w-full max-w-md flex flex-col items-center shadow-lg relative overflow-hidden">
         {/* Animated circles background - centered */}
         <div className="mb-8 flex items-center justify-center w-full h-48 z-10 mx-auto relative">

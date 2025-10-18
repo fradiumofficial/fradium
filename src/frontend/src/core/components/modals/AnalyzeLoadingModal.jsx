@@ -69,7 +69,7 @@ export default function AnalyzeLoadingModal({ isOpen, onCancel }) {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}>
-              <img src="/assets/images/analisis.png" alt="Analyzing" className="w-[100px] h-[100px] drop-shadow-[-5px_5px_20px_rgba(0,0,0,0.25)]" />
+              <img src="/assets/images/analisis.webp" alt="Analyzing" className="w-[100px] h-[100px] drop-shadow-[-5px_5px_20px_rgba(0,0,0,0.25)]" />
             </motion.div>
           </div>
 

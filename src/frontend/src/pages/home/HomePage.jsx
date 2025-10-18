@@ -577,7 +577,7 @@ const Home = React.memo(() => {
                     style={{
                       animation: "fradium-icon-float 1.5s ease-in-out infinite",
                     }}>
-                    <img src="/assets/images/analisis.png" alt="Analyzing" className="w-full h-full drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" />
+                    <img src="/assets/images/analisis.webp" alt="Analyzing" className="w-full h-full drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" />
                   </div>
                 </div>
               </div>

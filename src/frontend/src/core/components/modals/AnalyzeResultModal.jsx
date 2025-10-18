@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle, Wallet, BarChart3, Gauge, Clock, ExternalLink } from "lucide-react";
 import ButtonGreen from "@/core/components/ButtonGreen.jsx";
@@ -11,9 +11,9 @@ export default function AnalyzeResultModal({ isOpen, onClose, analysisResult, va
   const result = analysisResult?.result;
   if (!result) {
     return createPortal(
-      <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/50 backdrop-blur-md">
+      <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/50 backdrop-blur-sm" style={{ isolation: "isolate" }}>
         <div className="w-full max-w-[500px] mx-auto">
-          <div className="flex flex-col items-start p-4 gap-4 w-full h-auto bg-black rounded-3xl border border-white/10">
+          <div className="flex flex-col items-start p-4 gap-4 w-full h-auto bg-black rounded-3xl border border-white/10" style={{ transform: "translateZ(0)", contain: "layout style paint" }}>
             <h2 className="text-white text-lg font-semibold">Terjadi kesalahan</h2>
             <p className="text-white/70 text-sm">Gagal memuat hasil analisis alamat. Silakan coba lagi.</p>
             <div className="w-full">
@@ -42,10 +42,27 @@ export default function AnalyzeResultModal({ isOpen, onClose, analysisResult, va
   const explorer = getChainExplorer(network);
   const explorerUrl = getExplorerUrl(network, address);
 
+  // Lock body scroll while modal is open to prevent background scroll/repaint
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+    if (isOpen) {
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = "hidden";
+      if (scrollBarWidth > 0) {
+        document.body.style.paddingRight = `${scrollBarWidth}px`;
+      }
+    }
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
+    };
+  }, [isOpen]);
+
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/50 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-16 pl-4 pr-4 bg-black/50 backdrop-blur-sm overflow-hidden" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, isolation: "isolate" }}>
       <div className="w-full max-w-[500px] mx-auto pb-8">
-        <div className="flex flex-col items-start p-3 gap-3 w-full h-auto min-h-[670px] max-h-[90vh] bg-black rounded-3xl overflow-y-auto">
+        <div className="relative flex flex-col items-start p-3 gap-3 w-full h-auto min-h-[670px] max-h-[90vh] bg-black rounded-3xl overflow-y-auto border border-white/10" style={{ zIndex: 10001, transform: "translateZ(0)", willChange: "auto", contain: "layout style paint" }}>
           {/* Content */}
           <div className="flex flex-col items-end p-0 gap-4 w-full h-auto">
             {/* Image Container */}
@@ -60,7 +77,7 @@ export default function AnalyzeResultModal({ isOpen, onClose, analysisResult, va
               <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-[128px] flex items-center">
                 {/* Icon */}
                 <div className="w-32 h-32 flex-shrink-0">
-                  <img src={result.isSafe ? "/assets/images/analisis.png" : "/assets/images/ai-unsafe-result.webp"} alt="Analysis Result" className="w-32 h-32" />
+                  <img src={result.isSafe ? "/assets/images/analisis.webp" : "/assets/images/ai-unsafe-result.webp"} alt="Analysis Result" className="w-32 h-32" />
                 </div>
 
                 {/* Title Section */}

@@ -286,9 +286,9 @@ const Assistant = () => {
         </div>
 
         {/* DESKTOP ONLY */}
-        <div className="hidden md:flex overflow-hidden pt-[96px] md:pt-[100px] px-6 lg:px-12 xl:px-20 2xl:px-24 flex-col md:flex-row gap-x-4">
+        <div className="hidden md:flex overflow-hidden pt-[96px] md:pt-[100px] flex-col md:flex-row justify-center gap-x-5">
           {/* Left: Chat Area */}
-          <div className="flex-1 max-w-4xl mx-auto rounded-[16px] border border-white/10 bg-[#000000]/50 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-5 md:p-7 lg:p-8 flex flex-col h-[calc(100vh-170px)] md:h-[calc(100vh-180px)]">
+          <div className="flex-1 max-w-4xl rounded-[16px] border border-white/10 bg-[#000000]/50 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-5 md:p-7 lg:p-8 flex flex-col h-[calc(100vh-170px)] md:h-[calc(100vh-180px)]">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -317,7 +317,7 @@ const Assistant = () => {
             </div>
           </div>
           {/* Right: Suggested Question */}
-          <div className="w-full md:w-[320px] lg:w-[340px] mx-auto rounded-[16px] border border-white/10 bg-[#000000]/60 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-5 md:p-6 lg:p-8 flex flex-col h-[calc(100vh-170px)] md:h-[calc(100vh-180px)] md:mt-0 overflow-hidden">
+          <div className="w-full md:w-[320px] lg:w-[340px] rounded-[16px] border border-white/10 bg-[#000000]/60 backdrop-blur-[2px] shadow-[0_16px_48px_rgba(0,0,0,0.40)] p-5 md:p-6 lg:p-8 flex flex-col h-[calc(100vh-170px)] md:h-[calc(100vh-180px)] md:mt-0 overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <div className="text-lg font-medium text-white">Suggested Question</div>
             </div>
