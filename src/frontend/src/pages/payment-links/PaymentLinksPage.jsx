@@ -25,8 +25,23 @@ const PaymentLinksPage = () => {
   const qrCode = useRef(null);
 
   // Map TOKENS_CONFIG to payment link format (exclude SNS tokens - not supported by backend variant)
-  const tokenOptions = TOKENS_CONFIG.filter((token) => token.type !== "sns").map((token) => ({
-    value: token.symbol === "BTC" ? "BTC" : token.symbol === "ETH" ? "ETH" : token.symbol === "SOL" ? "SOL" : token.symbol === "ICP" ? "ICP" : token.symbol === "FRADIUM" ? "Fradium" : token.symbol === "ckBTC" ? "ckBTC" : token.symbol === "ckETH" ? "ckETH" : token.symbol,
+  const tokenOptions = TOKENS_CONFIG.filter(
+    (token) => {
+      // Exclude SNS tokens (not supported by backend variant)
+      if (token.type === "sns") return false;
+
+      // Exclude native tokens (BTC, ETH, SOL) - keeping for future use
+      const nativeTokens = ["BTC", "ETH", "SOL"];
+      if (nativeTokens.includes(token.symbol)) return false;
+
+      return true;
+    }
+  ).map((token) => ({
+    value: token.symbol === "ICP" ? "ICP"
+      : token.symbol === "FRADIUM" ? "Fradium"
+        : token.symbol === "ckBTC" ? "ckBTC"
+          : token.symbol === "ckETH" ? "ckETH"
+            : token.symbol,
     label: token.name,
     symbol: token.symbol,
     decimals: token.decimals || 8,
@@ -114,10 +129,10 @@ const PaymentLinksPage = () => {
     setIsLoading(true);
 
     try {
-      // Safety guard: only allow tokens supported by backend variant
-      const supportedTokens = new Set(["BTC", "ETH", "SOL", "ICP", "Fradium", "ckBTC", "ckETH"]);
-      if (!supportedTokens.has(tokenType)) {
-        toast.error("Selected token is not supported for payment links.");
+      // Safety guard: only allow ICRC tokens for now (native tokens reserved for future)
+      const icrcTokens = new Set(["ICP", "Fradium", "ckBTC", "ckETH"]);
+      if (!icrcTokens.has(tokenType)) {
+        toast.error("Selected token is not currently supported for payment links.");
         setIsLoading(false);
         return;
       }
