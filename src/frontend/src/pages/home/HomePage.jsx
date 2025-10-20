@@ -957,14 +957,7 @@ const Home = React.memo(() => {
                 lg:top-[2.5s%] lg:left-[8.5%] lg:w-[83%] lg:h-[109%]
                 rounded-lg overflow-hidden">
                 {/* Placeholder sementara - ganti dengan video nanti */}
-                <video
-                  src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1760675496/Test_zp3tvf.mp4"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover rounded-lg"
-                />
+                <video src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1761149707/HHH_tk2uta.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover rounded-lg" />
               </div>
             </div>
           </div>

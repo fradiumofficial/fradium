@@ -245,7 +245,7 @@ Once bitcoind is running successfully on your local machine, you can proceed to 
    ./script/fradium.mint_backend.sh
   ```
 
-Perfect. Here’s a **shortened and polished version** of your Fradium PocketIC Test Suite Guide — rewritten to fit neatly inside your **main README**, focusing on clarity and professionalism while keeping it lightweight for quick reading.
+---
 
 ## 🧪 Fradium PocketIC Test Suite
 
@@ -369,7 +369,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 ## 🍀 Our Teams
 
 - Wildan Syukri Niam (Frontend Developer)
-- Bintang Al-fath (Product Developer)
+- Bintang Al-Fath (Product Developer)
 - Ghina Rosvita Maharani (UI/UX Designer)
 - Arga Adolf Lumunon (AI Engineer)
 - Yazid Al Ghozali (Extension Developer)
