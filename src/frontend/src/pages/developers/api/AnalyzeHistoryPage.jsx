@@ -4,6 +4,8 @@ import { Search, Filter, Download, Eye, Clock, CheckCircle, XCircle, AlertCircle
 import LightButton from "@/core/components/ui/LightButton.jsx";
 import { backend as backendCan } from "declarations/backend";
 import { jsonStringify } from "@/core/lib/canisterUtils";
+import * as XLSX from "xlsx";
+import toast from "react-hot-toast";
 
 const AnalyzeHistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -113,6 +115,56 @@ const AnalyzeHistoryPage = () => {
     [items, searchTerm, filterStatus]
   );
 
+  // Handle export to Excel
+  const handleExport = () => {
+    try {
+      if (filteredHistory.length === 0) {
+        toast.error("No data to export");
+        return;
+      }
+
+      // Prepare data for Excel
+      const exportData = filteredHistory.map((item) => ({
+        Address: item.address,
+        Status: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+        "Risk Score": item.riskScore !== null ? item.riskScore : "N/A",
+        Model: item.model,
+        Cost: item.cost,
+        Timestamp: item.timestamp,
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 50 }, // Address
+        { wch: 12 }, // Status
+        { wch: 12 }, // Risk Score
+        { wch: 15 }, // Model
+        { wch: 18 }, // Cost
+        { wch: 20 }, // Timestamp
+      ];
+      ws["!cols"] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Analyze History");
+
+      // Generate filename with current date
+      const date = new Date().toISOString().split("T")[0];
+      const filename = `fradium_analyze_history_${date}.xlsx`;
+
+      // Write file
+      XLSX.writeFile(wb, filename);
+
+      toast.success(`Exported ${filteredHistory.length} records successfully`);
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      toast.error("Failed to export data");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-transparent">
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
@@ -147,7 +199,7 @@ const AnalyzeHistoryPage = () => {
               </div>
 
               {/* Export Button */}
-              <LightButton variant="primary" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+              <LightButton variant="primary" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport} disabled={filteredHistory.length === 0}>
                 Export
               </LightButton>
             </div>

@@ -9,11 +9,11 @@ import { formatAmount } from "@/core/lib/tokenUtils";
 import { Principal } from "@dfinity/principal";
 import { fradium_ledger } from "declarations/fradium_ledger";
 import toast from "react-hot-toast";
-import { useWallet } from "@/core/providers/WalletProvider";
+import { useAuth } from "@/core/providers/AuthProvider";
+import { convertE8sToToken } from "@/core/lib/canisterUtils";
 
 const APICreditsPage = () => {
-  // Wallet context for balance access
-  const { balances, balanceLoading } = useWallet();
+  const { identity } = useAuth();
 
   // Local approval history (filtered by API_CREDITS metadata)
   const STORAGE_KEY = "apiCreditsApprovalHistory";
@@ -21,6 +21,8 @@ const APICreditsPage = () => {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [amountInput, setAmountInput] = useState("");
   const [isApproving, setIsApproving] = useState(false);
+  const [fradiumBalance, setFradiumBalance] = useState(0);
+  const [isFetchingBalance, setIsFetchingBalance] = useState(false);
 
   // Normalize numeric input: remove leading zeros except before decimal
   const normalizeAmountInput = (value) => {
@@ -152,13 +154,35 @@ const APICreditsPage = () => {
     }
   };
 
+  // Fetch FRADIUM balance
+  const fetchFradiumBalance = async () => {
+    if (!identity) return;
+    try {
+      setIsFetchingBalance(true);
+      const response = await fradium_ledger.icrc1_balance_of({
+        owner: identity.getPrincipal(),
+        subaccount: [],
+      });
+      setFradiumBalance(convertE8sToToken(response));
+    } catch (error) {
+      console.error("Error fetching FRADIUM balance:", error);
+      setFradiumBalance(0);
+    } finally {
+      setIsFetchingBalance(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchHistory(1);
-    const onBalanceUpdated = () => fetchStats();
+    fetchFradiumBalance();
+    const onBalanceUpdated = () => {
+      fetchStats();
+      fetchFradiumBalance();
+    };
     window.addEventListener("balance-updated", onBalanceUpdated);
     return () => window.removeEventListener("balance-updated", onBalanceUpdated);
-  }, []);
+  }, [identity]);
 
   const used = useMemo(() => Number(stats.used_e8s) / 1e8, [stats]);
   const totalApproved = useMemo(() => Number(stats.remaining_e8s) / 1e8, [stats]);
@@ -199,17 +223,15 @@ const APICreditsPage = () => {
     return { statusColorTotal: "#F59E0B", statusLabelTotal: "Building up" }; // yellow
   }, [totalApproved, remainingFum]);
 
-  // Get FRADIUM balance from wallet context
+  // Use fetched FRADIUM balance
   const fumBalance = useMemo(() => {
-    // FRADIUM token has id: 5 in TOKENS_CONFIG
-    const fumBalanceStr = balances[5] || "0";
-    return parseFloat(fumBalanceStr) || 0;
-  }, [balances]);
+    return fradiumBalance;
+  }, [fradiumBalance]);
 
   // Check if balance is loading
   const isBalanceLoading = useMemo(() => {
-    return balanceLoading[5] || false;
-  }, [balanceLoading]);
+    return isFetchingBalance;
+  }, [isFetchingBalance]);
 
   // Resolve backend canister ID for display and approve spender
   const backendIdResolved = useMemo(() => {
@@ -541,9 +563,10 @@ const APICreditsPage = () => {
                             toast.success("Approved successfully", { id: loading });
                             setAmountInput(0);
                             setShowApproveModal(false);
-                            // Refresh stats and history from backend
+                            // Refresh stats, history, and balance from backend
                             fetchStats();
                             fetchHistory(currentPage);
+                            fetchFradiumBalance();
                           } catch (e) {
                             toast.error(e?.message || "Approval failed");
                           } finally {

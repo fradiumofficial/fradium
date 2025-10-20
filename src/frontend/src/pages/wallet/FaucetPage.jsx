@@ -25,9 +25,10 @@ export default function FaucetPage() {
   const [remainingTime, setRemainingTime] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [claimSuccess, setClaimSuccess] = useState(false);
 
   const CLAIM_AMOUNT = 10;
-  const COOLDOWN_HOURS = 24;
+  const COOLDOWN_HOURS = 48;
 
   // Fetch user balance
   useEffect(() => {
@@ -96,12 +97,14 @@ export default function FaucetPage() {
 
       if ("Ok" in response) {
         setCanClaim(false); // Update status after successful claim
+        setClaimSuccess(true); // Set success state
 
         // Show success toast
         toast({
-          title: "Tokens Claimed Successfully!",
-          description: `You have received ${CLAIM_AMOUNT} FRADIUM tokens.`,
+          title: "🎉 Tokens Claimed Successfully!",
+          description: `You have received ${CLAIM_AMOUNT} FRADIUM tokens. Check your balance!`,
           variant: "default",
+          className: "bg-[#99E39E]/10 border-[#99E39E]/30 text-white",
         });
 
         // Trigger balance update event for navbar
@@ -118,6 +121,7 @@ export default function FaucetPage() {
               if ("Ok" in response) {
                 setCanClaim(true);
                 setRemainingTime(null);
+                setClaimSuccess(false);
               } else if ("Err" in response) {
                 setCanClaim(false);
                 setRemainingTime(response.Err);
@@ -236,7 +240,7 @@ export default function FaucetPage() {
               <div className="relative">
                 <div className="absolute inset-0 bg-[radial-gradient(400px_200px_at_center,rgba(153,227,158,0.1),transparent_70%)] opacity-50"></div>
                 <div className="relative bg-[#000000]/60 backdrop-blur-[2px] border border-white/10 rounded-[20px] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.40)]">
-                  <Shield className="w-16 h-16 text-[#99E39E] mx-auto mb-6 animate-glow" />
+                  <Shield className="w-16 h-16 text-[#99E39E] mx-auto mb-6" />
                   <h2 className="text-2xl font-bold mb-4 text-white">Login Required</h2>
                   <p className="text-gray-300 mb-6">Please log in to your account to claim free FRADIUM tokens and participate in the Fradium ecosystem.</p>
                   <ButtonGreen onClick={handleLogin} size="sm" fontWeight="medium" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-green.svg" iconSize="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] md:w-[23px] md:h-[23px]">
@@ -251,7 +255,7 @@ export default function FaucetPage() {
               <div className="text-center">
                 <h2 className="text-3xl font-bold mb-4 text-white animate-fade-in-up">Claim Free Tokens</h2>
                 <p className="text-gray-300 mb-12 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                  Get free {CLAIM_AMOUNT} FRADIUM tokens every {COOLDOWN_HOURS} hours to participate in community voting, staking, and reporting activities.
+                  Get free {CLAIM_AMOUNT} FRADIUM tokens every {COOLDOWN_HOURS} hours to participate in community voting, staking, escrow transactions, address analysis, and reporting activities.
                 </p>
 
                 {/* Current Balance Card */}
@@ -277,6 +281,22 @@ export default function FaucetPage() {
                         <Clock className="w-8 h-8 text-[#99E39E] mx-auto mb-3 animate-spin" />
                         <h3 className="text-lg font-semibold text-[#99E39E] mb-2">Checking Claim Status</h3>
                         <p className="text-gray-300 text-sm">Please wait while we check your claim eligibility...</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : claimSuccess ? (
+                  <motion.div className="text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.3 }}>
+                    <div className="relative bg-[#000000]/60 backdrop-blur-[2px] border border-[#99E39E]/30 rounded-[20px] p-8 shadow-[0_16px_48px_rgba(0,0,0,0.40)]">
+                      <div className="absolute inset-0 bg-[radial-gradient(400px_200px_at_center,rgba(153,227,158,0.15),transparent_70%)] opacity-50 rounded-[20px]"></div>
+                      <div className="relative">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#99E39E]/20 flex items-center justify-center animate-scale-in">
+                          <svg className="w-8 h-8 text-[#99E39E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-[#99E39E] mb-2">Claim Successful!</h3>
+                        <p className="text-gray-300 text-base mb-4">You have successfully received {CLAIM_AMOUNT} FRADIUM tokens!</p>
+                        <p className="text-gray-400 text-sm">Your balance has been updated. You can claim again in {COOLDOWN_HOURS} hours.</p>
                       </div>
                     </div>
                   </motion.div>

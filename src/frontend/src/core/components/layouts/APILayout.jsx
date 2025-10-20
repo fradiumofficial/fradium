@@ -1,15 +1,13 @@
 import React from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { WalletProvider, useWallet } from "@/core/providers/WalletProvider";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/core/providers/AuthProvider";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import { BarChart3, History, Key, BookOpen, Coins } from "lucide-react";
 import Container from "@/core/components/ui/Container.jsx";
-import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { formatAmount } from "@/core/lib/tokenUtils";
 import ProfileDropdown from "@/core/components/common/ProfileDropdown.jsx";
+import { convertE8sToToken } from "@/core/lib/canisterUtils";
+import { fradium_ledger as token } from "declarations/fradium_ledger";
 
-import WelcomingWalletModal from "../modals/WelcomingWallet";
 import { SocialLinksSidebar } from "@/core/components/common/SocialLinks.jsx";
 
 // Removed MotionLink as framer-motion is not needed here
@@ -18,9 +16,10 @@ function APILayoutContent() {
   const location = useLocation();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = React.useState(false);
   const { logout, user, identity } = useAuth();
-  const navigate = useNavigate();
-  const { isLoading, isCreatingWallet, hideBalance: contextHideBalance, setHideBalance: setContextHideBalance, addresses, balances, usdPrices } = useWallet();
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [contextHideBalance, setContextHideBalance] = React.useState(false);
   const [hasLoadedHideBalance, setHasLoadedHideBalance] = React.useState(false);
+  const [fradiumBalance, setFradiumBalance] = React.useState(0);
 
   // Helper function to normalize path (same as WalletLayout)
   const normalize = (path) => {
@@ -62,19 +61,6 @@ function APILayoutContent() {
       return false;
     }
   };
-
-  // ProfileDropdown handles outside-click internally
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingState type="spinner" size="lg" color="primary" />
-          <div className="text-slate-900 text-lg">Loading API dashboard...</div>
-        </div>
-      </div>
-    );
-  }
 
   // Menu configuration for API
   const menu = [
@@ -123,10 +109,43 @@ function APILayoutContent() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Fetch FRADIUM balance - same as Navbar.jsx
+  React.useEffect(() => {
+    if (!identity) {
+      setIsLoading(false);
+      return;
+    }
+
+    async function fetchBalance() {
+      try {
+        const response = await token.icrc1_balance_of({
+          owner: identity.getPrincipal(),
+          subaccount: [],
+        });
+        setFradiumBalance(convertE8sToToken(response));
+      } catch (error) {
+        console.error("Error fetching FRADIUM balance:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchBalance();
+
+    // Listen for balance update events
+    const handleBalanceUpdate = () => {
+      fetchBalance();
+    };
+
+    window.addEventListener("balance-updated", handleBalanceUpdate);
+
+    return () => {
+      window.removeEventListener("balance-updated", handleBalanceUpdate);
+    };
+  }, [identity]);
+
   return (
     <>
-      <WelcomingWalletModal isOpen={isCreatingWallet} />
-
       <div className="relative block md:flex min-h-screen bg-transparent w-full max-w-full">
         {/* Fixed background layers */}
         <div className="fixed inset-0 z-0 pointer-events-none select-none bg-white">
@@ -159,7 +178,7 @@ function APILayoutContent() {
             <img src="/assets/logo/fradium-developer-light.svg" alt="Fradium Logo" className="w-10 h-10" />
           </Link>
           {/* User dropdown kanan menggunakan ProfileDropdown */}
-          <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
+          <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={identity?.getPrincipal()?.toString()} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
         </div>
 
         {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}
@@ -204,25 +223,18 @@ function APILayoutContent() {
             <div className="flex items-center gap-3">
               {/* FRADIUM balance pill */}
               {(() => {
-                const fradiumToken = TOKENS_CONFIG.find((t) => t.symbol === "FRADIUM");
-                const fradiumId = fradiumToken?.id;
-                if (!fradiumId) return null;
-                const bal = parseFloat(balances?.[fradiumId] || 0);
-                const price = parseFloat(usdPrices?.[fradiumId] || 0);
-                const balanceText = contextHideBalance ? "••••" : formatAmount(bal);
-                const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
+                const balanceText = contextHideBalance ? "••••" : fradiumBalance;
                 return (
                   <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
                     <img src="/assets/images/coins/fradium.webp" alt="FRADIUM" className="w-4 h-4" />
                     <span className="text-sm text-slate-700">FRADIUM:</span>
                     <span className="text-sm font-medium text-slate-900">{balanceText}</span>
-                    <span className="text-xs text-slate-500">{usdText}</span>
                   </div>
                 );
               })()}
             </div>
             <div className="flex items-center gap-3">
-              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
+              <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={identity?.getPrincipal()?.toString()} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
             </div>
           </div>
           <Container>
@@ -238,26 +250,19 @@ function APILayoutContent() {
               {/* Left: FRADIUM balance pill for xl */}
               <div className="flex items-center gap-3">
                 {(() => {
-                  const fradiumToken = TOKENS_CONFIG.find((t) => t.symbol === "FRADIUM");
-                  const fradiumId = fradiumToken?.id;
-                  if (!fradiumId) return null;
-                  const bal = parseFloat(balances?.[fradiumId] || 0);
-                  const price = parseFloat(usdPrices?.[fradiumId] || 0);
-                  const balanceText = contextHideBalance ? "••••" : formatAmount(bal);
-                  const usdText = contextHideBalance ? "" : ` · $${(bal * price).toFixed(2)}`;
+                  const balanceText = contextHideBalance ? "••••" : fradiumBalance;
                   return (
                     <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
                       <img src="/assets/images/coins/fradium.webp" alt="FRADIUM" className="w-4 h-4" />
                       <span className="text-sm text-slate-700">FRADIUM:</span>
                       <span className="text-sm font-medium text-slate-900">{balanceText}</span>
-                      <span className="text-xs text-slate-500">{usdText}</span>
                     </div>
                   );
                 })()}
               </div>
               {/* Right: Profile dropdown */}
               <div className="flex items-center gap-3">
-                <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={addresses?.icp_principal} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
+                <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={identity?.getPrincipal()?.toString()} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
               </div>
             </div>
           </div>
@@ -285,9 +290,5 @@ function APILayoutContent() {
 }
 
 export default function APILayout() {
-  return (
-    <WalletProvider>
-      <APILayoutContent />
-    </WalletProvider>
-  );
+  return <APILayoutContent />;
 }
