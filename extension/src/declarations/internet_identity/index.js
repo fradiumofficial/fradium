@@ -10,7 +10,7 @@ export { idlFactory } from "./internet_identity.did.js";
  * beginning in dfx 0.15.0
  */
 export const canisterId =
-  process.env.CANISTER_ID_INTERNET_IDENTITY;
+  process.env.PLASMO_PUBLIC_CANISTER_ID_INTERNET_IDENTITY;
 
 export const createActor = (canisterId, options = {}) => {
   const agent = options.agent || new HttpAgent({ ...options.agentOptions });

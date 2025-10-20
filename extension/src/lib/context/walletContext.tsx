@@ -64,116 +64,42 @@ import {
 
 // Resolve canister ID for extension builds where env injection may be missing
 const EFFECTIVE_WALLET_CANISTER_ID =
-  walletCanisterId ||
-  // Common env prefixes across toolchains
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_WALLET ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_WALLET ||
-      (process as any).env?.PLASMO_PUBLI_CANISTER_ID_WALLET)) ||
-  // As a last resort, fall back to mainnet canister ID in canister_ids.json
-  "v3x23-lyaaa-aaaam-aej2a-cai"
+  walletCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_WALLET;
 
 // Resolve ICP and Fradium ledger canister IDs for extension builds
 const EFFECTIVE_ICP_LEDGER_CANISTER_ID =
-  icpLedgerCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_ICP_LEDGER ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_ICP_LEDGER ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_ICP_LEDGER ||
-      (process as any).env?.CANISTER_ID_ICP_LEDGER)) ||
-  // ICP mainnet ledger as final fallback
-  "ryjl3-tyaaa-aaaaa-aaaba-cai"
-
-const EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID =
-  fradiumLedgerCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_FRADIUM_LEDGER ||
-      (process as any).env?.CANISTER_ID_FRADIUM_LEDGER)) ||
-  // Project mainnet value from canister_ids.json
-  "sr4wk-4qaaa-aaaae-qfdta-cai"
+  icpLedgerCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_ICP_LEDGER;
 
 const EFFECTIVE_CKBTC_LEDGER_CANISTER_ID =
-  ckbtcLedgerCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_CKBTC_LEDGER ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_LEDGER ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_LEDGER ||
-      (process as any).env?.CANISTER_ID_CKBTC_LEDGER)) ||
-  // ckBTC mainnet ledger
-  "mc6ru-gyaaa-aaaar-qaaaq-cai"
+  ckbtcLedgerCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_CKBTC_LEDGER;
 
 const EFFECTIVE_CKBTC_INDEX_CANISTER_ID =
-  ckbtcIndexCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_CKBTC_INDEX ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_INDEX ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_INDEX ||
-      (process as any).env?.CANISTER_ID_CKBTC_INDEX)) ||
-  // ckBTC mainnet index
-  "mm444-5iaaa-aaaar-qaabq-cai"
+  ckbtcIndexCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_CKBTC_INDEX;
 
 const EFFECTIVE_ICP_INDEX_CANISTER_ID =
-  icpIndexCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_ICP_INDEX ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_ICP_INDEX ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_ICP_INDEX ||
-      (process as any).env?.CANISTER_ID_ICP_INDEX)) ||
-  // ICP mainnet index
-  "qhbym-qaaaa-aaaaa-aaafq-cai"
+  icpIndexCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_ICP_INDEX;
 
 const EFFECTIVE_FRADIUM_INDEX_CANISTER_ID =
-  fradiumIndexCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_FRADIUM_INDEX ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_INDEX ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_FRADIUM_INDEX ||
-      (process as any).env?.CANISTER_ID_FRADIUM_INDEX)) ||
-  // Project mainnet value from canister_ids.json
-  "vjrnc-hiaaa-aaaam-aejza-cai"
+  fradiumIndexCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_INDEX;
 
 const EFFECTIVE_CKBTC_MINTER_CANISTER_ID =
-  ckbtcMinterCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_CKBTC_MINTER ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_MINTER ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_MINTER ||
-      (process as any).env?.CANISTER_ID_CKBTC_MINTER)) ||
-  // ckBTC mainnet minter
-  "ml52i-qqaaa-aaaar-qaaba-cai"
+  ckbtcMinterCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_CKBTC_MINTER;
 
 const EFFECTIVE_CKBTC_KYT_CANISTER_ID =
-  ckbtcKytCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.VITE_CANISTER_ID_CKBTC_KYT ||
-      (process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKBTC_KYT ||
-      (process as any).env?.NEXT_PUBLIC_CANISTER_ID_CKBTC_KYT ||
-      (process as any).env?.CANISTER_ID_CKBTC_KYT)) ||
-  // ckBTC mainnet KYT
-  "pvm5g-xaaaa-aaaar-qaaia-cai"
+  ckbtcKytCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_CKBTC_KYT;
 
 // ckETH effective canister IDs
 const EFFECTIVE_CKETH_LEDGER_CANISTER_ID =
-  ckethLedgerCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKETH_LEDGER ||
-      (process as any).env?.CANISTER_ID_CKETH_LEDGER)) ||
-  "apia6-jaaaa-aaaar-qabma-cai"
+  ckethLedgerCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_CKETH_LEDGER;
 
 const EFFECTIVE_CKETH_INDEX_CANISTER_ID =
-  ckethIndexCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKETH_INDEX ||
-      (process as any).env?.CANISTER_ID_CKETH_INDEX)) ||
-  "sh5u2-cqaaa-aaaar-qacna-cai"
+  ckethIndexCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_CKETH_INDEX;
 
 const EFFECTIVE_CKETH_MINTER_CANISTER_ID =
-  ckethMinterCanisterId ||
-  (typeof process !== "undefined" &&
-    ((process as any).env?.PLASMO_PUBLIC_CANISTER_ID_CKETH_MINTER ||
-      (process as any).env?.CANISTER_ID_CKETH_MINTER)) ||
-  "jzenf-aiaaa-aaaar-qaa7q-cai"
+  ckethMinterCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_CKETH_MINTER;
+
+const EFFECTIVE_FRADIUM_LEDGER_CANISTER_ID =
+  fradiumLedgerCanisterId || process.env.PLASMO_PUBLIC_CANISTER_ID_FRADIUM_LEDGER;
 
 interface NetworkFilters {
   Bitcoin: boolean

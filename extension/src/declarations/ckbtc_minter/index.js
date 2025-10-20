@@ -10,7 +10,7 @@ export { idlFactory } from "./ckbtc_minter.did.js";
  * beginning in dfx 0.15.0
  */
 export const canisterId =
-  process.env.CANISTER_ID_CKBTC_MINTER;
+  process.env.PLASMO_PUBLIC_CANISTER_ID_CKBTC_MINTER;
 
 export const createActor = (canisterId, options = {}) => {
   const agent = options.agent || new HttpAgent({ ...options.agentOptions });

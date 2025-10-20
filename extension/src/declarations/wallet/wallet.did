@@ -32,11 +32,15 @@ service : (NetworkChoice) -> {
   // Sends the given amount of bitcoin from this smart contract's P2PKH address to the given address.
   // Returns the transaction ID.
   bitcoin_send : (SendRequest) -> (text);
+  // Delegated send: backend (delegate) can send on behalf of `user` if user granted delegation
+  bitcoin_send_delegated : (principal, SendRequest) -> (text);
   // Returns the UTXOs of the given Bitcoin address.
   bitcoin_utxos : (text) -> (GetUtxosResponse);
   ethereum_address : () -> (text);
   ethereum_balance : () -> (text);
   ethereum_send : (text, nat) -> (text);
+  // Delegated send: backend can send on behalf of `user` if user granted delegation for scope "eth:send"
+  ethereum_send_delegated : (principal, text, nat) -> (text);
   solana_address : () -> (text);
   solana_balance : () -> (nat);
   solana_send : (text, nat) -> (text);
