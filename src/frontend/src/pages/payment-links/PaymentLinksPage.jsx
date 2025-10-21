@@ -5,7 +5,7 @@ import { Copy, Info, X, ChevronDown } from "lucide-react";
 import QRCodeStyling from "qr-code-styling";
 import { motion, AnimatePresence } from "framer-motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/core/components/ui/Tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/core/components/ui/tooltip";
 import { Checkbox } from "@/core/components/ui/Checkbox";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig";
 import ButtonYellow from "@/core/components/ButtonYellow";
@@ -25,23 +25,17 @@ const PaymentLinksPage = () => {
   const qrCode = useRef(null);
 
   // Map TOKENS_CONFIG to payment link format (exclude SNS tokens - not supported by backend variant)
-  const tokenOptions = TOKENS_CONFIG.filter(
-    (token) => {
-      // Exclude SNS tokens (not supported by backend variant)
-      if (token.type === "sns") return false;
+  const tokenOptions = TOKENS_CONFIG.filter((token) => {
+    // Exclude SNS tokens (not supported by backend variant)
+    if (token.type === "sns") return false;
 
-      // Exclude native tokens (BTC, ETH, SOL) - keeping for future use
-      const nativeTokens = ["BTC", "ETH", "SOL"];
-      if (nativeTokens.includes(token.symbol)) return false;
+    // Exclude native tokens (BTC, ETH, SOL) - keeping for future use
+    const nativeTokens = ["BTC", "ETH", "SOL"];
+    if (nativeTokens.includes(token.symbol)) return false;
 
-      return true;
-    }
-  ).map((token) => ({
-    value: token.symbol === "ICP" ? "ICP"
-      : token.symbol === "FRADIUM" ? "Fradium"
-        : token.symbol === "ckBTC" ? "ckBTC"
-          : token.symbol === "ckETH" ? "ckETH"
-            : token.symbol,
+    return true;
+  }).map((token) => ({
+    value: token.symbol === "ICP" ? "ICP" : token.symbol === "FRADIUM" ? "Fradium" : token.symbol === "ckBTC" ? "ckBTC" : token.symbol === "ckETH" ? "ckETH" : token.symbol,
     label: token.name,
     symbol: token.symbol,
     decimals: token.decimals || 8,
