@@ -364,48 +364,45 @@ This flow demonstrates how users can purchase Fradium tokens directly using fiat
 - **DAO-Driven Community Reporting & Voting**: A fully on-chain governance system where users can report suspicious addresses, validate evidence, and participate in decentralized voting—forming a security-focused DAO that strengthens collective trust in Web3.
 - **Custom $FRADIUM Token**: Native utility and governance token built with **ICRC-1 and ICRC-2 standards**, powering staking, voting, and rewarding credible community contributions.
 
-# **Fradium Roadmap**
-
-### Phase 1 – Ecosystem Foundation
-
-- Launch browser extension for **address analysis & transaction safety**
-- Develop & deploy **Web Wallet App** with **Solana** and **Bitcoin** transaction support
-- Deploy **community-driven reporting system** (voting + contribution tracking)
-- Launch **\$FRADIUM token** with full **ICRC-1** & **ICRC-2** standard support
-- Release browser extension on **Chrome Web Store** and **Firefox Add-ons**
-- Integrate **AI detection** for **Ethereum** & **Bitcoin** address analysis
+Here’s how your **Future Roadmap** section can be presented beautifully in a **GitHub README** — optimized for clarity, structure, and readability, while keeping the same visual hierarchy as your original slides.
 
 ---
 
-### Phase 2 – Expanding Accessibility
+## 🗺️ Future Roadmap
 
-- Develop **cross-platform browser extension wallet**
-- Enable **Ethereum transaction support** & **ERC20 token management**
-- Expand **AI detection** to support **Solana** address analysis
+Fradium’s development journey is divided into four key phases, each focused on building, testing, scaling, and expanding the ecosystem.
 
----
+### 🌱 **Emerging Phase**
 
-### Phase 3 – Full Multi-Chain Experience & Market Fit
+| **Goal**                            | **Description**                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| **Build Product**                   | Develop all core features and products in the target platform.            |
+| **Integration with SNS**            | Integrate with decentralized networks for community governance.           |
+| **On-chain Continuous AI Training** | Strengthen Fradium’s detection model through real-time on-chain learning. |
 
-- Launch **integrated browser extension wallet** for **unified UX**
-- Enable full support for **ICP native tokens** (ckBTC, ckETH, other chain-key assets)
-- Expand **AI Analyzer** to cover all **ICRC-standard** tokens on ICP (ICRC-1 & ICRC-2)
-- **Launch AI Agent Assistant**:
-  - Use natural language prompts to transfer, receive, analyze addresses, and access all wallet features
-  - Make Fradium accessible even for non-technical users through conversational interaction
-- **Focus on Market Fit**:
+### 🚀 **Early Stage**
 
-  - Conduct **beta testing** with real users
-  - Collect **user testimonials** to validate trust & usability
-  - Run **structured feedback sessions** to identify improvement areas
-  - Continuously **optimize features** based on real-world usage
+| **Goal**                | **Description**                                                    |
+| ----------------------- | ------------------------------------------------------------------ |
+| **Build Community**     | Foster ambassadors and early testers to drive organic adoption.    |
+| **Custdev and Testnet** | Engage users to test and provide feedback on the product.          |
+| **University Outreach** | Build a strong Web3 student community to onboard new crypto users. |
 
-### Phase 4 – Decentralized Governance & Advanced Integration
+### 💰 **Pre-TGE Phase**
 
-- Integrate Fradium into the **SNS (Service Nervous System)** → decentralized ownership & governance
-- Research & prototype **Fradium SDK/API** → allow third-party apps to access AI & security tools
-- Integrate with ICPSwap for real-time token swap
-- Integrate fiat on-ramp providers using Moonpay
+| **Goal**                      | **Description**                                                                               |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| **Token Listing Preparation** | Announce token listing to build anticipation and awareness.                                   |
+| **Marketing Hype**            | Run targeted KOL and campaign strategies to attract investors and users.                      |
+| **Partnership Expansion**     | Collaborate with ecosystem partners, launch early incentives, and cross-community promotions. |
+
+### 🌐 **Post-TGE Phase**
+
+| **Goal**                | **Description**                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| **CRM & Retention**     | Strengthen user loyalty through rewards, governance participation, and education programs. |
+| **Maintain Visibility** | Continue engagement with updates, AMA sessions, and press releases.                        |
+| **Ride the Hype**       | Leverage post-TGE momentum to sustain user and investor interest.                          |
 
 ## 📃 License
 
