@@ -96,6 +96,7 @@ export const idlFactory = ({ IDL }) => {
     'BTC' : IDL.Null,
     'ETH' : IDL.Null,
     'ICP' : IDL.Null,
+    'SNS' : IDL.Principal,
     'SOL' : IDL.Null,
     'Fradium' : IDL.Null,
     'ckBTC' : IDL.Null,

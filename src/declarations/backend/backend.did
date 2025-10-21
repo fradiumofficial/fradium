@@ -16,6 +16,7 @@ type TokenType__1 =
    ETH;
    Fradium;
    ICP;
+   SNS: principal;
    SOL;
    ckBTC;
    ckETH;

@@ -269,6 +269,7 @@ export type TokenType = { 'BTC' : null } |
 export type TokenType__1 = { 'BTC' : null } |
   { 'ETH' : null } |
   { 'ICP' : null } |
+  { 'SNS' : Principal } |
   { 'SOL' : null } |
   { 'Fradium' : null } |
   { 'ckBTC' : null } |

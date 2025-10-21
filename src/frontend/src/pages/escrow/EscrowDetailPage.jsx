@@ -382,7 +382,7 @@ export default function EscrowDetailPage() {
             <XCircle className="w-8 h-8 text-red-400" />
           </div>
           <div className="text-red-400 text-lg font-medium">{error || "Escrow not found"}</div>
-          <ButtonPurple onClick={() => navigate("/escrow/list")} size="sm" textSize="text-sm" fontWeight="medium">
+          <ButtonPurple onClick={() => navigate("/escrow")} size="sm" textSize="text-sm" fontWeight="medium">
             Back to P2P Trade
           </ButtonPurple>
         </div>
@@ -456,7 +456,7 @@ export default function EscrowDetailPage() {
       {/* Header Section */}
       <motion.div className="flex flex-col gap-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}>
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/escrow/list")} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={() => navigate("/escrow")} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
             <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>

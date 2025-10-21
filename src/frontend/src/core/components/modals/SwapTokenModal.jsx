@@ -24,15 +24,12 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
   const availableTokens = useMemo(() => {
     const supportedTokens = swapService.getSupportedTokens();
-    return TOKENS_CONFIG.filter((token) =>
-      supportedTokens.includes(token.symbol) &&
-      token.chain === "Internet Computer"
-    );
+    return TOKENS_CONFIG.filter((token) => supportedTokens.includes(token.symbol) && token.chain === "Internet Computer");
   }, []);
 
   const getAvailableToTokens = (selectedFromToken) => {
     if (!selectedFromToken) return availableTokens;
-    return availableTokens.filter(token => {
+    return availableTokens.filter((token) => {
       if (token.symbol === selectedFromToken.symbol) return false;
       return isSwapPairSupported(selectedFromToken.symbol, token.symbol);
     });
@@ -40,39 +37,32 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
   useEffect(() => {
     const ensureSwapServiceIdentity = async () => {
-      if (isAuthenticated && identity) {
+      // Only initialize swapService when modal is open and user is authenticated
+      if (isOpen && isAuthenticated && identity) {
         try {
-          // Check if swapService has identity stored
+          console.log("🔄 Initializing swap service for swap modal...");
+
+          // Initialize swapService with identity
+          await swapService.reinitializeAgent(identity);
+
+          // Verify initialization
           const storedIdentity = swapService.getIdentity?.();
           const principal = storedIdentity?.getPrincipal()?.toString();
 
-          if (!principal) {
-            console.warn("⚠️ Swap service missing identity, initializing now...");
-            await swapService.reinitializeAgent(identity);
-
-            // Verify after reinit
-            const newIdentity = swapService.getIdentity?.();
-            const newPrincipal = newIdentity?.getPrincipal()?.toString();
-
-            if (newPrincipal) {
-              console.log("✅ Swap service identity initialized:", newPrincipal);
-            } else {
-              console.error("❌ Identity still missing after initialization!");
-              setError("Failed to initialize swap service. Please try logging out and back in.");
-            }
+          if (principal) {
+            console.log("✅ Swap service initialized for modal:", principal);
           } else {
-            console.log("✅ Swap service already has identity:", principal);
+            console.error("❌ Failed to initialize swap service identity");
+            setError("Failed to initialize swap service. Please try again.");
           }
         } catch (error) {
-          console.error("❌ Failed to check/initialize swap service identity:", error);
-          setError("Failed to initialize swap service. Please try logging out and back in.");
+          console.error("❌ Failed to initialize swap service:", error);
+          setError("Failed to initialize swap service. Please try again.");
         }
       }
     };
 
-    if (isOpen) {
-      ensureSwapServiceIdentity();
-    }
+    ensureSwapServiceIdentity();
   }, [isOpen, isAuthenticated, identity]);
 
   useEffect(() => {
@@ -103,9 +93,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
     const swapAmount = parseFloat(fromAmount);
 
     // Get dynamic fee from swapService
-    const tokenCanisterId = fromToken.symbol === "ICP"
-      ? "ryjl3-tyaaa-aaaaa-aaaba-cai"
-      : "o7oak-iyaaa-aaaaq-aadzq-cai";
+    const tokenCanisterId = fromToken.symbol === "ICP" ? "ryjl3-tyaaa-aaaaa-aaaba-cai" : "o7oak-iyaaa-aaaaq-aadzq-cai";
 
     const transferFee = swapService.getTokenTransferFee?.(tokenCanisterId) || BigInt(10000);
     const feeInTokens = Number(transferFee) / 100000000; // Convert to token units
@@ -115,12 +103,12 @@ export default function SwapTokenModal({ isOpen, onClose }) {
       poolFee: feeInTokens,
       approveTxFee: feeInTokens,
       depositTxFee: feeInTokens,
-      totalCost: swapAmount + (feeInTokens * 3), // 3 fees total
+      totalCost: swapAmount + feeInTokens * 3, // 3 fees total
       breakdown: {
         swap: swapAmount,
         poolFee: feeInTokens,
-        txFees: feeInTokens * 2
-      }
+        txFees: feeInTokens * 2,
+      },
     };
   };
 
@@ -167,7 +155,7 @@ export default function SwapTokenModal({ isOpen, onClose }) {
   const handleFromTokenChange = (token) => {
     setFromToken(token);
     const availableToTokens = getAvailableToTokens(token);
-    if (!availableToTokens.find(t => t.symbol === toToken?.symbol)) {
+    if (!availableToTokens.find((t) => t.symbol === toToken?.symbol)) {
       setToToken(availableToTokens[0] || null);
     }
     setFromAmount("");
@@ -253,6 +241,18 @@ export default function SwapTokenModal({ isOpen, onClose }) {
     setIsLoading(false);
     setIsSwapping(false);
     setShowFeeBreakdown(false);
+
+    // Clean up swapService when modal is closed
+    try {
+      if (swapService && swapService._identity) {
+        console.log("🧹 Cleaning up swap service identity on modal close");
+        // Reset identity to prevent unnecessary network calls
+        swapService._identity = null;
+      }
+    } catch (error) {
+      console.warn("Warning: Could not clean up swap service:", error);
+    }
+
     onClose();
   };
 
@@ -332,7 +332,9 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                     <input type="number" placeholder="0.0" value={fromAmount} onChange={(e) => setFromAmount(e.target.value)} className="w-24 px-4 py-3 bg-transparent border border-white/10 rounded-xl text-white placeholder-[#B0B6BE] focus:outline-none focus:ring-2 focus:ring-[#9BE4A0]" />
                   </div>
                   <div className="flex justify-between items-center mt-2">
-                    <div className="text-xs text-white/60">Balance: {getBalanceForToken(fromToken)} {fromToken?.symbol}</div>
+                    <div className="text-xs text-white/60">
+                      Balance: {getBalanceForToken(fromToken)} {fromToken?.symbol}
+                    </div>
                     {fromToken && totalCost && (
                       <button onClick={() => setShowFeeBreakdown(!showFeeBreakdown)} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
                         <Info className="w-3 h-3" />
@@ -346,19 +348,27 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       <div className="text-xs font-medium text-white/80 mb-2">Total Cost Breakdown:</div>
                       <div className="flex justify-between text-xs">
                         <span className="text-white/60">Swap Amount</span>
-                        <span className="text-white">{totalCost.swapAmount.toFixed(6)} {fromToken.symbol}</span>
+                        <span className="text-white">
+                          {totalCost.swapAmount.toFixed(6)} {fromToken.symbol}
+                        </span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-white/60">Pool Fee</span>
-                        <span className="text-white">{totalCost.poolFee.toFixed(6)} {fromToken.symbol}</span>
+                        <span className="text-white">
+                          {totalCost.poolFee.toFixed(6)} {fromToken.symbol}
+                        </span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-white/60">Transaction Fees (×2)</span>
-                        <span className="text-white">{totalCost.txFees.toFixed(6)} {fromToken.symbol}</span>
+                        <span className="text-white">
+                          {totalCost.txFees.toFixed(6)} {fromToken.symbol}
+                        </span>
                       </div>
                       <div className="pt-2 mt-2 border-t border-white/10 flex justify-between text-xs font-medium">
                         <span className="text-white">Total Required</span>
-                        <span className="text-white">{totalCost.totalCost.toFixed(6)} {fromToken.symbol}</span>
+                        <span className="text-white">
+                          {totalCost.totalCost.toFixed(6)} {fromToken.symbol}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -423,21 +433,25 @@ export default function SwapTokenModal({ isOpen, onClose }) {
 
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Rate</span>
-                      <span className="text-white">1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}</span>
+                      <span className="text-white">
+                        1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Fee</span>
-                      <span className="text-white">{swapQuote.fee.toFixed(6)} {fromToken.symbol}</span>
+                      <span className="text-white">
+                        {swapQuote.fee.toFixed(6)} {fromToken.symbol}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Min Received</span>
-                      <span className="text-white">{swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}</span>
+                      <span className="text-white">
+                        {swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Pool Status</span>
-                      <span className={`text-sm ${swapQuote.hasLiquidity ? 'text-green-400' : 'text-orange-400'}`}>
-                        {swapQuote.hasLiquidity ? '✓ Has Liquidity' : '⚠ No Liquidity'}
-                      </span>
+                      <span className={`text-sm ${swapQuote.hasLiquidity ? "text-green-400" : "text-orange-400"}`}>{swapQuote.hasLiquidity ? "✓ Has Liquidity" : "⚠ No Liquidity"}</span>
                     </div>
                   </div>
                 )}
@@ -455,7 +469,9 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <button className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={handleClose}>Cancel</button>
+                  <button className="flex-1 py-3 rounded-lg border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={handleClose}>
+                    Cancel
+                  </button>
                   <button className="flex-1 py-3 rounded-lg bg-[#9BE4A0] text-black font-medium hover:bg-[#8BD490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleSwap} disabled={isSwapDisabled() || !swapQuote?.hasLiquidity}>
                     {isSwapping ? "Swapping..." : swapQuote?.hasLiquidity ? "Swap" : "No Liquidity"}
                   </button>

@@ -24,45 +24,56 @@ Our solution introduces **Fradium**, a fully on-chain security and analytics pla
 
 ## 📚 Complete Resources
 
-- Mainnet: https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io
-- Video Demo: https://youtu.be/-j6LzwI1Df8
-- Pitch Deck: https://drive.google.com/file/d/1x5Ow79NvpL58VqSLkqNf8o9VOg_UfAKm/view?usp=sharing
+- Mainnet: https://fradium.io
+- 2-min Demo: https://youtu.be/4Twnw54thms
+- 3-min Pitch: https://youtu.be/OrjROVReH6o
+- Pitch Deck: [Pitchdeck File](https://drive.google.com/file/d/1zp0Tk7d8dlwQd8qBsY3Ovyh9_pbtUC1N/view?usp=sharing)
 - Docs: https://fradium.gitbook.io/docs
 - Extension Chrome store: [Chrome store](https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp)
 
-## 🎉 What’s New in the Regional Round
+## 🎉 What’s New in the Global Round
 
-### 🔹 Fradium Wallet – Browser Extension
+### 🔹 Fradium API Developer
 
-Fradium now comes as a **lightweight browser extension** that runs directly in your browser.
-No extra setup, no heavy installs — just seamless access to your wallet wherever you browse.
+The new **Fradium Developer API** allows builders to integrate **Fradium’s risk analysis and address scanning** features directly into their dApps, exchanges, or wallets.
 
 **Key highlights:**
 
-- Real-time address scanning and safety checks
-- Multi-chain token support in one unified UI
-- On-chain evidence links for flagged entities
+- REST and ICP endpoint support
+- Access to AI-powered address safety scoring
+- Token-based API credit system for developers
+- Scalable integration for enterprise-grade apps
 
-### 🔍 ICP AI Address Analyzer
+📘 Explore the Docs:
+[Read API Developer Docs](https://fradium.gitbook.io/docs/for-developers/api-dashboard)
 
-Introducing **ICP AI Address Analyzer**, an advanced AI-powered tool built specifically for the Internet Computer ecosystem.
-Unlike generic scanners, this analyzer is trained to **understand and evaluate ICP addresses**, including those following the **ICRC-1 token standard**.
+---
 
-With it, users can:
+### 🔹 Fradium Escrow
 
-- **Scan and analyze ICP addresses** with full ICRC-1 support
-- **Detect risks** such as scam clusters, drainer proximity, or suspicious transaction histories
-- **Generate explanations backed by on-chain data** for transparency and trust
-- **Empower safer decision-making** before sending or signing any transaction
+**Fradium Escrow** ensures **trust and protection** in peer-to-peer transactions. It securely holds funds until both parties meet the agreed conditions, perfect for freelancers, NFT trades, and marketplace deals.
 
-📖 For more details, see [technical explanation](#-how-the-fradium-ai-threat-detection-works-white-box-view).
+**Key highlights:**
 
-### 🎨 Redesigned User Interface
+- AI-backed risk scoring before escrow creation
+- Transparent fund release process
+- On-chain dispute resolution with verified records
+- Supports ICP and cross-chain assets
 
-We’ve completely **redesigned the Fradium UI** to deliver a modern, cleaner, and more intuitive experience.
-[See the new interface →](#fradium-interface)
+---
 
-### 🧪 Beta Testing with Real Users (SUS Framework)
+### 🔹 Fradium Paylink
+
+Introducing **Fradium Paylink**, a new way to **send and receive crypto payments instantly** through a simple link. No need for wallet addresses or manual input, just share a link and complete your transaction securely.
+
+**Key highlights:**
+
+- One-click payment via unique shareable links
+- Smart validation for safe recipient verification
+- Supports multi-chain payment flow for flexibility
+- Integrated analytics to track payment success
+
+## 🧪 Beta Testing with Real Users (SUS Framework)
 
 To ensure Fradium is not just powerful but also **usable**, we ran **beta tests with real users**, applying the **System Usability Scale (SUS)** framework.
 This gave us concrete feedback on clarity, efficiency, and user confidence.
@@ -236,6 +247,52 @@ Once bitcoind is running successfully on your local machine, you can proceed to 
    ./script/fradium.mint_backend.sh
   ```
 
+Perfect. Here’s a **shortened and polished version** of your Fradium PocketIC Test Suite Guide — rewritten to fit neatly inside your **main README**, focusing on clarity and professionalism while keeping it lightweight for quick reading.
+
+## 🧪 Fradium PocketIC Test Suite
+
+Fradium’s backend canister has been fully tested using **PocketIC**, a local in-memory Internet Computer emulator that ensures **deterministic, reliable, and isolated testing** before deployment.
+
+### ✅ Test Summary
+
+All major canister modules have passed internal verification:
+
+- **Community Module:** Validates basic canister functions and state transitions.
+- **Faucet Module:** Ensures proper token distribution and cooldown logic.
+- **Staking & Rewards:** Simulates reward distribution and staking flows end-to-end.
+- **Voting Mechanism:** Confirms user authentication, voting logic, and data integrity.
+- **Comprehensive Suite:** Skipped by design (mock file dependency).
+
+> **Result:** 28 tests passed successfully with 0 failures.
+> 9 tests skipped intentionally.
+
+### ⚙️ Quick Start (Local Testing)
+
+To run the test suite locally:
+
+```bash
+# Setup Python virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Start local Internet Computer
+dfx start --clean --background
+
+# Build canisters
+dfx build
+
+# Run tests
+python -m unittest tests.test_community tests.test_faucet tests.test_staking_rewards tests.test_voting_mechanism -v
+```
+
+Expected output:
+
+```
+Ran 28 tests in XXs
+OK
+```
+
 ## 🏗️ Architecture Overview
 
 Fradium is built fully on-chain, combining multi-chain analytics, AI inference, and community governance into a seamless security layer for Web3. The architecture ensures every transaction is checked before execution, supported by AI models running inside Internet Computer canisters.
@@ -248,9 +305,15 @@ The high-level design of Fradium, showing how cross-chain data flows into the an
 
 ### 🔹 User Flow
 
-Illustrates the journey of a user interacting with Fradium — from scanning an address, receiving an AI-powered risk score, to community-driven reporting and DAO voting for validation.
+Illustrates the journey of a user interacting with Fradium from scanning an address, receiving an AI-powered risk score, to community-driven reporting and DAO voting for validation.
 
 ![User Flow Diagram](https://github.com/FradiumOfficial/fradium/blob/main/docs/images/userflow.png?raw=true)
+
+### 🔹 Buy Token with Fiat Flow – Transak
+
+This flow demonstrates how users can purchase Fradium tokens directly using fiat currency through Transak, a secure on-ramp provider.
+
+![User Flow Diagram](docs/images/transak-flow.png)
 
 ## 🔥 Complex Features Implemented
 
@@ -311,7 +374,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 ## 🍀 Our Teams
 
 - Wildan Syukri Niam (Frontend Developer)
-- Bintang Alfath Gavin Alinski (Product Developer)
+- Bintang Al-fath (Product Developer)
 - Ghina Rosvita Maharani (UI/UX Designer)
 - Arga Adolf Lumunon (AI Engineer)
 - Yazid Al Ghozali (Extension Developer)

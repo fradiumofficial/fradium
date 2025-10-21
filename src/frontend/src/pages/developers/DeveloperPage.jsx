@@ -4,6 +4,7 @@ import { useAuth } from "@/core/providers/AuthProvider";
 import SidebarButton from "@/core/components/SidebarButton";
 import Footer from "../../core/components/Footer.jsx";
 import ButtonGreen from "@/core/components/ButtonGreen";
+const BACKGROUND_URL_3 = "https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp";
 
 // Custom hook untuk deteksi mobile
 function useIsMobile() {
@@ -174,77 +175,37 @@ const DeveloperPage = () => {
             </div>
           </div>
 
-          {/* Cards section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 md:gap-4 mb-16 justify-items-center">
-            {/* Card 1: API Documentation */}
-            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/safe-transaction.webp" alt="API Documentation" className="w-full h-full object-cover" draggable={false} />
-              </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-white text-[18px] md:text-[20px] font-medium">API Documentation</div>
-                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Comprehensive guides and reference for all API endpoints</div>
-                </div>
-                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
+          <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
+            <div className="absolute inset-0 z-0 pointer-events-none select-none">
+              <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
             </div>
+            {/* Fade ke warna dasar ke background-3 */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
+            {/* Wrapper konten */}
+            <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8 md:pt-10 pb-16 sm:pb-20 md:pb-24 lg:pb-32">
+              {/* Laptop Image - positioned within background 3 content */}
+              <div className="relative flex justify-center items-end mt-16 sm:mt-6 md:mt-8">
+                <div className="relative w-full max-w-3xl sm:max-w-4xl md:max-w-5xl mx-auto">
+                  {/* Laptop Frame */}
+                  <img
+                    src="assets/laptop.webp"
+                    alt="MacBook"
+                    className="w-full h-auto object-contain"
+                    style={{
+                      transform: "translateY(0px)",
+                      marginBottom: "-10%",
+                    }}
+                    draggable={false}
+                  />
 
-            {/* Card 2: SDK & Tools */}
-            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/analyze-address.webp" alt="SDK & Tools" className="w-full h-full object-cover" draggable={false} />
-              </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-white text-[18px] md:text-[20px] font-medium">SDK & Tools</div>
-                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Ready-to-use SDKs for popular programming languages</div>
-                </div>
-                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Card 3: Analytics Dashboard */}
-            <div className="w-full max-w-[420px] h-[411px] rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-2 transition-transform duration-300 hover:scale-[1.01] hover:rotate-[0.6deg]">
-              <div className="w-full h-[250px] rounded-[12px] bg-white/5 mb-5 overflow-hidden">
-                <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/history.webp" alt="Analytics Dashboard" className="w-full h-full object-cover" draggable={false} />
-              </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-white text-[18px] md:text-[20px] font-medium">Analytics Dashboard</div>
-                  <div className="text-[#B0B6BE] text-[12px] md:text-[13px] mt-1">Monitor API usage and performance metrics</div>
-                </div>
-                <button className="ml-4 w-9 h-9 rounded-full border border-white/15 text-white/90 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* MacBook section */}
-          <div className="flex justify-center pt-8 items-center">
-            <div className="relative max-w-4xl w-full">
-              <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/produc/macbook-wallet.webp" alt="MacBook with Fradium API" className="w-full h-auto max-h-[500px] object-contain mx-auto" draggable={false} />
-              {/* Video overlay for MacBook screen */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Video area positioned on MacBook screen */}
-                  <div className="absolute w-[83.7%] h-[54%] top-[23%] left-[8.15%] overflow-hidden rounded-[8px]">
-                    <video className="w-full h-full object-cover" autoPlay loop muted playsInline preload="metadata" poster="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp">
-                      <source src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-demo.mp4" type="video/mp4" />
-                      {/* Fallback image if video doesn't load */}
-                      <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/wallet-dashboard-poster.webp" alt="Fradium API Dashboard" className="w-full h-full object-cover" />
-                    </video>
+                  <div
+                    className="absolute 
+                top-[2.5%] left-[8.5%] w-[83%] h-[109%]
+                md:top-[2.5%] md:left-[8.5%] md:w-[83%] md:h-[109%]
+                lg:top-[2.5s%] lg:left-[8.5%] lg:w-[83%] lg:h-[109%]
+                rounded-lg overflow-hidden">
+                    {/* Placeholder sementara - ganti dengan video nanti */}
+                    <video src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1760675496/Test_zp3tvf.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover rounded-lg" />
                   </div>
                 </div>
               </div>

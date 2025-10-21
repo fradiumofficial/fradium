@@ -11,25 +11,25 @@ const NETWORK_CONFIG = {
 
 const TOKEN_CANISTERS = {
   ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",
-  KONG: "o7oak-iyaaa-aaaaq-aadzq-cai"
+  KONG: "o7oak-iyaaa-aaaaq-aadzq-cai",
 };
 
 const TOKEN_DECIMALS = {
   ICP: 8,
-  KONG: 8
+  KONG: 8,
 };
 
 // Populated dynamically by querying actual ledger fees
 const TOKEN_TRANSFER_FEES = {};
 
 const KNOWN_POOLS = {
-  "ICP_KONG": {
+  ICP_KONG: {
     canisterId: "ye4fx-gqaaa-aaaag-qnara-cai",
-    fee: 3000,  // 0.3% swap fee
-    token0: "o7oak-iyaaa-aaaaq-aadzq-cai",  // KONG
-    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai",  // ICP
-    status: "active_with_liquidity"
-  }
+    fee: 3000, // 0.3% swap fee
+    token0: "o7oak-iyaaa-aaaaq-aadzq-cai", // KONG
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_with_liquidity",
+  },
 };
 
 export const SUPPORTED_SWAP_PAIRS = [
@@ -38,164 +38,141 @@ export const SUPPORTED_SWAP_PAIRS = [
 ];
 
 export function isSwapPairSupported(fromSymbol, toSymbol) {
-  return SUPPORTED_SWAP_PAIRS.some(
-    pair => (pair.from === fromSymbol && pair.to === toSymbol) ||
-      (pair.from === toSymbol && pair.to === fromSymbol)
-  );
+  return SUPPORTED_SWAP_PAIRS.some((pair) => (pair.from === fromSymbol && pair.to === toSymbol) || (pair.from === toSymbol && pair.to === fromSymbol));
 }
 
 // ==================== CANDID INTERFACES ====================
 
-const getICRCInterface = () => ({ IDL }) => {
-  const Account = IDL.Record({
-    owner: IDL.Principal,
-    subaccount: IDL.Opt(IDL.Vec(IDL.Nat8))
-  });
+const getICRCInterface =
+  () =>
+  ({ IDL }) => {
+    const Account = IDL.Record({
+      owner: IDL.Principal,
+      subaccount: IDL.Opt(IDL.Vec(IDL.Nat8)),
+    });
 
-  const TransferArg = IDL.Record({
-    from_subaccount: IDL.Opt(IDL.Vec(IDL.Nat8)),
-    to: Account,
-    amount: IDL.Nat,
-    fee: IDL.Opt(IDL.Nat),
-    memo: IDL.Opt(IDL.Vec(IDL.Nat8)),
-    created_at_time: IDL.Opt(IDL.Nat64)
-  });
+    const TransferArg = IDL.Record({
+      from_subaccount: IDL.Opt(IDL.Vec(IDL.Nat8)),
+      to: Account,
+      amount: IDL.Nat,
+      fee: IDL.Opt(IDL.Nat),
+      memo: IDL.Opt(IDL.Vec(IDL.Nat8)),
+      created_at_time: IDL.Opt(IDL.Nat64),
+    });
 
-  const TransferError = IDL.Variant({
-    BadFee: IDL.Record({ expected_fee: IDL.Nat }),
-    BadBurn: IDL.Record({ min_burn_amount: IDL.Nat }),
-    InsufficientFunds: IDL.Record({ balance: IDL.Nat }),
-    TooOld: IDL.Null,
-    CreatedInFuture: IDL.Record({ ledger_time: IDL.Nat64 }),
-    Duplicate: IDL.Record({ duplicate_of: IDL.Nat }),
-    TemporarilyUnavailable: IDL.Null,
-    GenericError: IDL.Record({
-      error_code: IDL.Nat,
-      message: IDL.Text
-    }),
-    AllowanceChanged: IDL.Record({ current_allowance: IDL.Nat }),
-  });
+    const TransferError = IDL.Variant({
+      BadFee: IDL.Record({ expected_fee: IDL.Nat }),
+      BadBurn: IDL.Record({ min_burn_amount: IDL.Nat }),
+      InsufficientFunds: IDL.Record({ balance: IDL.Nat }),
+      TooOld: IDL.Null,
+      CreatedInFuture: IDL.Record({ ledger_time: IDL.Nat64 }),
+      Duplicate: IDL.Record({ duplicate_of: IDL.Nat }),
+      TemporarilyUnavailable: IDL.Null,
+      GenericError: IDL.Record({
+        error_code: IDL.Nat,
+        message: IDL.Text,
+      }),
+      AllowanceChanged: IDL.Record({ current_allowance: IDL.Nat }),
+    });
 
-  const ApproveArgs = IDL.Record({
-    from_subaccount: IDL.Opt(IDL.Vec(IDL.Nat8)),
-    spender: Account,
-    amount: IDL.Nat,
-    expected_allowance: IDL.Opt(IDL.Nat),
-    expires_at: IDL.Opt(IDL.Nat64),
-    fee: IDL.Opt(IDL.Nat),
-    memo: IDL.Opt(IDL.Vec(IDL.Nat8)),
-    created_at_time: IDL.Opt(IDL.Nat64),
-  });
+    const ApproveArgs = IDL.Record({
+      from_subaccount: IDL.Opt(IDL.Vec(IDL.Nat8)),
+      spender: Account,
+      amount: IDL.Nat,
+      expected_allowance: IDL.Opt(IDL.Nat),
+      expires_at: IDL.Opt(IDL.Nat64),
+      fee: IDL.Opt(IDL.Nat),
+      memo: IDL.Opt(IDL.Vec(IDL.Nat8)),
+      created_at_time: IDL.Opt(IDL.Nat64),
+    });
 
-  const AllowanceArgs = IDL.Record({
-    account: Account,
-    spender: Account
-  });
+    const AllowanceArgs = IDL.Record({
+      account: Account,
+      spender: Account,
+    });
 
-  const Allowance = IDL.Record({
-    allowance: IDL.Nat,
-    expires_at: IDL.Opt(IDL.Nat64)
-  });
+    const Allowance = IDL.Record({
+      allowance: IDL.Nat,
+      expires_at: IDL.Opt(IDL.Nat64),
+    });
 
-  return IDL.Service({
-    icrc1_name: IDL.Func([], [IDL.Text], ['query']),
-    icrc1_symbol: IDL.Func([], [IDL.Text], ['query']),
-    icrc1_decimals: IDL.Func([], [IDL.Nat8], ['query']),
-    icrc1_fee: IDL.Func([], [IDL.Nat], ['query']),
-    icrc1_balance_of: IDL.Func([Account], [IDL.Nat], ['query']),
-    icrc1_transfer: IDL.Func([TransferArg], [IDL.Variant({ Ok: IDL.Nat, Err: TransferError })], []),
-    icrc2_approve: IDL.Func([ApproveArgs], [IDL.Variant({ Ok: IDL.Nat, Err: TransferError })], []),
-    icrc2_allowance: IDL.Func([AllowanceArgs], [Allowance], ['query'])
-  });
-};
+    return IDL.Service({
+      icrc1_name: IDL.Func([], [IDL.Text], ["query"]),
+      icrc1_symbol: IDL.Func([], [IDL.Text], ["query"]),
+      icrc1_decimals: IDL.Func([], [IDL.Nat8], ["query"]),
+      icrc1_fee: IDL.Func([], [IDL.Nat], ["query"]),
+      icrc1_balance_of: IDL.Func([Account], [IDL.Nat], ["query"]),
+      icrc1_transfer: IDL.Func([TransferArg], [IDL.Variant({ Ok: IDL.Nat, Err: TransferError })], []),
+      icrc2_approve: IDL.Func([ApproveArgs], [IDL.Variant({ Ok: IDL.Nat, Err: TransferError })], []),
+      icrc2_allowance: IDL.Func([AllowanceArgs], [Allowance], ["query"]),
+    });
+  };
 
-const getSwapPoolInterface = () => ({ IDL }) => {
-  const Token = IDL.Record({
-    address: IDL.Text,
-    standard: IDL.Text
-  });
+const getSwapPoolInterface =
+  () =>
+  ({ IDL }) => {
+    const Token = IDL.Record({
+      address: IDL.Text,
+      standard: IDL.Text,
+    });
 
-  const DepositArgs = IDL.Record({
-    token: IDL.Text,
-    amount: IDL.Nat,
-    fee: IDL.Nat
-  });
+    const DepositArgs = IDL.Record({
+      token: IDL.Text,
+      amount: IDL.Nat,
+      fee: IDL.Nat,
+    });
 
-  const SwapArgs = IDL.Record({
-    amountIn: IDL.Text,
-    zeroForOne: IDL.Bool,
-    amountOutMinimum: IDL.Text
-  });
+    const SwapArgs = IDL.Record({
+      amountIn: IDL.Text,
+      zeroForOne: IDL.Bool,
+      amountOutMinimum: IDL.Text,
+    });
 
-  const Error = IDL.Variant({
-    CommonError: IDL.Null,
-    InternalError: IDL.Text,
-    UnsupportedToken: IDL.Text,
-    InsufficientFunds: IDL.Null
-  });
+    const Error = IDL.Variant({
+      CommonError: IDL.Null,
+      InternalError: IDL.Text,
+      UnsupportedToken: IDL.Text,
+      InsufficientFunds: IDL.Null,
+    });
 
-  const PoolMetadata = IDL.Record({
-    fee: IDL.Nat,
-    key: IDL.Text,
-    sqrtPriceX96: IDL.Nat,
-    tick: IDL.Int,
-    liquidity: IDL.Nat,
-    token0: Token,
-    token1: Token,
-    maxLiquidityPerTick: IDL.Nat,
-    nextPositionId: IDL.Nat,
-  });
+    const PoolMetadata = IDL.Record({
+      fee: IDL.Nat,
+      key: IDL.Text,
+      sqrtPriceX96: IDL.Nat,
+      tick: IDL.Int,
+      liquidity: IDL.Nat,
+      token0: Token,
+      token1: Token,
+      maxLiquidityPerTick: IDL.Nat,
+      nextPositionId: IDL.Nat,
+    });
 
-  return IDL.Service({
-    depositFrom: IDL.Func(
-      [DepositArgs],
-      [IDL.Variant({ ok: IDL.Nat, err: Error })],
-      []
-    ),
+    return IDL.Service({
+      depositFrom: IDL.Func([DepositArgs], [IDL.Variant({ ok: IDL.Nat, err: Error })], []),
 
-    swap: IDL.Func(
-      [SwapArgs],
-      [IDL.Variant({ ok: IDL.Nat, err: Error })],
-      []
-    ),
+      swap: IDL.Func([SwapArgs], [IDL.Variant({ ok: IDL.Nat, err: Error })], []),
 
-    metadata: IDL.Func(
-      [],
-      [IDL.Variant({ ok: PoolMetadata, err: Error })],
-      ['query']
-    ),
+      metadata: IDL.Func([], [IDL.Variant({ ok: PoolMetadata, err: Error })], ["query"]),
 
-    getUserUnusedBalance: IDL.Func(
-      [IDL.Principal],
-      [IDL.Variant({ ok: IDL.Record({ balance0: IDL.Nat, balance1: IDL.Nat }), err: Error })],
-      ['query']
-    ),
+      getUserUnusedBalance: IDL.Func([IDL.Principal], [IDL.Variant({ ok: IDL.Record({ balance0: IDL.Nat, balance1: IDL.Nat }), err: Error })], ["query"]),
 
-    withdraw: IDL.Func(
-      [IDL.Record({ token: IDL.Text, amount: IDL.Nat, fee: IDL.Nat })],
-      [IDL.Variant({ ok: IDL.Nat, err: Error })],
-      []
-    ),
+      withdraw: IDL.Func([IDL.Record({ token: IDL.Text, amount: IDL.Nat, fee: IDL.Nat })], [IDL.Variant({ ok: IDL.Nat, err: Error })], []),
 
-    quote: IDL.Func(
-      [IDL.Record({ amountIn: IDL.Text, zeroForOne: IDL.Bool })],
-      [IDL.Variant({ ok: IDL.Nat, err: Error })],
-      ['query']
-    )
-  });
-};
+      quote: IDL.Func([IDL.Record({ amountIn: IDL.Text, zeroForOne: IDL.Bool })], [IDL.Variant({ ok: IDL.Nat, err: Error })], ["query"]),
+    });
+  };
 
 // ==================== HELPER FUNCTIONS ====================
 
 function formatErrorForDisplay(error) {
-  if (!error) return 'Unknown error';
-  if (typeof error === 'string') return error;
+  if (!error) return "Unknown error";
+  if (typeof error === "string") return error;
   if (error.InternalError) return `Internal Error: ${error.InternalError}`;
   if (error.UnsupportedToken) return `Unsupported Token: ${error.UnsupportedToken}`;
-  if (error.InsufficientFunds) return 'Insufficient Funds';
-  if (error.CommonError) return 'Common Error';
+  if (error.InsufficientFunds) return "Insufficient Funds";
+  if (error.CommonError) return "Common Error";
   if (error.message) return error.message;
-  return 'Unknown error occurred';
+  return "Unknown error occurred";
 }
 
 function calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1) {
@@ -211,14 +188,14 @@ function calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1) {
 function estimateSwapOutput(amountIn, sqrtPriceX96, zeroForOne, decimals0, decimals1, feeTier) {
   const price_token0_in_token1 = calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1);
   let estimatedOutput;
-  
+
   if (zeroForOne) {
     estimatedOutput = amountIn * price_token0_in_token1;
   } else {
     estimatedOutput = amountIn / price_token0_in_token1;
   }
 
-  const feeMultiplier = 1 - (feeTier / 1000000);
+  const feeMultiplier = 1 - feeTier / 1000000;
   return estimatedOutput * feeMultiplier;
 }
 
@@ -231,6 +208,10 @@ export class ICPSwapService {
     this._identity = null;
     this.knownPools = { ...KNOWN_POOLS };
     this.feesInitialized = false;
+
+    // ✅ ADDED: Track initialization for debugging
+    this.initializationCount = 0;
+    this.lastInitializedAt = null;
   }
 
   async initializeWithIdentity(identity) {
@@ -241,7 +222,7 @@ export class ICPSwapService {
       this._identity = identity;
       this.agent = await HttpAgent.create({
         host: this.config.host,
-        identity: identity
+        identity: identity,
       });
     }
 
@@ -291,10 +272,15 @@ export class ICPSwapService {
       return;
     }
 
+    // ✅ ADDED: Track initialization for debugging
+    this.initializationCount++;
+    this.lastInitializedAt = new Date().toISOString();
+    console.log(`🔄 SwapService reinitializeAgent called (count: ${this.initializationCount}) at ${this.lastInitializedAt}`);
+
     this._identity = identity;
     this.agent = await HttpAgent.create({
       host: this.config.host,
-      identity: identity
+      identity: identity,
     });
 
     this.feesInitialized = false;
@@ -325,12 +311,12 @@ export class ICPSwapService {
     const agent = await this.getAgent();
     return Actor.createActor(getSwapPoolInterface(), {
       agent,
-      canisterId: poolCanisterId
+      canisterId: poolCanisterId,
     });
   }
 
   getPoolKey(token0, token1) {
-    return [token0, token1].sort().join('_');
+    return [token0, token1].sort().join("_");
   }
 
   async findPool(token0Symbol, token1Symbol) {
@@ -346,7 +332,7 @@ export class ICPSwapService {
         fee: this.knownPools[key].fee,
         token0: { address: this.knownPools[key].token0, standard: "ICRC2" },
         token1: { address: this.knownPools[key].token1, standard: "ICRC2" },
-        status: this.knownPools[key].status
+        status: this.knownPools[key].status,
       };
     }
 
@@ -364,7 +350,7 @@ export class ICPSwapService {
       const poolActor = await this.getPoolActor(pool.canisterId.toString());
       const metadata = await poolActor.metadata();
 
-      if ('err' in metadata) {
+      if ("err" in metadata) {
         throw new Error(`Pool error: ${formatErrorForDisplay(metadata.err)}`);
       }
 
@@ -372,21 +358,10 @@ export class ICPSwapService {
       const hasLiquidity = Number(poolData.liquidity) > 0;
       const zeroForOne = TOKEN_CANISTERS[fromToken] === poolData.token0.address;
 
-      const decimals0 = TOKEN_DECIMALS[
-        Object.keys(TOKEN_CANISTERS).find(k => TOKEN_CANISTERS[k] === poolData.token0.address)
-      ];
-      const decimals1 = TOKEN_DECIMALS[
-        Object.keys(TOKEN_CANISTERS).find(k => TOKEN_CANISTERS[k] === poolData.token1.address)
-      ];
+      const decimals0 = TOKEN_DECIMALS[Object.keys(TOKEN_CANISTERS).find((k) => TOKEN_CANISTERS[k] === poolData.token0.address)];
+      const decimals1 = TOKEN_DECIMALS[Object.keys(TOKEN_CANISTERS).find((k) => TOKEN_CANISTERS[k] === poolData.token1.address)];
 
-      const estimatedOutput = estimateSwapOutput(
-        amount,
-        poolData.sqrtPriceX96,
-        zeroForOne,
-        decimals0,
-        decimals1,
-        Number(poolData.fee)
-      );
+      const estimatedOutput = estimateSwapOutput(amount, poolData.sqrtPriceX96, zeroForOne, decimals0, decimals1, Number(poolData.fee));
 
       const feePercentage = Number(poolData.fee) / 1000000;
       const fee = amount * feePercentage;
@@ -400,26 +375,19 @@ export class ICPSwapService {
         validFor: 300,
         poolId: pool.canisterId.toString(),
         poolFee: Number(poolData.fee),
-        source: 'icpswap',
+        source: "icpswap",
         poolPrice: calculatePriceFromSqrt(poolData.sqrtPriceX96, decimals0, decimals1),
         poolLiquidity: Number(poolData.liquidity),
         hasLiquidity: hasLiquidity,
-        status: pool.status
+        status: pool.status,
       };
-
     } catch (error) {
       console.error("Quote error:", error);
       throw error;
     }
   }
 
-  async executeSwap({
-    fromToken,
-    toToken,
-    amount,
-    minAmountOut,
-    userPrincipal
-  }) {
+  async executeSwap({ fromToken, toToken, amount, minAmountOut, userPrincipal }) {
     let depositSucceeded = false;
     let poolActor = null;
     let pool = null;
@@ -440,7 +408,7 @@ export class ICPSwapService {
       poolActor = await this.getPoolActor(pool.canisterId.toString());
       const metadata = await poolActor.metadata();
 
-      if ('err' in metadata) {
+      if ("err" in metadata) {
         throw new Error(`Pool error: ${formatErrorForDisplay(metadata.err)}`);
       }
 
@@ -464,12 +432,7 @@ export class ICPSwapService {
 
       if (balance < totalNeededInWallet) {
         const shortfall = this.fromSmallestUnit(totalNeededInWallet - balance, fromToken);
-        throw new Error(
-          `Insufficient balance.\n` +
-          `Have: ${this.fromSmallestUnit(balance, fromToken)} ${fromToken}\n` +
-          `Need: ${this.fromSmallestUnit(totalNeededInWallet, fromToken)} ${fromToken}\n` +
-          `Short: ${shortfall} ${fromToken}`
-        );
+        throw new Error(`Insufficient balance.\n` + `Have: ${this.fromSmallestUnit(balance, fromToken)} ${fromToken}\n` + `Need: ${this.fromSmallestUnit(totalNeededInWallet, fromToken)} ${fromToken}\n` + `Short: ${shortfall} ${fromToken}`);
       }
 
       // STEP 1: APPROVE
@@ -483,15 +446,15 @@ export class ICPSwapService {
         from_subaccount: [],
         created_at_time: [],
         expires_at: [],
-        expected_allowance: []
+        expected_allowance: [],
       });
 
-      if ('Err' in approveResult) {
+      if ("Err" in approveResult) {
         throw new Error(`Approval failed: ${formatErrorForDisplay(approveResult.Err)}`);
       }
 
       approvalSucceeded = true;
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // STEP 2: DEPOSIT
       console.log("Depositing to pool...");
@@ -499,30 +462,27 @@ export class ICPSwapService {
       const depositResult = await poolActor.depositFrom({
         token: TOKEN_CANISTERS[fromToken],
         amount: amountInSmallest,
-        fee: depositFee
+        fee: depositFee,
       });
 
-      if ('err' in depositResult) {
+      if ("err" in depositResult) {
         throw new Error(`Deposit failed: ${formatErrorForDisplay(depositResult.err)}`);
       }
 
       depositSucceeded = true;
 
       // STEP 3: VERIFY DEPOSIT
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       const balanceCheck = await poolActor.getUserUnusedBalance(user);
-      if ('err' in balanceCheck) {
+      if ("err" in balanceCheck) {
         console.warn("Could not verify deposit balance:", formatErrorForDisplay(balanceCheck.err));
       } else {
         const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
         const depositedBalance = zeroForOne ? balanceCheck.ok.balance0 : balanceCheck.ok.balance1;
 
-        if (depositedBalance < amountInSmallest * 95n / 100n) {
-          console.warn(
-            `WARNING: Deposited amount (${this.fromSmallestUnit(depositedBalance, fromToken)}) ` +
-            `is less than expected (${amount}). Proceeding with caution...`
-          );
+        if (depositedBalance < (amountInSmallest * 95n) / 100n) {
+          console.warn(`WARNING: Deposited amount (${this.fromSmallestUnit(depositedBalance, fromToken)}) ` + `is less than expected (${amount}). Proceeding with caution...`);
         }
       }
 
@@ -532,10 +492,10 @@ export class ICPSwapService {
       const swapResult = await poolActor.swap({
         amountIn: amountInSmallest.toString(),
         zeroForOne: TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address,
-        amountOutMinimum: minAmountOutSmallest.toString()
+        amountOutMinimum: minAmountOutSmallest.toString(),
       });
 
-      if ('err' in swapResult) {
+      if ("err" in swapResult) {
         throw new Error(`SWAP_FAILED: ${formatErrorForDisplay(swapResult.err)}`);
       }
 
@@ -553,10 +513,10 @@ export class ICPSwapService {
       const withdrawResult = await poolActor.withdraw({
         token: TOKEN_CANISTERS[toToken],
         amount: withdrawAmount,
-        fee: withdrawFee
+        fee: withdrawFee,
       });
 
-      if ('err' in withdrawResult) {
+      if ("err" in withdrawResult) {
         console.warn(`Swap succeeded but withdrawal failed: ${formatErrorForDisplay(withdrawResult.err)}`);
         return {
           success: true,
@@ -569,8 +529,8 @@ export class ICPSwapService {
             poolCanisterId: pool.canisterId.toString(),
             tokenCanister: TOKEN_CANISTERS[toToken],
             tokenSymbol: toToken,
-            amount: this.fromSmallestUnit(withdrawAmount, toToken)
-          }
+            amount: this.fromSmallestUnit(withdrawAmount, toToken),
+          },
         };
       }
 
@@ -583,9 +543,8 @@ export class ICPSwapService {
         amountOutRaw: withdrawAmount,
         message: "Swap completed successfully",
         txHash: swapResult.ok.toString(),
-        withdrawTxHash: withdrawResult.ok.toString()
+        withdrawTxHash: withdrawResult.ok.toString(),
       };
-
     } catch (error) {
       console.error("Swap error:", error.message);
 
@@ -597,7 +556,7 @@ export class ICPSwapService {
           const user = Principal.fromText(userPrincipal);
           const balanceCheck = await poolActor.getUserUnusedBalance(user);
 
-          if ('ok' in balanceCheck) {
+          if ("ok" in balanceCheck) {
             const metadata = await poolActor.metadata();
             const zeroForOne = TOKEN_CANISTERS[fromToken] === metadata.ok.token0.address;
             const stuckBalance = zeroForOne ? balanceCheck.ok.balance0 : balanceCheck.ok.balance1;
@@ -609,10 +568,10 @@ export class ICPSwapService {
               const withdrawResult = await poolActor.withdraw({
                 token: TOKEN_CANISTERS[fromToken],
                 amount: withdrawAmount,
-                fee: withdrawFee
+                fee: withdrawFee,
               });
 
-              if ('ok' in withdrawResult) {
+              if ("ok" in withdrawResult) {
                 const recoveredAmount = this.fromSmallestUnit(withdrawAmount, fromToken);
                 console.log(`Recovery successful: ${recoveredAmount} ${fromToken} returned to wallet`);
 
@@ -621,7 +580,7 @@ export class ICPSwapService {
                   error: error.message,
                   recovered: true,
                   recoveredAmount: recoveredAmount,
-                  message: `Swap failed but ${recoveredAmount} ${fromToken} was automatically recovered to your wallet.`
+                  message: `Swap failed but ${recoveredAmount} ${fromToken} was automatically recovered to your wallet.`,
                 };
               } else {
                 console.error("Automatic withdrawal failed:", formatErrorForDisplay(withdrawResult.err));
@@ -638,7 +597,7 @@ export class ICPSwapService {
         success: false,
         error: error.message || "Unknown error",
         recovered: false,
-        details: error
+        details: error,
       };
 
       if (depositSucceeded && !approvalSucceeded) {
@@ -651,7 +610,7 @@ export class ICPSwapService {
           poolCanisterId: pool.canisterId.toString(),
           userPrincipal: userPrincipal,
           tokenCanister: TOKEN_CANISTERS[fromToken],
-          tokenSymbol: fromToken
+          tokenSymbol: fromToken,
         };
       }
 
@@ -669,7 +628,7 @@ export class ICPSwapService {
       const actor = await this.getTokenActor(TOKEN_CANISTERS[tokenSymbol]);
       const balance = await actor.icrc1_balance_of({
         owner: Principal.fromText(userPrincipal),
-        subaccount: []
+        subaccount: [],
       });
       return this.fromSmallestUnit(balance, tokenSymbol);
     } catch (error) {
@@ -716,12 +675,12 @@ export class ICPSwapService {
 
       const balanceCheck = await poolActor.getUserUnusedBalance(user);
 
-      if ('err' in balanceCheck) {
+      if ("err" in balanceCheck) {
         throw new Error(`Cannot check balance: ${formatErrorForDisplay(balanceCheck.err)}`);
       }
 
       const metadata = await poolActor.metadata();
-      if ('err' in metadata) {
+      if ("err" in metadata) {
         throw new Error(`Cannot get pool metadata: ${formatErrorForDisplay(metadata.err)}`);
       }
 
@@ -732,7 +691,7 @@ export class ICPSwapService {
         return {
           success: true,
           message: "No stuck funds found",
-          stuckBalance: 0
+          stuckBalance: 0,
         };
       }
 
@@ -745,10 +704,10 @@ export class ICPSwapService {
       const withdrawResult = await poolActor.withdraw({
         token: TOKEN_CANISTERS[fromToken],
         amount: withdrawAmount,
-        fee: withdrawFee
+        fee: withdrawFee,
       });
 
-      if ('err' in withdrawResult) {
+      if ("err" in withdrawResult) {
         throw new Error(`Withdrawal failed: ${formatErrorForDisplay(withdrawResult.err)}`);
       }
 
@@ -759,15 +718,14 @@ export class ICPSwapService {
         success: true,
         message: `Successfully recovered ${recoveredAmount} ${fromToken}`,
         recoveredAmount: recoveredAmount,
-        txHash: withdrawResult.ok.toString()
+        txHash: withdrawResult.ok.toString(),
       };
-
     } catch (error) {
       console.error("Recovery failed:", error);
       return {
         success: false,
         error: error.message,
-        message: "Manual recovery failed. Please contact ICPSwap support."
+        message: "Manual recovery failed. Please contact ICPSwap support.",
       };
     }
   }
@@ -782,29 +740,25 @@ export class ICPSwapService {
         const poolActor = await this.getPoolActor(poolInfo.canisterId);
         const balanceCheck = await poolActor.getUserUnusedBalance(user);
 
-        if ('ok' in balanceCheck) {
+        if ("ok" in balanceCheck) {
           const balance0 = balanceCheck.ok.balance0;
           const balance1 = balanceCheck.ok.balance1;
 
           if (balance0 > 0n || balance1 > 0n) {
-            const token0Symbol = Object.keys(TOKEN_CANISTERS).find(
-              k => TOKEN_CANISTERS[k] === poolInfo.token0
-            );
-            const token1Symbol = Object.keys(TOKEN_CANISTERS).find(
-              k => TOKEN_CANISTERS[k] === poolInfo.token1
-            );
+            const token0Symbol = Object.keys(TOKEN_CANISTERS).find((k) => TOKEN_CANISTERS[k] === poolInfo.token0);
+            const token1Symbol = Object.keys(TOKEN_CANISTERS).find((k) => TOKEN_CANISTERS[k] === poolInfo.token1);
 
             const stuck = {
               pool: poolKey,
               poolCanisterId: poolInfo.canisterId,
-              funds: []
+              funds: [],
             };
 
             if (balance0 > 0n) {
               stuck.funds.push({
                 token: token0Symbol,
                 amount: this.fromSmallestUnit(balance0, token0Symbol),
-                amountRaw: balance0
+                amountRaw: balance0,
               });
             }
 
@@ -812,7 +766,7 @@ export class ICPSwapService {
               stuck.funds.push({
                 token: token1Symbol,
                 amount: this.fromSmallestUnit(balance1, token1Symbol),
-                amountRaw: balance1
+                amountRaw: balance1,
               });
             }
 
@@ -845,12 +799,23 @@ export class ICPSwapService {
       approvalFee: this.fromSmallestUnit(transferFee, fromToken),
       depositFee: this.fromSmallestUnit(transferFee, fromToken),
       totalFeesInToken: this.fromSmallestUnit(transferFee * 3n, fromToken),
-      totalNeeded: this.fromSmallestUnit(amountInSmallest + (transferFee * 3n), fromToken),
+      totalNeeded: this.fromSmallestUnit(amountInSmallest + transferFee * 3n, fromToken),
       breakdown: [
         { step: "Approval", fee: this.fromSmallestUnit(transferFee, fromToken) },
         { step: "Deposit", fee: this.fromSmallestUnit(transferFee, fromToken) },
-        { step: "Swap execution", fee: this.fromSmallestUnit(transferFee, fromToken) }
-      ]
+        { step: "Swap execution", fee: this.fromSmallestUnit(transferFee, fromToken) },
+      ],
+    };
+  }
+
+  // ✅ ADDED: Debug method to check initialization status
+  getInitializationStatus() {
+    return {
+      initializationCount: this.initializationCount,
+      lastInitializedAt: this.lastInitializedAt,
+      hasIdentity: !!this._identity,
+      principal: this._identity?.getPrincipal()?.toString() || null,
+      feesInitialized: this.feesInitialized,
     };
   }
 }
@@ -869,10 +834,8 @@ export const recoveryUtils = {
 
   async getFeesInfo(amount, fromToken) {
     return swapService.getFeesBreakdown(amount, fromToken);
-  }
+  },
 };
 
-// Make globally available for AuthProvider
-if (typeof window !== 'undefined') {
-  window.swapService = swapService;
-}
+// ✅ REMOVED: Global window assignment to prevent unnecessary access
+// swapService is now only accessible through direct import in SwapTokenModal

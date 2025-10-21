@@ -5,16 +5,7 @@ import { getInternetIdentityNetwork } from "@/core/lib/canisterUtils";
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({
-  children,
-  canisters = {},
-  onLoginSuccess = null,
-  onLogout = null,
-  redirectAfterLogin = null,
-  redirectAfterLogout = null,
-  getProfileFunction = null,
-  identityProvider = null,
-}) => {
+export const AuthProvider = ({ children, canisters = {}, onLoginSuccess = null, onLogout = null, redirectAfterLogin = null, redirectAfterLogout = null, getProfileFunction = null, identityProvider = null }) => {
   const [authClient, setAuthClient] = useState(null);
   const [user, setUser] = useState(null);
   const [identity, setIdentity] = useState(null);
@@ -37,44 +28,13 @@ export const AuthProvider = ({
     initAuth();
   }, []);
 
-  // ✅ NEW: Helper function to initialize swap service with retry
-  const initializeSwapService = async (newIdentity, retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-      if (window.swapService && window.swapService.reinitializeAgent) {
-        try {
-          console.log(`🔄 Attempt ${i + 1}: Initializing swap service with identity...`);
-          await window.swapService.reinitializeAgent(newIdentity);
-          
-          // ✅ FIXED: Check if identity was stored properly
-          const storedIdentity = window.swapService.getIdentity?.();
-          const principal = storedIdentity?.getPrincipal()?.toString();
-          
-          if (principal) {
-            console.log("✅ Swap service initialized with principal:", principal);
-            return true;
-          } else {
-            console.warn(`⚠️ Attempt ${i + 1}: No principal found after init`);
-          }
-        } catch (err) {
-          console.error(`❌ Attempt ${i + 1} failed:`, err);
-        }
-      } else {
-        console.warn(`⚠️ Attempt ${i + 1}: swapService not ready yet, waiting...`);
-      }
-      
-      // Wait before retry (100ms, 200ms, 400ms)
-      await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, i)));
-    }
-    
-    console.error("❌ Failed to initialize swap service after all retries");
-    return false;
-  };
+  // ✅ REMOVED: Swap service initialization moved to SwapTokenModal only
 
   const updateIdentity = async (client) => {
     try {
       const authenticated = await client.isAuthenticated();
       setIsAuthenticated(authenticated);
-      
+
       if (authenticated) {
         const newIdentity = client.getIdentity();
         setIdentity(newIdentity);
@@ -86,8 +46,7 @@ export const AuthProvider = ({
           }
         });
 
-        // ✅ FIXED: Initialize swap service with retry logic
-        await initializeSwapService(newIdentity);
+        // ✅ REMOVED: Swap service initialization moved to SwapTokenModal only
 
         setIsLoading(true);
 
@@ -120,17 +79,7 @@ export const AuthProvider = ({
   const handleLogin = async (customLoginSuccessHandler = null) => {
     if (!authClient) return;
 
-    const windowFeatures = [
-      "width=500",
-      "height=600",
-      "scrollbars=yes",
-      "resizable=yes",
-      "toolbar=no",
-      "menubar=no",
-      "location=no",
-      "status=no",
-      "directories=no"
-    ].join(",");
+    const windowFeatures = ["width=500", "height=600", "scrollbars=yes", "resizable=yes", "toolbar=no", "menubar=no", "location=no", "status=no", "directories=no"].join(",");
 
     await new Promise((resolve, reject) => {
       const loginOptions = {
@@ -141,12 +90,12 @@ export const AuthProvider = ({
       };
 
       if (process.env.DFX_NETWORK === "ic") {
-        // loginOptions.derivationOrigin = "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io";
+        loginOptions.derivationOrigin = "https://t4sse-tyaaa-aaaae-qfduq-cai.icp0.io";
       }
 
       authClient.login(loginOptions);
     });
-    
+
     const newIdentity = authClient.getIdentity();
     await handleLoginSuccess(newIdentity, customLoginSuccessHandler);
   };
@@ -161,8 +110,7 @@ export const AuthProvider = ({
       }
     });
 
-    // ✅ FIXED: Initialize swap service with retry logic
-    await initializeSwapService(newIdentity);
+    // ✅ REMOVED: Swap service initialization moved to SwapTokenModal only
 
     setIsLoading(true);
 

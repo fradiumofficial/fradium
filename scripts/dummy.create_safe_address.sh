@@ -71,8 +71,8 @@ dfx identity use safe_user1
 echo "Current user: $(dfx identity whoami)"
 echo "Current principal: $(dfx identity get-principal)"
 # Approve backend canister untuk transfer token
-dfx canister call token icrc2_approve '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 500000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
-dfx canister call backend create_report '(record { chain = "Bitcoin"; address = "35bSzXvRKLpHsHMrzb82f617cV4Srnt7hS"; category = "scam"; description = "This is a dummy unsafe address for testing"; url = null; evidence = vec { "Evidence 1" }; stake_amount = 500000000 })'
+dfx canister call token icrc2_approve --network ic '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 500000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
+dfx canister call backend create_report --network ic '(record { chain = "Bitcoin"; address = "35bSzXvRKLpHsHMrzb82f617cV4Srnt7hS"; category = "scam"; description = "This is a dummy unsafe address for testing"; url = null; evidence = vec { "Evidence 1" }; stake_amount = 500000000 })'
 
 # Step 4: User 2 vote YES (unsafe)
 echo "Step 4: User 2 voting YES (unsafe)..."
@@ -80,8 +80,8 @@ dfx identity use safe_user2
 echo "Current user: $(dfx identity whoami)"
 echo "Current principal: $(dfx identity get-principal)"
 # Approve backend canister untuk transfer token
-dfx canister call token icrc2_approve '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 100000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
-dfx canister call backend vote_report '(record { stake_amount = 100000000; vote_type = true; report_id = 0 })'
+dfx canister call token icrc2_approve --network ic '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 100000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
+dfx canister call backend vote_report --network ic '(record { stake_amount = 100000000; vote_type = true; report_id = 0 })'
 
 # Step 5: User 3 vote NO (safe)
 echo "Step 5: User 3 voting NO (safe)..."
@@ -89,8 +89,8 @@ dfx identity use safe_user3
 echo "Current user: $(dfx identity whoami)"
 echo "Current principal: $(dfx identity get-principal)"
 # Approve backend canister untuk transfer token
-dfx canister call token icrc2_approve '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 100000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
-dfx canister call backend vote_report '(record { stake_amount = 100000000; vote_type = false; report_id = 0 })'
+dfx canister call token icrc2_approve --network ic '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 100000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
+dfx canister call backend vote_report --network ic '(record { stake_amount = 100000000; vote_type = false; report_id = 0 })'
 
 # Step 6: User 4 vote NO (safe)
 echo "Step 6: User 4 voting NO (safe)..."
@@ -98,13 +98,13 @@ dfx identity use safe_user4
 echo "Current user: $(dfx identity whoami)"
 echo "Current principal: $(dfx identity get-principal)"
 # Approve backend canister untuk transfer token
-dfx canister call token icrc2_approve '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 100000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
-dfx canister call backend vote_report '(record { stake_amount = 100000000; vote_type = false; report_id = 0 })'
+dfx canister call token icrc2_approve --network ic '(record { from_subaccount = null; spender = principal "'$BACKEND_CANISTER_ID'"; amount = 100000000; expires_at = null; fee = null; memo = null; created_at_time = null })'
+dfx canister call backend vote_report --network ic '(record { stake_amount = 100000000; vote_type = false; report_id = 0 })'
 
 # Step 7: Ubah deadline agar report selesai dan dinyatakan unsafe
 echo "Step 7: Changing deadline to make report unsafe..."
 # Set deadline ke waktu yang sudah lewat (1 jam yang lalu)
-dfx canister call backend admin_change_report_deadline "(1, 100000000)"
+dfx canister call backend admin_change_report_deadline --network ic "(1, 100000000)"
 
 echo "Dummy data creation completed!"
 echo "Address 35bSzXvRKLpHsHMrzb82f617cV4Srnt7hS should now be marked as safe"

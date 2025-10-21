@@ -28,9 +28,6 @@ const CHOICE_MAP = [
   { idStr: "ICP", configId: 4, isWrapped: true, ledger: icp_ledger },
   { idStr: "ckBTC", configId: 6, isWrapped: true, ledger: ckbtc_ledger },
   { idStr: "ckETH", configId: 7, isWrapped: true, ledger: cketh_ledger },
-  { idStr: "BTC", configId: 1, isWrapped: false, ledger: null },
-  { idStr: "ETH", configId: 2, isWrapped: false, ledger: null },
-  { idStr: "SOL", configId: 3, isWrapped: false, ledger: null },
 ];
 
 function toVariant(tokenId) {
@@ -43,12 +40,6 @@ function toVariant(tokenId) {
       return { ckBTC: null };
     case "ckETH":
       return { ckETH: null };
-    case "BTC":
-      return { BTC: null };
-    case "ETH":
-      return { ETH: null };
-    case "SOL":
-      return { SOL: null };
     default:
       return { FRADIUM: null };
   }
@@ -252,18 +243,7 @@ export default function CreateEscrowPage() {
           const d = await selectedTo.ledger.icrc1_decimals();
           if (active) setDecimalsTo(Number(d ?? 8));
         } else {
-          // Defaults for native tokens
-          switch (tokenToId) {
-            case "ETH":
-              setDecimalsTo(18);
-              break;
-            case "SOL":
-              setDecimalsTo(9);
-              break;
-            case "BTC":
-            default:
-              setDecimalsTo(8);
-          }
+          setDecimalsTo(8);
         }
       } catch (_e) {
         setDecimalsTo(8);
@@ -273,7 +253,7 @@ export default function CreateEscrowPage() {
     return () => {
       active = false;
     };
-  }, [selectedTo, tokenToId]);
+  }, [selectedTo]);
 
   // Step validation
   const validateStep = (step) => {
@@ -350,55 +330,9 @@ export default function CreateEscrowPage() {
     try {
       // No delegation needed at creation - tokens will be transferred when someone joins
 
-      // Convert amounts to base units for both tokens
-      let amountFromNat;
-      if (isWrapped) {
-        amountFromNat = parseAmountToBaseUnits(amount, decimals);
-      } else {
-        const amountFloat = parseFloat(amount);
-        if (isNaN(amountFloat) || amountFloat <= 0) {
-          setSubmitting(false);
-          return toast.error("Invalid amount");
-        }
-        switch (tokenId) {
-          case "BTC":
-            amountFromNat = BigInt(Math.floor(amountFloat * 100_000_000));
-            break;
-          case "ETH":
-            amountFromNat = BigInt(Math.floor(amountFloat * 1_000_000_000_000_000_000));
-            break;
-          case "SOL":
-            amountFromNat = BigInt(Math.floor(amountFloat * 1_000_000_000));
-            break;
-          default:
-            amountFromNat = BigInt(Math.floor(amountFloat * 100_000_000));
-        }
-      }
-
-      // Convert target amount
-      let amountToNat;
-      if (selectedTo?.isWrapped && selectedTo?.ledger) {
-        amountToNat = parseAmountToBaseUnits(amountTo, decimalsTo);
-      } else {
-        const amtToFloat = parseFloat(amountTo);
-        if (isNaN(amtToFloat) || amtToFloat <= 0) {
-          setSubmitting(false);
-          return toast.error("Invalid receive amount");
-        }
-        switch (tokenToId) {
-          case "BTC":
-            amountToNat = BigInt(Math.floor(amtToFloat * 100_000_000));
-            break;
-          case "ETH":
-            amountToNat = BigInt(Math.floor(amtToFloat * 1_000_000_000_000_000_000));
-            break;
-          case "SOL":
-            amountToNat = BigInt(Math.floor(amtToFloat * 1_000_000_000));
-            break;
-          default:
-            amountToNat = BigInt(Math.floor(amtToFloat * 100_000_000));
-        }
-      }
+      // Convert amounts to base units for both tokens (ICRC tokens only)
+      const amountFromNat = parseAmountToBaseUnits(amount, decimals);
+      const amountToNat = parseAmountToBaseUnits(amountTo, decimalsTo);
 
       if (amountFromNat <= 0n || amountToNat <= 0n) {
         setSubmitting(false);
