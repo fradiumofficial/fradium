@@ -91,47 +91,85 @@ This gave us concrete feedback on clarity, efficiency, and user confidence.
 
 ## 🌟 Features of Fradium
 
-### Fradium Wallet App (Cross-Chain & On-Chain)
+### Fradium Wallet (App & Extension)
 
-- Manage multiple blockchain assets in a single interface.
-- Supports major networks like Bitcoin, Ethereum, Solana, and ICP.
-- Wallet addresses are generated on-chain with secure identity binding.
-- Send and receive tokens across supported networks.
-- Each recipient address is analyzed in real time before sending.
-- Transaction History & Scan Logs
+Fradium Wallet is the all-in-one gateway to Web3 safety.
+Available as both a **mobile/web app** and **browser extension**, it provides seamless access to your assets and built-in AI protection.
 
-### Fradium Wallet Extension
-
-- Simple browser tool to keep your Web3 activity safe
-- Automatically checks recipient addresses before you send
-- Gives clear risk explanations with reasons and evidence
-- Supports many coins with cross-chain token support in one place
-- Keeps scan history logs that you can review anytime in the web app
-
-### Multi-Chain Analytics Engine (AI onchain detection)
-
-- Fradium AI detects threats using high-quality, evolving datasets.
-- Analyzes address behavior across chains in real time.
-- Continuously improved through community and machine learning feedback.
-
-### Fradium Community Report
-
-- Report suspicious addresses and review reports from others.
-- Submit supporting evidence to back your report.
-- Earn $FRADIUM tokens through voting and contribution validation.
-- Voting & Governance (Proof of Credible Contribution - PoCC)
-- Stake your tokens and vote on submitted reports.
-- Contributions are publicly tracked and rewarded.
-
-### $FRADIUM Token System
-
-- Utility and governance token within the Fradium ecosystem.
-- Used for staking, voting, and rewarding credible reports.
-- All token actions are handled securely on-chain.
+- Manage multiple blockchain assets in one secure interface.
+- Supports **Bitcoin, Ethereum, Solana, and Internet Computer (ICP)**.
+- Addresses are generated on-chain with verified identity binding.
+- Real-time **AI risk analysis** before every transaction.
+- View complete **transaction history and scan logs** across chains.
+- Extension version provides **instant address checks** and **safety alerts** directly inside your browser.
 
 ---
 
-## 📃 How the Fradium AI Threat Detection Works (White-Box View):
+### Fradium Paylink
+
+A **Web3 payment link** that lets users send and receive crypto safely through a simple URL.
+Every transaction is verified by **Fradium Analyzer**, ensuring both sender and receiver are trustworthy.
+
+- Generate unique payment links for instant transfers.
+- Integrated AI address verification for both parties.
+- Works seamlessly across supported blockchains.
+
+---
+
+### Fradium Escrow
+
+A **trustless on-chain escrow system** for secure peer-to-peer trading.
+Funds are locked until both parties confirm, ensuring fairness and eliminating fraud.
+
+- Safe trading without intermediaries.
+- On-chain contract releases funds only when conditions are met.
+- Perfect for OTC and P2P transactions.
+
+---
+
+### Multi-Chain Analytics Engine (AI On-Chain Detection)
+
+Fradium’s AI engine continuously scans blockchain activities to detect anomalies, scams, and fraud in real time.
+It learns from both community feedback and on-chain data.
+
+- Detects threats using evolving datasets.
+- Analyzes address behaviors across multiple networks.
+- Continuously retrained via **on-chain AI learning** and **community input**.
+
+---
+
+### Fradium Community Report
+
+Fradium empowers users to shape a safer Web3 through **community-driven intelligence**.
+
+- Report suspicious addresses with supporting evidence.
+- Earn **$FRADIUM tokens** for credible contributions.
+- Vote and stake in governance through **Proof of Credible Contribution (PoCC)**.
+- Transparent tracking of all contributions and reputation metrics.
+
+---
+
+### $FRADIUM Token System
+
+The native utility and governance token powering the Fradium ecosystem.
+
+- Used for staking, voting, and rewarding credible reports.
+- Required for API access and developer integration.
+- Fully on-chain with transparent tokenomics.
+
+---
+
+### Fradium API Developer
+
+A public API for developers to integrate **Fradium Analyzer** directly into wallets, dApps, or exchanges.
+
+- Embed real-time risk detection into your own platform.
+- Authenticate via **FUM tokens** for usage credits.
+- Boost trust and safety for your Web3 users.
+
+---
+
+## How the Fradium AI Threat Detection Works (White-Box View):
 
 - **Real-Time Address Analysis**: Constantly analyzes blockchain addresses across multiple chains (Bitcoin, Ethereum, Solana, ICP) as transactions occur.
 - **Advanced Feature Engineering**: Extracts 100+ behavioral and transactional features, including:
