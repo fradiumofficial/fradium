@@ -6,7 +6,7 @@ import QRCodeStyling from "qr-code-styling";
 import { motion, AnimatePresence } from "framer-motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/core/components/ui/tooltip";
-import { Checkbox } from "@/core/components/ui/Checkbox";
+import { Checkbox } from "@/core/components/ui/checkbox";
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig";
 import ButtonYellow from "@/core/components/ButtonYellow";
 
