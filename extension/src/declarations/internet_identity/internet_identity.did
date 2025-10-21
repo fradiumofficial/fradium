@@ -291,7 +291,6 @@ type InternetIdentityInit = record {
     dummy_auth : opt opt DummyAuthConfig;
     // Feature flags
     feature_flag_continue_from_another_device : opt bool;
-    feature_flag_enable_generic_open_id_fe : opt bool;
 };
 
 type ChallengeKey = text;
@@ -325,6 +324,8 @@ type IdentityAnchorInfo = record {
     openid_credentials : opt vec OpenIdCredential;
     // The name of the Internet Identity
     name : opt text;
+    // The timestamp at which the anchor was created
+    created_at : opt Timestamp;
 };
 
 type AnchorCredentials = record {
@@ -633,6 +634,28 @@ type AccountDelegationError = variant {
     InternalCanisterError : text;
     Unauthorized : principal;
     NoSuchDelegation;
+};
+
+type GetDefaultAccountError = variant {
+    InternalCanisterError : text;
+    Unauthorized : principal;
+    NoSuchAnchor;
+    NoSuchOrigin : record {
+        anchor_number : UserNumber;
+    };
+};
+
+type SetDefaultAccountError = variant {
+    InternalCanisterError : text;
+    Unauthorized : principal;
+    NoSuchAnchor;
+    NoSuchOrigin : record {
+        anchor_number : UserNumber;
+    };
+    NoSuchAccount : record {
+        anchor_number : UserNumber;
+        origin : FrontendHostname;
+    };
 };
 
 type PrepareAccountDelegation = record {
@@ -985,4 +1008,15 @@ service : (opt InternetIdentityInit) -> {
         session_key : SessionKey,
         expiration : Timestamp
     ) -> (variant { Ok : SignedDelegation; Err : AccountDelegationError }) query;
+
+    get_default_account : (
+        anchor_number : UserNumber,
+        origin : FrontendHostname,
+    ) -> (variant { Ok : AccountInfo; Err: GetDefaultAccountError }) query;
+
+    set_default_account : (
+        anchor_number : UserNumber,
+        origin : FrontendHostname,
+        account_number : opt AccountNumber
+    ) -> (variant { Ok : AccountInfo; Err: SetDefaultAccountError });
 };

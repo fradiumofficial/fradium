@@ -431,27 +431,49 @@ export default function SwapTokenModal({ isOpen, onClose }) {
                       </div>
                     )}
 
+                    {swapQuote && swapQuote.hasLiquidity && swapQuote.status === "active_low_liquidity" && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mb-3">
+                        <p className="text-yellow-400 text-xs flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          Low liquidity pool. Large swaps may experience high slippage.
+                        </p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Rate</span>
-                      <span className="text-white">
+                      <span className="text-white/70">You're Swapping</span>
+                      <span className="text-white font-medium">
+                        {parseFloat(fromAmount).toFixed(6)} {fromToken.symbol}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">You'll Receive ~</span>
+                      <span className="text-green-400 font-medium">
+                        {swapQuote.estimatedOutput.toFixed(6)} {toToken.symbol}
+                      </span>
+                    </div>
+                    <div className="border-t border-white/10 my-2 pt-2"></div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/50">Exchange Rate</span>
+                      <span className="text-white/70">
                         1 {fromToken.symbol} = {swapQuote.rate.toFixed(6)} {toToken.symbol}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Fee</span>
-                      <span className="text-white">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/50">Pool Fee (0.3%)</span>
+                      <span className="text-white/70">
                         {swapQuote.fee.toFixed(6)} {fromToken.symbol}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Min Received</span>
-                      <span className="text-white">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/50">Minimum Received</span>
+                      <span className="text-white/70">
                         {swapQuote.minAmountOut.toFixed(6)} {toToken.symbol}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Pool Status</span>
-                      <span className={`text-sm ${swapQuote.hasLiquidity ? "text-green-400" : "text-orange-400"}`}>{swapQuote.hasLiquidity ? "✓ Has Liquidity" : "⚠ No Liquidity"}</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/50">Pool Status</span>
+                      <span className={`text-xs ${swapQuote.hasLiquidity ? "text-green-400" : "text-orange-400"}`}>{swapQuote.hasLiquidity ? "✓ Has Liquidity" : "⚠ No Liquidity"}</span>
                     </div>
                   </div>
                 )}

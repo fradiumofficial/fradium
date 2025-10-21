@@ -10,7 +10,7 @@ export { idlFactory } from "./icp_index.did.js";
  * beginning in dfx 0.15.0
  */
 export const canisterId =
-  process.env.CANISTER_ID_ICP_INDEX;
+  process.env.PLASMO_PUBLIC_CANISTER_ID_ICP_INDEX;
 
 export const createActor = (canisterId, options = {}) => {
   const agent = options.agent || new HttpAgent({ ...options.agentOptions });

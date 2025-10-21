@@ -12,11 +12,25 @@ const NETWORK_CONFIG = {
 const TOKEN_CANISTERS = {
   ICP: "ryjl3-tyaaa-aaaaa-aaaba-cai",
   KONG: "o7oak-iyaaa-aaaaq-aadzq-cai",
+  CHAT: "2ouva-viaaa-aaaaq-aaamq-cai",
+  ICS: "ca6gz-lqaaa-aaaaq-aacwa-cai",
+  PANDA: "druyg-tyaaa-aaaaq-aactq-cai",
+  SNEED: "hvgxa-wqaaa-aaaaq-aacia-cai",
+  OGY: "lkwrt-vyaaa-aaaaq-aadhq-cai",
+  WTN: "jcmow-hyaaa-aaaaq-aadlq-cai",
+  SONIC: "qbizb-wiaaa-aaaaq-aabwq-cai",
 };
 
 const TOKEN_DECIMALS = {
   ICP: 8,
   KONG: 8,
+  CHAT: 8,
+  ICS: 8,
+  PANDA: 8,
+  SNEED: 8,
+  OGY: 8,
+  WTN: 8,
+  SONIC: 8,
 };
 
 // Populated dynamically by querying actual ledger fees
@@ -25,16 +39,94 @@ const TOKEN_TRANSFER_FEES = {};
 const KNOWN_POOLS = {
   ICP_KONG: {
     canisterId: "ye4fx-gqaaa-aaaag-qnara-cai",
-    fee: 3000, // 0.3% swap fee
+    fee: 3000,
     token0: "o7oak-iyaaa-aaaaq-aadzq-cai", // KONG
     token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_low_liquidity", // Updated status
+  },
+
+  CHAT_ICP: {
+    canisterId: "ne2vj-6yaaa-aaaag-qb3ia-cai",
+    fee: 3000,
+    token0: "2ouva-viaaa-aaaaq-aaamq-cai", // CHAT
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
     status: "active_with_liquidity",
+  },
+
+  ICP_ICS: {
+    canisterId: "uizni-yiaaa-aaaag-qjrca-cai",
+    fee: 3000,
+    token0: "ca6gz-lqaaa-aaaaq-aacwa-cai", // ICS
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_with_liquidity",
+  },
+
+  ICP_PANDA: {
+    canisterId: "5fq4w-lyaaa-aaaag-qjqta-cai",
+    fee: 3000,
+    token0: "druyg-tyaaa-aaaaq-aactq-cai", // PANDA
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_with_liquidity",
+  },
+
+  ICP_SNEED: {
+    canisterId: "osyzs-xiaaa-aaaag-qc76q-cai",
+    fee: 3000,
+    token0: "hvgxa-wqaaa-aaaaq-aacia-cai", // SNEED
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_with_liquidity",
+  },
+
+  ICP_OGY: {
+    canisterId: "ttnzy-lyaaa-aaaag-qj2bq-cai",
+    fee: 3000,
+    token0: "lkwrt-vyaaa-aaaaq-aadhq-cai", // OGY
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_with_liquidity",
+  },
+
+  ICP_WTN: {
+    canisterId: "oqn67-kaaaa-aaaag-qj72q-cai",
+    fee: 3000,
+    token0: "jcmow-hyaaa-aaaaq-aadlq-cai", // WTN
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_with_liquidity",
+  },
+
+  ICP_SONIC: {
+    canisterId: "jknac-2aaaa-aaaag-qcmfq-cai",
+    fee: 3000,
+    token0: "qbizb-wiaaa-aaaaq-aabwq-cai", // SONIC
+    token1: "ryjl3-tyaaa-aaaaa-aaaba-cai", // ICP
+    status: "active_low_liquidity", // Warning: only $7K liquidity
   },
 };
 
 export const SUPPORTED_SWAP_PAIRS = [
   { from: "ICP", to: "KONG", hasLiquidity: true },
   { from: "KONG", to: "ICP", hasLiquidity: true },
+
+  // New pairs
+  { from: "ICP", to: "CHAT", hasLiquidity: true },
+  { from: "CHAT", to: "ICP", hasLiquidity: true },
+
+  { from: "ICP", to: "ICS", hasLiquidity: true },
+  { from: "ICS", to: "ICP", hasLiquidity: true },
+
+  { from: "ICP", to: "PANDA", hasLiquidity: true },
+  { from: "PANDA", to: "ICP", hasLiquidity: true },
+
+  { from: "ICP", to: "SNEED", hasLiquidity: true },
+  { from: "SNEED", to: "ICP", hasLiquidity: true },
+
+  { from: "ICP", to: "OGY", hasLiquidity: true },
+  { from: "OGY", to: "ICP", hasLiquidity: true },
+
+  { from: "ICP", to: "WTN", hasLiquidity: true },
+  { from: "WTN", to: "ICP", hasLiquidity: true },
+
+  { from: "ICP", to: "SONIC", hasLiquidity: true },
+  { from: "SONIC", to: "ICP", hasLiquidity: true },
 ];
 
 export function isSwapPairSupported(fromSymbol, toSymbol) {
@@ -178,23 +270,36 @@ function formatErrorForDisplay(error) {
 function calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1) {
   const Q96 = 2n ** 96n;
   const sqrtPrice = BigInt(sqrtPriceX96);
+
+  // Calculate raw price: (sqrtPriceX96 / 2^96)^2
   const numerator = sqrtPrice * sqrtPrice;
   const denominator = Q96 * Q96;
   const rawPrice = Number(numerator) / Number(denominator);
-  const decimalAdjustment = Math.pow(10, decimals0 - decimals1);
+
+  // Adjust for token decimals
+  // Price represents: how much token1 you get per 1 token0
+  const decimalAdjustment = Math.pow(10, decimals1 - decimals0);
+
   return rawPrice * decimalAdjustment;
 }
 
 function estimateSwapOutput(amountIn, sqrtPriceX96, zeroForOne, decimals0, decimals1, feeTier) {
-  const price_token0_in_token1 = calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1);
+  // Get the price of token0 in terms of token1
+  const price = calculatePriceFromSqrt(sqrtPriceX96, decimals0, decimals1);
+
   let estimatedOutput;
 
   if (zeroForOne) {
-    estimatedOutput = amountIn * price_token0_in_token1;
+    // Swapping token0 → token1
+    // 1 token0 = price * token1
+    estimatedOutput = amountIn * price;
   } else {
-    estimatedOutput = amountIn / price_token0_in_token1;
+    // Swapping token1 → token0
+    // 1 token1 = (1/price) * token0
+    estimatedOutput = amountIn / price;
   }
 
+  // Apply swap fee (0.3% = 3000/1000000)
   const feeMultiplier = 1 - feeTier / 1000000;
   return estimatedOutput * feeMultiplier;
 }

@@ -286,7 +286,13 @@ function addIntervalStats(features: { [key: string]: any }, prefix: string, bloc
 }
 
 export async function extractFeatures(targetAddress: string, apis: any = {}) {
-  const { etherscanApiKey = process.env.PLASMO_PUBLIC_ETHERSCAN_API_KEY, cryptocompareApiKey = process.env.PLASMO_PUBLIC_CRYPTOCOMPARE_API_KEY, moralisApiKey = process.env.PLASMO_PUBLIC_MORALIS_API_KEY} = apis;
+  // Try multiple sources for API keys
+  const etherscanApiKey = process.env.PLASMO_PUBLIC_ETHERSCAN_API_KEY;
+  const cryptocompareApiKey = process.env.PLASMO_PUBLIC_CRYPTOCOMPARE_API_KEY;
+  const moralisApiKey = process.env.PLASMO_PUBLIC_MORALIS_API_KEY;
+  console.log("etherscanApiKey✅", etherscanApiKey);
+  console.log("cryptocompareApiKey✅", cryptocompareApiKey);
+  console.log("moralisApiKey✅", moralisApiKey);
 
   // Debug: Log API key status
   console.log("🔍 Ethereum API Keys Debug:");
@@ -295,11 +301,70 @@ export async function extractFeatures(targetAddress: string, apis: any = {}) {
   console.log("- Moralis API Key:", moralisApiKey ? `${moralisApiKey.substring(0, 8)}...` : "NOT SET");
 
   // Check if API key is available
-  if (!etherscanApiKey || etherscanApiKey === "your_etherscan_api_key_here" || etherscanApiKey.trim() === "") {
+  if (!etherscanApiKey) {
     console.error("❌ Etherscan API key not configured!");
     console.error("Please set PLASMO_PUBLIC_ETHERSCAN_API_KEY in your environment variables.");
     console.error("Get a free API key from: https://etherscan.io/apis");
-    throw new Error("Etherscan API key not configured. Please set PLASMO_PUBLIC_ETHERSCAN_API_KEY environment variable.");
+    
+    // Return minimal features for addresses without API key
+    console.warn("⚠️ Returning minimal features due to missing API key");
+    return {
+      num_txs_as_sender: 0,
+      num_txs_as_receiver: 0,
+      total_txs: 0,
+      first_block_appeared_in: 0,
+      last_block_appeared_in: 0,
+      lifetime_in_blocks: 0,
+      num_timesteps_appeared_in: 0,
+      first_sent_block: 0,
+      first_received_block: 0,
+      btc_transacted_total: 0,
+      btc_transacted_min: 0,
+      btc_transacted_max: 0,
+      btc_transacted_mean: 0,
+      btc_transacted_median: 0,
+      btc_sent_total: 0,
+      btc_sent_min: 0,
+      btc_sent_max: 0,
+      btc_sent_mean: 0,
+      btc_sent_median: 0,
+      btc_received_total: 0,
+      btc_received_min: 0,
+      btc_received_max: 0,
+      btc_received_mean: 0,
+      btc_received_median: 0,
+      fees_total: 0,
+      fees_min: 0,
+      fees_max: 0,
+      fees_mean: 0,
+      fees_median: 0,
+      fees_as_share_total: 0,
+      fees_as_share_min: 0,
+      fees_as_share_max: 0,
+      fees_as_share_mean: 0,
+      fees_as_share_median: 0,
+      blocks_btwn_txs_total: 0,
+      blocks_btwn_txs_min: 0,
+      blocks_btwn_txs_max: 0,
+      blocks_btwn_txs_mean: 0,
+      blocks_btwn_txs_median: 0,
+      blocks_btwn_input_txs_total: 0,
+      blocks_btwn_input_txs_min: 0,
+      blocks_btwn_input_txs_max: 0,
+      blocks_btwn_input_txs_mean: 0,
+      blocks_btwn_input_txs_median: 0,
+      blocks_btwn_output_txs_total: 0,
+      blocks_btwn_output_txs_min: 0,
+      blocks_btwn_output_txs_max: 0,
+      blocks_btwn_output_txs_mean: 0,
+      blocks_btwn_output_txs_median: 0,
+      transacted_w_address_total: 0,
+      num_addr_transacted_multiple: 0,
+      transacted_w_address_min: 0,
+      transacted_w_address_max: 0,
+      transacted_w_address_mean: 0,
+      transacted_w_address_median: 0,
+    };
   }
 
   const address = String(targetAddress).toLowerCase();

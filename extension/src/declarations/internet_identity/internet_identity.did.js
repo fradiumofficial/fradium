@@ -55,7 +55,6 @@ export const idlFactory = ({ IDL }) => {
     'archive_config' : IDL.Opt(ArchiveConfig),
     'canister_creation_cycles_cost' : IDL.Opt(IDL.Nat64),
     'analytics_config' : IDL.Opt(IDL.Opt(AnalyticsConfig)),
-    'feature_flag_enable_generic_open_id_fe' : IDL.Opt(IDL.Bool),
     'related_origins' : IDL.Opt(IDL.Vec(IDL.Text)),
     'feature_flag_continue_from_another_device' : IDL.Opt(IDL.Bool),
     'openid_configs' : IDL.Opt(IDL.Vec(OpenIdConfig)),
@@ -294,9 +293,16 @@ export const idlFactory = ({ IDL }) => {
   });
   const IdentityAnchorInfo = IDL.Record({
     'name' : IDL.Opt(IDL.Text),
+    'created_at' : IDL.Opt(Timestamp),
     'devices' : IDL.Vec(DeviceWithUsage),
     'openid_credentials' : IDL.Opt(IDL.Vec(OpenIdCredential)),
     'device_registration' : IDL.Opt(DeviceRegistrationInfo),
+  });
+  const GetDefaultAccountError = IDL.Variant({
+    'NoSuchOrigin' : IDL.Record({ 'anchor_number' : UserNumber }),
+    'NoSuchAnchor' : IDL.Null,
+    'InternalCanisterError' : IDL.Text,
+    'Unauthorized' : IDL.Principal,
   });
   const GetDelegationResponse = IDL.Variant({
     'no_such_delegation' : IDL.Null,
@@ -470,6 +476,16 @@ export const idlFactory = ({ IDL }) => {
     'bad_challenge' : IDL.Null,
     'canister_full' : IDL.Null,
     'registered' : IDL.Record({ 'user_number' : UserNumber }),
+  });
+  const SetDefaultAccountError = IDL.Variant({
+    'NoSuchOrigin' : IDL.Record({ 'anchor_number' : UserNumber }),
+    'NoSuchAnchor' : IDL.Null,
+    'InternalCanisterError' : IDL.Text,
+    'Unauthorized' : IDL.Principal,
+    'NoSuchAccount' : IDL.Record({
+      'origin' : FrontendHostname,
+      'anchor_number' : UserNumber,
+    }),
   });
   const ArchiveInfo = IDL.Record({
     'archive_config' : IDL.Opt(ArchiveConfig),
@@ -649,6 +665,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_anchor_info' : IDL.Func([UserNumber], [IdentityAnchorInfo], []),
+    'get_default_account' : IDL.Func(
+        [UserNumber, FrontendHostname],
+        [IDL.Variant({ 'Ok' : AccountInfo, 'Err' : GetDefaultAccountError })],
+        ['query'],
+      ),
     'get_delegation' : IDL.Func(
         [UserNumber, FrontendHostname, SessionKey, Timestamp],
         [GetDelegationResponse],
@@ -785,6 +806,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'remove' : IDL.Func([UserNumber, DeviceKey], [], []),
     'replace' : IDL.Func([UserNumber, DeviceKey, DeviceData], [], []),
+    'set_default_account' : IDL.Func(
+        [UserNumber, FrontendHostname, IDL.Opt(AccountNumber)],
+        [IDL.Variant({ 'Ok' : AccountInfo, 'Err' : SetDefaultAccountError })],
+        [],
+      ),
     'stats' : IDL.Func([], [InternetIdentityStats], ['query']),
     'update' : IDL.Func([UserNumber, DeviceKey, DeviceData], [], []),
     'update_account' : IDL.Func(
@@ -854,7 +880,6 @@ export const init = ({ IDL }) => {
     'archive_config' : IDL.Opt(ArchiveConfig),
     'canister_creation_cycles_cost' : IDL.Opt(IDL.Nat64),
     'analytics_config' : IDL.Opt(IDL.Opt(AnalyticsConfig)),
-    'feature_flag_enable_generic_open_id_fe' : IDL.Opt(IDL.Bool),
     'related_origins' : IDL.Opt(IDL.Vec(IDL.Text)),
     'feature_flag_continue_from_another_device' : IDL.Opt(IDL.Bool),
     'openid_configs' : IDL.Opt(IDL.Vec(OpenIdConfig)),

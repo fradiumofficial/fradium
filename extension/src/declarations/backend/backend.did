@@ -10,42 +10,99 @@ type VoteReportParams =
    stake_amount: nat;
    vote_type: bool;
  };
-type TokenType = text;
+type TokenType__1 = 
+ variant {
+   BTC;
+   ETH;
+   Fradium;
+   ICP;
+   SNS: principal;
+   SOL;
+   ckBTC;
+   ckETH;
+ };
+type TokenType = 
+ variant {
+   BTC;
+   ETH;
+   FRADIUM;
+   ICP;
+   SOL;
+   ckBTC;
+   ckETH;
+ };
+type TokenStatus = 
+ variant {
+   active;
+   expired;
+   revoked;
+ };
+type TokenOperationResponse = 
+ variant {
+   err: text;
+   ok: text;
+ };
 type Time = int;
+type RevokeTokenRequest = record {tokenId: text;};
+type Result_9 = 
+ variant {
+   Err: text;
+   Ok: EscrowRecord;
+ };
+type Result_8 = 
+ variant {
+   Err: text;
+   Ok: vec PaymentLink;
+ };
 type Result_7 = 
- variant {
-   Err: text;
-   Ok: GetAnalyzeAddressResult;
- };
-type Result_6 = 
- variant {
-   Err: text;
-   Ok: vec AnalyzeHistory;
- };
-type Result_5 = 
- variant {
-   Err: text;
-   Ok: nat;
- };
-type Result_4 = 
  variant {
    Err: text;
    Ok: vec GetMyReportsParams;
  };
-type Result_3 = 
+type Result_6 = 
  variant {
    Err: text;
    Ok: vec GetMyVotesParams;
  };
-type Result_2 = 
+type Result_5 = 
+ variant {
+   Err: text;
+   Ok: PaymentLinkPublic;
+ };
+type Result_4 = 
  variant {
    Err: text;
    Ok: Report;
  };
-type Result_1 = 
+type Result_3 = 
  variant {
    Err: text;
    Ok: vec Report;
+ };
+type Result_2 = 
+ variant {
+   Err: text;
+   Ok: vec GetMyEscrowsParams;
+ };
+type Result_12 = 
+ variant {
+   Err: text;
+   Ok: GetAnalyzeAddressResult;
+ };
+type Result_11 = 
+ variant {
+   Err: text;
+   Ok: vec AnalyzeHistory;
+ };
+type Result_10 = 
+ variant {
+   Err: text;
+   Ok: nat;
+ };
+type Result_1 = 
+ variant {
+   Err: text;
+   Ok: EscrowId;
  };
 type Result = 
  variant {
@@ -68,6 +125,62 @@ type Report =
    voted_by: vec Voter;
    votes_no: nat;
    votes_yes: nat;
+ };
+type RegenerateTokenRequest = record {tokenId: text;};
+type PaymentStatus = 
+ variant {
+   Active;
+   Cancelled;
+   Completed;
+   Expired;
+ };
+type PaymentLinkPublic = 
+ record {
+   amount: nat;
+   created_at: Time;
+   creator: principal;
+   creator_addresses: opt CreatorAddresses;
+   expires_at: Time;
+   status: PaymentStatus;
+   token: TokenType__1;
+ };
+type PaymentLink = 
+ record {
+   amount: nat;
+   created_at: Time;
+   creator: principal;
+   creator_addresses: opt CreatorAddresses;
+   expires_at: Time;
+   id: text;
+   payer: opt principal;
+   status: PaymentStatus;
+   token: TokenType__1;
+ };
+type HttpResponse = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+   streaming_strategy: opt null;
+   upgrade: opt bool;
+ };
+type HttpRequest = 
+ record {
+   body: blob;
+   certificate_version: opt nat16;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HeaderField = 
+ record {
+   text;
+   text;
+ };
+type GetTokensResponse = 
+ variant {
+   err: text;
+   ok: vec ApiToken;
  };
 type GetMyVotesParams = 
  record {
@@ -108,11 +221,88 @@ type GetMyReportsParams =
    votes_no: nat;
    votes_yes: nat;
  };
+type GetMyEscrowsParams = 
+ record {
+   amount_from: nat;
+   amount_to: nat;
+   created_at: Time;
+   description: opt text;
+   escrow_id: EscrowId;
+   escrow_method: EscrowMethod;
+   expires_at: Time;
+   recipient: opt principal;
+   sender: principal;
+   state: EscrowState;
+   token_from: TokenType;
+   token_to: TokenType;
+ };
 type GetAnalyzeAddressResult = 
  record {
    is_safe: bool;
    report: opt Report;
  };
+type EscrowStats = 
+ record {
+   by_state: vec record {
+                   EscrowState;
+                   nat;
+                 };
+   completed_escrows: nat;
+   pending_escrows: nat;
+   suspended_escrows: nat;
+   total_escrows: nat;
+   total_volume_locked: nat;
+ };
+type EscrowState = 
+ variant {
+   AwaitingAccept;
+   Cancelled;
+   Expired;
+   Locked;
+   Pending;
+   Rejected;
+   Released;
+   Suspended;
+ };
+type EscrowRecord = 
+ record {
+   accepted_at: opt Time;
+   amount_from: nat;
+   amount_to: nat;
+   created_at: Time;
+   deposit_expires_at: opt Time;
+   deposit_from_done: bool;
+   deposit_to_done: bool;
+   description: opt text;
+   escrow_id: EscrowId;
+   escrow_method: EscrowMethod;
+   expires_at: Time;
+   metadata: opt text;
+   recipient: opt principal;
+   released_at: opt Time;
+   sender: principal;
+   state: EscrowState;
+   token_from: TokenType;
+   token_to: TokenType;
+ };
+type EscrowMethod = 
+ variant {
+   Native;
+   Wrapped;
+ };
+type EscrowId = nat64;
+type CreatorAddresses = 
+ record {
+   bitcoin: text;
+   ethereum: text;
+   solana: text;
+ };
+type CreateTokenResponse = 
+ variant {
+   err: text;
+   ok: ApiToken;
+ };
+type CreateTokenRequest = record {name: text;};
 type CreateReportParams = 
  record {
    address: text;
@@ -123,13 +313,55 @@ type CreateReportParams =
    stake_amount: nat;
    url: opt text;
  };
+type CreatePaymentLinkParams = 
+ record {
+   amount: nat;
+   custom_id: opt text;
+   duration_nanos: nat;
+   token: TokenType__1;
+ };
+type CreateEscrowParams = 
+ record {
+   amount_from: nat;
+   amount_to: nat;
+   description: opt text;
+   duration_seconds: opt nat64;
+   metadata: opt text;
+   recipient: opt principal;
+   token_from: TokenType;
+   token_to: TokenType;
+ };
 type CreateAnalyzeHistoryParams = 
  record {
    address: text;
    analyzed_type: AnalyzeHistoryType;
    is_safe: bool;
    metadata: text;
-   token_type: TokenType;
+   token_type: text;
+ };
+type ApiUsageRecord = 
+ record {
+   at: Time;
+   cost: nat;
+   model: text;
+   reason: opt text;
+   route: text;
+   status: text;
+ };
+type ApiToken = 
+ record {
+   created: Time;
+   id: text;
+   name: text;
+   "principal": principal;
+   status: TokenStatus;
+   token: text;
+ };
+type ApiApprovalRecord = 
+ record {
+   amount_e8s: nat;
+   at: Time;
+   metadata: text;
  };
 type AnalyzeHistoryType = 
  variant {
@@ -143,24 +375,98 @@ type AnalyzeHistory =
    created_at: Time;
    is_safe: bool;
    metadata: text;
-   token_type: TokenType;
+   token_type: text;
  };
+type AcceptEscrowParams = record {escrow_id: EscrowId;};
 service : {
   admin_change_report_deadline: (report_id: ReportId, new_deadline: Time) ->
    (Result);
   admin_delete_report: (report_id: ReportId) -> (Result);
-  analyze_address: (address: text) -> (Result_7);
+  analyze_address: (address: text) -> (Result_12);
+  cancel_payment_link: (link_id: text) -> (Result);
   check_faucet_claim: () -> (Result);
   claim_faucet: () -> (Result);
-  create_analyze_history: (params: CreateAnalyzeHistoryParams) -> (Result_6);
+  create_analyze_history: (params: CreateAnalyzeHistoryParams) -> (Result_11);
+  create_api_token: (request: CreateTokenRequest) -> (CreateTokenResponse);
+  create_escrow: (params: CreateEscrowParams) -> (Result_1);
+  create_payment_link: (params: CreatePaymentLinkParams) -> (Result);
   create_report: (params: CreateReportParams) -> (Result);
-  get_analyze_history: (offset: nat, limit: nat) -> (Result_6);
-  get_analyze_history_count: () -> (Result_5);
-  get_my_reports: () -> (Result_4);
-  get_my_votes: () -> (Result_3);
-  get_report: (report_id: ReportId) -> (Result_2) query;
-  get_reports: () -> (Result_1) query;
+  delete_api_token: (request: RevokeTokenRequest) -> (TokenOperationResponse);
+  execute_payment_icrc: (link_id: text) -> (Result);
+  get_all_escrows: () -> (vec EscrowRecord) query;
+  get_all_escrows_paginated: (offset: nat, limit: nat) ->
+   (record {
+      items: vec EscrowRecord;
+      total: nat;
+    }) query;
+  get_analyze_history: (offset: nat, limit: nat) -> (Result_11);
+  get_analyze_history_count: () -> (Result_10);
+  get_api_analyze_history: (offset: nat, limit: nat) ->
+   (record {
+      items: vec ApiUsageRecord;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
+  get_api_approvals_history: (offset: nat, limit: nat) ->
+   (record {
+      items: vec ApiApprovalRecord;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
+  get_api_credits_stats: () -> (record {
+                                  remaining_e8s: nat;
+                                  used_e8s: nat;
+                                });
+  get_api_token_info: (token_string: text) -> (opt ApiToken) query;
+  get_api_tokens: () -> (GetTokensResponse);
+  get_deposit_account: (escrow_id: EscrowId, side: text) ->
+   (record {
+      owner: principal;
+      sub: opt blob;
+    }) query;
+  get_escrow: (escrow_id: EscrowId) -> (Result_9) query;
+  get_escrow_stats: () -> (EscrowStats) query;
+  get_my_payment_links: () -> (Result_8);
+  get_my_reports: () -> (Result_7);
+  get_my_votes: () -> (Result_6);
+  get_open_escrows_paginated: (offset: nat, limit: nat) ->
+   (record {
+      items: vec EscrowRecord;
+      total: nat;
+    }) query;
+  get_payment_link_details: (id: text) -> (Result_5) query;
+  get_received_escrows: () -> (Result_2);
+  get_received_escrows_paginated: (offset: nat, limit: nat) ->
+   (record {
+      items: vec EscrowRecord;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
+  get_report: (report_id: ReportId) -> (Result_4) query;
+  get_reports: () -> (Result_3) query;
+  get_sent_escrows: () -> (Result_2);
+  get_sent_escrows_paginated: (offset: nat, limit: nat) ->
+   (record {
+      items: vec EscrowRecord;
+      limit: nat;
+      offset: nat;
+      total: nat;
+    });
+  http_request: (req: HttpRequest) -> (HttpResponse) query;
+  http_request_update: (req: HttpRequest) -> (HttpResponse);
+  join_escrow: (params: AcceptEscrowParams) -> (Result_1);
+  mark_deposit: (escrow_id: EscrowId) -> (Result);
+  record_api_approval: (amount_e8s: nat, metadata: text) -> ();
+  record_native_payment: (link_id: text, tx_hash: text) -> (Result);
+  regenerate_api_token: (request: RegenerateTokenRequest) ->
+   (TokenOperationResponse);
+  release_escrow: (escrow_id: EscrowId) -> (Result);
+  revoke_api_token: (request: RevokeTokenRequest) -> (TokenOperationResponse);
   unstake_created_report: (report_id: ReportId) -> (Result);
   unstake_voted_report: (report_id: ReportId) -> (Result);
+  validate_api_token: (token_string: text) -> (opt principal) query;
   vote_report: (params: VoteReportParams) -> (Result);
 }

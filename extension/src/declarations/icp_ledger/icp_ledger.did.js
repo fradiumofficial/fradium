@@ -360,7 +360,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text }))],
         ['query'],
       ),
-    'icrc1_balance_of' : IDL.Func([Account], [IDL.Nat64], ['query']),
+    'icrc1_balance_of' : IDL.Func([Account], [Icrc1Tokens], ['query']),
     'icrc1_decimals' : IDL.Func([], [IDL.Nat8], ['query']),
     'icrc1_fee' : IDL.Func([], [Icrc1Tokens], ['query']),
     'icrc1_metadata' : IDL.Func(
