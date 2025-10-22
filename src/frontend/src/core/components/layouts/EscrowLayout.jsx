@@ -409,8 +409,91 @@ function EscrowLayoutContent() {
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
 
+        {/* Topbar khusus mobile */}
+        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219]/95 backdrop-blur-lg fixed top-0 left-0 right-0 z-40 border-b border-white/10">
+          {/* Logo Fradium kiri */}
+          <Link to="/">
+            <img src="/assets/logo/fradium-escrow.svg" alt="Fradium Escrow" className="h-10 w-auto" />
+          </Link>
+          {/* Switch Service & user button kanan */}
+          <div className="flex items-center gap-2">
+            {/* Switch Services */}
+            <SwitchServices compact={true} color="#7C72FE" />
+            {/* User Button */}
+            <div className="relative profile-dropdown">
+              <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="flex items-center justify-center bg-white/5 hover:bg-white/10 backdrop-blur-lg w-9 h-9 rounded-lg border border-white/10 transition-all">
+                <User className="w-5 h-5 text-white" />
+              </button>
+              {/* Profile Dropdown Menu (mobile: full screen modal) */}
+              {isProfileDropdownOpen && (
+                <div className="fixed inset-0 z-50 bg-[#0F1219] md:hidden flex flex-col">
+                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10 bg-[#0F1219]">
+                    <div className="text-white text-xl font-semibold">Profile</div>
+                    <button onClick={() => setIsProfileDropdownOpen(false)} className="text-white/80 hover:text-white text-2xl font-bold focus:outline-none transition-colors">
+                      &times;
+                    </button>
+                  </div>
+                  <div className="flex-1 flex flex-col justify-start px-4 pt-4 gap-2 pb-24 bg-[#0F1219]">
+                    <button
+                      className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(addresses?.icp_principal || "");
+                          // Optional: Show success feedback
+                        } catch (error) {
+                          console.error("Failed to copy:", error);
+                        }
+                        setIsProfileDropdownOpen(false);
+                      }}>
+                      <Copy className="w-5 h-5 text-[#7C72FE]" />
+                      <span className="text-white font-medium">Copy Principal</span>
+                    </button>
+
+                    <div className="h-px bg-white/10 my-2"></div>
+
+                    <button className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#7C72FE]">
+                        <circle cx="12" cy="12" r="10" stroke="#7C72FE" strokeWidth="2" />
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                      <span className="text-white font-medium">Why Fradium</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#7C72FE]">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="14,2 14,8 20,8" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="16" y1="13" x2="8" y2="13" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="16" y1="17" x2="8" y2="17" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="10,9 9,9 8,9" stroke="#7C72FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span className="text-white font-medium">Documentation</span>
+                    </button>
+
+                    <div className="h-px bg-white/10 my-2"></div>
+                    <SocialLinksDropdown color="#7C72FE" />
+
+                    {/* Logout Button */}
+                    <div className="mt-2">
+                      <button
+                        className="flex items-center gap-3 w-full px-4 py-3 text-base text-red-500 hover:text-red-600 rounded-lg hover:bg-red-500/10 transition-all font-medium"
+                        onClick={() => {
+                          navigate("/");
+                          logout();
+                        }}>
+                        <LogOut className="w-5 h-5" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* ===== START: MAIN CONTENT ===== */}
-        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 pb-28 md:pb-8 pt-8 md:pt-7 flex flex-col md:pl-[15%] lg:pl-[16%] xl:pl-[18%] xl:pr-[20%]">
+        <main className="relative z-10 flex-1 w-full max-w-full p-4 md:p-8 pb-28 md:pb-8 pt-20 md:pt-7 flex flex-col md:pl-[15%] lg:pl-[16%] xl:pl-[18%] xl:pr-[20%]">
           {/* Trade Invitation Alert - Full Width (Hidden on detail page) */}
           {!location.pathname.includes("/escrow/detail/") && (
             <div className="w-full mb-4">

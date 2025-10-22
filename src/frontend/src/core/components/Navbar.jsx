@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
-import { ChevronDown, FileText, LogOut, Coins } from "lucide-react";
+import { ChevronDown, FileText, LogOut, Coins, Menu, User } from "lucide-react";
 
 import { fradium_ledger as token } from "declarations/fradium_ledger";
 
 import { useAuth } from "@/core/providers/AuthProvider";
 import { Button as ButtonShad } from "@/core/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/core/components/ui/DropdownMenu";
+import { Sheet, SheetContent, SheetTrigger } from "@/core/components/ui/sheet";
 import { LoadingState } from "@/core/components/ui/LoadingState";
 import SidebarButton from "@/core/components/SidebarButton";
 import ButtonPurple from "@/core/components/ButtonPurple";
@@ -57,7 +58,7 @@ const navigationItems = [
 ];
 
 const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, handleLogin, logout, identity } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,6 +69,8 @@ const Navbar = () => {
   const [developersDropdown, setDevelopersDropdown] = useState(false);
   const developersDropdownTimeout = useRef();
   const [isLoading, setIsLoading] = useState(false);
+  const [mobileProductsDropdown, setMobileProductsDropdown] = useState(false);
+  const [mobileDevelopersDropdown, setMobileDevelopersDropdown] = useState(false);
 
   const pathname = location.pathname || "/";
 
@@ -273,118 +276,198 @@ const Navbar = () => {
           </div>
         )}
         {/* Hamburger Mobile */}
-        <button className="lg:hidden flex items-center justify-center p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#9BEB83]" onClick={() => setMenuOpen((prev) => !prev)} aria-label="Toggle menu">
-          {/* Hamburger Icon */}
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-      {/* Mobile Menu Dropdown - Web3 Style */}
-      {menuOpen && (
-        <div
-          className="lg:hidden fixed top-[72px] left-0 w-full min-h-[calc(100vh-72px)] z-[1100] flex flex-col items-center justify-start px-4 py-6"
-          style={{
-            backdropFilter: "blur(16px)",
-            background: "rgba(12,13,20,0.85)",
-          }}>
-          {/* Background visual (dummy asset) */}
-          <img src="/assets/images/glow.png" className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none" alt="bg" />
-          {/* Glassmorphism Card */}
-          <div className="relative w-full max-w-sm mx-auto rounded-2xl bg-gradient-to-br from-[#23272f80] to-[#181c2280] border border-[rgba(155,235,131,0.25)] shadow-[0_4px_32px_0_rgba(155,235,131,0.15)] p-6 flex flex-col gap-6 animate-fadeIn">
-            {/* Menu items */}
-            {navigationItems.map((item) =>
-              item.external ? (
-                <a key={item.label} href={item.href} target="_blank" className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
-                  {item.label}
-                </a>
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <ButtonShad variant="ghost" size="icon" className="lg:hidden relative z-50">
+              <Menu className="h-5 w-5 text-white" />
+            </ButtonShad>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[85%] sm:w-[350px] p-0 bg-black/95 backdrop-blur-lg border-white/10">
+            <div className="flex flex-col h-full">
+              {/* Mobile Menu Header */}
+              <div className="border-b border-white/10 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <img src="/assets/logo/fradium.svg" alt="Fradium Logo" className="h-8 w-auto" draggable="false" />
+                </div>
+              </div>
+
+              {/* User Info & Balance - Mobile */}
+              {isAuthenticated && identity ? (
+                <div className="border-b border-white/10 p-4">
+                  <div className="flex flex-col gap-3">
+                    {/* User Profile */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                      <div className="relative h-10 w-10 overflow-hidden rounded-full">
+                        <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${identity.getPrincipal().toString()}&colors=000000`} alt="User avatar" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-white">{formatAddress(identity.getPrincipal().toString())}</span>
+                        <div className="flex items-center gap-1 text-xs text-white/60">
+                          <p className="truncate max-w-[150px]">{identity.getPrincipal().toString()}</p>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(identity.getPrincipal().toString());
+                                toast.success("Principal ID copied!");
+                              } catch (error) {
+                                toast.error("Failed to copy");
+                              }
+                            }}
+                            className="hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Balance */}
+                    <div
+                      className="flex items-center gap-3 p-3 rounded-lg bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
+                      onClick={() => {
+                        navigate("/balance");
+                        setIsMobileMenuOpen(false);
+                      }}>
+                      <Coins className="h-6 w-6 text-[#9BEB83]" />
+                      <div className="flex flex-col">
+                        <span className="text-sm text-white/60">FRADIUM Balance</span>
+                        <span className="text-base font-medium text-white">{convertE8sToToken(balance)} FRADIUM</span>
+                      </div>
+                    </div>
+
+                    {/* User Actions */}
+                    <ButtonShad
+                      variant="ghost"
+                      className="w-full justify-start text-white hover:bg-white/10"
+                      onClick={() => {
+                        navigate("/my-report");
+                        setIsMobileMenuOpen(false);
+                      }}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      My Reports
+                    </ButtonShad>
+
+                    {/* Logout Button */}
+                    <ButtonShad
+                      variant="ghost"
+                      className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </ButtonShad>
+                  </div>
+                </div>
               ) : (
-                <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
-                  {item.label}
-                </Link>
-              )
-            )}
-            {/* Products Dropdown Mobile */}
-            <div className="w-full">
-              <div className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
-                Products <ChevronDown className="w-4 h-4" />
-              </div>
-              {productsDropdown && (
-                <div className="flex flex-col bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] mt-1">
-                  <Link
-                    to="/products"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setProductsDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    Extension
-                  </Link>
-                  <Link
-                    to="/products-wallet"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setProductsDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    Wallet
-                  </Link>
-                  <Link
-                    to="/products-escrow"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setProductsDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    Escrow
-                  </Link>
-                  <Link
-                    to="/products-paylink"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setProductsDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    Paylink
-                  </Link>
+                <div className="border-b border-white/10 p-4">
+                  <ButtonPurple size="sm" onClick={handleSignIn} loading={isLoading} className="w-full" fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
+                    Sign in
+                  </ButtonPurple>
                 </div>
               )}
-            </div>
-            {/* Developers Dropdown Mobile */}
-            <div className="w-full">
-              <div className="font-[General Sans, sans-serif] text-base font-medium text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setDevelopersDropdown((v) => !v)}>
-                Developers <ChevronDown className="w-4 h-4" />
+
+              {/* Mobile Navigation */}
+              <div className="flex-1 overflow-auto py-4">
+                <nav className="flex flex-col px-4 gap-1">
+                  {navigationItems.map((item) =>
+                    item.external ? (
+                      <a key={item.label} href={item.href} target="_blank" className="flex items-center py-3 px-3 rounded-md hover:bg-white/10 text-white font-medium transition-colors">
+                        <span>{item.label}</span>
+                      </a>
+                    ) : (
+                      <Link key={item.label} to={item.href} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center py-3 px-3 rounded-md hover:bg-white/10 text-white font-medium transition-colors">
+                        <span>{item.label}</span>
+                      </Link>
+                    )
+                  )}
+
+                  {/* Developers Dropdown Mobile */}
+                  <div className="w-full">
+                    <button className="w-full flex items-center justify-between py-3 px-3 rounded-md hover:bg-white/10 text-white font-medium transition-colors" onClick={() => setMobileDevelopersDropdown((v) => !v)}>
+                      Developers
+                      <ChevronDown className={cn("w-4 h-4 transition-transform", mobileDevelopersDropdown && "rotate-180")} />
+                    </button>
+                    {mobileDevelopersDropdown && (
+                      <div className="flex flex-col ml-4 mt-1">
+                        <Link
+                          to="/developer-overview"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileDevelopersDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          API Dashboard
+                        </Link>
+                        <Link
+                          to="/developer-pricing"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileDevelopersDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Usage & Pricing
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Products Dropdown Mobile */}
+                  <div className="w-full">
+                    <button className="w-full flex items-center justify-between py-3 px-3 rounded-md hover:bg-white/10 text-white font-medium transition-colors" onClick={() => setMobileProductsDropdown((v) => !v)}>
+                      Products
+                      <ChevronDown className={cn("w-4 h-4 transition-transform", mobileProductsDropdown && "rotate-180")} />
+                    </button>
+                    {mobileProductsDropdown && (
+                      <div className="flex flex-col ml-4 mt-1">
+                        <Link
+                          to="/products-wallet"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Wallet App
+                        </Link>
+                        <Link
+                          to="/products-extension"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Wallet Extension
+                        </Link>
+                        <Link
+                          to="/products-escrow"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Escrow
+                        </Link>
+                        <Link
+                          to="/products-paylink"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Paylink
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </nav>
               </div>
-              {developersDropdown && (
-                <div className="flex flex-col bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] mt-1">
-                  <Link
-                    to="/developers/pricing"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setDevelopersDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    Usage & Pricing
-                  </Link>
-                  <Link
-                    to="/developers/api"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setDevelopersDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    API & SDK
-                  </Link>
-                </div>
-              )}
             </div>
-            {/* Sign In Button Mobile - Neon Style */}
-            <ButtonPurple size="sm" onClick={handleSignIn} loading={isLoading} className="w-11/12 max-w-xs mt-2" fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
-              Sign in
-            </ButtonPurple>
-          </div>
-        </div>
-      )}
+          </SheetContent>
+        </Sheet>
+      </div>
     </header>
   );
 };

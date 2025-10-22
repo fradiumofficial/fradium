@@ -368,7 +368,8 @@ export const WalletProvider = ({ children }) => {
         setBalances((prev) => ({ ...prev, [token.id]: formattedBalance }));
       } catch (error) {
         console.error(`Error fetching balance for ${token.symbol}:`, error);
-        setBalanceErrors((prev) => ({ ...prev, [token.id]: error.message || "Failed to fetch balance" }));
+        // Don't set error state, just set balance to 0
+        // setBalanceErrors((prev) => ({ ...prev, [token.id]: error.message || "Failed to fetch balance" }));
         setBalances((prev) => ({ ...prev, [token.id]: "0.000000" }));
       } finally {
         setBalanceLoading((prev) => ({ ...prev, [token.id]: false }));
@@ -459,7 +460,8 @@ export const WalletProvider = ({ children }) => {
       setUsdPrices((prev) => ({ ...prev, [tokenId]: price }));
     } catch (error) {
       console.error(`Error fetching USD price for token ${tokenId}:`, error);
-      setUsdPriceErrors((prev) => ({ ...prev, [tokenId]: error.message || "Failed to fetch price" }));
+      // Don't set error state, just set price to null (will show $0.00)
+      // setUsdPriceErrors((prev) => ({ ...prev, [tokenId]: error.message || "Failed to fetch price" }));
       setUsdPrices((prev) => ({ ...prev, [tokenId]: null }));
     } finally {
       setUsdPriceLoading((prev) => ({ ...prev, [tokenId]: false }));

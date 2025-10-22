@@ -315,49 +315,51 @@ function WalletLayoutContent() {
         </aside>
         {/* ===== END: SIDEBAR KIRI ===== */}
         {/* Topbar khusus mobile */}
-        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219] fixed top-0 left-0 right-0 z-40 border-b border-[#23272F]">
+        <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-[#0F1219]/95 backdrop-blur-lg fixed top-0 left-0 right-0 z-40 border-b border-white/10">
           {/* Logo Fradium kiri */}
           <Link to="/">
-            <img src="/logo.svg" alt="Fradium Logo" className="w-10 h-10" />
+            <img src="/assets/logo/fradium-wallet.svg" alt="Fradium Logo" className="h-10 w-auto" />
           </Link>
-          {/* Network dropdown & user button kanan */}
+          {/* Switch Service, Network dropdown & user button kanan */}
           <div className="flex items-center gap-2">
+            {/* Switch Services */}
+            <SwitchServices compact={true} />
             {/* Network Dropdown */}
             <div className="relative network-dropdown">
-              <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-2 bg-[#23272F] px-3 py-2 text-white font-medium text-xs rounded-md hover:bg-[#2A2F36] transition-all">
-                <img src="/assets/icons/construction.svg" alt="All Networks" className="w-5 h-5" />
+              <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 backdrop-blur-lg px-3 py-2 text-white font-medium text-xs rounded-lg border border-white/10 transition-all">
+                <img src="/assets/icons/construction.svg" alt="All Networks" className="w-4 h-4" />
                 <span className="text-white pr-1 capitalize text-xs">{network}</span>
                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" className={`ml-auto transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}>
-                  <path d="M7 10l5 5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M7 10l5 5 5-5" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               {/* Dropdown Menu (mobile: full screen modal) */}
               {isDropdownOpen && (
-                <div className="fixed inset-0 z-50 bg-[#23242A] md:hidden flex flex-col">
-                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#23272F]">
-                    <div className="text-white text-xl font-semibold">All Networks</div>
-                    <button onClick={() => setIsDropdownOpen(false)} className="text-white text-2xl font-bold focus:outline-none">
+                <div className="fixed inset-0 z-50 bg-[#0F1219] md:hidden flex flex-col">
+                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10 bg-[#0F1219]">
+                    <div className="text-white text-xl font-semibold">Select Network</div>
+                    <button onClick={() => setIsDropdownOpen(false)} className="text-white/80 hover:text-white text-2xl font-bold focus:outline-none transition-colors">
                       &times;
                     </button>
                   </div>
-                  <div className="flex-1 flex flex-col justify-start px-2 pt-2">
+                  <div className="flex-1 flex flex-col justify-start px-4 pt-4 gap-2 bg-[#0F1219]">
                     <button
                       onClick={() => {
                         handleNetworkChange("All Networks");
                         setIsDropdownOpen(false);
                       }}
-                      className={`flex items-center justify-between w-full px-4 py-4 text-base ${network === "All Networks" ? "bg-[#34373D]" : ""}`}>
+                      className={`flex items-center justify-between w-full px-4 py-3 text-base rounded-lg transition-all ${network === "All Networks" ? "bg-white/10 border border-[#9BE4A0]/30" : "hover:bg-white/10"}`}>
                       <div className="flex items-center gap-3">
                         {network === "All Networks" ? (
-                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                            <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                            <path d="M20 6L9 17l-5-5" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         ) : (
-                          <div className="w-4 h-4"></div>
+                          <div className="w-[18px] h-[18px]"></div>
                         )}
                         <span className="text-white font-medium">All Networks</span>
                       </div>
-                      <span className="text-[#9CA3AF] text-base font-medium">{getNetworkValue("All Networks")}</span>
+                      <span className="text-white/60 text-sm font-medium">{getNetworkValue("All Networks")}</span>
                     </button>
                     {getAvailableNetworks().map((net) => (
                       <button
@@ -366,122 +368,125 @@ function WalletLayoutContent() {
                           handleNetworkChange(net.name);
                           setIsDropdownOpen(false);
                         }}
-                        className={`flex items-center justify-between w-full px-4 py-4 text-base ${network === net.name ? "bg-[#34373D]" : ""}`}>
+                        className={`flex items-center justify-between w-full px-4 py-3 text-base rounded-lg transition-all ${network === net.name ? "bg-white/10 border border-[#9BE4A0]/30" : "hover:bg-white/10"}`}>
                         <div className="flex items-center gap-3">
                           {network === net.name ? (
-                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                              <path d="M20 6L9 17l-5-5" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                              <path d="M20 6L9 17l-5-5" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           ) : (
-                            <div className="w-4 h-4"></div>
+                            <div className="w-[18px] h-[18px]"></div>
                           )}
                           <span className="text-white font-medium">{net.name}</span>
                         </div>
-                        <span className="text-[#9CA3AF] text-base font-medium">{net.value}</span>
+                        <span className="text-white/60 text-sm font-medium">{net.value}</span>
                       </button>
                     ))}
-                    <button
-                      className="flex items-center gap-2 px-4 py-4 text-base text-[#9BEB83] font-medium mt-2"
-                      onClick={() => {
-                        setShowManageNetworks(true);
-                        setIsDropdownOpen(false);
-                      }}>
-                      <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
-                      Manage Networks
-                    </button>
+                    <div className="border-t border-white/10 mt-2 pt-2">
+                      <button
+                        className="flex items-center gap-3 w-full px-4 py-3 text-base text-[#9BE4A0] hover:text-[#9BE4A0] font-medium rounded-lg hover:bg-white/5 transition-all"
+                        onClick={() => {
+                          setShowManageNetworks(true);
+                          setIsDropdownOpen(false);
+                        }}>
+                        <img src="/assets/icons/construction.svg" alt="Manage Networks" className="w-5 h-5" />
+                        Manage Networks
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
             {/* User Button */}
             <div className="relative profile-dropdown">
-              <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="flex items-center justify-center bg-[#23272F] w-9 h-9 rounded-md hover:bg-[#2A2F36] transition-all">
+              <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} className="flex items-center justify-center bg-white/5 hover:bg-white/10 backdrop-blur-lg w-9 h-9 rounded-lg border border-white/10 transition-all">
                 <img src="/assets/icons/person.svg" alt="User" className="w-5 h-5" />
               </button>
               {/* Profile Dropdown Menu (mobile: full screen modal) */}
               {isProfileDropdownOpen && (
-                <div className="fixed inset-0 z-50 bg-[#23242A] md:hidden flex flex-col">
-                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#23272F]">
+                <div className="fixed inset-0 z-50 bg-[#0F1219] md:hidden flex flex-col">
+                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10 bg-[#0F1219]">
                     <div className="text-white text-xl font-semibold">Profile</div>
-                    <button onClick={() => setIsProfileDropdownOpen(false)} className="text-white text-2xl font-bold focus:outline-none">
+                    <button onClick={() => setIsProfileDropdownOpen(false)} className="text-white/80 hover:text-white text-2xl font-bold focus:outline-none transition-colors">
                       &times;
                     </button>
                   </div>
-                  <div className="flex-1 flex flex-col justify-start px-2 pt-2 gap-1 pb-24">
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={handleToggleHideBalance}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
+                  <div className="flex-1 flex flex-col justify-start px-4 pt-4 gap-2 pb-24 bg-[#0F1219]">
+                    <button className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all" onClick={handleToggleHideBalance}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
                         {contextHideBalance ? (
                           <>
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx="12" cy="12" r="3" stroke="#9BEB83" strokeWidth="2" />
-                            <path d="M1 1l22 22" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
+                            <path d="M1 1l22 22" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </>
                         ) : (
                           <>
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx="12" cy="12" r="3" stroke="#9BEB83" strokeWidth="2" />
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <circle cx="12" cy="12" r="3" stroke="#9BE4A0" strokeWidth="2" />
                           </>
                         )}
                       </svg>
-                      <span className="text-white">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
+                      <span className="text-white font-medium">{contextHideBalance ? "Show balance" : "Hide balance"}</span>
                     </button>
                     <button
-                      className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]"
+                      className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all"
                       onClick={() => {
                         copyICPPrincipal();
                         setIsProfileDropdownOpen(false);
                       }}>
                       <img src="/assets/icons/copy-green.svg" alt="Your Principal" className="w-5 h-5" />
-                      <span className="text-white">Your Principal</span>
+                      <span className="text-white font-medium">Your Principal</span>
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]">
+                    <button className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all">
                       <img src="/assets/icons/share-green.svg" alt="Refer your friends" className="w-5 h-5" />
-                      <span className="text-white">Refer your friends</span>
+                      <span className="text-white font-medium">Refer your friends</span>
                     </button>
-                    <div className="h-px bg-white/10 mx-4 my-2"></div>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                        <circle cx="12" cy="12" r="10" stroke="#9BEB83" strokeWidth="2" />
-                        <line x1="12" y1="8" x2="12" y2="12" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" />
+
+                    <div className="h-px bg-white/10 my-2"></div>
+
+                    <button className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all" onClick={() => window.open("https://fradium.gitbook.io/docs/introduction/why-fradium", "_blank")}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                        <circle cx="12" cy="12" r="10" stroke="#9BE4A0" strokeWidth="2" />
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" />
                       </svg>
-                      <span className="text-white">Why Fradium</span>
+                      <span className="text-white font-medium">Why Fradium</span>
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-base text-[#9BEB83]" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BEB83]">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="14,2 14,8 20,8" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <line x1="16" y1="13" x2="8" y2="13" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <line x1="16" y1="17" x2="8" y2="17" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <polyline points="10,9 9,9 8,9" stroke="#9BEB83" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <button className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all" onClick={() => window.open("https://fradium.gitbook.io/docs", "_blank")}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-[#9BE4A0]">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="14,2 14,8 20,8" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="16" y1="13" x2="8" y2="13" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="16" y1="17" x2="8" y2="17" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="10,9 9,9 8,9" stroke="#9BE4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      <span className="text-white">Documentation</span>
+                      <span className="text-white font-medium">Documentation</span>
                     </button>
                     <button
-                      className="w-full text-sm transition-colors group"
+                      className="flex items-center gap-3 px-4 py-3 text-base rounded-lg hover:bg-white/10 transition-all"
                       onClick={() => {
                         navigate("/wallet/setting");
                         setIsProfileDropdownOpen(false);
                       }}>
-                      <div className="mx-4 flex items-center gap-3 py-2 px-2 transition-colors group-hover:bg-[#4A4F57]">
-                        <img src="/assets/icons/setting-green.svg" alt="Settings" />
-                        <span className="text-white">Settings</span>
-                      </div>
+                      <img src="/assets/icons/setting-green.svg" alt="Settings" className="w-5 h-5" />
+                      <span className="text-white font-medium">Settings</span>
                     </button>
 
-                    <div className="h-px bg-white/5 mx-4"></div>
+                    <div className="h-px bg-white/10 my-2"></div>
                     <SocialLinksDropdown color="#9BE4A0" />
 
-                    {/* Logout Button using SidebarButton */}
-                    <div className="mx-4 mt-2">
-                      <SidebarButton
-                        icon="/assets/icons/logout-dark.svg"
+                    {/* Logout Button */}
+                    <div className="mt-2">
+                      <button
+                        className="flex items-center gap-3 w-full px-4 py-3 text-base text-red-500 hover:text-red-600 rounded-lg hover:bg-red-500/10 transition-all font-medium"
                         onClick={() => {
                           navigate("/");
                           logout();
                         }}>
+                        <img src="/assets/icons/logout-dark.svg" alt="Logout" className="w-5 h-5" />
                         Logout
-                      </SidebarButton>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -523,26 +528,28 @@ function WalletLayoutContent() {
       </div>
 
       {/* Bottom Navigation: hanya tampil di mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181C22] border-t border-[#23272F] flex md:hidden justify-between px-1 py-3" style={{ height: "80px" }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#0F1219]/95 backdrop-blur-lg border-t border-white/10 flex md:hidden justify-between px-1 py-2" style={{ height: "72px" }}>
         {menu.map((item, idx) => {
           const isActive = normalize(location.pathname) === normalize(item.path);
-          // Mapping nama menu ke icon mobile
-          const mobileIconMap = {
-            wallet: "wallet",
-            "analyze-address": "analyze-address",
-            "analyze-contract": "analyze-contract",
-            "transaction-history": "transaction-history",
-            history: "scan-history",
-            setting: "setting",
+          // Mapping nama menu ke icon mobile (gunakan icon dari getSidebarIconUrl)
+          const iconSrc = getSidebarIconUrl(item.label, isActive);
+
+          // Create shorter labels for mobile
+          const getMobileLabel = (label) => {
+            const mobileLabels = {
+              Assets: "Assets",
+              "Analyze Address": "Analyze",
+              "Transaction History": "History",
+              "Scan History": "Scans",
+              Settings: "Settings",
+            };
+            return mobileLabels[label] || label;
           };
-          const mobileIconKey = mobileIconMap[item.icon] || item.icon;
-          const iconSrc = `/assets/icons/mobile/${mobileIconKey}-${isActive ? "active" : "non"}.svg`;
+
           return (
-            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-1 transition-all duration-150 ${isActive ? "text-[#9BEB83] bg-[#9BE4A01A] rounded-sm shadow-[0_0_8px_0_#9BE4A01A]" : "text-[#FFFFFF99]"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "6px 0" }}>
-              <img src={iconSrc} alt={item.label} className="w-5 h-5 mb-0.5" />
-              <span className="leading-tight text-center text-xs" style={{ fontWeight: 400 }}>
-                {item.label}
-              </span>
+            <Link key={item.label} to={item.path} className={`flex flex-col items-center justify-center flex-1 mx-0.5 rounded-lg transition-all duration-200 ${isActive ? "text-white bg-white/10 shadow-[0_0_12px_rgba(155,228,160,0.2)]" : "text-white/60 hover:text-white/90 hover:bg-white/5"}`} style={{ fontSize: "10px", minWidth: 0, minHeight: 0, padding: "8px 2px" }}>
+              <img src={iconSrc} alt={item.label} className="w-5 h-5 mb-1" />
+              <span className="leading-tight text-center text-[10px] font-medium whitespace-nowrap px-1">{getMobileLabel(item.label)}</span>
             </Link>
           );
         })}

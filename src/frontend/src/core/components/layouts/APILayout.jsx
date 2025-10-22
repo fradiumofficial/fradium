@@ -175,10 +175,23 @@ function APILayoutContent() {
         <div className="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white/80 backdrop-blur-md fixed top-0 left-0 right-0 z-40 border-b border-slate-200">
           {/* Logo Fradium kiri */}
           <Link to="/">
-            <img src="/assets/logo/fradium-developer-light.svg" alt="Fradium Logo" className="w-10 h-10" />
+            <img src="/assets/logo/fradium-developer-light.svg" alt="Fradium Developer" className="h-10 w-auto" />
           </Link>
-          {/* User dropdown kanan menggunakan ProfileDropdown */}
-          <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={identity?.getPrincipal()?.toString()} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
+          {/* Balance & User dropdown kanan */}
+          <div className="flex items-center gap-2">
+            {/* FRADIUM balance pill */}
+            {(() => {
+              const balanceText = contextHideBalance ? "••••" : fradiumBalance;
+              return (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white shadow-sm">
+                  <img src="/assets/images/coins/fradium.webp" alt="FRADIUM" className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium text-slate-900">{balanceText}</span>
+                </div>
+              );
+            })()}
+            {/* User dropdown menggunakan ProfileDropdown */}
+            <ProfileDropdown isOpen={isProfileDropdownOpen} setIsOpen={setIsProfileDropdownOpen} contextHideBalance={contextHideBalance} handleToggleHideBalance={handleToggleHideBalance} icpPrincipal={identity?.getPrincipal()?.toString()} showSettings={false} logout={logout} color="#000000" background="light" showHideBalance={false} />
+          </div>
         </div>
 
         {/* ===== START: SIDEBAR KIRI (Desktop) ===== */}

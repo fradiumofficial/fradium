@@ -1,5 +1,8 @@
 import React, { useState, useRef } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { ChevronDown, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/core/components/ui/sheet";
+import { Button as ButtonShad } from "@/core/components/ui/button";
 import Button from "./Button";
 
 const navigationItems = [
@@ -12,23 +15,23 @@ const navigationItems = [
 ];
 
 const NavbarLogined = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [productsDropdown, setProductsDropdown] = useState(false);
   const productsDropdownTimeout = useRef();
+  const [mobileProductsDropdown, setMobileProductsDropdown] = useState(false);
+  const navigate = useNavigate();
+
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#0C0D14] flex items-center justify-center min-h-[72px] z-[1000]">
-      <div className="w-full max-w-[1440px] flex items-center justify-between px-12 min-h-[72px]">
+    <header className="fixed top-0 left-0 w-full backdrop-blur-lg bg-black/50 flex items-center justify-center min-h-[72px] z-[1000]">
+      <div className="w-full max-w-[1440px] flex items-center justify-between lg:px-12 md:px-8 sm:px-4 px-2 min-h-[72px]">
         {/* Logo */}
-        <div className="flex items-center gap-3 select-none">
-          <img src="/logo.svg" alt="Fradium Logo" className="h-9 w-auto" draggable="false" />
-          <span className="font-semibold text-[28px] text-white tracking-wider font-[General Sans, sans-serif]">
-            Cryp<span className="text-[#9BEB83]">go</span>
-          </span>
+        <div className="flex items-center gap-2 sm:gap-3 select-none min-w-fit cursor-pointer" onClick={() => navigate("/")}>
+          <img src="/assets/logo/fradium.svg" alt="Fradium Logo" className="h-9 sm:h-9 w-auto" draggable="false" />
         </div>
         {/* Menu Desktop */}
-        <nav className="hidden md:flex flex-1 justify-center items-center gap-12 relative">
+        <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-12 relative">
           {navigationItems.map((item) => (
-            <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83]">
+            <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-base font-normal text-white/70 hover:text-[#9BEB83] no-underline transition-colors duration-200">
               {item.label}
             </Link>
           ))}
@@ -42,15 +45,13 @@ const NavbarLogined = () => {
             onMouseLeave={() => {
               productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
             }}>
-            <button className="font-[General Sans, sans-serif] text-base font-normal text-white no-underline transition-colors duration-200 hover:text-[#9BEB83] flex items-center gap-1" onClick={() => setProductsDropdown((v) => !v)} type="button">
+            <button className="font-[General Sans, sans-serif] text-base font-normal text-white/70 hover:text-[#9BEB83] no-underline transition-colors duration-200 flex items-center gap-1" onClick={() => setProductsDropdown((v) => !v)} type="button">
               Products
-              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown className="w-4 h-4" />
             </button>
             {productsDropdown && (
               <div
-                className="absolute top-full left-0 mt-2 w-40 bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] z-50 flex flex-col py-2 animate-fadeIn"
+                className="absolute top-full left-0 mt-0 w-56 bg-black backdrop-blur-lg border border-white/10 rounded-lg z-50 flex flex-col py-2 animate-fadeIn"
                 onMouseEnter={() => {
                   clearTimeout(productsDropdownTimeout.current);
                   setProductsDropdown(true);
@@ -58,11 +59,17 @@ const NavbarLogined = () => {
                 onMouseLeave={() => {
                   productsDropdownTimeout.current = setTimeout(() => setProductsDropdown(false), 200);
                 }}>
-                <Link to="/products" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors" onClick={() => setProductsDropdown(false)}>
-                  Extension
+                <Link to="/products-wallet" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Wallet App
                 </Link>
-                <Link to="/products-wallet" className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-sm transition-colors" onClick={() => setProductsDropdown(false)}>
-                  Wallet
+                <Link to="/products-extension" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Wallet Extension
+                </Link>
+                <Link to="/products-escrow" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Escrow
+                </Link>
+                <Link to="/products-paylink" className="px-4 py-2 text-white hover:bg-[#23272f] hover:text-[#9BEB83] text-left text-sm transition-colors rounded-md" onClick={() => setProductsDropdown(false)}>
+                  Fradium Paylink
                 </Link>
               </div>
             )}
@@ -86,71 +93,97 @@ const NavbarLogined = () => {
           </div>
         </div>
         {/* Hamburger Mobile */}
-        <button className="md:hidden flex items-center justify-center p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#9BEB83]" onClick={() => setMenuOpen((prev) => !prev)} aria-label="Toggle menu">
-          {/* Hamburger Icon */}
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <ButtonShad variant="ghost" size="icon" className="lg:hidden relative z-50">
+              <Menu className="h-5 w-5 text-white" />
+            </ButtonShad>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[85%] sm:w-[350px] p-0 bg-black/95 backdrop-blur-lg border-white/10">
+            <div className="flex flex-col h-full">
+              {/* Mobile Menu Header */}
+              <div className="border-b border-white/10 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <img src="/assets/logo/fradium.svg" alt="Fradium Logo" className="h-8 w-auto" draggable="false" />
+                </div>
+              </div>
+
+              {/* User Info - Mobile */}
+              <div className="border-b border-white/10 p-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                  <img src="/assets/images/icon-user.png" className="w-12 h-12 rounded-full border-2 border-[#9BE4A0]" alt="avatar" />
+                  <div>
+                    <div className="font-bold text-white text-base mb-1">wildan's wallet</div>
+                    <div className="text-xs text-white/60 flex items-center gap-1">
+                      Aux78923...Ux
+                      <img src="/assets/images/icon-copy.png" className="w-4 h-4" alt="copy" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Navigation */}
+              <div className="flex-1 overflow-auto py-4">
+                <nav className="flex flex-col px-4 gap-1">
+                  {navigationItems.map((item) => (
+                    <Link key={item.label} to={item.href} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center py-3 px-3 rounded-md hover:bg-white/10 text-white font-medium transition-colors">
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+
+                  {/* Products Dropdown Mobile */}
+                  <div className="w-full">
+                    <button className="w-full flex items-center justify-between py-3 px-3 rounded-md hover:bg-white/10 text-white font-medium transition-colors" onClick={() => setMobileProductsDropdown((v) => !v)}>
+                      Products
+                      <ChevronDown className={`w-4 h-4 transition-transform ${mobileProductsDropdown ? "rotate-180" : ""}`} />
+                    </button>
+                    {mobileProductsDropdown && (
+                      <div className="flex flex-col ml-4 mt-1">
+                        <Link
+                          to="/products-wallet"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Wallet App
+                        </Link>
+                        <Link
+                          to="/products-extension"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Wallet Extension
+                        </Link>
+                        <Link
+                          to="/products-escrow"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Escrow
+                        </Link>
+                        <Link
+                          to="/products-paylink"
+                          className="py-2 px-3 text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                          onClick={() => {
+                            setMobileProductsDropdown(false);
+                            setIsMobileMenuOpen(false);
+                          }}>
+                          Fradium Paylink
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </nav>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
-      {/* Mobile Menu Dropdown - Web3 Style */}
-      {menuOpen && (
-        <div className="md:hidden fixed top-[72px] left-0 w-full min-h-[calc(100vh-72px)] z-[1100] flex flex-col items-center justify-start px-4 py-6" style={{ backdropFilter: "blur(16px)", background: "rgba(12,13,20,0.85)" }}>
-          {/* Background visual (dummy asset) */}
-          <img src="/assets/images/glow.png" className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none" alt="bg" />
-          {/* Glassmorphism Card */}
-          <div className="relative w-full max-w-sm mx-auto rounded-2xl bg-gradient-to-br from-[#23272f80] to-[#181c2280] border border-[rgba(155,235,131,0.25)] shadow-[0_4px_32px_0_rgba(155,235,131,0.15)] p-6 flex flex-col gap-6 animate-fadeIn">
-            {/* Menu items */}
-            {navigationItems.map((item) => (
-              <Link key={item.label} to={item.href} className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 transition-all duration-200 hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setMenuOpen(false)}>
-                {item.label}
-              </Link>
-            ))}
-            {/* Products Dropdown Mobile */}
-            <div className="w-full">
-              <div className="font-[General Sans, sans-serif] text-lg font-bold text-white no-underline rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-[0_0_8px_2px_#9BEB83] hover:bg-[#181C22]/60 focus:bg-[#181C22]/80 focus:shadow-[0_0_12px_3px_#A259FF] active:scale-95" onClick={() => setProductsDropdown((v) => !v)}>
-                Products
-                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-              {productsDropdown && (
-                <div className="flex flex-col bg-[#181C22] rounded-lg shadow-lg border border-[#23272f] mt-1">
-                  <Link
-                    to="/products"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setProductsDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    Extension
-                  </Link>
-                  <Link
-                    to="/products-wallet"
-                    className="px-4 py-2 text-white hover:bg-[#23272f] text-left text-base transition-colors"
-                    onClick={() => {
-                      setProductsDropdown(false);
-                      setMenuOpen(false);
-                    }}>
-                    Wallet
-                  </Link>
-                </div>
-              )}
-            </div>
-            {/* Wallet Card - Web3 Style */}
-            <div className="mt-2 p-4 rounded-xl bg-gradient-to-br from-[#181c22cc] to-[#23272fcc] border border-[#A259FF] shadow-[0_0_16px_2px_#A259FF80] flex items-center gap-4 animate-fadeIn">
-              {/* Pixel-art/generative avatar dummy */}
-              <img src="/assets/images/icon-user.png" className="w-12 h-12 rounded-full border-2 border-[#9BEB83] shadow-[0_0_8px_2px_#9BEB83] bg-[#23272f]" alt="avatar" />
-              <div>
-                <div className="font-bold text-white text-base mb-1">wildan's wallet</div>
-                <div className="text-xs text-[#B0B6BE] flex items-center gap-1">
-                  Aux78923...Ux <img src="/assets/images/icon-copy.png" className="w-4 h-4" alt="copy" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 };
