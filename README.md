@@ -113,6 +113,22 @@ A public API for developers to integrate **Fradium Analyzer** directly into wall
 
 ---
 
+## 🧪 Beta Testing with Real Users (SUS Framework)
+
+To ensure Fradium is not just powerful but also **usable**, we ran **beta tests with real users**, applying the **System Usability Scale (SUS)** framework.
+This gave us concrete feedback on clarity, efficiency, and user confidence.
+
+| ![Image 1](docs/images/testing/fieldwork.png) ![Image 2](docs/images/testing/experience.png) | ![Image 2](docs/images/testing/complex.png) ![Image 2](docs/images/testing/confident.png) |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+
+| [![Watch the video](https://img.youtube.com/vi/9H5q75SkUJg/maxresdefault.jpg)](https://youtu.be/9H5q75SkUJg) |
+| ------------------------------------------------------------------------------------------------------------ |
+
+🎥 Above is a short video recap of the beta testing process and user feedback:
+[Watch the video](https://youtu.be/9H5q75SkUJg)
+
+---
+
 ## How the Fradium AI Threat Detection Works (White-Box View):
 
 - **Real-Time Address Analysis**: Constantly analyzes blockchain addresses across multiple chains (Bitcoin, Ethereum, Solana, ICP) as transactions occur.
@@ -162,20 +178,6 @@ Other factors such as transaction amounts, contract interactions, and validator 
 | ![Image 1](docs/images/ai/precision.png) | ![Image 2](docs/images/ai/roc.png) | ![Image 3](docs/images/ai/training.png) |
 
 📖 For more details, see the [technical explanation](src/ai/README.md).
-
-## 🧪 Beta Testing with Real Users (SUS Framework)
-
-To ensure Fradium is not just powerful but also **usable**, we ran **beta tests with real users**, applying the **System Usability Scale (SUS)** framework.
-This gave us concrete feedback on clarity, efficiency, and user confidence.
-
-| ![Image 1](docs/images/testing/fieldwork.png) ![Image 2](docs/images/testing/experience.png) | ![Image 2](docs/images/testing/complex.png) ![Image 2](docs/images/testing/confident.png) |
-| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-
-| [![Watch the video](https://img.youtube.com/vi/9H5q75SkUJg/maxresdefault.jpg)](https://youtu.be/9H5q75SkUJg) |
-| ------------------------------------------------------------------------------------------------------------ |
-
-🎥 Above is a short video recap of the beta testing process and user feedback:
-[Watch the video](https://youtu.be/9H5q75SkUJg)
 
 ---
 
