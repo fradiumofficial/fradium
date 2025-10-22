@@ -484,7 +484,7 @@ const PaymentRequestPage = () => {
             </motion.div>
           </div>
           <div className="px-6 pb-6 bg-white">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mt-5">
               <div className="col-span-2 flex items-start justify-between gap-6">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="space-y-1">
                   <p className="text-xs text-gray-500">Amount</p>
@@ -522,7 +522,7 @@ const PaymentRequestPage = () => {
               </motion.div>
             </div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col sm:flex-row gap-3 mt-6">
-              <button onClick={() => navigate("/wallet")} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-transparent hover:bg-yellow-50/50 border border-[#AA8D42] rounded-xl transition-colors duration-200 ease-out text-sm font-semibold text-[#AA8D42]">
+              <button onClick={() => navigate("/")} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-transparent hover:bg-yellow-50/50 border border-[#AA8D42] rounded-xl transition-colors duration-200 ease-out text-sm font-semibold text-[#AA8D42]">
                 Explore Fradium
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -640,7 +640,6 @@ const PaymentRequestPage = () => {
             <AnimatePresence>
               {showAnalysisResult && analysisResult && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} layout>
-                  <h3 className="text-xs font-semibold text-gray-800 mb-2">Payment Request Analysis</h3>
                   {isAnalysisMinimized ? (
                     <div onClick={handleToggleAnalysisView} className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors ${analysisResult.result.isSafe ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"} border`}>
                       <div className="flex items-center gap-2">
