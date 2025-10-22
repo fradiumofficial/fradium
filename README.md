@@ -322,8 +322,6 @@ This flow demonstrates how users can purchase Fradium tokens directly using fiat
 - **DAO-Driven Community Reporting & Voting**: A fully on-chain governance system where users can report suspicious addresses, validate evidence, and participate in decentralized voting—forming a security-focused DAO that strengthens collective trust in Web3.
 - **Custom $FRADIUM Token**: Native utility and governance token built with **ICRC-1 and ICRC-2 standards**, powering staking, voting, and rewarding credible community contributions.
 
-Here’s how your **Future Roadmap** section can be presented beautifully in a **GitHub README** — optimized for clarity, structure, and readability, while keeping the same visual hierarchy as your original slides.
-
 ---
 
 ## 🗺️ Future Roadmap
