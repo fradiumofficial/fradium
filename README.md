@@ -108,7 +108,7 @@ The native utility and governance token powering the Fradium ecosystem.
 A public API for developers to integrate **Fradium Analyzer** directly into wallets, dApps, or exchanges.
 
 - Embed real-time risk detection into your own platform.
-- Authenticate via **FUM tokens** for usage credits.
+- Authenticate via **FRADIUM tokens** for usage credits.
 - Boost trust and safety for your Web3 users.
 
 ---
@@ -167,7 +167,7 @@ Other factors such as transaction amounts, contract interactions, and validator 
 - **Bitcoin Detection**: Analyzes UTXO patterns, transaction clustering, and spending behaviors
 - **Ethereum Detection**: Examines smart contract interactions, ERC-20 token flows, and gas usage patterns
 - **Solana Detection**: Evaluates program interactions, token account behaviors, and validator patterns
-- \*\*ICP Detection: Monitors canister interaction patterns, cycles consumption behavior, principal authentication analysis, and inter-canister communication patterns
+- **ICP Detection**: Monitors canister interaction patterns, cycles consumption behavior, principal authentication analysis, and inter-canister communication patterns
 
 | Features Importance                     | Confusion Matrix                         |
 | --------------------------------------- | ---------------------------------------- |
