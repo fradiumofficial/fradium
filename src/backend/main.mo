@@ -6,7 +6,6 @@ import Nat16 "mo:base/Nat16";
 import Nat "mo:base/Nat";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
-// removed unused HashMap/Iter after moving API usage to api module
 
 import FradiumLedgerOriginal "canister:fradium_ledger";
 import IcpLedgerOriginal "canister:icp_ledger";
@@ -139,11 +138,11 @@ persistent actor Fradium {
   };
 
   // ===== REPORT FUNCTIONS (COMMUNITY MODULE) =====
-  public query func get_reports() : async Types.Result<[CommunityTypes.Report], Text> {
+  public query func get_reports() : async Types.Result<[CommunityTypes.ReportWithStatus], Text> {
     return communityModule.get_reports();
   };
 
-  public query func get_report(report_id : CommunityTypes.ReportId) : async Types.Result<CommunityTypes.Report, Text> {
+  public query func get_report(report_id : CommunityTypes.ReportId) : async Types.Result<CommunityTypes.ReportWithStatus, Text> {
     return communityModule.get_report(report_id);
   };
 
@@ -308,7 +307,7 @@ persistent actor Fradium {
     return apiModule.getTokenInfo(token_string);
   };
 
-  // ===== ADMIN FUNCTIONS (ADMIN MODULE) =====
+  // ===== ADMIN DEBUG (THIS IS FOR TESTING ONLY) =====
   public func admin_change_report_deadline(report_id : CommunityTypes.ReportId, new_deadline : Time.Time) : async Types.Result<Text, Text> {
     return adminModule.admin_change_report_deadline(report_id, new_deadline, communityModule.get_report_store());
   };

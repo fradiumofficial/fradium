@@ -19,26 +19,6 @@ function getBalanceCacheKey(principal, tokenId) {
   return principal ? `${CACHE_CONFIG.BALANCE_CACHE_PREFIX}${principal}_${tokenId}` : `${CACHE_CONFIG.BALANCE_CACHE_PREFIX}default_${tokenId}`;
 }
 
-function loadBalanceFromStorage(principal, tokenId) {
-  const key = getBalanceCacheKey(principal, tokenId);
-  try {
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Check if cache is still valid
-      if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_CONFIG.BALANCE_CACHE_DURATION) {
-        return parsed.balance;
-      } else {
-        // Cache expired, remove it
-        localStorage.removeItem(key);
-      }
-    }
-  } catch (error) {
-    console.error("Error loading balance from localStorage:", error);
-  }
-  return null;
-}
-
 function saveBalanceToStorage(principal, tokenId, balance) {
   const key = getBalanceCacheKey(principal, tokenId);
   try {

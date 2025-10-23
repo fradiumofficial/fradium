@@ -479,6 +479,8 @@ const Home = React.memo(() => {
         {/* Background layer */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/60"></div>
         </div>
 
         {/* Content di atas background */}
@@ -594,6 +596,8 @@ const Home = React.memo(() => {
       <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[760px] overflow-hidden">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL_2} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/60"></div>
         </div>
         {/* Fade dari warna dasar ke background-2 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
@@ -661,58 +665,58 @@ const Home = React.memo(() => {
                   <div className="relative">
                     <div className="space-y-1 sm:space-y-1.5 md:space-y-4">
                       {/* Step 1 */}
-                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative transition-all duration-300 hover:bg-[#000000]/40 hover:border-[#99E39E]/30 hover:shadow-[0_0_20px_rgba(153,227,158,0.1)] cursor-pointer group">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10 transition-all duration-300 group-hover:bg-[#99E39E]/20 group-hover:scale-110">
+                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white transition-colors duration-300 group-hover:text-[#99E39E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Launch Wallet</h5>
-                          <p className="text-white/75 text-[9px] sm:text-xs">Create your new wallet instantly</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm transition-colors duration-300 group-hover:text-[#99E39E]">Start Transaction</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs transition-colors duration-300 group-hover:text-white/90">Begin your crypto payment or transfer</p>
                         </div>
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
-                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50 transition-all duration-300 group-hover:text-[#99E39E] group-hover:scale-125" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                           </svg>
                         </div>
                         {/* Stepper line to next step */}
-                        <div className="absolute left-3.5 sm:left-4 md:left-7 top-full w-0.5 h-1.5 sm:h-2 md:h-4 bg-white/30"></div>
+                        <div className="absolute left-3.5 sm:left-4 md:left-7 top-full w-0.5 h-1.5 sm:h-2 md:h-4 bg-white/30 transition-colors duration-300 group-hover:bg-[#99E39E]/50"></div>
                       </div>
 
                       {/* Step 2 */}
-                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative transition-all duration-300 hover:bg-[#000000]/40 hover:border-[#99E39E]/30 hover:shadow-[0_0_20px_rgba(153,227,158,0.1)] cursor-pointer group">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10 transition-all duration-300 group-hover:bg-[#99E39E]/20 group-hover:scale-110">
+                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white transition-colors duration-300 group-hover:text-[#99E39E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Copy Addres</h5>
-                          <p className="text-white/75 text-[9px] sm:text-xs">Paste it into the input field</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm transition-colors duration-300 group-hover:text-[#99E39E]">Security Check</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs transition-colors duration-300 group-hover:text-white/90">Automatic wallet address verification</p>
                         </div>
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
-                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50 transition-all duration-300 group-hover:text-[#99E39E] group-hover:scale-125" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                           </svg>
                         </div>
                         {/* Stepper line to next step */}
-                        <div className="absolute left-3.5 sm:left-4 md:left-7 top-full w-0.5 h-1.5 sm:h-2 md:h-4 bg-white/30"></div>
+                        <div className="absolute left-3.5 sm:left-4 md:left-7 top-full w-0.5 h-1.5 sm:h-2 md:h-4 bg-white/30 transition-colors duration-300 group-hover:bg-[#99E39E]/50"></div>
                       </div>
 
                       {/* Step 3 */}
-                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative">
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10">
-                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 bg-[#000000]/20 rounded-md sm:rounded-lg p-1 sm:p-1.5 md:p-3 border border-white/10 relative transition-all duration-300 hover:bg-[#000000]/40 hover:border-[#99E39E]/30 hover:shadow-[0_0_20px_rgba(153,227,158,0.1)] cursor-pointer group">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-8 md:h-8 bg-white/10 rounded-md sm:rounded-lg flex items-center justify-center relative z-10 transition-all duration-300 group-hover:bg-[#99E39E]/20 group-hover:scale-110">
+                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-4 md:h-4 text-white transition-colors duration-300 group-hover:text-[#99E39E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm">Get Result</h5>
-                          <p className="text-white/75 text-[9px] sm:text-xs">You're Done! wait a moment for the result!</p>
+                          <h5 className="text-white font-medium text-[10px] sm:text-xs md:text-sm transition-colors duration-300 group-hover:text-[#99E39E]">Safe Completion</h5>
+                          <p className="text-white/75 text-[9px] sm:text-xs transition-colors duration-300 group-hover:text-white/90">Transaction protected from fraud</p>
                         </div>
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-5 md:h-5 flex items-center justify-center">
-                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-3 md:h-3 text-white/50 transition-all duration-300 group-hover:text-[#99E39E] group-hover:scale-125" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                           </svg>
                         </div>
@@ -740,7 +744,7 @@ const Home = React.memo(() => {
                   <div className="relative p-2 z-10">
                     <h3 className="text-xl md:text-2xl font-medium text-white mb-3">Fradium Wallet</h3>
                     <div className="flex items-start justify-between">
-                      <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Safeguards your assets by scanningevery transaction in real time.</p>
+                      <p className="text-sm md:text-sm text-white/75 flex-1 pr-4">Safeguards your assets by scanning every transaction in real time.</p>
                       <a href="https://chromewebstore.google.com/detail/fradium-the-trust-layer-f/bkkhicfomfaagfhnlechfapddmdfabdp" target="_blank" rel="noreferrer" aria-label="Open Fradium Extension in Chrome Web Store" className="w-12 h-12 bg-white/5 border border-gray-600 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-white/10 transition-colors">
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7V17" />
@@ -759,7 +763,7 @@ const Home = React.memo(() => {
                   {/* Content overlay */}
                   <div className="relative z-10">
                     <h3 className="text-xl md:text-2xl font-medium text-white">Fradium Paylink</h3>
-                    <p className="mt-2 max-w-2xl text-xs md:text-sm text-white/75">Fradium Wallet safeguards your assets by scanning every transaction in real time.</p>
+                    <p className="mt-2 max-w-2xl text-xs md:text-sm text-white/75">let you simply generate a secure link and let Fradium handle the safety checks behind the scenes.</p>
                   </div>
 
                   {/* Bottom gradient overlay */}
@@ -784,8 +788,8 @@ const Home = React.memo(() => {
 
                     {/* Sign up button */}
                     <div className="ml-4 flex-shrink-0">
-                      <ButtonPurple size="sm" onClick={handleSignUp} loading={isSignUpLoading} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
-                        Sign up
+                      <ButtonPurple size="sm" onClick={() => navigate("/reports")} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">
+                        Get Started
                       </ButtonPurple>
                     </div>
                   </div>
@@ -917,6 +921,8 @@ const Home = React.memo(() => {
       <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/60"></div>
         </div>
         {/* Fade ke warna dasar ke background-3 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
@@ -956,8 +962,7 @@ const Home = React.memo(() => {
                 md:top-[2.5%] md:left-[8.5%] md:w-[83%] md:h-[109%]
                 lg:top-[2.5s%] lg:left-[8.5%] lg:w-[83%] lg:h-[109%]
                 rounded-lg overflow-hidden">
-                {/* Placeholder sementara - ganti dengan video nanti */}
-                <video src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1761149707/HHH_tk2uta.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover rounded-lg" />
+                <video src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1761183332/Dashboard_mlkplq.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover rounded-lg" />
               </div>
             </div>
           </div>

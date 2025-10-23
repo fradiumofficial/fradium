@@ -29,6 +29,6 @@ module {
 
   public type GetAnalyzeAddressResult = {
     is_safe: Bool;
-    report: ?CommunityTypes.Report;
+    report: ?CommunityTypes.ReportWithStatus;
   };
 };

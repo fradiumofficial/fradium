@@ -73,14 +73,15 @@ module {
     tokenCanister : TokenCanisterInterface
   ) {
     // Constants
-    private let VOTE_DEADLINE_DURATION : Time.Time = 604_800_000_000_000;
-    private let UNSTAKE_VOTER_REWARD_PERCENTAGE : Nat = 10;
-    private let UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE : Nat = 4;
-    private let MINIMUM_QUORUM : Nat = 1;
+    private let VOTE_DEADLINE_DURATION : Time.Time = 604_800_000_000_000;  // 7 days
+    private let UNSTAKE_VOTER_REWARD_PERCENTAGE : Nat = 1000;  // 0.1% = 1/1000
+    private let UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE : Nat = 4;  // 25% = 1/4
+    private let MINIMUM_QUORUM : Nat = 3;
 
     // Storage
     private var reportsStorage : [(Principal, [CommunityTypes.Report])] = [];
     private var stakeRecordsStorage : [(Principal, CommunityTypes.StakeRecord)] = [];
+    private var nextReportIdStorage : CommunityTypes.ReportId = 0; // Stable storage for counter
     
     private var reportStore = Map.HashMap<Principal, [CommunityTypes.Report]>(0, Principal.equal, Principal.hash);
     private var stakeRecordsStore = Map.HashMap<Principal, CommunityTypes.StakeRecord>(0, Principal.equal, Principal.hash);
@@ -91,6 +92,7 @@ module {
     public func preupgrade() {
       reportsStorage := Iter.toArray(reportStore.entries());
       stakeRecordsStorage := Iter.toArray(stakeRecordsStore.entries());
+      nextReportIdStorage := next_report_id; // Save counter
     };
 
     public func postupgrade() {
@@ -103,10 +105,52 @@ module {
       for ((key, value) in stakeRecordsStorage.vals()) {
         stakeRecordsStore.put(key, value);
       };
+      
+      next_report_id := nextReportIdStorage; // Restore counter
     };
 
     // Helper functions
-    private func is_vote_correct(report : CommunityTypes.Report, vote_type : Bool) : Bool {
+    // Calculate the current status of a report
+    private func get_report_status(report : CommunityTypes.Report) : CommunityTypes.ReportStatus {
+      let currentTime = Time.now();
+      let totalVoters = report.voted_by.size();
+      
+      // If voting is still ongoing
+      if (currentTime <= report.vote_deadline) {
+        return #Voting;
+      };
+      
+      // Voting has ended
+      // Check if minimum quorum was met
+      if (totalVoters < MINIMUM_QUORUM) {
+        return #NotValidated;
+      };
+      
+      // Quorum met - determine if Safe or Unsafe based on weighted votes
+      var totalYesWeight : Nat = 0;
+      var totalNoWeight : Nat = 0;
+      
+      for (voter in report.voted_by.vals()) {
+        switch (voter.vote) {
+          case (#Unsafe) {
+            totalYesWeight += voter.vote_weight;
+          };
+          case (#Safe) {
+            totalNoWeight += voter.vote_weight;
+          };
+        };
+      };
+      
+      // If Yes weight is greater, report is Unsafe (majority says address is unsafe)
+      // If No weight is greater or equal, report is Safe (majority says address is safe)
+      if (totalYesWeight > totalNoWeight) {
+        return #Unsafe;
+      } else {
+        return #Safe;
+      };
+    };
+
+    private func is_vote_correct(report : CommunityTypes.Report, vote_type : CommunityTypes.VoteType) : Bool {
       let totalVoters = report.voted_by.size();
       if (totalVoters < MINIMUM_QUORUM) {
         return false;
@@ -116,34 +160,47 @@ module {
       var totalNoWeight : Nat = 0;
       
       for (voter in report.voted_by.vals()) {
-        if (voter.vote == true) {
-          totalYesWeight += voter.vote_weight;
-        } else {
-          totalNoWeight += voter.vote_weight;
+        switch (voter.vote) {
+          case (#Unsafe) {
+            totalYesWeight += voter.vote_weight;
+          };
+          case (#Safe) {
+            totalNoWeight += voter.vote_weight;
+          };
         };
       };
       
       let isYesMajority = totalYesWeight > totalNoWeight;
       let isVoteCorrect = if (isYesMajority) {
-        vote_type == true
+        switch (vote_type) {
+          case (#Unsafe) { true };
+          case (#Safe) { false };
+        }
       } else {
-        vote_type == false
+        switch (vote_type) {
+          case (#Unsafe) { false };
+          case (#Safe) { true };
+        }
       };
       
       return isVoteCorrect;
     };
 
     private func calculate_reporter_reward(report : CommunityTypes.Report, stakeAmount : Nat) : Nat {
-      let isReportValidated = is_vote_correct(report, true);
-      let rewardAmount = if (isReportValidated) {
-        stakeAmount / UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE;
-      } else {
-        0;
+      // Check if voting has concluded with minimum quorum
+      let totalVoters = report.voted_by.size();
+      if (totalVoters < MINIMUM_QUORUM) {
+        return 0;  // No reward if quorum not met
       };
+      
+      // Give reward for any completed report with sufficient votes
+      // Reward is 25% (1/4) regardless of whether report is marked Safe or Unsafe
+      // As long as voting concluded with quorum, reporter gets reward
+      let rewardAmount = stakeAmount / UNSTAKE_CREATED_REPORT_REWARD_PERCENTAGE;
       return rewardAmount;
     };
 
-    private func calculate_voter_reward(report : CommunityTypes.Report, voteType : Bool, stakeAmount : Nat) : Nat {
+    private func calculate_voter_reward(report : CommunityTypes.Report, voteType : CommunityTypes.VoteType, stakeAmount : Nat) : Nat {
       let isVoteCorrect = is_vote_correct(report, voteType);
       let rewardAmount = if (isVoteCorrect) {
         stakeAmount / UNSTAKE_VOTER_REWARD_PERCENTAGE;
@@ -174,9 +231,15 @@ module {
                       };
                       
                       let isVoteCorrect = if (yesPercentage >= 75) {
-                        vote_type == true
+                        switch (vote_type) {
+                          case (#Unsafe) { true };
+                          case (#Safe) { false };
+                        }
                       } else {
-                        vote_type == false
+                        switch (vote_type) {
+                          case (#Unsafe) { false };
+                          case (#Safe) { true };
+                        }
                       };
                       
                       if (isVoteCorrect) {
@@ -221,23 +284,55 @@ module {
     };
 
     // Public functions
-    public func get_reports() : ParentTypes.Result<[CommunityTypes.Report], Text> {
-      var allReports : [CommunityTypes.Report] = [];
+    public func get_reports() : ParentTypes.Result<[CommunityTypes.ReportWithStatus], Text> {
+      var allReports : [CommunityTypes.ReportWithStatus] = [];
       
       for ((principal, reports) in reportStore.entries()) {
         for (report in reports.vals()) {
-          allReports := Array.append(allReports, [report]);
+          let reportWithStatus : CommunityTypes.ReportWithStatus = {
+            report_id = report.report_id;
+            reporter = report.reporter;
+            chain = report.chain;
+            address = report.address;
+            category = report.category;
+            description = report.description;
+            evidence = report.evidence;
+            url = report.url;
+            votes_yes = report.votes_yes;
+            votes_no = report.votes_no;
+            voted_by = report.voted_by;
+            vote_deadline = report.vote_deadline;
+            created_at = report.created_at;
+            status = get_report_status(report);
+          };
+          allReports := Array.append(allReports, [reportWithStatus]);
         };
       };
       
       return #Ok(allReports);
     };
 
-    public func get_report(report_id : CommunityTypes.ReportId) : ParentTypes.Result<CommunityTypes.Report, Text> {
+    public func get_report(report_id : CommunityTypes.ReportId) : ParentTypes.Result<CommunityTypes.ReportWithStatus, Text> {
       for ((principal, reports) in reportStore.entries()) {
         for (report in reports.vals()) {
           if (report.report_id == report_id) {
-            return #Ok(report);
+            let reportWithStatus : CommunityTypes.ReportWithStatus = {
+              report_id = report.report_id;
+              reporter = report.reporter;
+              chain = report.chain;
+              address = report.address;
+              category = report.category;
+              description = report.description;
+              evidence = report.evidence;
+              url = report.url;
+              votes_yes = report.votes_yes;
+              votes_no = report.votes_no;
+              voted_by = report.voted_by;
+              vote_deadline = report.vote_deadline;
+              created_at = report.created_at;
+              status = get_report_status(report);
+            };
+            return #Ok(reportWithStatus);
           };
         };
       };
@@ -284,6 +379,7 @@ module {
               stake_amount = stakeAmount;
               reward = reward;
               unstaked_at = unstakedAt;
+              status = get_report_status(report);
             }
           });
           
@@ -329,6 +425,7 @@ module {
                       reward = reward;
                       vote_type = vote_type;
                       unstaked_at = stakeRecord.unstaked_at;
+                      status = get_report_status(report);
                     };
                     
                     votedReports := Array.append(votedReports, [voteReport]);
@@ -511,16 +608,14 @@ module {
 
           let updatedVotedBy = Array.append(report.voted_by, [newVoter]);
           
-          let updatedVotesYes = if (params.vote_type) {
-            report.votes_yes + 1
-          } else {
-            report.votes_yes
+          let updatedVotesYes = switch (params.vote_type) {
+            case (#Unsafe) { report.votes_yes + 1 };
+            case (#Safe) { report.votes_yes };
           };
 
-          let updatedVotesNo = if (params.vote_type) {
-            report.votes_no
-          } else {
-            report.votes_no + 1
+          let updatedVotesNo = switch (params.vote_type) {
+            case (#Unsafe) { report.votes_no };
+            case (#Safe) { report.votes_no + 1 };
           };
 
           let updatedReport : CommunityTypes.Report = {
@@ -561,7 +656,10 @@ module {
             };
           };
 
-          let voteTypeText = if (params.vote_type) { "unsafe" } else { "safe" };
+          let voteTypeText = switch (params.vote_type) {
+            case (#Unsafe) { "unsafe" };
+            case (#Safe) { "safe" };
+          };
           return #Ok("Vote submitted successfully. You voted " # voteTypeText # " with " # Nat.toText(params.stake_amount) # " tokens staked");
         };
       };

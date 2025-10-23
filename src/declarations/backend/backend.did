@@ -1,14 +1,19 @@
 type Voter = 
  record {
-   vote: bool;
+   vote: VoteType;
    vote_weight: nat;
    voter: principal;
+ };
+type VoteType = 
+ variant {
+   Safe;
+   Unsafe;
  };
 type VoteReportParams = 
  record {
    report_id: ReportId;
    stake_amount: nat;
-   vote_type: bool;
+   vote_type: VoteType;
  };
 type TokenType__1 = 
  variant {
@@ -72,12 +77,12 @@ type Result_5 =
 type Result_4 = 
  variant {
    Err: text;
-   Ok: Report;
+   Ok: ReportWithStatus;
  };
 type Result_3 = 
  variant {
    Err: text;
-   Ok: vec Report;
+   Ok: vec ReportWithStatus;
  };
 type Result_2 = 
  variant {
@@ -109,8 +114,7 @@ type Result =
    Err: text;
    Ok: text;
  };
-type ReportId = nat32;
-type Report = 
+type ReportWithStatus = 
  record {
    address: text;
    category: text;
@@ -120,12 +124,21 @@ type Report =
    evidence: vec text;
    report_id: ReportId;
    reporter: principal;
+   status: ReportStatus;
    url: opt text;
    vote_deadline: Time;
    voted_by: vec Voter;
    votes_no: nat;
    votes_yes: nat;
  };
+type ReportStatus = 
+ variant {
+   NotValidated;
+   Safe;
+   Unsafe;
+   Voting;
+ };
+type ReportId = nat32;
 type RegenerateTokenRequest = record {tokenId: text;};
 type PaymentStatus = 
  variant {
@@ -194,10 +207,11 @@ type GetMyVotesParams =
    reporter: principal;
    reward: nat;
    stake_amount: nat;
+   status: ReportStatus;
    unstaked_at: opt Time;
    url: opt text;
    vote_deadline: Time;
-   vote_type: bool;
+   vote_type: VoteType;
    voted_by: vec Voter;
    votes_no: nat;
    votes_yes: nat;
@@ -214,6 +228,7 @@ type GetMyReportsParams =
    reporter: principal;
    reward: nat;
    stake_amount: nat;
+   status: ReportStatus;
    unstaked_at: opt Time;
    url: opt text;
    vote_deadline: Time;
@@ -239,7 +254,7 @@ type GetMyEscrowsParams =
 type GetAnalyzeAddressResult = 
  record {
    is_safe: bool;
-   report: opt Report;
+   report: opt ReportWithStatus;
  };
 type EscrowStats = 
  record {

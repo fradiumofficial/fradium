@@ -2,14 +2,22 @@ export const idlFactory = ({ IDL }) => {
   const ReportId = IDL.Nat32;
   const Time = IDL.Int;
   const Result = IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text });
+  const ReportStatus = IDL.Variant({
+    'Safe' : IDL.Null,
+    'Voting' : IDL.Null,
+    'Unsafe' : IDL.Null,
+    'NotValidated' : IDL.Null,
+  });
+  const VoteType = IDL.Variant({ 'Safe' : IDL.Null, 'Unsafe' : IDL.Null });
   const Voter = IDL.Record({
     'voter' : IDL.Principal,
-    'vote' : IDL.Bool,
+    'vote' : VoteType,
     'vote_weight' : IDL.Nat,
   });
-  const Report = IDL.Record({
+  const ReportWithStatus = IDL.Record({
     'url' : IDL.Opt(IDL.Text),
     'report_id' : ReportId,
+    'status' : ReportStatus,
     'voted_by' : IDL.Vec(Voter),
     'votes_no' : IDL.Nat,
     'chain' : IDL.Text,
@@ -23,7 +31,7 @@ export const idlFactory = ({ IDL }) => {
     'reporter' : IDL.Principal,
   });
   const GetAnalyzeAddressResult = IDL.Record({
-    'report' : IDL.Opt(Report),
+    'report' : IDL.Opt(ReportWithStatus),
     'is_safe' : IDL.Bool,
   });
   const Result_12 = IDL.Variant({
@@ -212,6 +220,7 @@ export const idlFactory = ({ IDL }) => {
   const GetMyReportsParams = IDL.Record({
     'url' : IDL.Opt(IDL.Text),
     'report_id' : ReportId,
+    'status' : ReportStatus,
     'reward' : IDL.Nat,
     'unstaked_at' : IDL.Opt(Time),
     'voted_by' : IDL.Vec(Voter),
@@ -234,11 +243,12 @@ export const idlFactory = ({ IDL }) => {
   const GetMyVotesParams = IDL.Record({
     'url' : IDL.Opt(IDL.Text),
     'report_id' : ReportId,
+    'status' : ReportStatus,
     'reward' : IDL.Nat,
     'unstaked_at' : IDL.Opt(Time),
     'voted_by' : IDL.Vec(Voter),
     'votes_no' : IDL.Nat,
-    'vote_type' : IDL.Bool,
+    'vote_type' : VoteType,
     'chain' : IDL.Text,
     'description' : IDL.Text,
     'created_at' : Time,
@@ -282,8 +292,11 @@ export const idlFactory = ({ IDL }) => {
     'Ok' : IDL.Vec(GetMyEscrowsParams),
     'Err' : IDL.Text,
   });
-  const Result_4 = IDL.Variant({ 'Ok' : Report, 'Err' : IDL.Text });
-  const Result_3 = IDL.Variant({ 'Ok' : IDL.Vec(Report), 'Err' : IDL.Text });
+  const Result_4 = IDL.Variant({ 'Ok' : ReportWithStatus, 'Err' : IDL.Text });
+  const Result_3 = IDL.Variant({
+    'Ok' : IDL.Vec(ReportWithStatus),
+    'Err' : IDL.Text,
+  });
   const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
@@ -303,7 +316,7 @@ export const idlFactory = ({ IDL }) => {
   const RegenerateTokenRequest = IDL.Record({ 'tokenId' : IDL.Text });
   const VoteReportParams = IDL.Record({
     'report_id' : ReportId,
-    'vote_type' : IDL.Bool,
+    'vote_type' : VoteType,
     'stake_amount' : IDL.Nat,
   });
   return IDL.Service({

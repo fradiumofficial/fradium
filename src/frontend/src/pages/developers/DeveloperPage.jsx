@@ -44,6 +44,8 @@ const DeveloperPage = () => {
         {/* Background layer - match desktop */}
         <div className="absolute inset-x-0 top-16 bottom-0 z-0 pointer-events-none select-none">
           <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/70"></div>
         </div>
         {/* Soft fade to blend with navbar */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -154,6 +156,8 @@ const DeveloperPage = () => {
       {/* Background layer - starts below navbar (not from top) */}
       <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
         <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
+        {/* Dark overlay untuk background lebih gelap */}
+        <div className="absolute inset-0 bg-black/70"></div>
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -178,6 +182,8 @@ const DeveloperPage = () => {
           <div className="relative mx-auto min-h-[520px] md:min-h-[680px] lg:min-h-[800px] overflow-visible">
             <div className="absolute inset-0 z-0 pointer-events-none select-none">
               <img src={BACKGROUND_URL_3} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
+              {/* Dark overlay untuk background lebih gelap */}
+              <div className="absolute inset-0 bg-black/70"></div>
             </div>
             {/* Fade ke warna dasar ke background-3 */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
@@ -204,7 +210,7 @@ const DeveloperPage = () => {
                 md:top-[2.5%] md:left-[8.5%] md:w-[83%] md:h-[109%]
                 lg:top-[2.5s%] lg:left-[8.5%] lg:w-[83%] lg:h-[109%]
                 rounded-lg overflow-hidden">
-                    <video src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1761149707/HHH_tk2uta.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover rounded-lg" />
+                    <video src="https://res.cloudinary.com/dsvxom8rv/video/upload/v1761181346/API4_bhayka.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover rounded-lg" />
                   </div>
                 </div>
               </div>

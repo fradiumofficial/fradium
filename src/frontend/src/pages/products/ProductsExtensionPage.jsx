@@ -52,6 +52,8 @@ const ProductsExtension = () => {
           {/* Background layer - starts from bottom with natural height */}
           <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
             <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
+            {/* Dark overlay untuk background lebih gelap */}
+            <div className="absolute inset-0 bg-black/70"></div>
           </div>
           {/* Soft fade at top edge to blend with navbar */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -62,12 +64,8 @@ const ProductsExtension = () => {
               <span className="block text-[#9beb83] text-[14px] font-semibold tracking-[0.15em] mb-3 text-center">FRADIUM EXTENSION</span>
             </Reveal>
             <Reveal delay={90}>
-              <h1 className="text-[28px] font-medium leading-tight mb-4 text-center">
-                About Fradium Extension
-              </h1>
-              <p className="text-[#B0B6BE] text-[14px] leading-[1.6] text-center max-w-[340px] mx-auto mb-6">
-                Fradium Extension lets you analyse wallet addresses and smart contracts directly in your browser, showing instant risk checks so you can spot threats without leaving the page.
-              </p>
+              <h1 className="text-[28px] font-medium leading-tight mb-4 text-center">About Fradium Extension</h1>
+              <p className="text-[#B0B6BE] text-[14px] leading-[1.6] text-center max-w-[340px] mx-auto mb-6">Fradium Extension lets you analyse wallet addresses and smart contracts directly in your browser, showing instant risk checks so you can spot threats without leaving the page.</p>
             </Reveal>
             <Reveal delay={140}>
               <ButtonGreen
@@ -105,7 +103,6 @@ const ProductsExtension = () => {
               </Reveal>
             </div>
             {/* Mobile: Image di bawah */}
-
           </section>
 
           {/* Content Section 2: How It Works - mobile grid */}
@@ -144,6 +141,8 @@ const ProductsExtension = () => {
         {/* Background layer - starts from bottom with natural height */}
         <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
           <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/70"></div>
         </div>
         {/* Soft fade at top edge to blend with navbar */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />

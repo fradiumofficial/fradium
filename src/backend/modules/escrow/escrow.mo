@@ -120,6 +120,7 @@ module {
     
     // Storage
     private var escrowStorage : [(EscrowTypes.EscrowId, EscrowTypes.EscrowRecord)] = [];
+    private var nextEscrowIdStorage : EscrowTypes.EscrowId = 0; // Stable storage for counter
     
     // Custom hash function for Nat64
     private func nat64Hash(n : Nat64) : Hash.Hash {
@@ -177,6 +178,7 @@ module {
     // System hooks
     public func preupgrade() {
       escrowStorage := Iter.toArray(escrowStore.entries());
+      nextEscrowIdStorage := next_escrow_id; // Save counter
     };
 
     public func postupgrade() {
@@ -184,6 +186,7 @@ module {
       for ((key, value) in escrowStorage.vals()) {
         escrowStore.put(key, value);
       };
+      next_escrow_id := nextEscrowIdStorage; // Restore counter
     };
 
     // Helper: Determine if token should use native wallet or wrapped ledger

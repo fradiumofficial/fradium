@@ -19,7 +19,7 @@ module {
     private var analyzeHistoryStore = Map.HashMap<Principal, [AnalyzeTypes.AnalyzeHistory]>(0, Principal.equal, Principal.hash);
 
     // Minimum quorum constant
-    private let MINIMUM_QUORUM : Nat = 1;
+    private let MINIMUM_QUORUM : Nat = 3;
 
     // System hooks for upgrade
     public func preupgrade() {
@@ -39,8 +39,48 @@ module {
       };
     };
 
-    // Helper function to check if vote is correct
-    private func is_vote_correct(report : CommunityTypes.Report, vote_type : Bool) : Bool {
+    // Helper function to calculate report status
+    private func get_report_status(report : CommunityTypes.Report) : CommunityTypes.ReportStatus {
+      let currentTime = Time.now();
+      let totalVoters = report.voted_by.size();
+      
+      // If voting is still ongoing
+      if (currentTime <= report.vote_deadline) {
+        return #Voting;
+      };
+      
+      // Voting has ended
+      // Check if minimum quorum was met
+      if (totalVoters < MINIMUM_QUORUM) {
+        return #NotValidated;
+      };
+      
+      // Quorum met - determine if Safe or Unsafe based on weighted votes
+      var totalYesWeight : Nat = 0;
+      var totalNoWeight : Nat = 0;
+      
+      for (voter in report.voted_by.vals()) {
+        switch (voter.vote) {
+          case (#Unsafe) {
+            totalYesWeight += voter.vote_weight;
+          };
+          case (#Safe) {
+            totalNoWeight += voter.vote_weight;
+          };
+        };
+      };
+      
+      // If Yes weight is greater, report is Unsafe (majority says address is unsafe)
+      // If No weight is greater or equal, report is Safe (majority says address is safe)
+      if (totalYesWeight > totalNoWeight) {
+        return #Unsafe;
+      } else {
+        return #Safe;
+      };
+    };
+
+    // Helper function to check if vote is correct (not used currently, but kept for consistency)
+    private func is_vote_correct(report : CommunityTypes.Report, vote_type : CommunityTypes.VoteType) : Bool {
       let totalVoters = report.voted_by.size();
       if (totalVoters < MINIMUM_QUORUM) {
         return false;
@@ -50,19 +90,28 @@ module {
       var totalNoWeight : Nat = 0;
       
       for (voter in report.voted_by.vals()) {
-        if (voter.vote == true) {
-          totalYesWeight += voter.vote_weight;
-        } else {
-          totalNoWeight += voter.vote_weight;
+        switch (voter.vote) {
+          case (#Unsafe) {
+            totalYesWeight += voter.vote_weight;
+          };
+          case (#Safe) {
+            totalNoWeight += voter.vote_weight;
+          };
         };
       };
       
       let isYesMajority = totalYesWeight > totalNoWeight;
       
       let isVoteCorrect = if (isYesMajority) {
-        vote_type == true
+        switch (vote_type) {
+          case (#Unsafe) { true };
+          case (#Safe) { false };
+        }
       } else {
-        vote_type == false
+        switch (vote_type) {
+          case (#Unsafe) { false };
+          case (#Safe) { true };
+        }
       };
       
       return isVoteCorrect;
@@ -86,7 +135,7 @@ module {
             
             let currentTime = Time.now();
             if (currentTime > report.vote_deadline) {
-              isUnsafe := is_vote_correct(report, true);
+              isUnsafe := is_vote_correct(report, #Unsafe);
             } else {
               isUnsafe := false;
             };
@@ -101,6 +150,29 @@ module {
         });
       } else {
         let isSafe = not isUnsafe;
+        
+        // Convert foundReport to ReportWithStatus
+        let reportWithStatus : ?CommunityTypes.ReportWithStatus = switch (foundReport) {
+          case (?report) {
+            ?{
+              report_id = report.report_id;
+              reporter = report.reporter;
+              chain = report.chain;
+              address = report.address;
+              category = report.category;
+              description = report.description;
+              evidence = report.evidence;
+              url = report.url;
+              votes_yes = report.votes_yes;
+              votes_no = report.votes_no;
+              voted_by = report.voted_by;
+              vote_deadline = report.vote_deadline;
+              created_at = report.created_at;
+              status = get_report_status(report);
+            }
+          };
+          case null { null };
+        };
         
         let historyEntry : AnalyzeTypes.AnalyzeHistory = {
           address = address;
@@ -121,7 +193,7 @@ module {
 
         return #Ok({
           is_safe = isSafe;
-          report = foundReport;
+          report = reportWithStatus;
         });
       };
     };

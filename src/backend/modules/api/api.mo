@@ -27,6 +27,7 @@ module {
         // ===== UPGRADE STORAGE =====
         private var tokensStorage : [(Text, Types.ApiToken)] = [];
         private var usedAmountCounterStorage : [(Principal, Nat)] = [];
+        private var tokenCounterStorage : Nat = 0; // Stable storage for counter
 
         // Generate a random token string
         private func generateTokenString(): Text {
@@ -300,6 +301,7 @@ module {
             usageStorage := Iter.toArray(usageStore.entries());
             usedAmountCounterStorage := Iter.toArray(usedAmountCounter.entries());
             approvalsStorage := Iter.toArray(approvalsStore.entries());
+            tokenCounterStorage := tokenCounter; // Save counter
         };
 
         public func postupgrade() {
@@ -315,6 +317,8 @@ module {
             
             approvalsStore := HashMap.HashMap<Principal, [Types.ApiApprovalRecord]>(approvalsStorage.size(), Principal.equal, Principal.hash);
             for ((k2, v2) in approvalsStorage.vals()) { approvalsStore.put(k2, v2); };
+            
+            tokenCounter := tokenCounterStorage; // Restore counter
         };
     };
 };

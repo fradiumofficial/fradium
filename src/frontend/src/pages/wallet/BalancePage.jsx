@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 import { Link } from "react-router";
 
-import { Search, ArrowUpRight, ArrowDownLeft, Coins, Calendar } from "lucide-react";
+import { Search, ArrowUpRight, ArrowDownLeft, Coins } from "lucide-react";
 
 import { fradium_ledger as token } from "declarations/fradium_ledger";
 
@@ -13,7 +13,6 @@ import { convertE8sToToken, formatAddress } from "@/core/lib/canisterUtils";
 import { getICRCTransactionHistory } from "@/core/services/historyTransactionService";
 
 import Card from "@/core/components/Card";
-import ButtonGreen from "@/core/components/ButtonGreen.jsx";
 import Footer from "../../core/components/Footer.jsx";
 
 export default function BalancePage() {
@@ -30,31 +29,6 @@ export default function BalancePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all"); // all, receive, sent
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
-  // Reveal-on-scroll (match ProductsExtensionPage)
-  const Reveal = ({ children, delay = 0 }) => {
-    const ref = useRef(null);
-    const [show, setShow] = useState(false);
-    useEffect(() => {
-      const el = ref.current;
-      if (!el) return;
-      const io = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setShow(true);
-            io.disconnect();
-          }
-        },
-        { rootMargin: "-10% 0px" }
-      );
-      io.observe(el);
-      return () => io.disconnect();
-    }, []);
-    return (
-      <div ref={ref} className={`transition-all duration-300 ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"}`} style={{ transitionDelay: `${delay}ms` }}>
-        {children}
-      </div>
-    );
-  };
 
   // Skeleton for a transaction row
   const SkeletonTxCard = () => (
@@ -367,6 +341,8 @@ export default function BalancePage() {
       {/* Background layer - starts below navbar (not from top) */}
       <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
         <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
+        {/* Dark overlay untuk background lebih gelap */}
+        <div className="absolute inset-0 bg-black/70"></div>
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -415,23 +391,21 @@ export default function BalancePage() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Current Balance with Top Up (with skeleton + reveal) */}
+              {/* Current Balance with Top Up (with skeleton) */}
               {isLoadingBalance ? (
                 <SkeletonBalanceCard />
               ) : (
-                <Reveal>
-                  <Card className="p-4 sm:p-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.30)]">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-white/70 mb-1">Current Balance</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-semibold text-white">{userBalance ? userBalance : "0"}</span>
-                          <span className="text-sm text-white/70">FRADIUM</span>
-                        </div>
+                <Card className="p-4 sm:p-5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.30)]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-white/70 mb-1">Current Balance</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-semibold text-white">{userBalance ? userBalance : "0"}</span>
+                        <span className="text-sm text-white/70">FRADIUM</span>
                       </div>
                     </div>
-                  </Card>
-                </Reveal>
+                  </div>
+                </Card>
               )}
 
               {/* Transaction History */}
@@ -464,9 +438,7 @@ export default function BalancePage() {
                 {isLoadingTransactions ? (
                   <div className="space-y-4">
                     {[0, 1, 2, 3].map((i) => (
-                      <Reveal key={i} delay={i * 80}>
-                        <SkeletonTxCard />
-                      </Reveal>
+                      <SkeletonTxCard key={i} />
                     ))}
                   </div>
                 ) : filteredTransactions.length === 0 ? (
@@ -481,39 +453,37 @@ export default function BalancePage() {
                     {filteredTransactions.map((transaction, idx) => {
                       const { date, time } = formatDate(transaction.date);
                       return (
-                        <Reveal key={transaction.id} delay={idx * 80}>
-                          <Card className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.35)] p-4 sm:p-5">
-                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-20%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_60%)]" />
-                            <div className="relative z-[1] flex items-start justify-between">
-                              <div className="flex items-start space-x-4 flex-1 min-w-0">
-                                {/* Transaction Icon */}
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${transaction.type === "receive" ? "bg-green-400/10" : "bg-red-400/10"}`}>{getTransactionIcon(transaction.type)}</div>
+                        <Card key={transaction.id} className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.35)] p-4 sm:p-5">
+                          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-20%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_60%)]" />
+                          <div className="relative z-[1] flex items-start justify-between">
+                            <div className="flex items-start space-x-4 flex-1 min-w-0">
+                              {/* Transaction Icon */}
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${transaction.type === "receive" ? "bg-green-400/10" : "bg-red-400/10"}`}>{getTransactionIcon(transaction.type)}</div>
 
-                                {/* Transaction Details */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between mb-1">
-                                    <h3 className="font-medium text-white truncate pr-2">{transaction.description}</h3>
-                                    <div className={`ml-2 font-medium text-lg sm:text-xl ${getTransactionColor(transaction.type)}`}>
-                                      {transaction.amount > 0 ? "+" : ""}
-                                      {transaction.amount} FRADIUM
-                                    </div>
+                              {/* Transaction Details */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between mb-1">
+                                  <h3 className="font-medium text-white truncate pr-2">{transaction.description}</h3>
+                                  <div className={`ml-2 font-medium text-lg sm:text-xl ${getTransactionColor(transaction.type)}`}>
+                                    {transaction.amount > 0 ? "+" : ""}
+                                    {transaction.amount} FRADIUM
                                   </div>
+                                </div>
 
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3 text-sm text-white/70">
-                                      <span className="capitalize">{transaction.type}</span>
-                                      <span>•</span>
-                                      <span>
-                                        {date} at {time}
-                                      </span>
-                                    </div>
-                                    <div className="font-mono text-xs text-white/60">{formatTxHash(transaction.txHash)}</div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3 text-sm text-white/70">
+                                    <span className="capitalize">{transaction.type}</span>
+                                    <span>•</span>
+                                    <span>
+                                      {date} at {time}
+                                    </span>
                                   </div>
+                                  <div className="font-mono text-xs text-white/60">{formatTxHash(transaction.txHash)}</div>
                                 </div>
                               </div>
                             </div>
-                          </Card>
-                        </Reveal>
+                          </div>
+                        </Card>
                       );
                     })}
                   </div>

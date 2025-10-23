@@ -8,15 +8,29 @@ module {
   // ===== REPORT TYPES =====
   public type ReportId = Nat32;
 
+  // Report status type
+  public type ReportStatus = {
+    #Voting;           // Still within voting period
+    #NotValidated;     // Voting ended but didn't meet minimum quorum (< 3 voters)
+    #Safe;             // Voting ended, quorum met, majority voted safe
+    #Unsafe;           // Voting ended, quorum met, majority voted unsafe
+  };
+
+  // Vote type
+  public type VoteType = {
+    #Unsafe;           // Vote that address is unsafe
+    #Safe;             // Vote that address is safe
+  };
+
   public type Voter = {
     voter: Principal;
-    vote: Bool;
+    vote: VoteType;
     vote_weight: Nat;
   };
 
   public type ReportRole = {
     #Reporter;
-    #Voter: Bool;
+    #Voter: VoteType;
   };
 
   public type Report = {
@@ -45,17 +59,24 @@ module {
   };
 
   // ===== REPORT PARAMS =====
+  // Response type for reports with status
+  public type ReportWithStatus = Report and {
+    status : ReportStatus;
+  };
+
   public type GetMyReportsParams = Report and {
     stake_amount : Nat;
     reward : Nat;
     unstaked_at : ?Time.Time;
+    status : ReportStatus;
   };
 
   public type GetMyVotesParams = Report and {
     stake_amount : Nat;
     reward : Nat;
-    vote_type : Bool;
+    vote_type : VoteType;
     unstaked_at : ?Time.Time;
+    status : ReportStatus;
   };
 
   public type CreateReportParams = {
@@ -70,7 +91,7 @@ module {
 
   public type VoteReportParams = {
     stake_amount : Nat;
-    vote_type : Bool;
+    vote_type : VoteType;
     report_id : ReportId;
   };
 };

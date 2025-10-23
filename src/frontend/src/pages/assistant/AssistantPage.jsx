@@ -192,6 +192,8 @@ const Assistant = () => {
       {/* Background layer */}
       <div className="absolute inset-0 z-0 pointer-events-none select-none">
         <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 object-contain w-full h-full translate-y-[-4%] md:translate-y-0" />
+        {/* Dark overlay untuk background lebih gelap */}
+        <div className="absolute inset-0 bg-black/70"></div>
       </div>
 
       <div className="relative z-10">

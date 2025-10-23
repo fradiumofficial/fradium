@@ -114,7 +114,7 @@ export interface EscrowStats {
   'pending_escrows' : bigint,
 }
 export interface GetAnalyzeAddressResult {
-  'report' : [] | [Report],
+  'report' : [] | [ReportWithStatus],
   'is_safe' : boolean,
 }
 export interface GetMyEscrowsParams {
@@ -134,6 +134,7 @@ export interface GetMyEscrowsParams {
 export interface GetMyReportsParams {
   'url' : [] | [string],
   'report_id' : ReportId,
+  'status' : ReportStatus,
   'reward' : bigint,
   'unstaked_at' : [] | [Time],
   'voted_by' : Array<Voter>,
@@ -152,11 +153,12 @@ export interface GetMyReportsParams {
 export interface GetMyVotesParams {
   'url' : [] | [string],
   'report_id' : ReportId,
+  'status' : ReportStatus,
   'reward' : bigint,
   'unstaked_at' : [] | [Time],
   'voted_by' : Array<Voter>,
   'votes_no' : bigint,
-  'vote_type' : boolean,
+  'vote_type' : VoteType,
   'chain' : string,
   'description' : string,
   'created_at' : Time,
@@ -210,9 +212,15 @@ export type PaymentStatus = { 'Active' : null } |
   { 'Completed' : null } |
   { 'Expired' : null };
 export interface RegenerateTokenRequest { 'tokenId' : string }
-export interface Report {
+export type ReportId = number;
+export type ReportStatus = { 'Safe' : null } |
+  { 'Voting' : null } |
+  { 'Unsafe' : null } |
+  { 'NotValidated' : null };
+export interface ReportWithStatus {
   'url' : [] | [string],
   'report_id' : ReportId,
+  'status' : ReportStatus,
   'voted_by' : Array<Voter>,
   'votes_no' : bigint,
   'chain' : string,
@@ -225,7 +233,6 @@ export interface Report {
   'votes_yes' : bigint,
   'reporter' : Principal,
 }
-export type ReportId = number;
 export type Result = { 'Ok' : string } |
   { 'Err' : string };
 export type Result_1 = { 'Ok' : EscrowId } |
@@ -238,9 +245,9 @@ export type Result_12 = { 'Ok' : GetAnalyzeAddressResult } |
   { 'Err' : string };
 export type Result_2 = { 'Ok' : Array<GetMyEscrowsParams> } |
   { 'Err' : string };
-export type Result_3 = { 'Ok' : Array<Report> } |
+export type Result_3 = { 'Ok' : Array<ReportWithStatus> } |
   { 'Err' : string };
-export type Result_4 = { 'Ok' : Report } |
+export type Result_4 = { 'Ok' : ReportWithStatus } |
   { 'Err' : string };
 export type Result_5 = { 'Ok' : PaymentLinkPublic } |
   { 'Err' : string };
@@ -276,12 +283,14 @@ export type TokenType__1 = { 'BTC' : null } |
   { 'ckETH' : null };
 export interface VoteReportParams {
   'report_id' : ReportId,
-  'vote_type' : boolean,
+  'vote_type' : VoteType,
   'stake_amount' : bigint,
 }
+export type VoteType = { 'Safe' : null } |
+  { 'Unsafe' : null };
 export interface Voter {
   'voter' : Principal,
-  'vote' : boolean,
+  'vote' : VoteType,
   'vote_weight' : bigint,
 }
 export interface _SERVICE {

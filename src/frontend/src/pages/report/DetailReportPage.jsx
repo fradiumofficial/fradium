@@ -14,6 +14,9 @@ import ButtonGreen from "@/core/components/ButtonGreen";
 import { backend } from "declarations/backend";
 import { fradium_ledger as token } from "declarations/fradium_ledger";
 import Footer from "@/core/components/Footer";
+import { convertReportStatus } from "@/core/lib/reportUtils";
+
+const backendCanisterId = process.env.CANISTER_ID_BACKEND;
 
 export default function DetailReportPage() {
   const { id } = useParams();
@@ -44,7 +47,7 @@ export default function DetailReportPage() {
 
   // Helper function to check if a vote is correct based on majority and quorum (same logic as backend)
   const isVoteCorrect = (report, voteType) => {
-    const MINIMUM_QUORUM = 1; // Same as backend
+    const MINIMUM_QUORUM = 3; // Same as backend
 
     // Check if minimum quorum is met
     const totalVoters = report.voted_by.length;
@@ -92,6 +95,7 @@ export default function DetailReportPage() {
 
   // Helper function to convert backend data to UI format
   const convertBackendDataToUI = (backendData) => {
+    console.log("backendData:", backendData);
     if (!backendData) return null;
 
     const votesYes = parseInt(backendData.votes_yes) || 0;
@@ -104,11 +108,25 @@ export default function DetailReportPage() {
     const createdAt = new Date(parseInt(backendData.created_at) / 1000000);
     const voteDeadline = new Date(parseInt(backendData.vote_deadline) / 1000000);
 
-    // Determine status based on deadline and votes using same logic as backend
-    let status = "Pending";
-    if (new Date() > voteDeadline) {
-      const isUnsafe = isReportUnsafe(backendData);
-      status = isUnsafe ? "Unsafe" : "Safe";
+    // Get total voters from voted_by array (for quorum check)
+    const totalVoters = backendData.voted_by ? backendData.voted_by.length : 0;
+
+    // Determine status - use backend status if available, otherwise calculate from votes
+    let status = "Voting";
+    if (backendData.status) {
+      // Backend already provides status - convert it to readable string
+      status = convertReportStatus(backendData.status);
+    } else {
+      // Fallback: calculate from votes if voting period ended
+      if (new Date() > voteDeadline) {
+        const MINIMUM_QUORUM = 3;
+        if (totalVoters < MINIMUM_QUORUM) {
+          status = "Not Validated";
+        } else {
+          const isUnsafe = isReportUnsafe(backendData);
+          status = isUnsafe ? "Unsafe" : "Safe";
+        }
+      }
     }
 
     // Convert Principal objects to strings
@@ -199,8 +217,11 @@ export default function DetailReportPage() {
         return <AlertTriangle className="w-5 h-5 text-red-400" />;
       case "Safe":
         return <CheckCircle className="w-5 h-5 text-green-400" />;
+      case "Voting":
       case "Pending":
         return <Clock className="w-5 h-5 text-yellow-400" />;
+      case "Not Validated":
+        return <X className="w-5 h-5 text-gray-400" />;
       default:
         return <Clock className="w-5 h-5 text-gray-400" />;
     }
@@ -212,8 +233,11 @@ export default function DetailReportPage() {
         return "text-red-400 bg-red-400/10 border-red-400/20";
       case "Safe":
         return "text-green-400 bg-green-400/10 border-green-400/20";
+      case "Voting":
       case "Pending":
         return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
+      case "Not Validated":
+        return "text-gray-400 bg-gray-400/10 border-gray-400/20";
       default:
         return "text-gray-400 bg-gray-400/10 border-gray-400/20";
     }
@@ -342,8 +366,7 @@ export default function DetailReportPage() {
       const stakeAmountE8s = BigInt(Math.floor(Number.parseFloat(stakeAmount) * 1e8));
 
       // Approve allowance (ICRC-2) for backend canister before voting
-      const backendCanisterId = "oqcob-6iaaa-aaaar-qbr7q-cai";
-      const approvalAmount = stakeAmountE8s + BigInt(200000000); // +2 $FRADIUM buffer
+      const approvalAmount = stakeAmountE8s + BigInt(50000000); // +0.5 $FRADIUM buffer
 
       const approveResult = await token.icrc2_approve({
         from_subaccount: [],
@@ -379,7 +402,7 @@ export default function DetailReportPage() {
       const voteParams = {
         report_id: parseInt(uiData.id),
         stake_amount: stakeAmountE8s,
-        vote_type: voteType === "yes", // true for unsafe, false for safe
+        vote_type: voteType === "yes" ? { Unsafe: null } : { Safe: null }, // variant type: #Unsafe or #Safe
       };
 
       const result = await backend.vote_report(voteParams);
@@ -392,8 +415,30 @@ export default function DetailReportPage() {
       setShowVoteModal(false);
       setShowSuccessModal(true);
 
-      // Refresh the report data to show updated vote counts
-      window.location.reload();
+      // Fetch updated report data without page reload
+      try {
+        const reportId = parseInt(id);
+        const response = await backend.get_report(reportId);
+        if (response.Ok) {
+          setReportData(response.Ok);
+        }
+      } catch (error) {
+        console.error("Error refreshing report data:", error);
+      }
+
+      // Refresh balance
+      try {
+        const balance = await token.icrc1_balance_of({
+          owner: identity.getPrincipal(),
+          subaccount: [],
+        });
+        setUserBalance(balance);
+
+        // Trigger balance update event for navbar
+        window.dispatchEvent(new Event("balance-updated"));
+      } catch (error) {
+        console.error("Error refreshing balance:", error);
+      }
     } catch (error) {
       console.error("Vote submission error:", error);
       toast.error(error.message || "Failed to submit vote");
@@ -590,6 +635,8 @@ export default function DetailReportPage() {
       {/* Background layer - starts from bottom with natural height */}
       <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
         <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
+        {/* Dark overlay untuk background lebih gelap */}
+        <div className="absolute inset-0 bg-black/70"></div>
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-20 md:h-28 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -800,7 +847,7 @@ export default function DetailReportPage() {
                 </div>
 
                 {/* Vote Buttons */}
-                {uiData.status === "Pending" && !uiData.hasUserVoted && isAuthenticated && !uiData.isUserReporter && (
+                {(uiData.status === "Voting" || uiData.status === "Pending") && !uiData.hasUserVoted && isAuthenticated && !uiData.isUserReporter && (
                   <div className="space-y-4 mt-6">
                     <button onClick={() => handleVoteClick("yes")} className={`w-full py-3 rounded-full transition-all duration-200 flex items-center justify-center gap-2 ${userVote === "yes" ? "bg-red-400 text-white" : "bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400"}`}>
                       <AlertTriangle className="w-4 h-4" />
@@ -814,7 +861,7 @@ export default function DetailReportPage() {
                 )}
 
                 {/* Show message if user has already voted */}
-                {uiData.status === "Pending" && uiData.hasUserVoted && (
+                {(uiData.status === "Voting" || uiData.status === "Pending") && uiData.hasUserVoted && (
                   <div className="text-center py-4">
                     <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-400">You have already voted on this report</p>
@@ -822,14 +869,14 @@ export default function DetailReportPage() {
                 )}
 
                 {/* Show message if user is the reporter */}
-                {uiData.status === "Pending" && isAuthenticated && uiData.isUserReporter && (
+                {(uiData.status === "Voting" || uiData.status === "Pending") && isAuthenticated && uiData.isUserReporter && (
                   <div className="text-center py-4">
                     <p className="text-sm text-gray-400">You cannot vote on your own report</p>
                   </div>
                 )}
 
                 {/* Show message if user is not authenticated */}
-                {uiData.status === "Pending" && !isAuthenticated && (
+                {(uiData.status === "Voting" || uiData.status === "Pending") && !isAuthenticated && (
                   <div className="text-center py-4 px-6">
                     <p className="text-gray-400 text-sm mb-3">Please login to vote on this report</p>
                     <ButtonPurple size="sm" fullWidth onClick={() => handleLogin()} fontWeight="medium" iconSize="w-5 h-5" icon="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/icons/f-purple.svg">

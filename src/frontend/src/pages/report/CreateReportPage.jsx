@@ -26,10 +26,11 @@ import { Principal } from "@dfinity/principal";
 import { backend } from "declarations/backend";
 
 // Backend canister ID
-const backendCanisterId = "oqcob-6iaaa-aaaar-qbr7q-cai";
+const backendCanisterId = process.env.CANISTER_ID_BACKEND;
 
 // Utils (local)
 import { convertE8sToToken } from "@/core/lib/canisterUtils";
+import { detectAddressNetwork } from "@/core/lib/tokenUtils";
 
 import { uploadMultipleFilesToPinataWithFallback } from "@/core/lib/pinataUtils";
 import { validateFiles, formatFileSize, FILE_SIZE_LIMITS, ALLOWED_FILE_TYPES } from "@/core/lib/fileValidationUtils";
@@ -119,26 +120,9 @@ export default function CreateReportPage() {
     },
   ];
 
-  // Auto-detect blockchain network from address
-  const detectChain = (address) => {
-    if (!address) return "";
-
-    // Simple chain detection based on address format
-    if (address.startsWith("0x") && address.length === 42) {
-      return "Ethereum";
-    } else if (address.startsWith("bc1") || address.startsWith("1") || address.startsWith("3")) {
-      return "Bitcoin";
-    } else if (address.length === 44) {
-      return "Solana";
-    } else if (address.startsWith("cosmos")) {
-      return "Cosmos";
-    }
-    return "Unknown";
-  };
-
-  // Update chain when address changes
+  // Update chain when address changes using detectAddressNetwork from tokenUtils
   useEffect(() => {
-    const detectedChain = detectChain(formData.address);
+    const detectedChain = detectAddressNetwork(formData.address);
     setFormData((prev) => ({ ...prev, chain: detectedChain }));
   }, [formData.address]);
 
@@ -341,29 +325,20 @@ export default function CreateReportPage() {
       // Check if user has sufficient balance
       const userBalance = balance ? convertE8sToToken(balance) : 0;
       const stakeAmountNumber = Number(stakeAmount);
-      const requiredBalance = stakeAmountNumber + 2; // Add 2 FRADIUM for fees and safety
+      const feeAmount = 0.0001; // Fee: 10_000 e8s = 0.0001 FRADIUM
+      const requiredBalance = stakeAmountNumber + feeAmount; // Add 0.0001 FRADIUM for fees
 
       if (requiredBalance > userBalance) {
-        toast.error(`Insufficient balance. You have ${userBalance} FRADIUM but need ${requiredBalance} FRADIUM (${stakeAmountNumber} for stake + 2 for fees).`);
+        toast.error(`Insufficient balance. You have ${userBalance} FRADIUM but need ${requiredBalance} FRADIUM (${stakeAmountNumber} for stake + ${feeAmount} for fees).`);
         return;
       }
 
       // Approve tokens first - approve more than needed to cover fees and operations
-      const approvalAmount = BigInt(stakeAmountNumber * 10 ** 8 + 200000000); // Add 2 FRADIUM extra for fees and safety
+      // Add extra 0.0001 FRADIUM (10_000 e8s) for fees, safety margin, and approval fee itself
+      const approvalAmount = BigInt(Math.floor(stakeAmountNumber * 10 ** 8) + 10000); // stake + 0.0001 FRADIUM for safety
 
-      console.log("Approving tokens with parameters:", {
-        from_subaccount: [],
-        spender: {
-          owner: backendCanisterId,
-          subaccount: [],
-        },
-        amount: Number(approvalAmount),
-        fee: [],
-        memo: [],
-        created_at_time: [],
-        expected_allowance: [],
-        expires_at: [],
-      });
+      console.log("Approval amount (BigInt):", approvalAmount.toString());
+      console.log("Stake amount:", stakeAmountNumber);
 
       const approveResult = await fradium_ledger.icrc2_approve({
         from_subaccount: [],
@@ -384,6 +359,7 @@ export default function CreateReportPage() {
       // Check if approve failed
       if (!approveResult || approveResult.Err) {
         console.error("Approve failed:", approveResult);
+        setIsSubmitting(false);
         if (approveResult?.Err?.InsufficientFunds) {
           toast.error("Insufficient funds. Please top up your balance.");
         } else if (approveResult?.Err?.InsufficientAllowance) {
@@ -399,6 +375,19 @@ export default function CreateReportPage() {
         }
         return;
       }
+
+      // Verify approval was successful by checking for Ok response with blockIndex
+      if (!approveResult.Ok) {
+        console.error("Approve did not return Ok:", approveResult);
+        setIsSubmitting(false);
+        toast.error("Token approval failed. Please try again.");
+        return;
+      }
+
+      console.log("Approval successful! Block index:", approveResult.Ok);
+
+      // Wait a bit for the approval to be finalized on the ledger
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Upload files to Pinata after successful approve
       const evidenceUrls = [];
@@ -424,7 +413,7 @@ export default function CreateReportPage() {
         description: formData.description,
         url: formData.url ? [formData.url] : [],
         evidence: evidenceUrls.length > 0 ? evidenceUrls : [],
-        stake_amount: stakeAmountNumber * 10 ** 8,
+        stake_amount: BigInt(Math.floor(stakeAmountNumber * 10 ** 8)),
       });
 
       if (response.Ok) {
@@ -694,6 +683,8 @@ export default function CreateReportPage() {
         {/* Background layer */}
         <div className="absolute inset-x-0 top-20 md:top-28 bottom-0 z-0 pointer-events-none select-none">
           <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/70"></div>
         </div>
         {/* Soft fade at top edge */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -841,6 +832,10 @@ export default function CreateReportPage() {
                         <span className="text-white/90 text-sm font-medium">Minimum stake required:</span>
                         <span className="font-bold text-red-400">5 FRADIUM</span>
                       </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/90 text-sm font-medium">Transaction fee:</span>
+                        <span className="font-bold text-gray-400">0.0001 FRADIUM</span>
+                      </div>
                     </div>
                   </motion.div>
 
@@ -852,6 +847,14 @@ export default function CreateReportPage() {
                       </label>
                       <Input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} placeholder="5" min="5" max={balance ? convertE8sToToken(balance) : 1000} required className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:bg-white/10 rounded-xl" />
                       <p className="text-[#B0B6BE] text-xs">Minimum: 5 FRADIUM tokens required to submit a report</p>
+                      {stakeAmount && Number(stakeAmount) >= 5 && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/90 text-sm font-medium">Total amount (stake + fee):</span>
+                            <span className="font-bold text-[#99e39e]">{(Number(stakeAmount) + 0.0001).toFixed(4)} FRADIUM</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
 

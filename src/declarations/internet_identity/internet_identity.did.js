@@ -56,7 +56,6 @@ export const idlFactory = ({ IDL }) => {
     'canister_creation_cycles_cost' : IDL.Opt(IDL.Nat64),
     'analytics_config' : IDL.Opt(IDL.Opt(AnalyticsConfig)),
     'related_origins' : IDL.Opt(IDL.Vec(IDL.Text)),
-    'feature_flag_continue_from_another_device' : IDL.Opt(IDL.Bool),
     'openid_configs' : IDL.Opt(IDL.Vec(OpenIdConfig)),
     'captcha_config' : IDL.Opt(CaptchaConfig),
     'dummy_auth' : IDL.Opt(IDL.Opt(DummyAuthConfig)),
@@ -193,7 +192,10 @@ export const idlFactory = ({ IDL }) => {
   const AuthnMethodSecuritySettingsReplaceError = IDL.Variant({
     'AuthnMethodNotFound' : IDL.Null,
   });
-  const AuthnMethodSessionInfo = IDL.Record({ 'name' : IDL.Opt(IDL.Text) });
+  const AuthnMethodSessionInfo = IDL.Record({
+    'name' : IDL.Opt(IDL.Text),
+    'created_at' : IDL.Opt(Timestamp),
+  });
   const CheckCaptchaArg = IDL.Record({ 'solution' : IDL.Text });
   const RegistrationFlowNextStep = IDL.Variant({
     'CheckCaptcha' : IDL.Record({ 'captcha_png_base64' : IDL.Text }),
@@ -372,6 +374,7 @@ export const idlFactory = ({ IDL }) => {
     'authn_methods' : IDL.Vec(AuthnMethodData),
     'metadata' : MetadataMapV2,
     'name' : IDL.Opt(IDL.Text),
+    'created_at' : IDL.Opt(Timestamp),
     'authn_method_registration' : IDL.Opt(AuthnMethodRegistrationInfo),
     'openid_credentials' : IDL.Opt(IDL.Vec(OpenIdCredential)),
   });
@@ -881,7 +884,6 @@ export const init = ({ IDL }) => {
     'canister_creation_cycles_cost' : IDL.Opt(IDL.Nat64),
     'analytics_config' : IDL.Opt(IDL.Opt(AnalyticsConfig)),
     'related_origins' : IDL.Opt(IDL.Vec(IDL.Text)),
-    'feature_flag_continue_from_another_device' : IDL.Opt(IDL.Bool),
     'openid_configs' : IDL.Opt(IDL.Vec(OpenIdConfig)),
     'captcha_config' : IDL.Opt(CaptchaConfig),
     'dummy_auth' : IDL.Opt(IDL.Opt(DummyAuthConfig)),

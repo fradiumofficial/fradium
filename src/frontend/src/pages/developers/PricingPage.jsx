@@ -50,6 +50,8 @@ const PricingPage = () => {
       <div className="relative mx-auto overflow-hidden">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/70"></div>
         </div>
 
         {/* Content */}
@@ -175,6 +177,8 @@ const PricingPage = () => {
       <div className="relative mx-auto overflow-hidden">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL_2} alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-x-0 bottom-0 h-full w-full object-cover" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/70"></div>
         </div>
         {/* Fade dari warna dasar ke background-2 */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />

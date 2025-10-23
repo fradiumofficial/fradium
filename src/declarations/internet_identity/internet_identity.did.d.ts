@@ -102,7 +102,10 @@ export interface AuthnMethodSecuritySettings {
 export type AuthnMethodSecuritySettingsReplaceError = {
     'AuthnMethodNotFound' : null
   };
-export interface AuthnMethodSessionInfo { 'name' : [] | [string] }
+export interface AuthnMethodSessionInfo {
+  'name' : [] | [string],
+  'created_at' : [] | [Timestamp],
+}
 export interface BufferedArchiveEntry {
   'sequence_number' : bigint,
   'entry' : Uint8Array | number[],
@@ -248,6 +251,7 @@ export interface IdentityInfo {
   'authn_methods' : Array<AuthnMethodData>,
   'metadata' : MetadataMapV2,
   'name' : [] | [string],
+  'created_at' : [] | [Timestamp],
   'authn_method_registration' : [] | [AuthnMethodRegistrationInfo],
   'openid_credentials' : [] | [Array<OpenIdCredential>],
 }
@@ -287,7 +291,6 @@ export interface InternetIdentityInit {
   'canister_creation_cycles_cost' : [] | [bigint],
   'analytics_config' : [] | [[] | [AnalyticsConfig]],
   'related_origins' : [] | [Array<string>],
-  'feature_flag_continue_from_another_device' : [] | [boolean],
   'openid_configs' : [] | [Array<OpenIdConfig>],
   'captcha_config' : [] | [CaptchaConfig],
   'dummy_auth' : [] | [[] | [DummyAuthConfig]],

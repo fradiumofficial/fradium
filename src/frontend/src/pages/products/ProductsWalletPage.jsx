@@ -43,6 +43,8 @@ const ProductsWallet = () => {
         {/* Background layer - match desktop */}
         <div className="absolute inset-x-0 top-16 bottom-0 z-0 pointer-events-none select-none">
           <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-cover object-top" />
+          {/* Dark overlay untuk background lebih gelap */}
+          <div className="absolute inset-0 bg-black/70"></div>
         </div>
         {/* Soft fade to blend with navbar */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
@@ -153,6 +155,8 @@ const ProductsWallet = () => {
       {/* Background layer - starts from bottom with natural height (no stretch) */}
       <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none">
         <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/backgrounds/background-3.webp" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable={false} className="w-full h-auto object-contain object-bottom" />
+        {/* Dark overlay untuk background lebih gelap */}
+        <div className="absolute inset-0 bg-black/70"></div>
       </div>
       {/* Soft fade at top edge to blend with navbar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent z-0" />
