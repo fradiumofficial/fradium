@@ -63,6 +63,7 @@ export default function CreateReportPage() {
   const [stakeAmount, setStakeAmount] = useState(5);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [files, setFiles] = useState([]);
+  const [createdReportId, setCreatedReportId] = useState(null);
 
   // Toast helper styled with Fradium design system
   const showFileTooLargeToast = (tooLargeFiles) => {
@@ -417,17 +418,18 @@ export default function CreateReportPage() {
       });
 
       if (response.Ok) {
+        // Extract report ID from response message
+        // Response format: "Report created successfully with ID: 123"
+        const reportIdMatch = response.Ok.match(/ID:\s*(\d+)/);
+        const reportId = reportIdMatch ? reportIdMatch[1] : null;
+
+        setCreatedReportId(reportId);
         toast.success("Report created successfully!");
         setShowConfirmModal(false);
         setShowSuccessModal(true);
 
         // Trigger balance update event for navbar
         window.dispatchEvent(new Event("balance-updated"));
-
-        // Navigate to reports after a delay
-        setTimeout(() => {
-          navigate("/reports");
-        }, 2000);
       } else {
         console.error("Report creation failed:", response);
         if (response.Err) {
@@ -489,6 +491,38 @@ export default function CreateReportPage() {
     }
     newFiles.splice(index, 1);
     setFiles(newFiles);
+  };
+
+  // Reset form data
+  const resetForm = () => {
+    setFormData({
+      address: "",
+      chain: "",
+      description: "",
+      evidenceFields: [""],
+      whatHappened: "",
+      url: "",
+    });
+    setStakeAmount(5);
+    setFiles([]);
+    setErrors({});
+    setCurrentStep(1);
+    setCreatedReportId(null);
+  };
+
+  // Handle close success modal
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    resetForm();
+  };
+
+  // Handle view report detail
+  const handleViewReportDetail = () => {
+    if (createdReportId) {
+      navigate(`/reports/${createdReportId}`);
+    } else {
+      navigate("/reports");
+    }
   };
 
   // Render step content
@@ -897,7 +931,7 @@ export default function CreateReportPage() {
           <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm">
             <div className="flex min-h-full items-start justify-center pt-8 pl-4 pr-4 pb-4">
               <motion.div className="relative w-full max-w-[500px] mx-auto my-8 bg-[#171A1C] rounded-2xl border border-white/10" variants={containerVariants} initial="hidden" animate="visible" exit="exit">
-                <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={() => setShowSuccessModal(false)} aria-label="Close">
+                <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={handleCloseSuccessModal} aria-label="Close">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -917,26 +951,23 @@ export default function CreateReportPage() {
                   </motion.div>
 
                   {/* Report ID */}
-                  <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
-                    <div className="text-center">
-                      <div className="text-sm text-[#B0B6BE] mb-1">Report ID</div>
-                      <div className="font-mono text-lg text-white">
-                        RPT-2024-
-                        {Math.floor(Math.random() * 9999)
-                          .toString()
-                          .padStart(4, "0")}
+                  {createdReportId && (
+                    <motion.div variants={itemVariants} className="mx-2 sm:mx-3 w-full mb-2 rounded-xl bg-[#FFFFFF08] border-white/10 p-6">
+                      <div className="text-center">
+                        <div className="text-sm text-[#B0B6BE] mb-1">Report ID</div>
+                        <div className="font-mono text-lg text-white">#{createdReportId}</div>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  )}
 
                   {/* Action Buttons */}
                   <motion.div variants={itemVariants} className="w-full px-2 sm:px-3 pb-2">
                     <div className="flex gap-3">
-                      <button className="flex-1 py-3 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={() => setShowSuccessModal(false)}>
-                        Create Another
+                      <button className="flex-1 py-3 rounded-full border border-white/15 text-white/90 font-medium hover:bg-white/[0.05] transition-colors" onClick={handleCloseSuccessModal}>
+                        Close
                       </button>
-                      <ButtonGreen fullWidth className="flex-1" onClick={() => navigate("/reports")} size="md" textSize="text-base" fontWeight="medium">
-                        View Reports
+                      <ButtonGreen fullWidth className="flex-1" onClick={handleViewReportDetail} size="md" textSize="text-base" fontWeight="medium">
+                        View Detail
                       </ButtonGreen>
                     </div>
                   </motion.div>

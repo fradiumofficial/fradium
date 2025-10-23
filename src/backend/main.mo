@@ -138,8 +138,8 @@ persistent actor Fradium {
   };
 
   // ===== REPORT FUNCTIONS (COMMUNITY MODULE) =====
-  public query func get_reports() : async Types.Result<[CommunityTypes.ReportWithStatus], Text> {
-    return communityModule.get_reports();
+  public query func get_reports(offset : Nat, limit : Nat) : async Types.Result<CommunityTypes.GetReportsResponse, Text> {
+    return communityModule.get_reports(offset, limit);
   };
 
   public query func get_report(report_id : CommunityTypes.ReportId) : async Types.Result<CommunityTypes.ReportWithStatus, Text> {

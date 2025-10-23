@@ -293,10 +293,13 @@ export const idlFactory = ({ IDL }) => {
     'Err' : IDL.Text,
   });
   const Result_4 = IDL.Variant({ 'Ok' : ReportWithStatus, 'Err' : IDL.Text });
-  const Result_3 = IDL.Variant({
-    'Ok' : IDL.Vec(ReportWithStatus),
-    'Err' : IDL.Text,
+  const GetReportsResponse = IDL.Record({
+    'total' : IDL.Nat,
+    'offset' : IDL.Nat,
+    'limit' : IDL.Nat,
+    'reports' : IDL.Vec(ReportWithStatus),
   });
+  const Result_3 = IDL.Variant({ 'Ok' : GetReportsResponse, 'Err' : IDL.Text });
   const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
@@ -419,7 +422,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'get_report' : IDL.Func([ReportId], [Result_4], ['query']),
-    'get_reports' : IDL.Func([], [Result_3], ['query']),
+    'get_reports' : IDL.Func([IDL.Nat, IDL.Nat], [Result_3], ['query']),
     'get_sent_escrows' : IDL.Func([], [Result_2], []),
     'get_sent_escrows_paginated' : IDL.Func(
         [IDL.Nat, IDL.Nat],

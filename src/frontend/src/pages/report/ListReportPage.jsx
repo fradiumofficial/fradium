@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 
 import { Button } from "@/core/components/ui/button";
 import { Input } from "@/core/components/ui/input";
-import { Search, AlertTriangle, CheckCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, Clock, ChevronDown } from "lucide-react";
 
 import { backend } from "declarations/backend";
 import { toast } from "react-toastify";
@@ -26,9 +26,11 @@ export default function ReportPage() {
 
   // State for search and pagination
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(4);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalReports, setTotalReports] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const itemsPerPage = 10;
 
   // Enhanced reveal-on-scroll component with better animations
   const Reveal = ({ children, delay = 0, duration = 600 }) => {
@@ -202,7 +204,7 @@ export default function ReportPage() {
   };
 
   // Filter data
-  const filteredAndSortedData = useMemo(() => {
+  const filteredData = useMemo(() => {
     const uiData = convertBackendDataToUI(reportData);
 
     const filtered = uiData.filter((report) => {
@@ -210,68 +212,18 @@ export default function ReportPage() {
       return report.address.toLowerCase().includes(searchLower) || report.shortAddress.toLowerCase().includes(searchLower) || report.status.toLowerCase().includes(searchLower) || report.riskLevel.toLowerCase().includes(searchLower) || report.category.toLowerCase().includes(searchLower) || report.chain.toLowerCase().includes(searchLower);
     });
 
-    // Sort by timestamp (latest first) as default
-    filtered.sort((a, b) => {
-      const aValue = Number(a.timestamp);
-      const bValue = Number(b.timestamp);
-      return bValue - aValue; // descending order (newest first)
-    });
-
     return filtered;
   }, [reportData, searchTerm]);
 
-  // Stats cards data
-  const statsCards = useMemo(() => {
-    const uiData = convertBackendDataToUI(reportData);
-    return [
-      {
-        title: "Total Reports",
-        value: uiData.length.toLocaleString(),
-        subtitle: "All reports",
-        icon: <AlertTriangle className="w-5 h-5 text-gray-400" />,
-        color: "text-green-400",
-      },
-      {
-        title: "Ongoing",
-        value: uiData.filter((report) => report.status === "Voting" || report.status === "Ongoing" || report.status === "Pending").length,
-        subtitle: "Awaiting votes",
-        icon: <Clock className="w-5 h-5 text-yellow-400" />,
-        color: "text-yellow-400",
-      },
-      {
-        title: "Confirmed Unsafe",
-        value: uiData.filter((report) => report.status === "Unsafe").length,
-        subtitle: "Blocked addresses",
-        icon: <AlertTriangle className="w-5 h-5 text-red-400" />,
-        color: "text-red-400",
-      },
-      {
-        title: "Community Votes",
-        value: uiData.reduce((sum, report) => sum + report.totalVotes, 0).toLocaleString(),
-        subtitle: "Total cast",
-        icon: <CheckCircle className="w-5 h-5 text-green-400" />,
-        color: "text-green-400",
-      },
-    ];
-  }, [reportData]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredAndSortedData.slice(startIndex, endIndex);
-
-  // Handle pagination
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+  // Check if there are more items to load
+  const hasMore = reportData.length < totalReports;
 
   // Handle search
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
   };
 
+  // Fetch initial reports
   useEffect(() => {
     const fetchReports = async () => {
       setIsLoading(true);
@@ -279,18 +231,42 @@ export default function ReportPage() {
       // Add a small delay to show loading animation
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const response = await backend.get_reports();
+      const response = await backend.get_reports(0, itemsPerPage);
       setIsLoading(false);
 
       if (response.Err) {
         toast.error(response.Err);
       } else {
-        setReportData(response.Ok);
+        setReportData(response.Ok.reports);
+        setTotalReports(parseInt(response.Ok.total));
+        setOffset(itemsPerPage);
       }
     };
 
     fetchReports();
   }, []);
+
+  // Load more reports
+  const loadMoreReports = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const response = await backend.get_reports(offset, itemsPerPage);
+
+      if (response.Err) {
+        toast.error(response.Err);
+      } else {
+        setReportData((prev) => [...prev, ...response.Ok.reports]);
+        setOffset((prev) => prev + itemsPerPage);
+      }
+    } catch (error) {
+      console.error("Error loading more reports:", error);
+      toast.error("Failed to load more reports");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   return (
     <>
@@ -323,7 +299,7 @@ export default function ReportPage() {
       `}</style>
       <div className="min-h-screen max-w-full mt-12 md:mt-16 bg-[#000510] text-white ">
         {/* Main Content */}
-        <main className="pt-18">
+        <main className="pt-18 mb-40">
           {/* Loading state handled inline in list section below */}
           {/* Page Header - Full Screen */}
           <div className="relative overflow-hidden mb-6 sm:mb-8 px-3 md:px-6">
@@ -390,7 +366,7 @@ export default function ReportPage() {
                       <p className="text-gray-400 text-sm">Community-reported wallet addresses under review for potential security threats</p>
                     </div>
                     <div className="text-sm text-gray-400">
-                      Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} results
+                      Showing {filteredData.length} of {totalReports} reports
                     </div>
                   </div>
 
@@ -400,7 +376,7 @@ export default function ReportPage() {
                         <SkeletonReportCard key={i} />
                       ))}
                     </div>
-                  ) : currentData.length === 0 ? (
+                  ) : filteredData.length === 0 ? (
                     <div className="mx-auto w-full rounded-2xl bg-white/5 backdrop-blur-sm shadow-[0_16px_48px_rgba(0,0,0,0.30)] p-10 md:p-12 min-h-[260px] md:min-h-[260px] hover:bg-white/8 hover:shadow-[0_20px_56px_rgba(0,0,0,0.40)] transition-all duration-300 ease-out">
                       <div className="flex flex-col items-center justify-center text-center">
                         <Search className="w-12 h-12 text-gray-300/80 mx-auto mb-6 animate-bounce" />
@@ -409,53 +385,32 @@ export default function ReportPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                      {currentData.map((report) => (
-                        <ReportCard key={report.report_id} report={report} variant="list" />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Pagination */}
-                  {filteredAndSortedData.length > 0 && (
-                    <div className="mt-6 sm:mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-                      <span className="text-gray-400 text-sm text-center sm:text-left">
-                        Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedData.length)} of {filteredAndSortedData.length} reports
-                      </span>
-                      <div className="flex items-center space-x-2">
-                        <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10">
-                          <ChevronLeft className="w-4 h-4 sm:mr-1 transition-transform duration-200 hover:-translate-x-0.5" />
-                          <span className="hidden sm:inline">Previous</span>
-                        </Button>
-
-                        {/* Page Numbers */}
-                        <div className="flex items-center space-x-1">
-                          {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 3) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 2) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 1) {
-                              pageNum = totalPages - 2 + i;
-                            } else {
-                              pageNum = currentPage - 1 + i;
-                            }
-
-                            return (
-                              <Button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`w-8 h-8 p-0 text-sm transition-all duration-200 ease-out ${currentPage === pageNum ? "bg-white text-black shadow-lg" : "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white hover:shadow-lg hover:shadow-white/10"}`}>
-                                {pageNum}
-                              </Button>
-                            );
-                          })}
-                        </div>
-
-                        <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out hover:shadow-lg hover:shadow-white/10">
-                          <span className="hidden sm:inline">Next</span>
-                          <ChevronRight className="w-4 h-4 sm:ml-1 transition-transform duration-200 hover:translate-x-0.5" />
-                        </Button>
+                    <>
+                      <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                        {filteredData.map((report) => (
+                          <ReportCard key={report.report_id} report={report} variant="list" />
+                        ))}
                       </div>
-                    </div>
+
+                      {/* Load More Button */}
+                      {hasMore && !searchTerm && (
+                        <div className="mt-8 flex justify-center">
+                          <ButtonGreen onClick={loadMoreReports} disabled={isLoadingMore} size="md" fontWeight="medium" className="min-w-[200px]">
+                            {isLoadingMore ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Loading...</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span>Load More Reports</span>
+                                <ChevronDown className="w-4 h-4" />
+                              </div>
+                            )}
+                          </ButtonGreen>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

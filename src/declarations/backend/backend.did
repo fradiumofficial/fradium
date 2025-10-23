@@ -82,7 +82,7 @@ type Result_4 =
 type Result_3 = 
  variant {
    Err: text;
-   Ok: vec ReportWithStatus;
+   Ok: GetReportsResponse;
  };
 type Result_2 = 
  variant {
@@ -194,6 +194,13 @@ type GetTokensResponse =
  variant {
    err: text;
    ok: vec ApiToken;
+ };
+type GetReportsResponse = 
+ record {
+   limit: nat;
+   offset: nat;
+   reports: vec ReportWithStatus;
+   total: nat;
  };
 type GetMyVotesParams = 
  record {
@@ -461,7 +468,7 @@ service : {
       total: nat;
     });
   get_report: (report_id: ReportId) -> (Result_4) query;
-  get_reports: () -> (Result_3) query;
+  get_reports: (offset: nat, limit: nat) -> (Result_3) query;
   get_sent_escrows: () -> (Result_2);
   get_sent_escrows_paginated: (offset: nat, limit: nat) ->
    (record {

@@ -29,6 +29,6 @@ dfx canister call "${CANISTER_ID_FRADIUM_LEDGER}"  icrc1_transfer "(
         memo = null;
         created_at_time = null;
     }
-)" --network ic
+)"
 
 echo "Transfer completed successfully!"

@@ -8,7 +8,7 @@ import { cketh_minter } from "declarations/cketh_minter";
 
 // Token utilities
 import { TOKENS_CONFIG } from "@/core/config/tokenConfig.js";
-import { getBalance, getUSD, getUSDPrices, clearBalanceCache, getCkEthHelperContractAddress, getCkEthMinterAddress } from "@/core/lib/tokenUtils";
+import { getBalance, getUSD, getUSDPrices, clearBalanceCache, getCkEthHelperContractAddress, getCkEthMinterAddress, getTokenVisibility } from "@/core/lib/tokenUtils";
 
 // Create context for wallet data
 const WalletContext = createContext();
@@ -379,9 +379,22 @@ export const WalletProvider = ({ children }) => {
 
   // Function to fetch all balances
   const fetchAllBalances = useCallback(async () => {
-    // Load all token balances in parallel (both native and ICRC tokens)
-    await Promise.all(TOKENS_CONFIG.map((token) => fetchTokenBalance(token)));
-  }, [fetchTokenBalance]);
+    // Get principal to check token visibility
+    const principal = identity?.getPrincipal();
+
+    // Filter tokens based on visibility
+    const visibleTokens = TOKENS_CONFIG.filter((token) => {
+      try {
+        return getTokenVisibility(principal, token.id);
+      } catch (error) {
+        console.error(`Error checking visibility for token ${token.symbol}:`, error);
+        return true; // Default to visible if error
+      }
+    });
+
+    // Load all visible token balances in parallel (both native and ICRC tokens)
+    await Promise.all(visibleTokens.map((token) => fetchTokenBalance(token)));
+  }, [fetchTokenBalance, identity]);
 
   // Function to initialize balances (for pages that need them)
   const initializeBalances = useCallback(async () => {
@@ -396,28 +409,41 @@ export const WalletProvider = ({ children }) => {
 
     setIsRefreshingBalances(true);
 
-    // Set all tokens to loading state
+    // Get principal to check token visibility
+    const principal = identity?.getPrincipal();
+
+    // Filter tokens based on visibility
+    const visibleTokens = TOKENS_CONFIG.filter((token) => {
+      try {
+        return getTokenVisibility(principal, token.id);
+      } catch (error) {
+        console.error(`Error checking visibility for token ${token.symbol}:`, error);
+        return true; // Default to visible if error
+      }
+    });
+
+    // Set all visible tokens to loading state
     const loadingState = {};
-    TOKENS_CONFIG.forEach((token) => {
+    visibleTokens.forEach((token) => {
       loadingState[token.id] = true;
     });
     setBalanceLoading((prev) => ({ ...prev, ...loadingState }));
 
     try {
-      // Load all balances in parallel (both native and ICRC tokens)
+      // Load all visible balances in parallel (both native and ICRC tokens)
       // Use cache=false for refresh to ensure fresh data from blockchain
-      await Promise.all(TOKENS_CONFIG.map((token) => fetchTokenBalance(token, false)));
+      await Promise.all(visibleTokens.map((token) => fetchTokenBalance(token, false)));
     } finally {
       setIsRefreshingBalances(false);
     }
-  }, [fetchTokenBalance, isRefreshingBalances]);
+  }, [fetchTokenBalance, isRefreshingBalances, identity]);
 
   // Listen for external balance updates (e.g., after transfers) and refresh balances
   useEffect(() => {
     const onBalanceUpdated = () => {
       try {
         refreshAllBalances();
-      } catch (_e) { }
+      } catch (_e) {}
     };
     window.addEventListener("balance-updated", onBalanceUpdated);
     return () => window.removeEventListener("balance-updated", onBalanceUpdated);
@@ -442,9 +468,22 @@ export const WalletProvider = ({ children }) => {
 
   // Function to fetch all USD prices
   const fetchAllUSDPrices = useCallback(async () => {
-    const allTokenIds = TOKENS_CONFIG.map((token) => token.id);
-    await Promise.all(allTokenIds.map((tokenId) => fetchTokenUSDPrice(tokenId)));
-  }, [fetchTokenUSDPrice]);
+    // Get principal to check token visibility
+    const principal = identity?.getPrincipal();
+
+    // Filter tokens based on visibility
+    const visibleTokens = TOKENS_CONFIG.filter((token) => {
+      try {
+        return getTokenVisibility(principal, token.id);
+      } catch (error) {
+        console.error(`Error checking visibility for token ${token.symbol}:`, error);
+        return true; // Default to visible if error
+      }
+    });
+
+    const visibleTokenIds = visibleTokens.map((token) => token.id);
+    await Promise.all(visibleTokenIds.map((tokenId) => fetchTokenUSDPrice(tokenId)));
+  }, [fetchTokenUSDPrice, identity]);
 
   // Function to initialize USD prices (for pages that need them)
   const initializeUSDPrices = useCallback(async () => {
@@ -464,18 +503,32 @@ export const WalletProvider = ({ children }) => {
   const refreshAllUSDPrices = useCallback(async () => {
     if (isRefreshingPrices) return;
     setIsRefreshingPrices(true);
-    const allTokenIds = TOKENS_CONFIG.map((token) => token.id);
+
+    // Get principal to check token visibility
+    const principal = identity?.getPrincipal();
+
+    // Filter tokens based on visibility
+    const visibleTokens = TOKENS_CONFIG.filter((token) => {
+      try {
+        return getTokenVisibility(principal, token.id);
+      } catch (error) {
+        console.error(`Error checking visibility for token ${token.symbol}:`, error);
+        return true; // Default to visible if error
+      }
+    });
+
+    const visibleTokenIds = visibleTokens.map((token) => token.id);
     const loadingState = {};
-    allTokenIds.forEach((tokenId) => {
+    visibleTokenIds.forEach((tokenId) => {
       loadingState[tokenId] = true;
     });
     setUsdPriceLoading((prev) => ({ ...prev, ...loadingState }));
     try {
-      await Promise.all(allTokenIds.map((tokenId) => fetchTokenUSDPrice(tokenId)));
+      await Promise.all(visibleTokenIds.map((tokenId) => fetchTokenUSDPrice(tokenId)));
     } finally {
       setIsRefreshingPrices(false);
     }
-  }, [fetchTokenUSDPrice, isRefreshingPrices]);
+  }, [fetchTokenUSDPrice, isRefreshingPrices, identity]);
 
   // Function to clear balance cache manually
   const clearBalanceCacheManual = useCallback(
@@ -569,10 +622,29 @@ export const WalletProvider = ({ children }) => {
     (networkName) => {
       if (hideBalance) return 0;
 
+      // Get principal to check token visibility
+      const principal = identity?.getPrincipal();
+
       // Get all tokens for this network
       const networkTokens = TOKENS_CONFIG.filter((token) => {
-        if (networkName === "All Networks") return true;
-        return token.chain === networkName;
+        if (networkName === "All Networks") {
+          // Check visibility for all networks
+          try {
+            return getTokenVisibility(principal, token.id);
+          } catch (error) {
+            console.error(`Error checking visibility for token ${token.symbol}:`, error);
+            return true; // Default to visible if error
+          }
+        }
+        // Check both network match and visibility
+        const networkMatch = token.chain === networkName;
+        try {
+          const isVisible = getTokenVisibility(principal, token.id);
+          return networkMatch && isVisible;
+        } catch (error) {
+          console.error(`Error checking visibility for token ${token.symbol}:`, error);
+          return networkMatch; // Default to visible if error
+        }
       });
 
       let totalValue = 0;
@@ -586,7 +658,7 @@ export const WalletProvider = ({ children }) => {
 
       return totalValue;
     },
-    [balances, usdPrices, hideBalance]
+    [balances, usdPrices, hideBalance, identity]
   );
 
   // Function to get formatted network value

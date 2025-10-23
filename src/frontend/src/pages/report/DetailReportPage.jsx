@@ -518,23 +518,23 @@ export default function DetailReportPage() {
 
         // First, try to get all reports to see what's available
         console.log("Getting all reports to debug...");
-        const allReportsResponse = await backend.get_reports();
+        const allReportsResponse = await backend.get_reports(0, 100); // Get first 100 reports for debugging
         console.log("All reports response:", allReportsResponse);
 
-        if (allReportsResponse.Ok && allReportsResponse.Ok.length > 0) {
+        if (allReportsResponse.Ok && allReportsResponse.Ok.reports && allReportsResponse.Ok.reports.length > 0) {
           console.log(
             "Available report IDs:",
-            allReportsResponse.Ok.map((r) => r.report_id)
+            allReportsResponse.Ok.reports.map((r) => r.report_id)
           );
           console.log("Looking for report ID:", id, "in available IDs");
 
           // Try to find the report by different ID comparisons
-          let foundReport = allReportsResponse.Ok.find((r) => r.report_id.toString() === id);
+          let foundReport = allReportsResponse.Ok.reports.find((r) => r.report_id.toString() === id);
           if (!foundReport) {
-            foundReport = allReportsResponse.Ok.find((r) => Number(r.report_id) === Number(id));
+            foundReport = allReportsResponse.Ok.reports.find((r) => Number(r.report_id) === Number(id));
           }
           if (!foundReport) {
-            foundReport = allReportsResponse.Ok.find((r) => r.report_id === parseInt(id));
+            foundReport = allReportsResponse.Ok.reports.find((r) => r.report_id === parseInt(id));
           }
 
           if (foundReport) {

@@ -64,6 +64,14 @@ module {
     status : ReportStatus;
   };
 
+  // Response type for get_reports with pagination
+  public type GetReportsResponse = {
+    reports : [ReportWithStatus];
+    total : Nat;
+    offset : Nat;
+    limit : Nat;
+  };
+
   public type GetMyReportsParams = Report and {
     stake_amount : Nat;
     reward : Nat;

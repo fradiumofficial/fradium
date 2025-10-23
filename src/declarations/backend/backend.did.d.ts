@@ -170,6 +170,12 @@ export interface GetMyVotesParams {
   'stake_amount' : bigint,
   'reporter' : Principal,
 }
+export interface GetReportsResponse {
+  'total' : bigint,
+  'offset' : bigint,
+  'limit' : bigint,
+  'reports' : Array<ReportWithStatus>,
+}
 export type GetTokensResponse = { 'ok' : Array<ApiToken> } |
   { 'err' : string };
 export type HeaderField = [string, string];
@@ -245,7 +251,7 @@ export type Result_12 = { 'Ok' : GetAnalyzeAddressResult } |
   { 'Err' : string };
 export type Result_2 = { 'Ok' : Array<GetMyEscrowsParams> } |
   { 'Err' : string };
-export type Result_3 = { 'Ok' : Array<ReportWithStatus> } |
+export type Result_3 = { 'Ok' : GetReportsResponse } |
   { 'Err' : string };
 export type Result_4 = { 'Ok' : ReportWithStatus } |
   { 'Err' : string };
@@ -369,7 +375,7 @@ export interface _SERVICE {
     }
   >,
   'get_report' : ActorMethod<[ReportId], Result_4>,
-  'get_reports' : ActorMethod<[], Result_3>,
+  'get_reports' : ActorMethod<[bigint, bigint], Result_3>,
   'get_sent_escrows' : ActorMethod<[], Result_2>,
   'get_sent_escrows_paginated' : ActorMethod<
     [bigint, bigint],

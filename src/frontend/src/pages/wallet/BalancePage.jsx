@@ -227,8 +227,15 @@ export default function BalancePage() {
 
           // Fetch transactions via index service (Fradium only)
           setIsLoadingTransactions(true);
-          let fradiumTx = await getICRCTransactionHistory("fradium", identity.getPrincipal(), null, 100);
-          // Fallback ke ledger langsung jika indexer belum ada data
+          let fradiumTx = null;
+
+          try {
+            fradiumTx = await getICRCTransactionHistory("fradium", identity.getPrincipal(), null, 100);
+          } catch (indexError) {
+            console.warn("Index service not available, falling back to ledger:", indexError);
+          }
+
+          // Fallback ke ledger langsung jika indexer belum ada data atau error
           if (!fradiumTx || fradiumTx.length === 0) {
             try {
               const backendTransactions = await token.get_transactions({ start: 0, length: 100 });
@@ -253,8 +260,13 @@ export default function BalancePage() {
               setFilteredTransactions(converted);
               setIsLoadingTransactions(false);
               return;
-            } catch (_e) {
-              // ignore fallback error; will proceed with empty list
+            } catch (ledgerError) {
+              console.error("Error fetching from ledger:", ledgerError);
+              // Set empty list if both index and ledger fail
+              setTransactions([]);
+              setFilteredTransactions([]);
+              setIsLoadingTransactions(false);
+              return;
             }
           }
 

@@ -373,42 +373,147 @@ export async function getICRCTransactionHistory(tokenType, principal, icpAccount
           max_results: limit,
         });
 
-        // Handle the actual structure from Fradium index canister
+        console.log("🔍 Fradium Result:", fradiumResult);
+        console.log("🔍 Fradium Transactions Count:", fradiumResult?.Ok?.transactions?.length || 0);
+
+        // Handle the actual structure from Fradium index canister (supports transfer, mint, burn)
         if (fradiumResult && fradiumResult.Ok && fradiumResult.Ok.transactions) {
           transactions = fradiumResult.Ok.transactions
-            .map((tx) => {
-              // Extract transfer data from the actual structure (different from ICP)
-              const transfer = tx.transaction?.transfer?.[0];
+            .map((txWrapper, index) => {
+              console.log(`🔍 Fradium TX ${index} FULL:`, txWrapper);
 
-              if (!transfer) {
+              // txWrapper.transaction contains the actual transaction data
+              const tx = txWrapper.transaction;
+              if (!tx) {
+                console.log(`⚠️ Fradium TX ${index} has no transaction property`);
                 return null;
               }
 
-              const fromPrincipal = transfer.from?.owner?.__principal__ || transfer.from?.owner;
-              const toPrincipal = transfer.to?.owner?.__principal__ || transfer.to?.owner;
+              console.log(`🔍 Fradium TX ${index} transaction:`, tx);
 
-              const isSent = fromPrincipal.toString() === principalObj.toString();
-              const otherParty = isSent ? toPrincipal.toString() : fromPrincipal.toString();
-              const otherPartyStr = otherParty || "Unknown";
+              // Check for transfer transaction
+              if (tx.transfer && tx.transfer.length > 0) {
+                const transfer = tx.transfer[0];
+                console.log(`🔍 Fradium TX ${index} is TRANSFER:`, transfer);
 
-              const processedTx = {
-                hash: tx.id.toString(),
-                chain: "Internet Computer",
-                title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
-                amount: isSent ? -Number(transfer.amount || 0) / 1e8 : Number(transfer.amount || 0) / 1e8, // Convert e8s to Fradium
-                status: "Completed",
-                timestamp: Number(tx.transaction.timestamp || 0) / 1000000, // Convert nanoseconds to milliseconds
-                from: fromPrincipal.toString() || "Unknown",
-                to: toPrincipal.toString() || "Unknown",
-                fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e8 : 0,
-                memo: transfer.memo || [],
-                kind: "Transfer",
-                tokenType: "fradium",
-              };
+                // Parse principals using the approach from BalancePage.jsx
+                const fromPrincipal = transfer.from?.owner;
+                const toPrincipal = transfer.to?.owner;
 
-              return processedTx;
+                console.log(`🔍 Fradium TX ${index} from owner:`, fromPrincipal);
+                console.log(`🔍 Fradium TX ${index} to owner:`, toPrincipal);
+
+                if (!fromPrincipal || !toPrincipal) {
+                  console.log(`⚠️ Fradium TX ${index} missing from/to principal`);
+                  return null;
+                }
+
+                const fromStr = fromPrincipal.toString();
+                const toStr = toPrincipal.toString();
+                const currentPrincipalStr = principalObj.toString();
+
+                console.log(`🔍 Fradium TX ${index} from:`, fromStr);
+                console.log(`🔍 Fradium TX ${index} to:`, toStr);
+                console.log(`🔍 Fradium TX ${index} current principal:`, currentPrincipalStr);
+
+                const isSent = fromStr === currentPrincipalStr;
+                const otherParty = isSent ? toStr : fromStr;
+                const otherPartyStr = otherParty || "Unknown";
+
+                console.log(`🔍 Fradium TX ${index} isSent:`, isSent);
+
+                return {
+                  hash: txWrapper.id.toString(),
+                  chain: "Internet Computer",
+                  title: isSent ? `Transfer to ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}` : `Received from ${otherPartyStr.slice(0, 6)}...${otherPartyStr.slice(-4)}`,
+                  amount: isSent ? -Number(transfer.amount || 0) / 1e8 : Number(transfer.amount || 0) / 1e8,
+                  status: "Completed",
+                  timestamp: Number(tx.timestamp || 0) / 1000000,
+                  from: fromStr,
+                  to: toStr,
+                  fee: transfer.fee?.[0] ? Number(transfer.fee[0]) / 1e8 : 0,
+                  memo: transfer.memo || [],
+                  kind: "Transfer",
+                  tokenType: "fradium",
+                };
+              }
+
+              // Check for mint transaction
+              if (tx.mint && tx.mint.length > 0) {
+                const mint = tx.mint[0];
+                console.log(`🔍 Fradium TX ${index} is MINT:`, mint);
+
+                const toPrincipal = mint.to?.owner;
+                if (!toPrincipal) {
+                  console.log(`⚠️ Fradium TX ${index} mint missing to principal`);
+                  return null;
+                }
+
+                const toStr = toPrincipal.toString();
+                const currentPrincipalStr = principalObj.toString();
+                const isMintToUser = toStr === currentPrincipalStr;
+
+                console.log(`🔍 Fradium TX ${index} mint to:`, toStr);
+                console.log(`🔍 Fradium TX ${index} isMintToUser:`, isMintToUser);
+
+                return {
+                  hash: txWrapper.id.toString(),
+                  chain: "Internet Computer",
+                  title: isMintToUser ? `Minted Fradium` : `Mint to ${toStr.slice(0, 6)}...${toStr.slice(-4)}`,
+                  amount: isMintToUser ? Number(mint.amount || 0) / 1e8 : 0,
+                  status: "Completed",
+                  timestamp: Number(tx.timestamp || 0) / 1000000,
+                  from: "Mint",
+                  to: toStr,
+                  fee: 0,
+                  memo: mint.memo || [],
+                  kind: "Mint",
+                  tokenType: "fradium",
+                };
+              }
+
+              // Check for burn transaction
+              if (tx.burn && tx.burn.length > 0) {
+                const burn = tx.burn[0];
+                console.log(`🔍 Fradium TX ${index} is BURN:`, burn);
+
+                const fromPrincipal = burn.from?.owner;
+                if (!fromPrincipal) {
+                  console.log(`⚠️ Fradium TX ${index} burn missing from principal`);
+                  return null;
+                }
+
+                const fromStr = fromPrincipal.toString();
+                const currentPrincipalStr = principalObj.toString();
+                const isBurnFromUser = fromStr === currentPrincipalStr;
+
+                console.log(`🔍 Fradium TX ${index} burn from:`, fromStr);
+                console.log(`🔍 Fradium TX ${index} isBurnFromUser:`, isBurnFromUser);
+
+                return {
+                  hash: txWrapper.id.toString(),
+                  chain: "Internet Computer",
+                  title: isBurnFromUser ? `Burned Fradium` : `Burn from ${fromStr.slice(0, 6)}...${fromStr.slice(-4)}`,
+                  amount: isBurnFromUser ? -Number(burn.amount || 0) / 1e8 : 0,
+                  status: "Completed",
+                  timestamp: Number(tx.timestamp || 0) / 1000000,
+                  from: fromStr,
+                  to: "Burn",
+                  fee: burn.fee?.[0] ? Number(burn.fee[0]) / 1e8 : 0,
+                  memo: burn.memo || [],
+                  kind: "Burn",
+                  tokenType: "fradium",
+                };
+              }
+
+              // If no supported transaction type found, return null
+              console.log(`⚠️ Fradium TX ${index} no matching type (transfer/mint/burn)`);
+              return null;
             })
-            .filter((tx) => tx !== null); // Remove null transactions
+            .filter((tx) => tx !== null);
+
+          console.log("✅ Fradium Processed Transactions:", transactions.length);
+          console.log("✅ Fradium Processed Transactions Data:", transactions);
         }
         break;
 
@@ -624,23 +729,14 @@ export async function getSNSTransactionHistory(tokenSymbol, principal, limit = 2
 
     const { SNSTokenService } = await import("@/core/services/snsTokenService.js");
 
-    const transactions = await SNSTokenService.getTransactionHistory(
-      tokenSymbol,
-      principal,
-      limit,
-      0
-    );
+    const transactions = await SNSTokenService.getTransactionHistory(tokenSymbol, principal, limit, 0);
 
     return transactions;
   } catch (error) {
     console.error(`Error fetching ${tokenSymbol} transaction history:`, error);
 
     // Handle specific authentication errors
-    if (
-      error.message?.includes("Invalid certificate") ||
-      error.message?.includes("Signature verification failed") ||
-      error.message?.includes("AgentQueryError")
-    ) {
+    if (error.message?.includes("Invalid certificate") || error.message?.includes("Signature verification failed") || error.message?.includes("AgentQueryError")) {
       console.warn(`Authentication error for ${tokenSymbol} transactions. User may need to re-authenticate.`);
       return [];
     }

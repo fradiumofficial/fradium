@@ -284,9 +284,10 @@ module {
     };
 
     // Public functions
-    public func get_reports() : ParentTypes.Result<[CommunityTypes.ReportWithStatus], Text> {
+    public func get_reports(offset : Nat, limit : Nat) : ParentTypes.Result<CommunityTypes.GetReportsResponse, Text> {
       var allReports : [CommunityTypes.ReportWithStatus] = [];
       
+      // Collect all reports
       for ((principal, reports) in reportStore.entries()) {
         for (report in reports.vals()) {
           let reportWithStatus : CommunityTypes.ReportWithStatus = {
@@ -309,7 +310,37 @@ module {
         };
       };
       
-      return #Ok(allReports);
+      // Sort by created_at (newest first)
+      let sortedReports = Array.sort(allReports, func(a : CommunityTypes.ReportWithStatus, b : CommunityTypes.ReportWithStatus) : { #less; #equal; #greater } {
+        if (a.created_at > b.created_at) { #less }
+        else if (a.created_at < b.created_at) { #greater }
+        else { #equal }
+      });
+      
+      let totalReports = sortedReports.size();
+      
+      // Apply pagination
+      let startIndex = offset;
+      let endIndex = Nat.min(offset + limit, totalReports);
+      
+      var paginatedReports : [CommunityTypes.ReportWithStatus] = [];
+      if (startIndex < totalReports) {
+        paginatedReports := Array.tabulate<CommunityTypes.ReportWithStatus>(
+          endIndex - startIndex,
+          func(i : Nat) : CommunityTypes.ReportWithStatus {
+            sortedReports[startIndex + i]
+          }
+        );
+      };
+      
+      let response : CommunityTypes.GetReportsResponse = {
+        reports = paginatedReports;
+        total = totalReports;
+        offset = offset;
+        limit = limit;
+      };
+      
+      return #Ok(response);
     };
 
     public func get_report(report_id : CommunityTypes.ReportId) : ParentTypes.Result<CommunityTypes.ReportWithStatus, Text> {
