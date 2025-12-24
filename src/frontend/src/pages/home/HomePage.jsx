@@ -114,7 +114,7 @@ const Home = React.memo(() => {
   const appear = "opacity-100 translate-y-0"; // Simplified, no conditional rendering
 
   return (
-    <section className="relative bg-[#000510] w-full overflow-hidden">
+    <section className="relative w-full overflow-hidden">
       {showFirstTimeModal && <FirstTimeModal onClose={handleModalClose} onSkip={handleModalSkip} onScrollToProducts={handleScrollToProducts} />}
       <style>{`
         @keyframes fradium-float {
@@ -470,12 +470,13 @@ const Home = React.memo(() => {
         }
       `}</style>
       {/* Tagline di atas background */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-12 sm:pt-16 md:pt-24 mt-4 sm:mt-6 md:mt-8 text-center">
+      <div className="mt-10"></div>
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-12 sm:pt-16 md:pt-24 text-center">
         <p className="text-xs sm:text-[14px] font-medium tracking-[0.2em] sm:tracking-[0.28em] text-[#C1FFC5] mt-4 sm:mt-0">REINVENTED BLOCKCHAIN SECURITY</p>
       </div>
 
       {/* Hero background dimulai di bawah tagline, mengikuti pola layering dari App.jsx */}
-      <div className="relative mx-auto mt-4 overflow-hidden">
+      <div className="relative mx-auto overflow-hidden">
         {/* Background layer */}
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
           <img src={BACKGROUND_URL} alt="" aria-hidden="true" decoding="async" loading="eager" fetchpriority="high" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
@@ -584,12 +585,12 @@ const Home = React.memo(() => {
                 </div>
               </div>
               {/* Bottom gradient overlay */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-black" />
             </div>
           </div>
         </div>
         {/* Fade ke warna dasar agar transisi halus */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#000510]" />
+        <div className="absolute left-0 right-0 bottom-[-2px] h-8 z-[1] pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent 0%, #000 80%)" }} />
       </div>
 
       {/* Background kedua di bawah background pertama, dengan jarak margin-8 */}
@@ -600,7 +601,7 @@ const Home = React.memo(() => {
           <div className="absolute inset-0 bg-black/60"></div>
         </div>
         {/* Fade dari warna dasar ke background-2 */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-black" />
 
         {/* Row kedua: kolom kiri panjang, kolom kanan dua kartu setengah tinggi */}
         <div className="relative z-10 mx-auto w-full max-w-6xl pt-4 sm:pt-6 pb-8 sm:pb-12 px-4 sm:px-6">
@@ -767,7 +768,7 @@ const Home = React.memo(() => {
                   </div>
 
                   {/* Bottom gradient overlay */}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-black" />
                 </div>
               </div>
 
@@ -799,13 +800,13 @@ const Home = React.memo(() => {
           </div>
         </div>
         {/* Fade ke warna dasar di bagian bawah */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#000510]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-black" />
       </div>
 
       {/* Our Product Section */}
-      <div ref={productsRef} className="relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-[#000510]">
+      <div ref={productsRef} className="relative mx-auto min-h-[600px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#000510] to-[#0a0f14]"></div>
+          <div className="absolute inset-0 bg-black"></div>
         </div>
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-12 sm:pt-20 md:pt-24 pb-14 sm:pb-20 md:pb-24">
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
@@ -814,7 +815,7 @@ const Home = React.memo(() => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
             {/* Card 1: Fradium Paylink */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
+            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="0, 0, 0">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                 <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-paylink.webp" alt="Fradium Paylink" className="w-full h-full object-cover" draggable={false} />
@@ -831,7 +832,7 @@ const Home = React.memo(() => {
               </div>
             </MagicBento>
             {/* Card 2: Fradium Escrow */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
+            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="0, 0, 0">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                 <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-escrow.webp" alt="Fradium Escrow" className="w-full h-full object-cover" draggable={false} />
@@ -848,7 +849,7 @@ const Home = React.memo(() => {
               </div>
             </MagicBento>
             {/* Card 3: Fradium Wallet */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
+            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="0, 0, 0">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                 <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradiums-wallet.webp" alt="Fradium Wallet" className="w-full h-full object-cover" draggable={false} />
@@ -865,7 +866,7 @@ const Home = React.memo(() => {
               </div>
             </MagicBento>
             {/* Card 4: Fradium Extension */}
-            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="132, 0, 255">
+            <MagicBento textAutoHide={false} enableStars={true} enableSpotlight={true} enableBorderGlow={false} enableTilt={false} enableMagnetism={false} clickEffect={true} spotlightRadius={300} particleCount={12} glowColor="0, 0, 0">
               <div className="w-full rounded-2xl border border-white/10 bg-[#00000059] backdrop-blur-[2px] p-4 sm:p-6 relative overflow-hidden group shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                 <div className="w-full h-[180px] sm:h-[200px] md:h-[260px] rounded-[14px] bg-white/5 mb-5 overflow-hidden relative product-image-hover">
                   <img src="https://cdn.jsdelivr.net/gh/fradiumofficial/fradium-asset@main/landing-page/fradium-extension.webp" alt="Fradium Extension" className="w-full h-full object-cover" draggable={false} />
@@ -886,9 +887,9 @@ const Home = React.memo(() => {
       </div>
 
       {/* Ecosystem Section */}
-      <div className="relative mx-auto min-h-[400px] md:min-h-[500px] overflow-hidden bg-[#000510]">
+      <div className="relative mx-auto min-h-[400px] md:min-h-[500px] overflow-hidden">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14] to-[#000510]"></div>
+          <div className="absolute inset-0 bg-black"></div>
         </div>
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-16 sm:pt-20 md:pt-24 pb-16 sm:pb-20 md:pb-24">
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
@@ -925,7 +926,7 @@ const Home = React.memo(() => {
           <div className="absolute inset-0 bg-black/60"></div>
         </div>
         {/* Fade ke warna dasar ke background-3 */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#000510] to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-black" />
         {/* Wrapper konten */}
         <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8 md:pt-10 pb-16 sm:pb-20 md:pb-24 lg:pb-32">
           {/* Hero di atas background ketiga */}
